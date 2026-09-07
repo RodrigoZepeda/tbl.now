@@ -32,7 +32,7 @@
 
     <a class="navbar-brand me-2" href="index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.31.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.33.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -49,7 +49,7 @@
 <li><a class="dropdown-item" href="articles/custom-nowcast-models.html">Adding your own nowcasting model</a></li>
     <li><a class="dropdown-item" href="articles/diagnosing-a-tbl-now.html">Diagnosing a tbl_now</a></li>
     <li><a class="dropdown-item" href="articles/ensemble-nowcasting.html">One call, many models: run_nowcast(), custom backends and ensembles</a></li>
-    <li><a class="dropdown-item" href="articles/example.html">A complete nowcasting workflow: hospital-acquired infections in Bucaramanga</a></li>
+    <li><a class="dropdown-item" href="articles/example.html">The nowcasting workflow: hospital-acquired infections in Bucaramanga, Colombia</a></li>
     <li><a class="dropdown-item" href="articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with different modelling packages</a></li>
     <li><a class="dropdown-item" href="articles/tbl.now.html">tbl.now</a></li>
   </ul>
@@ -85,7 +85,7 @@
 </div>
 <!-- badges: start -->
 
-<p><a href="https://rodrigozepeda.github.io/tbl.now/"><code>tbl.now</code></a> provides an extension of the <a href="https://tibble.tidyverse.org/" class="external-link"><code>tibble()</code></a> for storing, validating, and manipulating epidemiological nowcasting data. It standardizes the representation of event dates, report dates, strata, temporal covariates, etc and in a way that is compatible with many frameworks including diseasenowcasting, epinowcast, NobBS, surveillance, EpiNow2, and more.</p>
+<p><a href="https://rodrigozepeda.github.io/tbl.now/"><code>tbl.now</code></a> provides an extension of the <a href="https://tibble.tidyverse.org/" class="external-link"><code>tibble()</code></a> for storing, validating, and manipulating epidemiological nowcasting data. It standardizes the representation of event dates, report dates, strata, temporal covariates, etc and in a way that is compatible with many frameworks including <a href="https://rodrigozepeda.github.io/diseasenowcasting/" class="external-link">diseasenowcasting</a>, <a href="https://package.epinowcast.org/" class="external-link">epinowcast</a>, <a href="https://cran.r-project.org/web/packages/NobBS/index.html" class="external-link">NobBS</a>, <a href="https://cran.r-project.org/web/packages/surveillance/index.html" class="external-link">surveillance</a>, <a href="https://epiforecasts.io/EpiNow2/" class="external-link">EpiNow2</a>, and more.</p>
 <p>Specifically a <code>tbl_now</code> is a data structure that keeps track of the following attributes relevant for a nowcasting excercise so that all <code>dplyr</code> transformations (i.e. the ones from tidyverse) keep track of the relevant nowcasting variables:</p>
 <table class="table">
 <thead><tr>
@@ -102,7 +102,7 @@ What it records
 <tbody>
 <tr>
 <td align="center">
-<img src="reference/figures/event_date.svg" height="70" style="height:70px;width:auto;" alt="event_date">
+<img src="reference/figures/event_date.svg" height="80" style="height:80px;width:auto;max-width:80px;" alt="event_date">
 </td>
 <td align="left">
 <code>event_date</code>
@@ -113,7 +113,7 @@ The column storing <strong>event dates</strong>; i.e. when the epidemiological 
 </tr>
 <tr>
 <td align="center">
-<img src="reference/figures/report_date.svg" height="70" style="height:70px;width:auto;" alt="report_date">
+<img src="reference/figures/report_date.svg" height="80" style="height:80px;width:auto;max-width:80px;" alt="report_date">
 </td>
 <td align="left">
 <code>report_date</code>
@@ -124,7 +124,7 @@ The column storing <strong>report dates</strong>; i.e. when that event became k
 </tr>
 <tr>
 <td align="center">
-<img src="reference/figures/validation_date.svg" height="70" style="height:70px;width:auto;" alt="validation">
+<img src="reference/figures/validation_date.svg" height="80" style="height:80px;width:auto;max-width:80px;" alt="validation">
 </td>
 <td align="left">
 <code>validation_date</code>
@@ -135,7 +135,7 @@ An optional third date indicating when the report was resolved (see <code>valida
 </tr>
 <tr>
 <td align="center">
-<img src="reference/figures/validation_type.svg" height="70" style="height:70px;width:auto;" alt="validation">
+<img src="reference/figures/validation_type.svg" height="80" style="height:80px;width:auto;max-width:80px;" alt="validation">
 </td>
 <td align="left">
 <code>validation_type</code>
@@ -146,18 +146,18 @@ What the validation date resolved to. Only <code>confirmed</code>, <code>retract
 </tr>
 <tr>
 <td align="center">
-<img src="reference/figures/validation_type.svg" height="70" style="height:70px;width:auto;" alt="validation_levels">
+<img src="reference/figures/validation_type.svg" height="80" style="height:80px;width:auto;max-width:80px;" alt="validation_levels">
 </td>
 <td align="left">
 <code>validation_levels</code>
 </td>
 <td align="left">
-A named dictionary translating the labels in <code>validation_type</code> into those four, e.g. <code>c(confirmado = “confirmed”)</code>. <em>Optional</em>.
+A named dictionary translating the labels in <code>validation_type</code> into those four, e.g. <code>c(positive = “confirmed”)</code>. <em>Optional</em>.
 </td>
 </tr>
 <tr>
 <td align="center">
-<img src="reference/figures/now.svg" height="70" style="height:70px;width:auto;" alt="now">
+<img src="reference/figures/now.svg" height="80" style="height:80px;width:auto;max-width:80px;" alt="now">
 </td>
 <td align="left">
 <code>now</code>
@@ -168,7 +168,7 @@ The date the nowcast is anchored to — “today” from the model’s point of 
 </tr>
 <tr>
 <td align="center">
-<img src="reference/figures/strata.svg" height="70" style="height:70px;width:auto;" alt="strata">
+<img src="reference/figures/strata.svg" height="80" style="height:80px;width:auto;max-width:80px;" alt="strata">
 </td>
 <td align="left">
 <code>strata</code>
@@ -179,7 +179,7 @@ Columns you want a separate nowcast for (e.g. gender, region). <em>Optional</em
 </tr>
 <tr>
 <td align="center">
-<img src="reference/figures/covariates.svg" height="70" style="height:70px;width:auto;" alt="covariates">
+<img src="reference/figures/covariates.svg" height="80" style="height:80px;width:auto;max-width:80px;" alt="covariates">
 </td>
 <td align="left">
 <code>covariates</code>
@@ -190,7 +190,7 @@ Columns that inform the nowcast but that you do <em>not</em> want it broken down
 </tr>
 <tr>
 <td align="center">
-<img src="reference/figures/case_count.svg" height="70" style="height:70px;width:auto;" alt="case_count">
+<img src="reference/figures/case_count.svg" height="80" style="height:80px;width:auto;max-width:80px;" alt="case_count">
 </td>
 <td align="left">
 <code>case_count</code>
@@ -201,7 +201,7 @@ The column holding the counts when the data is given as aggregated (rather than 
 </tr>
 <tr>
 <td align="center">
-<img src="reference/figures/datatype.svg" height="70" style="height:70px;width:auto;" alt="data_type">
+<img src="reference/figures/datatype.svg" height="80" style="height:80px;width:auto;max-width:80px;" alt="data_type">
 </td>
 <td align="left">
 <code>data_type</code>
@@ -212,7 +212,7 @@ Whether the data represents a <code>linelist</code> (each row is a case), <code>
 </tr>
 <tr>
 <td align="center">
-<img src="reference/figures/units.svg" height="70" style="height:70px;width:auto;" alt="units">
+<img src="reference/figures/units.svg" height="80" style="height:80px;width:auto;max-width:80px;" alt="units">
 </td>
 <td align="left">
 <code>event_units</code>, <code>report_units</code>, <code>validation_units</code>
@@ -223,7 +223,7 @@ The time grid each date lives on: <code>days</code>, <code>weeks</code>, <code>m
 </tr>
 <tr>
 <td align="center">
-<img src="reference/figures/censoring.svg" height="70" style="height:70px;width:auto;" alt="is_censored_report">
+<img src="reference/figures/censoring.svg" height="80" style="height:80px;width:auto;max-width:80px;" alt="is_censored_report">
 </td>
 <td align="left">
 <code>is_censored_report</code>
@@ -234,7 +234,7 @@ Flags report dates that are only an upper bound, e.g. a batch or back-fill dump
 </tr>
 <tr>
 <td align="center">
-<img src="reference/figures/censoring.svg" height="70" style="height:70px;width:auto;" alt="is_censored_validation">
+<img src="reference/figures/censoring.svg" height="80" style="height:80px;width:auto;max-width:80px;" alt="is_censored_validation">
 </td>
 <td align="left">
 <code>is_censored_validation</code>
@@ -245,7 +245,7 @@ The same on the validation axis: flags rows whose <em>validation</em> delay is a
 </tr>
 <tr>
 <td align="center">
-<img src="reference/figures/temporal_effects.svg" height="70" style="height:70px;width:auto;" alt="temporal_effects">
+<img src="reference/figures/temporal_effects.svg" height="80" style="height:80px;width:auto;max-width:80px;" alt="temporal_effects">
 </td>
 <td align="left">
 <code>t_effects</code>
@@ -264,32 +264,35 @@ Columns holding temporal effects (day of week, holidays, …) that some models c
 <span></span>
 <span><span class="co">#Here we use just a few dates for the example</span></span>
 <span><span class="va">denguedat</span> <span class="op">&lt;-</span> <span class="va">denguedat</span> <span class="op">|&gt;</span> </span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">onset_week</span> <span class="op">&gt;=</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2005/01/01"</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">onset_week</span> <span class="op">&lt;=</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2005/10/01"</span><span class="op">)</span>  <span class="op">&amp;</span> <span class="va">report_week</span> <span class="op">&lt;=</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2005/10/01"</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">onset_week</span> <span class="op">&gt;=</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2005/01/01"</span><span class="op">)</span>,</span>
+<span>         <span class="va">report_week</span> <span class="op">&lt;=</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2005/10/01"</span><span class="op">)</span><span class="op">)</span> </span>
+<span></span>
+<span><span class="co">#And we specify as a tbl_now:</span></span>
+<span><span class="va">denguedat</span> <span class="op">&lt;-</span> <span class="va">denguedat</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="reference/tbl_now.html">tbl_now</a></span><span class="op">(</span></span>
 <span>    report_date <span class="op">=</span> <span class="va">report_week</span>,</span>
 <span>    event_date <span class="op">=</span> <span class="va">onset_week</span>,</span>
 <span>    strata <span class="op">=</span> <span class="va">gender</span></span>
 <span>  <span class="op">)</span> </span></code></pre></div>
-<p>Once transformed, it can help you diagnose data problems or modeling requirements with your database:</p>
+<p>Once transformed, it can help you diagnose data problems (see <a href="https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html">this article</a>) or modeling requirements with your database:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">denguedat</span><span class="op">)</span></span></code></pre></div>
 <p><img src="reference/figures/README-unnamed-chunk-3-1.png" alt="" width="100%" class="r-plt"></p>
-<p>And it can be used to run any of multiple nowcast libraries through the <code><a href="reference/engine.html">engine()</a></code> and <code>run_nowcast</code> specifications. For example, baselinenowcast:</p>
+<p>And it can be used to run any of multiple nowcast libraries through the <code><a href="reference/engine.html">engine()</a></code> and <code>run_nowcast</code> specifications (see <a href="https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html">this article</a>. For example, <a href="https://baselinenowcast.epinowcast.org/" class="external-link">baselinenowcast</a>:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">dengue_nowcast_1</span> <span class="op">&lt;-</span> <span class="va">denguedat</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="reference/run_nowcast.html">run_nowcast</a></span><span class="op">(</span>engine <span class="op">=</span> <span class="fu"><a href="reference/nowcast_engines.html">engine_baselinenowcast</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">dengue_nowcast_1</span><span class="op">)</span></span></code></pre></div>
 <p><img src="reference/figures/README-unnamed-chunk-5-1.png" alt="" width="100%" class="r-plt"></p>
-<p>or diseasenowcasting:</p>
+<p>or <a href="https://rodrigozepeda.github.io/diseasenowcasting/" class="external-link">diseasenowcasting</a>:</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">dengue_nowcast_2</span> <span class="op">&lt;-</span> <span class="va">denguedat</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="reference/run_nowcast.html">run_nowcast</a></span><span class="op">(</span>engine <span class="op">=</span> <span class="fu"><a href="reference/nowcast_engines.html">engine_diseasenowcasting</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">dengue_nowcast_2</span><span class="op">)</span></span></code></pre></div>
 <p><img src="reference/figures/README-unnamed-chunk-7-1.png" alt="" width="100%" class="r-plt"></p>
-<p>It can also generate ensemble nowcasts combining multiple engines or multiple realizations from the same engine:</p>
+<p>It can also generate ensemble nowcasts combining multiple engines or multiple realizations from the same engine as you can see <a href="https://rodrigozepeda.github.io/tbl.now/articles/ensemble-nowcasting.html">in this article</a>:</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">dengue_ensemble</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/nowcast_ensemble.html">nowcast_ensemble</a></span><span class="op">(</span></span>
 <span>  baselinenowcast  <span class="op">=</span> <span class="va">dengue_nowcast_1</span>,</span>
@@ -298,7 +301,7 @@ Columns holding temporal effects (day of week, holidays, …) that some models c
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">dengue_ensemble</span><span class="op">)</span></span></code></pre></div>
 <p><img src="reference/figures/README-unnamed-chunk-9-1.png" alt="" width="100%" class="r-plt"></p>
-<p>If this seems exciting to you, install the development version from <a href="https://github.com/" class="external-link">GitHub</a>:</p>
+<p>If this seems as exciting to you as it is to us, install the development version from <a href="https://github.com/" class="external-link">GitHub</a>:</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># install.packages("pak") # &lt;- uncomment if you do not have `pak`</span></span>
 <span><span class="fu">pak</span><span class="fu">::</span><span class="fu"><a href="https://pak.r-lib.org/reference/pkg_install.html" class="external-link">pkg_install</a></span><span class="op">(</span><span class="st">"RodrigoZepeda/tbl.now"</span><span class="op">)</span></span></code></pre></div>

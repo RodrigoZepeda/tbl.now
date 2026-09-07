@@ -25,7 +25,7 @@ every stratum, leaving only the not-yet-reported cells absent."><meta property="
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.31.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.33.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -40,7 +40,7 @@ every stratum, leaving only the not-yet-reported cells absent."><meta property="
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/custom-nowcast-models.html">Adding your own nowcasting model</a></li>
     <li><a class="dropdown-item" href="../articles/diagnosing-a-tbl-now.html">Diagnosing a tbl_now</a></li>
     <li><a class="dropdown-item" href="../articles/ensemble-nowcasting.html">One call, many models: run_nowcast(), custom backends and ensembles</a></li>
-    <li><a class="dropdown-item" href="../articles/example.html">A complete nowcasting workflow: hospital-acquired infections in Bucaramanga</a></li>
+    <li><a class="dropdown-item" href="../articles/example.html">The nowcasting workflow: hospital-acquired infections in Bucaramanga, Colombia</a></li>
     <li><a class="dropdown-item" href="../articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with different modelling packages</a></li>
     <li><a class="dropdown-item" href="../articles/tbl.now.html">tbl.now</a></li>
   </ul></li>
@@ -113,14 +113,28 @@ carry any report on or before it, so no row would survive for it.</p></dd>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A <code>tbl_now</code> object with the same columns as <code>x</code>, plus the rows that
-were implicitly zero, carrying <code>0</code> in the <code>case_count</code> column. The data type
-is preserved.</p>
+were implicitly zero, carrying <code>0</code> in the <code>case_count</code> column. Explicit
+missing counts in the input remain <code>NA</code>; only cells created by
+<code>complete_zeroes()</code> are filled. The data type is preserved.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>Zeros are only filled where a report <em>could</em> have arrived: cells with a report
 date on or before the event date's <code>now</code>, and within <code>max_delay</code>. Filling
-beyond that would invent observations from the future.</p>
+beyond that would invent observations from the future.</p><div class="section">
+<h3 id="rows-with-a-missing-date">Rows with a missing date<a class="anchor" aria-label="anchor" href="#rows-with-a-missing-date"></a></h3>
+
+
+<p>A row whose event or report date is <code>NA</code> has no cell on the rectangle, so it
+takes no part in the grid: the bounds (<code>max_delay</code>, the first and last event
+date, the last report date) are all computed ignoring it. It is still a case,
+though, so it is <strong>carried through unchanged</strong> rather than dropped – use
+<code><a href="censoring.html">censor_reports()</a></code> to give it a bound, or <code><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">dplyr::filter()</a></code> to remove it, if
+you would rather it were on the grid or gone. Only an object in which <em>every</em>
+row is missing one of the two dates is refused, because then there is no grid
+to complete at all.</p>
+</div>
+
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

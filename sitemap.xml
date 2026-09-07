@@ -1,6 +1,5 @@
 <urlset xmlns = 'http://www.sitemaps.org/schemas/sitemap/0.9'>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/404.html</loc></url>
-<url><loc>https://rodrigozepeda.github.io/tbl.now/BATCH_DETECTION_EXPLAINED.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/DEVELOPMENT_SKILL.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/LICENSE-text.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/LICENSE.html</loc></url>
@@ -32,8 +31,8 @@
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/covid_us.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/denguedat.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/diagnose.html</loc></url>
-<url><loc>https://rodrigozepeda.github.io/tbl.now/reference/diagnose_batch_shape.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/diagnose_batches.html</loc></url>
+<url><loc>https://rodrigozepeda.github.io/tbl.now/reference/diagnose_batches2.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/diagnose_changepoint.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/diagnose_drift.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/diagnostic_plot.html</loc></url>
@@ -70,6 +69,7 @@
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/plot_transport_discriminant.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/plot_validation_status.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/print.tbl_now_diagnosis.html</loc></url>
+<url><loc>https://rodrigozepeda.github.io/tbl.now/reference/print.tbl_now_palette.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/print.tbl_now_summary_table.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/reexports.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/run_nowcast.html</loc></url>
@@ -87,6 +87,7 @@
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_epinow2_snapshots.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_epinowcast.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_nobbs.html</loc></url>
+<url><loc>https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_palette.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_summary.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_surveillance.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_surveillance_list.html</loc></url>

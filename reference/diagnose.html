@@ -7,10 +7,9 @@ recent to be complete – and returns them as a tibble of findings, sorted
 worst first.
 It is deterministic and runs no statistical test. Whether the reporting
 delay drifts, and whether reports arrive in batches, are questions about a
-distribution, not about the object's structure; diagnose() emits a
-&quot;not_run&quot; signpost naming the function to call instead
-(diagnose_drift(), diagnose_batches()) rather than quietly running a test
-whose method, window and multiplicity correction you did not choose.
+distribution, not about the object's structure, so diagnose() leaves them
+to diagnose_drift() and diagnose_batches() rather than quietly running a
+test whose method, window and multiplicity correction you did not choose.
 Every block is also available on its own – see
 nowcast_diagnose_components – and diagnose() is exactly the
 dplyr::bind_rows() of those pieces."><meta property="og:description" content="
@@ -21,10 +20,9 @@ recent to be complete – and returns them as a tibble of findings, sorted
 worst first.
 It is deterministic and runs no statistical test. Whether the reporting
 delay drifts, and whether reports arrive in batches, are questions about a
-distribution, not about the object's structure; diagnose() emits a
-&quot;not_run&quot; signpost naming the function to call instead
-(diagnose_drift(), diagnose_batches()) rather than quietly running a test
-whose method, window and multiplicity correction you did not choose.
+distribution, not about the object's structure, so diagnose() leaves them
+to diagnose_drift() and diagnose_batches() rather than quietly running a
+test whose method, window and multiplicity correction you did not choose.
 Every block is also available on its own – see
 nowcast_diagnose_components – and diagnose() is exactly the
 dplyr::bind_rows() of those pieces."><meta property="og:image" content="https://rodrigozepeda.github.io/tbl.now/logo.png"></head><body>
@@ -35,7 +33,7 @@ dplyr::bind_rows() of those pieces."><meta property="og:image" content="https://
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.31.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.33.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -50,7 +48,7 @@ dplyr::bind_rows() of those pieces."><meta property="og:image" content="https://
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/custom-nowcast-models.html">Adding your own nowcasting model</a></li>
     <li><a class="dropdown-item" href="../articles/diagnosing-a-tbl-now.html">Diagnosing a tbl_now</a></li>
     <li><a class="dropdown-item" href="../articles/ensemble-nowcasting.html">One call, many models: run_nowcast(), custom backends and ensembles</a></li>
-    <li><a class="dropdown-item" href="../articles/example.html">A complete nowcasting workflow: hospital-acquired infections in Bucaramanga</a></li>
+    <li><a class="dropdown-item" href="../articles/example.html">The nowcasting workflow: hospital-acquired infections in Bucaramanga, Colombia</a></li>
     <li><a class="dropdown-item" href="../articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with different modelling packages</a></li>
     <li><a class="dropdown-item" href="../articles/tbl.now.html">tbl.now</a></li>
   </ul></li>
@@ -86,10 +84,9 @@ recent to be complete – and returns them as a tibble of findings, sorted
 worst first.</p>
 <p>It is <strong>deterministic and runs no statistical test.</strong> Whether the reporting
 delay drifts, and whether reports arrive in batches, are questions about a
-<em>distribution</em>, not about the object's structure; <code>diagnose()</code> emits a
-<code>"not_run"</code> signpost naming the function to call instead
-(<code><a href="diagnose_drift.html">diagnose_drift()</a></code>, <code><a href="diagnose_batches.html">diagnose_batches()</a></code>) rather than quietly running a test
-whose method, window and multiplicity correction you did not choose.</p>
+<em>distribution</em>, not about the object's structure, so <code>diagnose()</code> leaves them
+to <code><a href="diagnose_drift.html">diagnose_drift()</a></code> and <code><a href="diagnose_batches.html">diagnose_batches()</a></code> rather than quietly running a
+test whose method, window and multiplicity correction you did not choose.</p>
 <p>Every block is also available on its own – see
 <a href="nowcast_diagnose_components.html">nowcast_diagnose_components</a> – and <code>diagnose()</code> is exactly the
 <code><a href="https://dplyr.tidyverse.org/reference/bind_rows.html" class="external-link">dplyr::bind_rows()</a></code> of those pieces.</p>
@@ -127,8 +124,7 @@ whose method, window and multiplicity correction you did not choose.</p>
 
 <dt id="arg-checks">checks<a class="anchor" aria-label="anchor" href="#arg-checks"></a></dt>
 <dd><p>Character vector of checks to run, a subset of
-<code>c("declarations", "ordering", "missing", "duplicates", "units", "negatives", "now", "truncation", "strata", "signposts")</code>. Defaults to all
-of them.</p></dd>
+<code>c("declarations", "ordering", "missing", "duplicates", "units", "negatives", "now", "truncation", "strata")</code>. Defaults to all of them.</p></dd>
 
 
 <dt id="arg-by-strata">by_strata<a class="anchor" aria-label="anchor" href="#arg-by-strata"></a></dt>
@@ -165,7 +161,7 @@ stacked with <code><a href="https://dplyr.tidyverse.org/reference/bind_rows.html
 <dl><dt><code>check</code></dt>
 <dd><p>Which block the row belongs to: <code>"declarations"</code>,
 <code>"ordering"</code>, <code>"missing"</code>, <code>"duplicates"</code>, <code>"units"</code>, <code>"negatives"</code>,
-<code>"now"</code>, <code>"truncation"</code>, <code>"strata"</code> or <code>"signposts"</code>.</p></dd>
+<code>"now"</code>, <code>"truncation"</code> or <code>"strata"</code>.</p></dd>
 
 <dt><code>scope</code></dt>
 <dd><p>What the row is about: a column name, a time axis, a pair of
@@ -177,7 +173,7 @@ the pooled rows, or the stratum label otherwise.</p></dd>
 
 <dt><code>status</code></dt>
 <dd><p>An <strong>ordered factor</strong>, worst first, so the tibble sorts
-itself: <code>error</code> &gt; <code>warning</code> &gt; <code>note</code> &gt; <code>ok</code> &gt; <code>not_run</code> &gt; <code>skipped</code>. See
+itself: <code>error</code> &gt; <code>warning</code> &gt; <code>note</code> &gt; <code>ok</code> &gt; <code>skipped</code>. See
 the section below.</p></dd>
 
 <dt><code>n_affected</code></dt>
@@ -225,10 +221,6 @@ construction into a noisy one for data that has always been accepted.</p></dd>
 <dt><code>ok</code></dt>
 <dd><p>The check ran and found nothing.</p></dd>
 
-<dt><code>not_run</code></dt>
-<dd><p>A signpost: this question needs a statistical test, and
-<code>message</code> names the call that answers it.</p></dd>
-
 <dt><code>skipped</code></dt>
 <dd><p>Could not be assessed – no validation process, the
 wrong data type, or an optional package that is not installed.</p></dd>
@@ -259,7 +251,7 @@ goes through the findings one at a time.</p></div>
 <span class="r-in"><span><span class="co"># Everything, worst first</span></span></span>
 <span class="r-in"><span><span class="fu">diagnose</span><span class="op">(</span><span class="va">ndata</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── Diagnosis of a <span style="color: #0000BB;">&lt;tbl_now&gt;</span> ────────────────────────────────────────────────────</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">9 notes</span><span style="color: #555555;">, </span><span style="color: #00BB00;">14 passed</span><span style="color: #555555;">, </span><span style="color: #00BBBB;">3 not run</span><span style="color: #555555;">, 6 skipped.</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">9 notes</span><span style="color: #555555;">, </span><span style="color: #00BB00;">15 passed</span><span style="color: #555555;">, 5 skipped.</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="font-weight: bold;">Notes (9)</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">ℹ</span> <span style="font-weight: bold;">now/now_gap_event [Female]:</span> The last event date is 3 weeks before now ("2010-12-20").</span>
@@ -268,24 +260,17 @@ goes through the findings one at a time.</p></div>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">ℹ</span> <span style="font-weight: bold;">now/now_gap_event:</span> The last event date is 3 weeks before now ("2010-12-20").</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">ℹ</span> <span style="font-weight: bold;">now/now_gap_report [Male]:</span> The last report date is 1 week before now ("2010-12-20").</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">ℹ</span> <span style="font-weight: bold;">strata/size [Male]:</span> The smallest stratum is "Male" with 26395 cases, 49.8% of the total.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">ℹ</span> <span style="font-weight: bold;">strata/sparsity [Female]:</span> The sparsest stratum is "Female": 1.2% of the event dates on the grid carry no cases at all.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #555555;">→</span> <span style="color: #555555;">A stratum that is mostly zeros is the one a per-stratum fit will struggle with; pooling it is often better than fitting it.</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">ℹ</span> <span style="font-weight: bold;">strata/sparsity [Female]:</span> The sparsest stratum is "Female": 13 of the 1095 weeks between the minimum event (1990-01-01) and the now (2010-12-20) carry no cases at all (1.2%, against 0.4% pooled over every stratum).</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #555555;">→</span> <span style="color: #555555;">A stratum that is mostly zeros is the one a per-stratum fit will struggle with; pooling it is often better than fitting it. When every stratum is mostly zeros the grid is finer than the data -- `aggregate_time_units()` coarsens it.</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">ℹ</span> <span style="font-weight: bold;">truncation/event_date [Female]:</span> 1 event date is younger than the 95th percentile of the delay, so its counts are still filling in; an estimated 5.8% of its eventual total has not arrived.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #555555;">→</span> <span style="color: #555555;">This is right-truncation, and it is the reason to nowcast rather than a defect. Cut the series at "2010-11-22" to describe it instead.</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">ℹ</span> <span style="font-weight: bold;">truncation/event_date [Male]:</span> 1 event date is younger than the 95th percentile of the delay, so its counts are still filling in; an estimated 5.9% of its eventual total has not arrived.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">ℹ</span> <span style="font-weight: bold;">truncation/event_date:</span> 1 event date is younger than the 95th percentile of the delay, so its counts are still filling in; an estimated 5.9% of its eventual total has not arrived.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="font-weight: bold;">Not run (3)</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">→</span> <span style="font-weight: bold;">signposts/report:</span> Run: diagnose_drift(x, axis = "report")</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #555555;">→</span> <span style="color: #555555;">`diagnose()` runs no statistical test: a trend test needs a method, a maturity window and an alpha, and those are the caller's to choose.</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">→</span> <span style="font-weight: bold;">signposts/report_batches:</span> Run: diagnose_batches(x, axis = "report")</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #555555;">→</span> <span style="color: #555555;">`diagnose()` runs no statistical test: batch detection needs a look-back, a null model and a multiplicity correction.</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">→</span> <span style="font-weight: bold;">signposts/validation_batches:</span> Run: diagnose_batches(x, axis = "validation")</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> 15 passed: <span style="color: #00BB00;">declarations/temporal_effects</span>, <span style="color: #00BB00;">declarations/undeclared</span>, <span style="color: #00BB00;">missing/gender</span>, <span style="color: #00BB00;">missing/onset_week</span>, <span style="color: #00BB00;">missing/report_week</span>, <span style="color: #00BB00;">now/event_date</span>, <span style="color: #00BB00;">now/now_gap_report</span>, <span style="color: #00BB00;">now/report_date</span>, <span style="color: #00BB00;">ordering/event_to_report</span>, <span style="color: #00BB00;">simultaneously missing/event and report dates</span>, <span style="color: #00BB00;">units/declared</span>, <span style="color: #00BB00;">units/delay</span>, <span style="color: #00BB00;">units/event_grid</span>, and <span style="color: #00BB00;">units/report_grid</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #555555;">─</span> 5 skipped: <span style="color: #00BB00;">duplicates/key</span>, <span style="color: #00BB00;">negatives/count</span>, <span style="color: #00BB00;">ordering/event_to_validation</span>, <span style="color: #00BB00;">ordering/report_to_validation</span>, and <span style="color: #00BB00;">strata/pending</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> 14 passed: <span style="color: #00BB00;">declarations/temporal_effects</span>, <span style="color: #00BB00;">declarations/undeclared</span>, <span style="color: #00BB00;">missing/gender</span>, <span style="color: #00BB00;">missing/onset_week</span>, <span style="color: #00BB00;">missing/report_week</span>, <span style="color: #00BB00;">now/event_date</span>, <span style="color: #00BB00;">now/now_gap_report</span>, <span style="color: #00BB00;">now/report_date</span>, <span style="color: #00BB00;">ordering/event_to_report</span>, <span style="color: #00BB00;">units/declared</span>, <span style="color: #00BB00;">units/delay</span>, <span style="color: #00BB00;">units/event_grid</span>, and <span style="color: #00BB00;">units/report_grid</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #555555;">─</span> 6 skipped: <span style="color: #00BB00;">duplicates/key</span>, <span style="color: #00BB00;">negatives/count</span>, <span style="color: #00BB00;">ordering/event_to_validation</span>, <span style="color: #00BB00;">ordering/report_to_validation</span>, <span style="color: #00BB00;">signposts/validation</span>, and <span style="color: #00BB00;">strata/pending</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #555555;">ℹ 32 findings. Use `dplyr::filter()` or `tibble::as_tibble()` for the table.</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #555555;">ℹ 29 findings. Use `dplyr::filter()` or `tibble::as_tibble()` for the table.</span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Only what needs acting on</span></span></span>
 <span class="r-in"><span><span class="fu">diagnose</span><span class="op">(</span><span class="va">ndata</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">status</span> <span class="op">&lt;=</span> <span class="st">"note"</span><span class="op">)</span></span></span>
@@ -299,8 +284,8 @@ goes through the findings one at a time.</p></div>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">ℹ</span> <span style="font-weight: bold;">now/now_gap_event:</span> The last event date is 3 weeks before now ("2010-12-20").</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">ℹ</span> <span style="font-weight: bold;">now/now_gap_report [Male]:</span> The last report date is 1 week before now ("2010-12-20").</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">ℹ</span> <span style="font-weight: bold;">strata/size [Male]:</span> The smallest stratum is "Male" with 26395 cases, 49.8% of the total.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">ℹ</span> <span style="font-weight: bold;">strata/sparsity [Female]:</span> The sparsest stratum is "Female": 1.2% of the event dates on the grid carry no cases at all.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #555555;">→</span> <span style="color: #555555;">A stratum that is mostly zeros is the one a per-stratum fit will struggle with; pooling it is often better than fitting it.</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">ℹ</span> <span style="font-weight: bold;">strata/sparsity [Female]:</span> The sparsest stratum is "Female": 13 of the 1095 weeks between the minimum event (1990-01-01) and the now (2010-12-20) carry no cases at all (1.2%, against 0.4% pooled over every stratum).</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #555555;">→</span> <span style="color: #555555;">A stratum that is mostly zeros is the one a per-stratum fit will struggle with; pooling it is often better than fitting it. When every stratum is mostly zeros the grid is finer than the data -- `aggregate_time_units()` coarsens it.</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">ℹ</span> <span style="font-weight: bold;">truncation/event_date [Female]:</span> 1 event date is younger than the 95th percentile of the delay, so its counts are still filling in; an estimated 5.8% of its eventual total has not arrived.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #555555;">→</span> <span style="color: #555555;">This is right-truncation, and it is the reason to nowcast rather than a defect. Cut the series at "2010-11-22" to describe it instead.</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">ℹ</span> <span style="font-weight: bold;">truncation/event_date [Male]:</span> 1 event date is younger than the 95th percentile of the delay, so its counts are still filling in; an estimated 5.9% of its eventual total has not arrived.</span>
@@ -324,7 +309,7 @@ goes through the findings one at a time.</p></div>
 <span class="r-in"><span><span class="co">## `diagnose()` never stops your pipeline -- it hands back a table for you to</span></span></span>
 <span class="r-in"><span><span class="co">## read. Use validate_tbl_now() when you want a broken object to be an error.</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="fu">diagnose</span><span class="op">(</span><span class="va">ndata</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 32</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 29</span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

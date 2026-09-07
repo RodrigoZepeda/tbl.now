@@ -10,7 +10,13 @@ into a vector of weights for
 ## Usage
 
 ``` r
-nowcast_weights(backtest, type = c("inverse_score", "optim", "equal"), ...)
+nowcast_weights(
+  backtest,
+  type = c("inverse_score", "optim", "equal"),
+  now = NULL,
+  include_now = FALSE,
+  ...
+)
 ```
 
 ## Arguments
@@ -38,6 +44,19 @@ nowcast_weights(backtest, type = c("inverse_score", "optim", "equal"), ...)
 
   :   \\w_i = 1/M\\. Included so that the same code path can produce the
       unweighted ensemble.
+
+- now:
+
+  Optional Date vector of nowcast origins to exclude from the
+  weight-training window when `include_now = FALSE`.
+  [`nowcast_ensemble()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_ensemble.md)
+  passes its members' own `now` values here when deriving performance
+  weights.
+
+- include_now:
+
+  Logical. Should rows at `now` be allowed into the weight-training
+  window? Default `FALSE`; set `TRUE` for an in-sample diagnostic.
 
 - ...:
 

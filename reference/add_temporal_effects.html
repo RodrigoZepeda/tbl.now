@@ -39,7 +39,7 @@ them."><meta property="og:image" content="https://rodrigozepeda.github.io/tbl.no
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.31.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.33.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -54,7 +54,7 @@ them."><meta property="og:image" content="https://rodrigozepeda.github.io/tbl.no
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/custom-nowcast-models.html">Adding your own nowcasting model</a></li>
     <li><a class="dropdown-item" href="../articles/diagnosing-a-tbl-now.html">Diagnosing a tbl_now</a></li>
     <li><a class="dropdown-item" href="../articles/ensemble-nowcasting.html">One call, many models: run_nowcast(), custom backends and ensembles</a></li>
-    <li><a class="dropdown-item" href="../articles/example.html">A complete nowcasting workflow: hospital-acquired infections in Bucaramanga</a></li>
+    <li><a class="dropdown-item" href="../articles/example.html">The nowcasting workflow: hospital-acquired infections in Bucaramanga, Colombia</a></li>
     <li><a class="dropdown-item" href="../articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with different modelling packages</a></li>
     <li><a class="dropdown-item" href="../articles/tbl.now.html">tbl.now</a></li>
   </ul></li>
@@ -111,7 +111,8 @@ them.</p>
 <span>  date_col <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  numeric_col <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  name_prefix <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"."</span>, <span class="va">date_col</span><span class="op">)</span>,</span>
-<span>  weekend_days <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Sat"</span>, <span class="st">"Sun"</span><span class="op">)</span></span>
+<span>  weekend_days <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Sat"</span>, <span class="st">"Sun"</span><span class="op">)</span>,</span>
+<span>  units <span class="op">=</span> <span class="st">"days"</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># S3 method for class 'tbl_now'</span></span>
@@ -174,6 +175,14 @@ the weekend. Defaults to Saturday and Sunday.</p><ul><li><p>Character: day names
 <li><p>Numeric: integers 1-7 in <code><a href="https://lubridate.tidyverse.org/reference/day.html" class="external-link">lubridate::wday()</a></code> numbering with
 <code>week_start = 1</code>, so <strong>1 = Monday</strong> and 7 = Sunday.</p></li>
 </ul></dd>
+
+
+<dt id="arg-units">units<a class="anchor" aria-label="anchor" href="#arg-units"></a></dt>
+<dd><p>Character. The time units <code>date_col</code> is measured in: <code>"days"</code>
+(the default), <code>"weeks"</code>, <code>"months"</code> or <code>"years"</code>. It only affects the
+<strong>holiday</strong> column, which on a grid coarser than days becomes the <em>share</em> of
+the period's days that are holidays rather than a 0/1 indicator. For a
+<code>tbl_now</code>, <code>compute_temporal_effects()</code> reads this off the object.</p></dd>
 
 
 <dt id="arg-date-type">date_type<a class="anchor" aria-label="anchor" href="#arg-date-type"></a></dt>

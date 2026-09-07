@@ -60,7 +60,10 @@ plot_epidemic_process(
 
 - palette:
 
-  A named colour palette. Defaults to the package palette.
+  A named colour palette (see
+  [`tbl_now_palette()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_palette.md)).
+  These two panels draw bars and nothing else, so they take no `size` or
+  `linewidth`.
 
 ## Value
 

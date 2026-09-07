@@ -1,50 +1,70 @@
 # tbl.now — development guide
 
-This file teaches an LLM (or a new human contributor) how to **develop**
-the `tbl.now` package. It is not a user manual: `SKILL.md` explains how
-to *use* the package, and the vignettes explain how to *apply* it. Read
-this before changing code.
-
-------------------------------------------------------------------------
+This file teaches an LLM how to **develop** the `tbl.now` package. It is
+not a user manual: `SKILL.md` explains how to *use* the package, and the
+vignettes explain how to *apply* it. Read this before changing code.
 
 ## 1. What the package is
 
-`tbl.now` extends `tibble` into a class that stores **epidemiological
-nowcasting data**: case data where every observation carries two dates —
-when the event happened and when it was reported. The gap between them
-is the **reporting delay**, and the whole package exists to keep that
-structure honest, queryable and convertible.
+`tbl.now` is an R package that extends `tibble` into a class for
+nowcasting epidemiological phenomena. It also helps set up a pipeline
+for describing datasets for nowcasting, connecting with other nowcasting
+packages to perform nowcasts and standardizing their results for
+analyzing them. Finally it also helps perform ensemble nowcasts.
 
-A `tbl_now` is a tibble plus attributes. It is deliberately *not* an
-S4/R6 object: it must keep working inside a `dplyr` pipeline.
+The main class of the package is a `tbl_now`. A `tbl_now` is a tibble
+plus attributes. It is deliberately *not* an S4/R6 object as it must
+keep working inside a `dplyr` pipeline.
+
+A `tbl_now` stores at least two dates: when the event happened
+(`event_date`) and when it was reported (`report_date`). Optionally it
+can have a (`validation_date`). The assumption is that something happens
+at the event date, gets reported at the report date and the report gets
+revised at the validation date.
+
+The difference between the event and the report dates is the reporting
+delay. The difference between the report and the validation dates is the
+validation delay. All nowcasts attempt to predict the total number of
+cases that happened at `event_date` and will eventually be reported
+(and/or validated) at the `report_date` or the `validation_date`
+respectively.
+
+When dates are not measured exactly but represent an upper bound
+(i.e. they are left-censored) we utilize the `is_censored_*` columns to
+indicate them. As an example if we know a case was repoted before April
+1st 2020 we would mark that as `is_censored_report = 1`. If a case was
+reported **exactly** on April 1st 2020 then `is_censored_report = 0`. If
+no `is_censored_*` column is present we assume all columns are exact.
 
 The package does **not** fit nowcast models itself. It prepares data for
 the packages that do (`diseasenowcasting`, `baselinenowcast`,
 `epinowcast`, `NobBS`, `surveillance`, `nowcaster`, `epidist`) and
 normalises what they return.
 
-------------------------------------------------------------------------
-
 ## 2. The three data types
 
-Every `tbl_now` has exactly one `data_type`, and almost every bug in
-this package traces back to code that assumed the wrong one. Check with
-`get_data_type(x)`.
+Every `tbl_now` has exactly one `data_type`. Check with
+`get_data_type(x)` and make sure your methods work (or error!) for each
+of the data types.
+
+The
+[`to_count()`](https://rodrigozepeda.github.io/tbl.now/reference/to_count.md)
+function helps convert between them as the following table suggests:
 
 | `data_type` | one row is | case column | can convert to |
 |----|----|----|----|
 | `"linelist"` | **one case** | none ([`get_case_count()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md) is `NULL`) | both count types |
-| `"count-incidence"` | cases *newly reported* for an (event, report) pair | required | `count-cumulative` |
+| `"count-incidence"` | cases *newly reported* for an (event, report) or (event, report, validate) pair | required | `count-cumulative` |
 | `"count-cumulative"` | cases reported **so far** for that event as of that report | required | `count-incidence` |
 
-Rules that follow from this, and that you must not break:
+Rules that follow from this:
 
 - **A line list cannot represent a zero.** An event date with no reports
   has no rows at all. Any code that builds a time grid from the rows it
-  was handed will silently stop short of the `now`.
+  was handed will silently stop short of the `now`. The
   [`complete_zeroes()`](https://rodrigozepeda.github.io/tbl.now/reference/complete_zeroes.md)
-  fixes this for count data. For the line-list engines the grid is the
-  **caller’s** job:
+  function can fix this for count data. For the line-list engines the
+  grid is the **caller’s** job:
   [`tbl_now_to_surveillance()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_surveillance.md)
   deliberately does *not* bake it in — it returns a line list and leaves
   `now` and `control$dRange` to you, because the object already carries
@@ -67,8 +87,6 @@ Rules that follow from this, and that you must not break:
   (strata/covariates) nor protected is silently pooled away. If a test
   shows “impossible” spread in a boxplot, look for an undeclared column
   before suspecting the plot.
-
-------------------------------------------------------------------------
 
 ## 3. Attributes and getters
 
@@ -94,23 +112,24 @@ Rules that follow from this, and that you must not break:
 | `validation_units` | same set as `report_units` | [`get_validation_units()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md) |
 | `validation_levels` | dictionary of non-canonical outcome labels, or `NULL` | [`get_validation_levels()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md) |
 
+Required new attributes should be added to
+`.TBL_NOW_REQUIRED_ATTRIBUTES`. When adding new attributes associated to
+columns, consider whether they should be protected columns and added to
+`get_protected_cols()`.
+
 ### The rules
 
-1.  **Always use the getter. Never `attr(x, "...")`.** Attribute names
-    are an implementation detail; the getters are the contract. This
-    applies to your own code inside the package just as much as to user
-    code.
+1.  **Always use the getter. Never `attr(x, "...")`.** This applies to
+    your own code inside the package just as much as to user code.
 2.  **If you add an attribute, you add a getter in the same commit.** No
     exceptions. Export it, document it under the `nowcast_data_getters`
-    topic, and test it. An attribute without a getter is a private field
-    the user will end up reading by hand — which is exactly the coupling
-    the getters exist to prevent.
-3.  **A getter returns the smallest useful thing.**
-    `get_nowcaster_strata()` returns the `bins_age` vector, not a list
-    to dig through. Prefer the value a caller passes straight to the
-    next function.
-4.  **Getters return column *names*, not data.** `get_event_date(x)` is
-    a string. Get the values with `x[[get_event_date(x)]]`.
+    topic, and test it.
+3.  **A getter should return the smallest useful thing.** Prefer the
+    value a caller passes straight to the next function than something
+    the user has to sift through.
+4.  **Getters return column *names*, not data.** For example,
+    `get_event_date(x)` is a string. Get the values with
+    `x |> pull(get_event_date(x))`.
 5.  **Temporal effects are lazy.**
     [`get_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
     returns *specs*; the columns do not exist until
@@ -127,8 +146,7 @@ Rules that follow from this, and that you must not break:
 `event <= report <= validation <= now`. It is **optional**: most objects
 have no validation, so every code path must work when
 `has_validation(x)` is `FALSE`, and `.validation_group_cols(x)` returns
-`character(0)` there so it can be spliced into a grouping
-unconditionally.
+`character(0)`.
 
 1.  **Every rebuild must carry it.**
     `do.call(tbl_now, c(list(...), .validation_rebuild_args(x, data)))`.
@@ -139,88 +157,97 @@ unconditionally.
     each rebuild by hand, and each one dropped the validation until it
     was spliced in. **Grep for `do.call(tbl_now` before adding an
     attribute** and fix every site.
-2.  **`"pending"` means no date, not a missing date.** A pending case is
-    reported and still waiting. Anything that counts arrivals on the
-    validation axis must drop pending rows – counting them invents an
-    arrival on a date they do not have.
+
+2.  **`"pending"` can mean no date, not a missing date.** A pending case
+    is reported and still waiting to have a validation result. Anything
+    that counts arrivals on the validation axis must drop pending rows.
+
 3.  **Two different delays.** `.validation_delay` is the laboratory’s
-    turnaround, measured **from the report**. The `axis = "validation"`
-    diagnostics measure **from the event**, so the two axes are
-    comparable. Do not mix them up.
-4.  **Do not duplicate a diagnostic for the new axis.** Add
-    `axis = c("report", "validation")` and forward it to
-    `.batch_report_increments()` / `.batch_registration()`, which is
-    where the axis is actually swapped. One switch point, no parallel
-    implementations.
-5.  **`now` is validation-aware, in both directions.** `infer_now()`
+    turnaround, measured **from the report**.
+
+4.  **`now` is validation-aware, in both directions.** `infer_now()`
     takes the max over both. Setting `now` *before* a validation is not
-    an error, it is a backtest:
+    an error, it should be used for a backtest:
     [`change_now()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
     calls `.mask_validations_after()`, which returns every validation
     dated after the new `now` to `"pending"` and masks its date,
-    `.validation_num`, `.validation_delay` and censoring flag. The
-    validator’s rule (nothing is known after `now`) is unchanged – what
-    changed is that the verb now satisfies it instead of failing it.
-6.  **`validation_type` holds four values and no others**, and
+    `.validation_num`, `.validation_delay` and censoring flag.
+
+5.  **`validation_type` holds four values and no others**, and
     `validation_levels` is the only way in for anything else. The
     dictionary is applied by `.resolve_validation_type()` BEFORE the
     check, and it must be idempotent: it runs again on every rebuild, so
     `.check_validation_levels()` refuses a mapping that would move a
     canonical value.
-7.  **Censoring has two axes.** `is_censored_report` is a bound on the
+
+6.  **Censoring has two axes.** `is_censored_report` is a bound on the
     reporting delay, `is_censored_validation` on the validation delay.
     Both are protected, both are grouping keys, and
     `.tbl_now_collapse_censoring()` collapses both. Neither ever deletes
     a case or rewrites an outcome – that is what makes it *censoring*
     rather than deletion.
 
-### `is_tbl_now()` is not `validate_tbl_now()`
+7.  **A censored date is a bound, so no *test* of arrival times may
+    count it as an arrival – and nothing else may drop it.** The batch
+    family
+    ([`diagnose_batches()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_batches.md),
+    [`diagnose_batches2()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_batches2.md),
+    [`transport_discriminant()`](https://rodrigozepeda.github.io/tbl.now/reference/transport_discriminant.md))
+    defaults to `drop_censored = TRUE` and passes it to
+    `.batch_report_increments()`, which drops the rows flagged on the
+    axis being scanned via `.batch_drop_censored()`. Censoring is
+    applied *because* something was known about those dates – often that
+    they were batched – and the censored rows all carry the same bound,
+    so left in they pile up on one date and the detector rediscovers, as
+    a finding, the artefact it was already told about.
 
-Two questions, two functions, and they were conflated until \#62:
+    **The helper’s own default is `FALSE`, and it must stay `FALSE`.**
+    This was shipped as `TRUE` for one version and it was wrong:
+    `.batch_report_increments()` is shared by every reporting-process
+    plot, so
+    [`plot_epidemic_process()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_epidemic_process.md)
+    quietly deleted 58 real cases from an epidemic curve because their
+    *report* date had been censored. The flag says nothing about the
+    event date. A row censored on the report axis is still a case that
+    happened, so anything answering *what happened, and when* keeps it;
+    only a test of *when records arrived* may drop it. Ask which axis
+    the question is about before reaching for the argument.
 
-- **[`is_tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/validate_tbl_now.md)**
-  – *is this the class?* A class check, the attributes in
-  `.TBL_NOW_REQUIRED_ATTRIBUTES`, and the columns those attributes name.
-  Cheap, silent, no findings. It is what `.assert_tbl_now()` calls,
-  which is to say nearly every exported function calls it.
-- **[`validate_tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/validate_tbl_now.md)**
-  – *is the data in it sane?* The findings engine, re-emitted as
-  conditions. Called by
+### Checking for valid tbl_now s
+
+There are two functions used to validate an object:
+
+- [`is_tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/validate_tbl_now.md)
+  Checks the class, the attributes in `.TBL_NOW_REQUIRED_ATTRIBUTES`,
+  and the columns those attributes name. Should remain cheap and silent.
+  It is what `.assert_tbl_now()` calls, which is to say nearly every
+  exported function calls it. Never put data checks here.
+- [`validate_tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/validate_tbl_now.md)
+  Checks the class and the data. This is the findings engine. Called by
   [`tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.md)
   when the object is built.
 
-[`is_tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/validate_tbl_now.md)
-used to run the second, inside a
-[`tryCatch()`](https://rdrr.io/r/base/conditions.html) that caught
-errors but not warnings – so the object’s findings escaped from wherever
-the predicate happened to be called, and a verb that fixed a problem
-warned about it twice, after the fix. Do not put data checks back into
-the predicate, and do not make the predicate the place a user learns
-their data is bad.
-
-The corollary is one to state plainly in documentation: an object can be
-a `tbl_now` and still have data
+An object can be a `tbl_now` and still have data
 [`validate_tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/validate_tbl_now.md)
-warns about. The class is a container; it is not a claim about what is
-in it.
+warns about. When developing, however, one should aim to pass the
+[`validate_tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/validate_tbl_now.md)
+unless there is a good reason.
 
 ### Protected columns
 
-`get_protected_cols()` = the user-given ones (event/report dates,
-censoring indicator, case count) plus the generated ones (`.event_num`,
-`.report_num`, `.delay`). Removing any of them **downgrades the object
-to a plain tibble**, with a warning. This is why
-[`dplyr::summarise()`](https://dplyr.tidyverse.org/reference/summarise.html)
-on a `tbl_now` usually returns a tibble: it drops the protected columns.
+`get_protected_cols()` returns user-given columns
+(event/report/validation dates, validation type, censoring flags, case
+count) plus generated numeric columns (`.event_num`, `.report_num`,
+`.delay`, and, when validation exists, `.validation_num`,
+`.validation_delay`). Removing or renaming any generated protected
+column must demote with `.demote_to_tibble()`, so all `tbl_now`
+attributes are removed and only user metadata survives.
 
-When you need to reshape inside the package, operate on
-`.strip_tbl_now(x)` (a bare data frame) and rebuild the attributes,
-rather than fighting the dplyr methods. See
-`.tbl_now_collapse_censoring()` for the pattern.
+When reshaping inside the package, operate on `.strip_tbl_now(x)` and
+rebuild with `.tbl_now_rebuild()` or
+`do.call(tbl_now, c(list(...), .validation_rebuild_args(x, data)))`.
 
-------------------------------------------------------------------------
-
-## 4. Function-choice hierarchy
+## 4. Functions
 
 When writing data-manipulation code **inside this package**, prefer in
 this order:
@@ -229,8 +256,8 @@ this order:
     [`to_count()`](https://rodrigozepeda.github.io/tbl.now/reference/to_count.md),
     [`complete_zeroes()`](https://rodrigozepeda.github.io/tbl.now/reference/complete_zeroes.md),
     [`align_weeks()`](https://rodrigozepeda.github.io/tbl.now/reference/align_weeks.md),
-    `get_*()`, `add_*()` / `change_*()` / `remove_*()`. They know about
-    the attributes and keep the object valid.
+    `get_*()`, `add_*()` / `change_*()` / `remove_*()`, etcetera. They
+    know about the attributes and keep the object valid.
 2.  **`dplyr` / `tidyr` / `tibble`** — for anything the package does not
     already express. `dplyr` verbs have `tbl_now` methods and mostly
     preserve the class.
@@ -240,56 +267,56 @@ this order:
     [`seq()`](https://rdrr.io/r/base/seq.html), matrix work, S3
     plumbing).
 
-Rewriting a `tbl.now` helper’s logic by hand is a bug waiting to happen:
-the helper handles the data types, the units and the `now` edge, and
-your inline version will handle whichever one you were thinking about
-that day.
+Avoid rewriting a `tbl.now` helper’s logic by hand as much as possible.
+Justify whenever you do this and check it works for all data types,
+nows, and combinations of attributes (i.e. what if it doesn’t have
+strata, what if it has two and a validation date?).
 
-### Before you write a new function, prove it does not exist
+### Duplicate function check (mandatory)
 
-This has gone wrong twice, in the same shape both times, and neither
-time did a test catch it – the duplicate had a *different body*, so
-nothing mechanical noticed.
+You must not rely on training memory to know what functions exist in
+`tbl.now`. Before writing a new function, you must systematically verify
+it does not already exist.
 
-- `nowcast_truth()` was written, exported and documented before anyone
-  noticed it was
-  [`get_latest_reported_cases()`](https://rodrigozepeda.github.io/tbl.now/reference/get_latest_first.md)
-  with the class stripped and the count column renamed. It shipped as a
-  second public name for one idea.
-- `.strata_from_labels()` and `.split_strata_labels()` were written a
-  few hours apart, in the same file, by the same author, to split the
-  same `" | "` label.
+#### Rule 1: If you have terminal/shell access
 
-So the rule is a **pre-flight grep, and you say in the commit what you
-grepped for**:
+You MUST execute the following pre-flight searches using your shell tool
+and read the output before proposing code. State in your response
+exactly what you searched for.
 
-``` bash
-# 1. Does a getter already answer this question?
+```` R
+Getters: 
+```bash
 grep -n "^get_" R/getters.R
-
-# 2. Does a helper already do this? Search the VERB, not your name for it.
-grep -rn "split\|paste.*sep\|pool\|aggregate" R/ | grep "<- function"
-
-# 3. Is there already an exported function in this area?
-grep -n "^export" NAMESPACE | grep -i "<the noun you are about to use>"
 ```
 
-Two questions decide it:
+Helpers: Search the VERB, not your name for it.
+```
+grep -rn "split\|paste.*sep\|pool\|aggregate" R/ | grep "<- function"
+```
 
-1.  **Could an existing function answer this with different arguments?**
-    Then add the argument. `score_nowcast(truth = )` learning to accept
-    a `tbl_now` was the right fix; a `nowcast_truth()` to produce that
-    input was not.
-2.  **Is the new thing a reshaping of an existing thing?** Then it is
-    internal at most, and its documentation must name what it wraps. A
-    reshaping is not a concept, and the user should not have to learn it
-    as one.
+Exports: Search the NOUN.
+```
+grep -n "^export" NAMESPACE | grep -i "<the noun you are about to use and synonyms>"
+```
+````
 
-When you genuinely need both, there is **one implementation** and the
-other calls it. Two functions that split the same string are one bug
-waiting to be fixed in one place only.
+#### Rule 2: If you do not have terminal access
 
-------------------------------------------------------------------------
+You must STOP. Do not generate the function. Output the exact grep
+commands you need to verify the namespace, and instruct the human user
+to run them and paste the results back to you.
+
+#### Rule 3: Evaluation
+
+1.  Could an existing function answer this with different arguments?
+    (e.g., adding an argument to an existing verb rather than writing a
+    new wrapper).
+
+2.  Is the new thing just a reshaping of an existing thing? If so, it is
+    internal (@noRd) and its documentation must name what it wraps.
+
+If two functions do the same thing, one must call the other.
 
 ## 5. Style
 
@@ -300,48 +327,105 @@ waiting to be fixed in one place only.
   spaces around infix operators. Aim for 80 characters, but this is a
   target rather than a rule the codebase already meets — do not reflow
   unrelated lines to chase it.
-- **Anonymous functions:** package code uses `function(x) ...` almost
-  everywhere (~400 occurrences against a single `\(x)`), so match that
-  in `R/`. The shorthand `\(x)` is used in the **vignettes**, inside
-  pipes, where it reads better. Consistency with the surrounding file
-  beats personal preference either way.
-- **Documentation:** `roxygen2` for everything. Regenerate with
-  `devtools::document()` — never hand-edit `man/*.Rd` or `NAMESPACE`.
-- **Internal helpers** are `.`-prefixed and `@noRd`.
-- **Messages** use `cli`. But see the pitfall in §9: `cli_*` writes to
-  the *message* stream, which is invisible in a knitr chunk with
-  `message=FALSE`. Anything a
+- **Anonymous functions:** package code uses `function(x) ...`. match
+  that in `R/`. The shorthand `\(x)` is used in the **vignettes**,
+  inside pipes, where it reads better.
+- **Avoid `x[]` calls for tibbles, tbl_nows, and data frames**. Always
+  prefer **dplyr** even if its more verbose. For example
+  `x |> pull(get_event_date(x))` is the correct call instead of
+  `x[[get_event_date(x)]]`.
+- **Documentation:** Use `roxygen2` for everything. Regenerate with
+  `devtools::document()`. Never hand-edit `man/*.Rd` or `NAMESPACE`.
+- **Internal helpers** are `.`-prefixed and utilize `@noRd`. They should
+  all be documented.
+- **Messages** use `cli`. Anything a
   [`print()`](https://rdrr.io/r/base/print.html) method emits must use
   [`cli::cat_line()`](https://cli.r-lib.org/reference/cat_line.html) /
-  `cat_rule()` / `cat_bullet()`.
-- **Comments explain *why*, not *what*.** Match the density of the
-  surrounding file. A comment restating the code is noise; a comment
-  recording the non-obvious constraint that forced the code is the
-  point.
+  [`cli::cat_rule()`](https://cli.r-lib.org/reference/cat_line.html) /
+  [`cli::cat_bullet()`](https://cli.r-lib.org/reference/cat_line.html).
+- **Comments explain *why*, not *what*.**
 - **No emoji in R code or console output.** (`SKILL.md`’s capability
   tables do use `✅`/`❌` as status markers; that is a deliberate local
-  convention for those tables, not licence to use emoji elsewhere.)
+  convention for those tables, not a licence to use emoji elsewhere.)
 
-------------------------------------------------------------------------
+## 6. Colours and sizes
 
-## 6. Colours
+### The palette names ROLES, never hues
 
-The default palette is **the `tbl.now` palette**, `.tbl_now_palette()`.
+The default palette is the exported
+**[`tbl_now_palette()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_palette.md)**.
 Do not introduce new hex codes in plotting code; take them from the
-palette.
+palette. `R/palette.R` is the only file in `R/` that may contain one.
+
+Every element is named for the **role** it plays, never for the colour
+it happens to be. This is the whole reason the names changed in 0.33.0:
+a palette whose slot is called `primary_green` cannot be re-themed,
+because a user with a blue-and-orange palette has to call their orange
+`primary_green` for the plots to find it. A role name survives a
+re-theme; a hue name does not.
 
 The package has one visual grammar, and every plot must obey it:
 
-- **Red** (`accent_red`, `light_red`) = the **reporting** process —
-  report dates, delays, anything about *when we found out*.
-- **Green** (`primary_green`, `light_green`, `dark_green`) = the
-  **epidemic** process — event dates, case counts, anything about *what
-  happened*.
+- **`reporting`, `reporting_light`** = the **reporting** process —
+  report dates, delays, anything about *when we found out*. Red by
+  default.
+- **`epidemic`, `epidemic_light`, `epidemic_mid`, `epidemic_dark`** =
+  the **epidemic** process — event dates, case counts, anything about
+  *what happened*. Green by default.
 
-A new panel that draws delays in green is wrong even if it looks nice.
+A new panel that draws delays with an `epidemic*` role is wrong even if
+it looks nice, and it stays wrong when somebody swaps the two hues. The
+remaining roles are furniture (`ink`, `ink_muted`, `ink_inverse`,
+`surface*`, `grid_major`, `grid_minor`, `guide`, `guide_strong`,
+`annotation`, `neutral`) plus the three data states that are not a
+process (`zero`, `pending`, `observed`).
+
+Rules that follow:
+
+1.  **Add a role, add it to the constructor.**
+    `.tbl_now_palette_roles()` reads `formals(tbl_now_palette)`, so the
+    constructor is the single source of the contract and cannot drift
+    from the checker.
+2.  **Every exported plot calls `.tbl_now_check_palette()`** in its
+    prologue. A missing role is an error naming what is missing, never a
+    silent fall back to the default — falling back draws a plot in a
+    colour the caller did not choose and cannot see they did not choose.
+3.  **Do not name a role after what it looks like.** `guide_strong` is
+    right; `dark_grey` would put us back where we started.
+
 The website CSS (`pkgdown/extra.css`) follows the same palette, which is
 why `.alert-info` is green (event-date process) and `.alert-warning` is
 the attenuated red used for intervals.
+
+### Sizes are multipliers; grids are absolute
+
+Every plot exposes the sizes it draws, because a figure rendered large
+had marks sized for a small one and no way to change them.
+
+- **`size` and `linewidth` are MULTIPLIERS, default `1`.** They scale
+  the values the panel already uses. This is not a stylistic choice:
+  most panels draw several layers whose *relative* sizes carry meaning —
+  the transport plane’s flagged points are `2.6` against the unflagged
+  `1.1` — and a single absolute size would erase that distinction at
+  exactly the moment the user was trying to make the flagged ones stand
+  out. A multiplier scales the hierarchy instead of flattening it, and
+  leaves every existing figure identical at the default.
+- **A grid the package draws itself gets its own ABSOLUTE argument**
+  (`grid_linewidth`, or `grid_linewidth_major` / `grid_linewidth_minor`
+  where there are two families). These are not ’s panel grid — the plots
+  that have them switch that off — and there is exactly one value per
+  family, so an absolute width is what the name promises.
+- **[`plot_reporting_hexamap()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_reporting_hexamap.md)
+  is the one exception**: its `size` is an absolute point size in
+  millimetres, because the marks are millimetres and the lattice is data
+  units, so no default can be right for every cell count and figure
+  size. That mismatch is the argument’s reason for existing, and it is
+  written in the `@details`.
+- **A plot that draws only bars, tiles or areas takes neither**, and
+  says so in its `@param palette`. An argument that does nothing is
+  worse than no argument.
+- **Validate with `.tbl_now_check_size()`.** One message for every one
+  of them.
 
 ------------------------------------------------------------------------
 
@@ -475,6 +559,33 @@ your test proves nothing.
   counts completed to the `now`, do it *inside* the converter
   (`complete = "auto"`), so the user does not have to remember
   `to_count() |> complete_zeroes()`.
+
+  **To the `now`, not to the last row**, and the rule binds the **fit
+  method** as much as the converter. A line list cannot record a period
+  in which nothing was reported – the rows are simply absent – so any
+  grid built from the rows you were handed stops at the last period that
+  HAS a report, which is precisely the period a nowcast is not about.
+  This has now shipped twice:
+  [`nowcast_fit.baselinenowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_fit.md)
+  built its per-stratum triangles from `format = "long"`, which has no
+  grid and so is deliberately never completed (#67), and
+  `.epinow2_series_data()` handed its daily series straight on. Both
+  looked right on every fixture whose last event period happens to carry
+  a report, which is every shipped dataset.
+
+  Two things follow. Test with a fixture whose **last event periods are
+  silent**, so `now` is past the last event date present;
+  `linelist_gap_pair()` in
+  `tests/testthat/test-engines-linelist-equivalence.R` is that fixture,
+  and that file asserts every engine returns the same nowcast, under one
+  seed, from a line list and from the equivalent
+  `to_count() |> complete_zeroes()` object. And never let a
+  [`complete_zeroes()`](https://rodrigozepeda.github.io/tbl.now/reference/complete_zeroes.md)
+  failure pass silently: it **refuses a line list**, so a
+  [`tryCatch()`](https://rdrr.io/r/base/conditions.html) around it that
+  returns the input unchanged turns “I could not complete this” into a
+  short grid with no message at all – which is what
+  `.epinow2_snapshots()` did.
 
 - **Respect `NA` vs `0`.** In a reporting triangle an `NA` cell means
   *not yet observed*; a `0` means *observed, and it was zero*.
@@ -870,15 +981,34 @@ stores `list(...)` unmerged and never had the problem.
 
 ------------------------------------------------------------------------
 
-## 9. Pitfalls that have already bitten
+## Documenting
 
-- **`cli_*` vs `cat_*`.**
-  [`cli::cli_inform()`](https://cli.r-lib.org/reference/cli_abort.html)
-  writes to the *message* stream. Inside a knitr chunk with
-  `message=FALSE` it vanishes.
-  [`print()`](https://rdrr.io/r/base/print.html) methods must use
-  [`cli::cat_line()`](https://cli.r-lib.org/reference/cat_line.html) /
-  `cat_rule()` / `cat_bullet()`.
+### Examples
+
+No example should use `dontrun` or `donttest`. Nor should they use an
+`if(FALSE)` conditional to avoid running. When creating a new example
+time it so that it passes on CRAN.
+
+### Ending articles and vignettes
+
+Add the following at the end of every article or vignette:
+
+`{r learning-more, echo=FALSE, results="asis"} cat( knitr::knit_child( system.file("fragments", "learning-more.Rmd", package = "tbl.now"), quiet = TRUE ), sep = "\n" )`
+
+Note that the fragment is looked up by ABSOLUTE path via system.file(),
+never by a relative one. pkgdown/rmarkdown render into an intermediates
+directory under tempdir() and copy relative resources alongside; a path
+containing “../..” escapes that directory (“cannot create file
+‘/tmp/RtmpXXX/../../man/…’”), which fails wherever tempdir() sits near
+the filesystem root – as it does on CI.
+[`system.file()`](https://rdrr.io/r/base/system.file.html) also works
+under pkgload::load_all(), which shims it to find inst/ in the source
+tree.
+
+Every new article or vignette should be referenced in the
+`learning-more.Rmd` that is linked above.
+
+## 9. Pitfalls that have already bitten
 
 - **`\\` line continuations render literally** inside
   [`cli::format_inline()`](https://cli.r-lib.org/reference/format_inline.html).
@@ -943,20 +1073,32 @@ stores `list(...)` unmerged and never had the problem.
   [`class()`](https://rdrr.io/r/base/class.html) is `"pkg::thing"`, and
   `::` cannot appear in a method name. Register in `.onLoad()`.
 
+- **A [`print()`](https://rdrr.io/r/base/print.html) method needs
+  `@exportS3Method base::print`, never a plain `@export`.** The package
+  namespace defines an S7 `print` generic
+  (`S7::method(print, tbl_nowcast)`,
+  `S7::method(print, temporal_effects)`), which **shadows
+  [`base::print`](https://rdrr.io/r/base/print.html) for an attached
+  session**. A plainly-exported method is written to NAMESPACE as
+  `S3method(print, <cls>)` – the package’s own table – so auto-print
+  never finds it and the object falls through to the default. There is
+  no error and no warning: the object simply comes back as a bare
+  tibble, which is easy to read as “that class has no print method yet”.
+  `print.diagnose_batches` and `print.transport_discriminant` shipped
+  this way and nobody noticed, because the only symptom is output that
+  looks plausible.
+
+  Two things follow. First, **test auto-print, not `print(x)`**:
+  `capture.output(x)` auto-prints its argument and reproduces the
+  failure; `tbl.now:::print.<cls>(x)` calls the method directly and
+  passes either way, so it proves nothing. Second, **check NAMESPACE
+  after `document()`** – every entry should read
+  `S3method(base::print, ...)`, and a bare `S3method(print, ...)` is the
+  bug.
+
 - **`fileEncoding = "UTF-8"`** truncates a
   [`read.csv()`](https://rdrr.io/r/utils/read.table.html) at the first
   non-ASCII byte on some platforms. Use `encoding = "UTF-8"`.
-
-- **Do not poll for a background job at all.** The harness notifies you
-  when a backgrounded command exits; a watch loop adds nothing and can
-  outlive the work by hours. `while pgrep -f "job.R"; do sleep 30; done`
-  never terminates, because the loop’s *own* command line contains
-  `job.R`, so `pgrep` matches itself. The `[j]ob.R` bracket trick does
-  not save you either: any *second* watcher carrying the same string
-  keeps every one of them alive. If you truly must poll, match on a PID
-  you captured, never on a name. And when cleaning up, enumerate what
-  you actually spawned – grepping for one loop syntax silently leaves
-  the others running.
 
 - **pkgdown builds against the *installed* package, not the source.** A
   `devtools::load_all()` session will show a fixed converter while the
@@ -986,19 +1128,11 @@ stores `list(...)` unmerged and never had the problem.
 
 - **A local render is not proof when paths are involved.** Reproduce
   with the same `TMPDIR` CI uses (`TMPDIR=/tmp Rscript -e '...'`) before
-  concluding a path bug is fixed – or unfixed.
+  any conclusion regarding a path bug.
 
 - **Weekly data with fractional `.delay`** means the two date columns
   are on different weekday grids. Use
-  [`align_weeks()`](https://rodrigozepeda.github.io/tbl.now/reference/align_weeks.md);
-  do not round. The package no longer rounds either:
-  `.reconstruct_date_from_delay()` refuses a fractional delay through
-  `.assert_whole_delay()`, on the calendar axes as well as the numeric
-  one. It used to [`round()`](https://rdrr.io/r/base/Round.html) – which
-  is round-half-to-**even**, so `2.5` went down and `3.5` went up,
-  silently, while the numeric axis refused the same value with a clear
-  error. One argument, one value, two opposite fates is the part that
-  was wrong, whichever rounding rule you prefer.
+  [`align_weeks()`](https://rodrigozepeda.github.io/tbl.now/reference/align_weeks.md).
 
 - **A package that declares its own
   [`tidy()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast.md)
@@ -1019,12 +1153,6 @@ stores `list(...)` unmerged and never had the problem.
   has not.** `.onLoad()` checks `getS3method(..., optional = TRUE)`
   before registering the `diseasenowcasting` method, so tbl.now fills
   the gap on old versions without overriding the method newer ones ship.
-
-- **Never edit a script a background job is reading.** `Rscript` streams
-  the file as it evaluates, so an edit mid-run corrupts its read
-  position and produces a parse error at a line that is perfectly valid
-  on disk. Copy the script somewhere frozen and run that copy if you
-  need to keep editing.
 
 - **A vignette that displays cached results must not have TWO sources of
   truth.** `nowcasting-models.Rmd` used to show one call and cache the
@@ -1078,9 +1206,8 @@ stores `list(...)` unmerged and never had the problem.
   legitimately distinguishes two rows belongs in that key.
 
 - **`.quietly_if()`/[`suppressWarnings()`](https://rdrr.io/r/base/warning.html)
-  around a backend hides the warnings that matter.** Suppress messages
-  only. (Recorded twice now: `run_engine()` and
-  [`nowcast_fit()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_fit.md).)
+  around a backend hides the warnings that matter.** Use suppress
+  messages only.
 
 ------------------------------------------------------------------------
 
@@ -1093,10 +1220,20 @@ hand-edited.
 
 `NOT_CRAN=true` test suite passes; new behaviour has new tests.
 
+`devtools::run_examples(run_donttest = T, run_dontrun = T)` runs without
+any error
+
 **Any new function taking a `tbl_now` has a grouped test** – it did not
 abort, the groups came back, and the answer matches the ungrouped one.
 See §8 and `devel/audit_grouped_verbs.R`; this bug has shipped six
 times.
+
+Any new functionality using the report-date or the validation-date
+handles the cases when those dates are censored either because: 1)
+censoring doesn’t matter, 2) it warns or errors about the censoring, or
+
+3.  it handles the censoring in a specific way consistent with their
+    status. The choice is justified.
 
 Any new attribute has an exported, documented, tested getter.
 
@@ -1116,6 +1253,9 @@ in §4, and say in the commit message what you checked against.
 `NEWS.md` updated for anything user-visible, including deliberate
 behaviour changes.
 
+Any new article or vignette contains the `learning-more.Rmd` as
+explained in the Documenting section of this document.
+
 `SKILL.md` updated if the *user-facing* API changed.
 
 **Every new exported topic added to `reference:` in `_pkgdown.yml`.**
@@ -1127,11 +1267,20 @@ which is fast and needs no site build.
 A new check or statistic goes **into the findings engine**, not beside
 it — see §11.
 
-Plots use `.tbl_now_palette()` and the red/green grammar.
+Plots use
+[`tbl_now_palette()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_palette.md)
+**by role name** and the reporting/epidemic grammar; no hex code outside
+`R/palette.R`; the prologue calls `.tbl_now_check_palette()`, and any
+`size`/`linewidth` it offers is validated with `.tbl_now_check_size()`
+and multiplies rather than replaces — see §6.
 
-**`R CMD check` clean** — the test suite passing is not the same check.
+No examples use `\donttest{}` or `\dontrun{}`. Nor do they use
+`if (FALSE)`.
 
-**`checktor::checkup()` clean** — the extra CRAN-submission checks.
+**`R CMD check` clean**. The test suite passing is not the same as this
+check.
+
+**`checktor::checkup()` clean**. The extra CRAN-submission checks.
 
 ### The two checks, and why the suite does not cover them
 
@@ -1243,6 +1392,44 @@ test asserting exactly that. When you add a block:
   `quantity`. `"validation_type = confirmed"` is a quantity; `"Female"`
   is a stratum. Mixing them makes a compositional row impossible to
   interpret.
+- **say what `n` counts.** One shared schema means the two count columns
+  necessarily mean different things per block: `total` is always
+  **cases**, and `n` is always the block’s own unit – dates for
+  `"cases"`, runs for `"zero_run"`, (event, report) cells for `"delay"`
+  and `"composition"`. Two unexplained integers side by side is a reader
+  guessing, so `.summary_block_gloss()` prints one grey line per block
+  saying which is which, and a new block adds its entry there in the
+  same commit.
+
+### An unreviewed statistic does not go in the default report
+
+[`case_autocorrelation()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md)
+and
+[`reporting_completeness()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md)
+were written by an LLM and never checked by a human. They were part of
+[`summary()`](https://rdrr.io/r/base/summary.html), which means every
+user who printed a summary read two numbers nobody had verified, with
+nothing in the output saying so. In 0.33.0 they were taken out of
+[`summary()`](https://rdrr.io/r/base/summary.html) and now warn – **on
+every call, deliberately not throttled with `.frequency`**, unlike the
+experimental diagnostics – via `.summary_unreviewed_warning()`.
+
+The corollary, and it was missed the first time: **do not then suppress
+that warning in the documentation.** Adding `warning=FALSE` to the
+vignette chunk that calls one, or
+[`suppressWarnings()`](https://rdrr.io/r/base/warning.html) to its
+`@examples`, hides the caveat from exactly the reader it was written for
+– and makes the warning look broken to anyone who notices it is missing
+from the rendered page.
+
+The rule that follows: a block joins
+[`summary()`](https://rdrr.io/r/base/summary.html) (or
+[`diagnose()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose.md))
+only once a human has checked what it computes. Until then it can be
+exported, and it must say what it is every time it produces a number. A
+warning that fires once per session is the wrong tool here: the point is
+that the *number* carries the caveat, and a number copied into a report
+outlives the session that made it.
 
 ### `skipped` is not `ok`, and the difference is load-bearing
 
@@ -1285,13 +1472,20 @@ statements about a distribution, and answering them means choosing a
 method, a window and a multiplicity correction — decisions a health
 check has no business making silently.
 
-They come back as `not_run` **signposts** carrying the call that answers
-them
+So they are not in the report at all.
+[`diagnose()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose.md)
+used to emit `not_run` **signposts** carrying the call that answers each
+one; those were removed in 0.32.0, because a health check that lists
+what it did not do adds a block of rows the reader must skip on every
+single run to say something a `@seealso` already says once. A
+statistical diagnostic is its own exported function
 ([`diagnose_drift()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_drift.md),
-[`diagnose_batches()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_batches.md)).
-If you add a statistical diagnostic, add a signpost row for it; do not
-wire it into
-[`diagnose()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose.md).
+[`diagnose_batches()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_batches.md)),
+documented under `@seealso` on
+[`diagnose()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose.md);
+do not wire it into
+[`diagnose()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose.md),
+and do not add a row announcing that you did not.
 
 ### Grids run to `now`, globally
 
@@ -1320,19 +1514,9 @@ counts them in the `unobserved_cells` coverage row, so the drop is
 visible rather than silent. This was found by running against
 `flusight`: one `NA` turned every total in the table into `NA`.
 
-## Documenting
+## Editing Instructions for LLMs
 
-Add the following at the end of every article or vignette:
-` ``{r learning-more, echo=FALSE, results="asis"} cat( knitr::knit_child( system.file("fragments", "learning-more.Rmd", package = "tbl.now"), quiet = TRUE ), sep = "\n" )`` `
-Note that the fragment is looked up by ABSOLUTE path via system.file(),
-never by a relative one. pkgdown/rmarkdown render into an intermediates
-directory under tempdir() and copy relative resources alongside; a path
-containing “../..” escapes that directory (“cannot create file
-‘/tmp/RtmpXXX/../../man/…’”), which fails wherever tempdir() sits near
-the filesystem root – as it does on CI.
-[`system.file()`](https://rdrr.io/r/base/system.file.html) also works
-under pkgload::load_all(), which shims it to find inst/ in the source
-tree.
-
-Every new article or vignette should be referenced in the
-`learning-more.Rmd` that is linked above.
+When updating or adding rules to this document: - State the **Rule** and
+**Constraint** clearly first. - Keep context/rationale to 1–2 sentences
+maximum. - Do NOT write long post-mortems or historical narratives about
+how a bug was discovered unless explicitly asked.

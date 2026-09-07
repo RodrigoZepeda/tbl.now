@@ -33,7 +33,7 @@ similar list EpiNow2::estimate_secondary() does not take.'><meta property="og:im
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.31.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.33.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -48,7 +48,7 @@ similar list EpiNow2::estimate_secondary() does not take.'><meta property="og:im
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/custom-nowcast-models.html">Adding your own nowcasting model</a></li>
     <li><a class="dropdown-item" href="../articles/diagnosing-a-tbl-now.html">Diagnosing a tbl_now</a></li>
     <li><a class="dropdown-item" href="../articles/ensemble-nowcasting.html">One call, many models: run_nowcast(), custom backends and ensembles</a></li>
-    <li><a class="dropdown-item" href="../articles/example.html">A complete nowcasting workflow: hospital-acquired infections in Bucaramanga</a></li>
+    <li><a class="dropdown-item" href="../articles/example.html">The nowcasting workflow: hospital-acquired infections in Bucaramanga, Colombia</a></li>
     <li><a class="dropdown-item" href="../articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with different modelling packages</a></li>
     <li><a class="dropdown-item" href="../articles/tbl.now.html">tbl.now</a></li>
   </ul></li>
@@ -135,8 +135,8 @@ similar list <code><a href="https://epiforecasts.io/EpiNow2/reference/estimate_s
 <span class="r-in"><span><span class="co"># Printing summarises the stack rather than dumping every snapshot.</span></span></span>
 <span class="r-in"><span><span class="va">snaps</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── 5 reporting snapshots from a <span style="color: #0000BB;">&lt;tbl_now&gt;</span> ──────────────────────────────────────</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> • One per report date: <span style="color: #0000BB;">"1991-09-02"</span>, <span style="color: #0000BB;">"1991-09-09"</span>, <span style="color: #0000BB;">"1991-09-16"</span>, <span style="color: #0000BB;">"1991-09-23"</span>, and <span style="color: #0000BB;">"1991-10-14"</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> • Rows each: <span style="color: #0000BB;">602</span>, <span style="color: #0000BB;">602</span>, <span style="color: #0000BB;">602</span>, <span style="color: #0000BB;">602</span>, and <span style="color: #0000BB;">602</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> • One per report date: <span style="color: #0000BB;">"1991-09-16"</span>, <span style="color: #0000BB;">"1991-09-23"</span>, <span style="color: #0000BB;">"1991-09-30"</span>, <span style="color: #0000BB;">"1991-10-07"</span>, and <span style="color: #0000BB;">"1991-10-14"</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> • Rows each: <span style="color: #0000BB;">630</span>, <span style="color: #0000BB;">637</span>, <span style="color: #0000BB;">644</span>, <span style="color: #0000BB;">651</span>, and <span style="color: #0000BB;">658</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> • Now: <span style="color: #0000BB;">"1991-10-14"</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ℹ Pass this to `EpiNow2::estimate_truncation()`. `EpiNow2::estimate_secondary()` wants a single data frame of linked series instead -- not this.</span>
 <span class="r-in"><span></span></span>

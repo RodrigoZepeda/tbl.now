@@ -5,10 +5,10 @@
 Draws the reporting triangle as a hexagonal age-period-cohort map, using
 the projection of Jalal and Burke (2020). Event date, report date and
 reporting delay are the cohort, period and age of the map
-(`report = event + delay`), and each `(event, delay)` cell is one
-hexagon coloured by its report count. Because a batch is a single
-**report date**, it appears as a clean **vertical stripe**; the
-fast-reporting bulk sits along the short-delay bottom edge.
+(`report = event + delay`), and each `(event, delay)` cell is one point
+on the hexagonal lattice, coloured by its report count. Because a batch
+is a single **report date**, it appears as a clean **vertical stripe**;
+the fast-reporting bulk sits along the short-delay bottom edge.
 
 ## Usage
 
@@ -23,6 +23,14 @@ plot_reporting_hexamap(
   max_cells = 12000L,
   trans = "sqrt",
   axis = c("report", "validation"),
+  size = 1.5,
+  shape = 16,
+  text_size = 2.3,
+  grid_linewidth_major = 0.3,
+  grid_linewidth_minor = 0.15,
+  axis_linewidth = 0.4,
+  legend_width = 7,
+  legend_height = 0.4,
   palette = .tbl_now_palette()
 )
 ```
@@ -42,9 +50,9 @@ plot_reporting_hexamap(
 
 - complete:
 
-  If `TRUE`, fill the whole observable triangle with zeros so the grey
-  background shows every observable cell. Default `FALSE` (observed
-  cells only). Coerces linelist input to counts via
+  If `TRUE`, fill the whole observable triangle with zeros so a point is
+  drawn for every observable cell. Default `FALSE` (observed cells
+  only). Coerces linelist input to counts via
   [`to_count()`](https://rodrigozepeda.github.io/tbl.now/reference/to_count.md).
 
 - iso, iso_minor:
@@ -60,7 +68,7 @@ plot_reporting_hexamap(
 
 - max_cells:
 
-  Safety cap on the number of hexagons. Default `12000`.
+  Safety cap on the number of points. Default `12000`.
 
 - trans:
 
@@ -75,9 +83,47 @@ plot_reporting_hexamap(
   [`add_validation_date()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md));
   cases still `"pending"` have no validation date and are left out.
 
+- size:
+
+  Size of the plotted points, in millimetres, as ggplot2 measures it.
+  Default `1.5`. See **Details** for why there is no data-dependent
+  default.
+
+- shape:
+
+  Point shape, passed to
+  [`ggplot2::geom_point()`](https://ggplot2.tidyverse.org/reference/geom_point.html).
+  Default `16` (a solid circle); `15` gives squares, which tile the
+  lattice more closely. The count is mapped to `colour`, so use a solid
+  shape (`0`-`20`) – the fillable shapes `21`-`25` would draw the count
+  on the border only.
+
+- text_size:
+
+  Size of the event-, report- and delay-axis tick labels. Default `2.3`.
+  The axis *titles* scale with it.
+
+- grid_linewidth_major, grid_linewidth_minor:
+
+  Line widths of the major and minor triangular grids this function
+  draws (`iso` and `iso_minor` spacing). These are the package's own
+  grids, not ggplot2's – the panel grid is switched off here. Defaults
+  `0.3` and `0.15`.
+
+- axis_linewidth:
+
+  Line width of the delay-axis spine and its ticks. Default `0.4`.
+
+- legend_width, legend_height:
+
+  Size of the count colourbar, as
+  [unit](https://rdrr.io/r/grid/unit.html) objects or as numbers in
+  centimetres. Defaults `7` and `0.4` cm.
+
 - palette:
 
-  A named colour palette. Defaults to the package palette.
+  A named colour palette (see
+  [`tbl_now_palette()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_palette.md)).
 
 ## Value
 
@@ -88,16 +134,21 @@ A ggplot2 object.
 The three axes are read off three families of iso-lines: **report date**
 (period) runs vertically, **delay** (age) up the right-hand spine, and
 **event date** (cohort) up the left. A major/minor triangular grid is
-drawn so any hexagon can be traced back to its event date, report date
-and delay.
+drawn so any point can be traced back to its event date, report date and
+delay.
 
-The number of hexagons is `#\{observed (event, delay) cells\}`, which
+The number of points is `#\{observed (event, delay) cells\}`, which
 grows with the delay range. To stay responsive the delay axis is capped
-so at most `max_cells` hexagons are drawn (raise `max_cells`, or set
+so at most `max_cells` points are drawn (raise `max_cells`, or set
 `max_delay`, to change this). `complete = TRUE` first fills the whole
 observable triangle with explicit zeros (via
 [`complete_zeroes()`](https://rodrigozepeda.github.io/tbl.now/reference/complete_zeroes.md))
-so the empty cells are shown in grey.
+so the empty cells are shown too.
+
+A point is sized in millimetres and the lattice is sized in data units,
+so no default `size` can be right for every combination of cell count
+and figure size – which is exactly why `size` exists. Raise it until the
+points nearly touch for the figure you are actually drawing.
 
 ## References
 

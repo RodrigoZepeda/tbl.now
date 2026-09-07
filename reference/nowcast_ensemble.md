@@ -19,6 +19,7 @@ nowcast_ensemble(
   type = c("quantile", "linear_pool"),
   weights = "equal",
   backtest = NULL,
+  include_now = FALSE,
   quantile_levels = NULL,
   n_draws = 4000L,
   name = "ensemble",
@@ -61,6 +62,13 @@ nowcast_ensemble(
   A
   [`nowcast_backtest()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_backtest.md)
   object, required when `weights` is `"inverse_score"` or `"optim"`.
+
+- include_now:
+
+  Logical. When deriving performance weights from `backtest`, should
+  rows at the nowcast members' own `now` dates be allowed into the
+  weight-training window? Default `FALSE`; set `TRUE` only for an
+  in-sample diagnostic.
 
 - quantile_levels:
 

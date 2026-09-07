@@ -27,7 +27,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.31.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.33.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -44,7 +44,7 @@
 <li><a class="dropdown-item" href="../articles/custom-nowcast-models.html">Adding your own nowcasting model</a></li>
     <li><a class="dropdown-item" href="../articles/diagnosing-a-tbl-now.html">Diagnosing a tbl_now</a></li>
     <li><a class="dropdown-item" href="../articles/ensemble-nowcasting.html">One call, many models: run_nowcast(), custom backends and ensembles</a></li>
-    <li><a class="dropdown-item" href="../articles/example.html">A complete nowcasting workflow: hospital-acquired infections in Bucaramanga</a></li>
+    <li><a class="dropdown-item" href="../articles/example.html">The nowcasting workflow: hospital-acquired infections in Bucaramanga, Colombia</a></li>
     <li><a class="dropdown-item" href="../articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with different modelling packages</a></li>
     <li><a class="dropdown-item" href="../articles/tbl.now.html">tbl.now</a></li>
   </ul>
@@ -1211,6 +1211,12 @@ column, so the object’s strata are folded into one label:</p>
 <code class="sourceCode R"><span><span class="va">covid_regional</span> <span class="op">&lt;-</span> <span class="va">covid_seasonal</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/stats/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">notification_date</span> <span class="op">&gt;=</span> <span class="va">cutoff</span> <span class="op">-</span> <span class="fl">60</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/tbl_now_EpiNow2.html">tbl_now_to_EpiNow2</a></span><span class="op">(</span>target <span class="op">=</span> <span class="st">"regional_epinow"</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span>, quiet <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Warning: `tbl_now_to_EpiNow2()`: declared temporal effects are not carried into this</span></span>
+<span><span class="co">#&gt; format.</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> They are stored lazily, so there are no columns to keep or name yet.</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> When called through `engine_epinow2()`, supported report-date weekly effects</span></span>
+<span><span class="co">#&gt;   are added through `EpiNow2::obs_opts()` instead.</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> The model will not see them from the converted data.</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">covid_regional</span><span class="op">)</span></span>
 <span><span class="co">#&gt;         date confirm region</span></span>

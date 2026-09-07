@@ -4,12 +4,12 @@ Simulates a reporting system that is closed on a given set of report dates
 and releases its accumulated backlog on the next open date.  Reports keep
 their event dates and merely move later on the report axis, so no cases are
 created or destroyed – the defining property of a batch.  Useful for checking
-that diagnose_batches() and diagnose_batch_shape() recover a batch you planted."><meta property="og:description" content="
+that diagnose_batches() and diagnose_batches2() recover a batch you planted."><meta property="og:description" content="
 Simulates a reporting system that is closed on a given set of report dates
 and releases its accumulated backlog on the next open date.  Reports keep
 their event dates and merely move later on the report axis, so no cases are
 created or destroyed – the defining property of a batch.  Useful for checking
-that diagnose_batches() and diagnose_batch_shape() recover a batch you planted."><meta property="og:image" content="https://rodrigozepeda.github.io/tbl.now/logo.png"></head><body>
+that diagnose_batches() and diagnose_batches2() recover a batch you planted."><meta property="og:image" content="https://rodrigozepeda.github.io/tbl.now/logo.png"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -17,7 +17,7 @@ that diagnose_batches() and diagnose_batch_shape() recover a batch you planted."
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.31.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.33.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -32,7 +32,7 @@ that diagnose_batches() and diagnose_batch_shape() recover a batch you planted."
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/custom-nowcast-models.html">Adding your own nowcasting model</a></li>
     <li><a class="dropdown-item" href="../articles/diagnosing-a-tbl-now.html">Diagnosing a tbl_now</a></li>
     <li><a class="dropdown-item" href="../articles/ensemble-nowcasting.html">One call, many models: run_nowcast(), custom backends and ensembles</a></li>
-    <li><a class="dropdown-item" href="../articles/example.html">A complete nowcasting workflow: hospital-acquired infections in Bucaramanga</a></li>
+    <li><a class="dropdown-item" href="../articles/example.html">The nowcasting workflow: hospital-acquired infections in Bucaramanga, Colombia</a></li>
     <li><a class="dropdown-item" href="../articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with different modelling packages</a></li>
     <li><a class="dropdown-item" href="../articles/tbl.now.html">tbl.now</a></li>
   </ul></li>
@@ -65,7 +65,7 @@ that diagnose_batches() and diagnose_batch_shape() recover a batch you planted."
 and releases its accumulated backlog on the next open date.  Reports keep
 their event dates and merely move <em>later</em> on the report axis, so no cases are
 created or destroyed – the defining property of a batch.  Useful for checking
-that <code><a href="diagnose_batches.html">diagnose_batches()</a></code> and <code><a href="diagnose_batch_shape.html">diagnose_batch_shape()</a></code> recover a batch you planted.</p>
+that <code><a href="diagnose_batches.html">diagnose_batches()</a></code> and <code><a href="diagnose_batches2.html">diagnose_batches2()</a></code> recover a batch you planted.</p>
     </div>
 
     <div class="section level2">
@@ -146,7 +146,7 @@ the later one survives: it is that report date's final word on the total.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="diagnose_batches.html">diagnose_batches()</a></code> and <code><a href="diagnose_batch_shape.html">diagnose_batch_shape()</a></code>, the tests this exists to
+    <div class="dont-index"><p><code><a href="diagnose_batches.html">diagnose_batches()</a></code> and <code><a href="diagnose_batches2.html">diagnose_batches2()</a></code>, the tests this exists to
 validate; <code><a href="censoring.html">censor_reporting_delays_above()</a></code> for recording a real batch rather than
 planting one. The
 <a href="https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html"><em>Diagnosing a tbl_now</em> article</a>

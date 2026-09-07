@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.31.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.33.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -22,7 +22,7 @@
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="articles/custom-nowcast-models.html">Adding your own nowcasting model</a></li>
     <li><a class="dropdown-item" href="articles/diagnosing-a-tbl-now.html">Diagnosing a tbl_now</a></li>
     <li><a class="dropdown-item" href="articles/ensemble-nowcasting.html">One call, many models: run_nowcast(), custom backends and ensembles</a></li>
-    <li><a class="dropdown-item" href="articles/example.html">A complete nowcasting workflow: hospital-acquired infections in Bucaramanga</a></li>
+    <li><a class="dropdown-item" href="articles/example.html">The nowcasting workflow: hospital-acquired infections in Bucaramanga, Colombia</a></li>
     <li><a class="dropdown-item" href="articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with different modelling packages</a></li>
     <li><a class="dropdown-item" href="articles/tbl.now.html">tbl.now</a></li>
   </ul></li>
@@ -50,16 +50,20 @@
 
 <div id="tblnow--development-guide" class="section level1">
 
-<p>This file teaches an LLM (or a new human contributor) how to <strong>develop</strong> the <code>tbl.now</code> package. It is not a user manual: <code>SKILL.md</code> explains how to <em>use</em> the package, and the vignettes explain how to <em>apply</em> it. Read this before changing code.</p>
-<hr><div class="section level2">
+<p>This file teaches an LLM how to <strong>develop</strong> the <code>tbl.now</code> package. It is not a user manual: <code>SKILL.md</code> explains how to <em>use</em> the package, and the vignettes explain how to <em>apply</em> it. Read this before changing code.</p>
+<div class="section level2">
 <h2 id="id_1-what-the-package-is">1. What the package is<a class="anchor" aria-label="anchor" href="#id_1-what-the-package-is"></a></h2>
-<p><code>tbl.now</code> extends <code>tibble</code> into a class that stores <strong>epidemiological nowcasting data</strong>: case data where every observation carries two dates — when the event happened and when it was reported. The gap between them is the <strong>reporting delay</strong>, and the whole package exists to keep that structure honest, queryable and convertible.</p>
-<p>A <code>tbl_now</code> is a tibble plus attributes. It is deliberately <em>not</em> an S4/R6 object: it must keep working inside a <code>dplyr</code> pipeline.</p>
+<p><code>tbl.now</code> is an R package that extends <code>tibble</code> into a class for nowcasting epidemiological phenomena. It also helps set up a pipeline for describing datasets for nowcasting, connecting with other nowcasting packages to perform nowcasts and standardizing their results for analyzing them. Finally it also helps perform ensemble nowcasts.</p>
+<p>The main class of the package is a <code>tbl_now</code>. A <code>tbl_now</code> is a tibble plus attributes. It is deliberately <em>not</em> an S4/R6 object as it must keep working inside a <code>dplyr</code> pipeline.</p>
+<p>A <code>tbl_now</code> stores at least two dates: when the event happened (<code>event_date</code>) and when it was reported (<code>report_date</code>). Optionally it can have a (<code>validation_date</code>). The assumption is that something happens at the event date, gets reported at the report date and the report gets revised at the validation date.</p>
+<p>The difference between the event and the report dates is the reporting delay. The difference between the report and the validation dates is the validation delay. All nowcasts attempt to predict the total number of cases that happened at <code>event_date</code> and will eventually be reported (and/or validated) at the <code>report_date</code> or the <code>validation_date</code> respectively.</p>
+<p>When dates are not measured exactly but represent an upper bound (i.e. they are left-censored) we utilize the <code>is_censored_*</code> columns to indicate them. As an example if we know a case was repoted before April 1st 2020 we would mark that as <code>is_censored_report = 1</code>. If a case was reported <strong>exactly</strong> on April 1st 2020 then <code>is_censored_report = 0</code>. If no <code>is_censored_*</code> column is present we assume all columns are exact.</p>
 <p>The package does <strong>not</strong> fit nowcast models itself. It prepares data for the packages that do (<code>diseasenowcasting</code>, <code>baselinenowcast</code>, <code>epinowcast</code>, <code>NobBS</code>, <code>surveillance</code>, <code>nowcaster</code>, <code>epidist</code>) and normalises what they return.</p>
-<hr></div>
+</div>
 <div class="section level2">
 <h2 id="id_2-the-three-data-types">2. The three data types<a class="anchor" aria-label="anchor" href="#id_2-the-three-data-types"></a></h2>
-<p>Every <code>tbl_now</code> has exactly one <code>data_type</code>, and almost every bug in this package traces back to code that assumed the wrong one. Check with <code>get_data_type(x)</code>.</p>
+<p>Every <code>tbl_now</code> has exactly one <code>data_type</code>. Check with <code>get_data_type(x)</code> and make sure your methods work (or error!) for each of the data types.</p>
+<p>The <code><a href="reference/to_count.html">to_count()</a></code> function helps convert between them as the following table suggests:</p>
 <table class="table"><colgroup><col width="25%"><col width="25%"><col width="25%"><col width="25%"></colgroup><thead><tr><th><code>data_type</code></th>
 <th>one row is</th>
 <th>case column</th>
@@ -69,23 +73,23 @@
 <td>none (<code><a href="reference/nowcast_data_getters.html">get_case_count()</a></code> is <code>NULL</code>)</td>
 <td>both count types</td>
 </tr><tr><td><code>"count-incidence"</code></td>
-<td>cases <em>newly reported</em> for an (event, report) pair</td>
+<td>cases <em>newly reported</em> for an (event, report) or (event, report, validate) pair</td>
 <td>required</td>
 <td><code>count-cumulative</code></td>
 </tr><tr><td><code>"count-cumulative"</code></td>
 <td>cases reported <strong>so far</strong> for that event as of that report</td>
 <td>required</td>
 <td><code>count-incidence</code></td>
-</tr></tbody></table><p>Rules that follow from this, and that you must not break:</p>
+</tr></tbody></table><p>Rules that follow from this:</p>
 <ul><li>
-<strong>A line list cannot represent a zero.</strong> An event date with no reports has no rows at all. Any code that builds a time grid from the rows it was handed will silently stop short of the <code>now</code>. <code><a href="reference/complete_zeroes.html">complete_zeroes()</a></code> fixes this for count data. For the line-list engines the grid is the <strong>caller’s</strong> job: <code><a href="reference/tbl_now_surveillance.html">tbl_now_to_surveillance()</a></code> deliberately does <em>not</em> bake it in — it returns a line list and leaves <code>now</code> and <code>control$dRange</code> to you, because the object already carries them (<code><a href="reference/nowcast_data_getters.html">get_now()</a></code>, <code><a href="reference/nowcast_data_getters.html">get_event_units()</a></code>) and the converter cannot know which window you mean to fit. Pass them at the call site, as the <code>surveillance</code> section of <code>vignettes/articles/nowcasting-models.Rmd</code> does.</li>
+<strong>A line list cannot represent a zero.</strong> An event date with no reports has no rows at all. Any code that builds a time grid from the rows it was handed will silently stop short of the <code>now</code>. The <code><a href="reference/complete_zeroes.html">complete_zeroes()</a></code> function can fix this for count data. For the line-list engines the grid is the <strong>caller’s</strong> job: <code><a href="reference/tbl_now_surveillance.html">tbl_now_to_surveillance()</a></code> deliberately does <em>not</em> bake it in — it returns a line list and leaves <code>now</code> and <code>control$dRange</code> to you, because the object already carries them (<code><a href="reference/nowcast_data_getters.html">get_now()</a></code>, <code><a href="reference/nowcast_data_getters.html">get_event_units()</a></code>) and the converter cannot know which window you mean to fit. Pass them at the call site, as the <code>surveillance</code> section of <code>vignettes/articles/nowcasting-models.Rmd</code> does.</li>
 <li>
 <strong><code>count-cumulative</code> is not additive.</strong> Never <code><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum()</a></code> it across delays. To get increments use <code>to_count(x, to = "count-incidence")</code>, which de-accumulates — and can produce <strong>negative</strong> values when a total was revised downward. Downstream code must handle negatives or refuse them explicitly, never assume they cannot happen.</li>
 <li>
 <strong><code><a href="reference/to_count.html">to_count()</a></code> cannot rebuild a line list.</strong> Aggregation is one-way.</li>
 <li>
 <strong><code><a href="reference/to_count.html">to_count()</a></code> sums over undeclared columns.</strong> A column that is neither declared (strata/covariates) nor protected is silently pooled away. If a test shows “impossible” spread in a boxplot, look for an undeclared column before suspecting the plot.</li>
-</ul><hr></div>
+</ul></div>
 <div class="section level2">
 <h2 id="id_3-attributes-and-getters">3. Attributes and getters<a class="anchor" aria-label="anchor" href="#id_3-attributes-and-getters"></a></h2>
 <div class="section level3">
@@ -159,89 +163,92 @@
 <td>dictionary of non-canonical outcome labels, or <code>NULL</code>
 </td>
 <td><code><a href="reference/nowcast_data_getters.html">get_validation_levels()</a></code></td>
-</tr></tbody></table></div>
+</tr></tbody></table><p>Required new attributes should be added to <code>.TBL_NOW_REQUIRED_ATTRIBUTES</code>. When adding new attributes associated to columns, consider whether they should be protected columns and added to <code>get_protected_cols()</code>.</p>
+</div>
 <div class="section level3">
 <h3 id="the-rules">The rules<a class="anchor" aria-label="anchor" href="#the-rules"></a></h3>
 <ol style="list-style-type: decimal"><li>
-<strong>Always use the getter. Never <code>attr(x, "...")</code>.</strong> Attribute names are an implementation detail; the getters are the contract. This applies to your own code inside the package just as much as to user code.</li>
+<strong>Always use the getter. Never <code>attr(x, "...")</code>.</strong> This applies to your own code inside the package just as much as to user code.</li>
 <li>
-<strong>If you add an attribute, you add a getter in the same commit.</strong> No exceptions. Export it, document it under the <code>nowcast_data_getters</code> topic, and test it. An attribute without a getter is a private field the user will end up reading by hand — which is exactly the coupling the getters exist to prevent.</li>
+<strong>If you add an attribute, you add a getter in the same commit.</strong> No exceptions. Export it, document it under the <code>nowcast_data_getters</code> topic, and test it.</li>
 <li>
-<strong>A getter returns the smallest useful thing.</strong> <code>get_nowcaster_strata()</code> returns the <code>bins_age</code> vector, not a list to dig through. Prefer the value a caller passes straight to the next function.</li>
+<strong>A getter should return the smallest useful thing.</strong> Prefer the value a caller passes straight to the next function than something the user has to sift through.</li>
 <li>
-<strong>Getters return column <em>names</em>, not data.</strong> <code>get_event_date(x)</code> is a string. Get the values with <code>x[[get_event_date(x)]]</code>.</li>
+<strong>Getters return column <em>names</em>, not data.</strong> For example, <code>get_event_date(x)</code> is a string. Get the values with <code>x |&gt; pull(get_event_date(x))</code>.</li>
 <li>
 <strong>Temporal effects are lazy.</strong> <code><a href="reference/nowcast_data_getters.html">get_temporal_effects()</a></code> returns <em>specs</em>; the columns do not exist until <code><a href="reference/add_temporal_effects.html">compute_temporal_effects()</a></code> runs. Converters call <code>.materialize_temporal_effects()</code> for this. Calling <code><a href="reference/add_temporal_effects.html">compute_temporal_effects()</a></code> before <code><a href="reference/add_temporal_effects.html">add_temporal_effects()</a></code> is a no-op.</li>
 </ol></div>
 <div class="section level3">
 <h3 id="the-validation-process-the-optional-third-date">The validation process (the optional third date)<a class="anchor" aria-label="anchor" href="#the-validation-process-the-optional-third-date"></a></h3>
-<p><code>event &lt;= report &lt;= validation &lt;= now</code>. It is <strong>optional</strong>: most objects have no validation, so every code path must work when <code>has_validation(x)</code> is <code>FALSE</code>, and <code>.validation_group_cols(x)</code> returns <code>character(0)</code> there so it can be spliced into a grouping unconditionally.</p>
-<ol style="list-style-type: decimal"><li>
-<strong>Every rebuild must carry it.</strong> <code>do.call(tbl_now, c(list(...), .validation_rebuild_args(x, data)))</code>. This is the same silent-drop hazard as strata: <code>summarise()</code>, <code>group_by()</code>, <code>ungroup()</code>, <code><a href="https://rdrr.io/r/stats/update.html" class="external-link">update()</a></code> and <code><a href="reference/align_weeks.html">align_weeks()</a></code> each rebuild by hand, and each one dropped the validation until it was spliced in. <strong>Grep for <code>do.call(tbl_now</code> before adding an attribute</strong> and fix every site.</li>
+<p><code>event &lt;= report &lt;= validation &lt;= now</code>. It is <strong>optional</strong>: most objects have no validation, so every code path must work when <code>has_validation(x)</code> is <code>FALSE</code>, and <code>.validation_group_cols(x)</code> returns <code>character(0)</code>.</p>
+<ol style="list-style-type: decimal"><li><p><strong>Every rebuild must carry it.</strong> <code>do.call(tbl_now, c(list(...), .validation_rebuild_args(x, data)))</code>. This is the same silent-drop hazard as strata: <code>summarise()</code>, <code>group_by()</code>, <code>ungroup()</code>, <code><a href="https://rdrr.io/r/stats/update.html" class="external-link">update()</a></code> and <code><a href="reference/align_weeks.html">align_weeks()</a></code> each rebuild by hand, and each one dropped the validation until it was spliced in. <strong>Grep for <code>do.call(tbl_now</code> before adding an attribute</strong> and fix every site.</p></li>
+<li><p><strong><code>"pending"</code> can mean no date, not a missing date.</strong> A pending case is reported and still waiting to have a validation result. Anything that counts arrivals on the validation axis must drop pending rows.</p></li>
+<li><p><strong>Two different delays.</strong> <code>.validation_delay</code> is the laboratory’s turnaround, measured <strong>from the report</strong>.</p></li>
+<li><p><strong><code>now</code> is validation-aware, in both directions.</strong> <code>infer_now()</code> takes the max over both. Setting <code>now</code> <em>before</em> a validation is not an error, it should be used for a backtest: <code><a href="reference/add.html">change_now()</a></code> calls <code>.mask_validations_after()</code>, which returns every validation dated after the new <code>now</code> to <code>"pending"</code> and masks its date, <code>.validation_num</code>, <code>.validation_delay</code> and censoring flag.</p></li>
+<li><p><strong><code>validation_type</code> holds four values and no others</strong>, and <code>validation_levels</code> is the only way in for anything else. The dictionary is applied by <code>.resolve_validation_type()</code> BEFORE the check, and it must be idempotent: it runs again on every rebuild, so <code>.check_validation_levels()</code> refuses a mapping that would move a canonical value.</p></li>
+<li><p><strong>Censoring has two axes.</strong> <code>is_censored_report</code> is a bound on the reporting delay, <code>is_censored_validation</code> on the validation delay. Both are protected, both are grouping keys, and <code>.tbl_now_collapse_censoring()</code> collapses both. Neither ever deletes a case or rewrites an outcome – that is what makes it <em>censoring</em> rather than deletion.</p></li>
 <li>
-<strong><code>"pending"</code> means no date, not a missing date.</strong> A pending case is reported and still waiting. Anything that counts arrivals on the validation axis must drop pending rows – counting them invents an arrival on a date they do not have.</li>
-<li>
-<strong>Two different delays.</strong> <code>.validation_delay</code> is the laboratory’s turnaround, measured <strong>from the report</strong>. The <code>axis = "validation"</code> diagnostics measure <strong>from the event</strong>, so the two axes are comparable. Do not mix them up.</li>
-<li>
-<strong>Do not duplicate a diagnostic for the new axis.</strong> Add <code>axis = c("report", "validation")</code> and forward it to <code>.batch_report_increments()</code> / <code>.batch_registration()</code>, which is where the axis is actually swapped. One switch point, no parallel implementations.</li>
-<li>
-<strong><code>now</code> is validation-aware, in both directions.</strong> <code>infer_now()</code> takes the max over both. Setting <code>now</code> <em>before</em> a validation is not an error, it is a backtest: <code><a href="reference/add.html">change_now()</a></code> calls <code>.mask_validations_after()</code>, which returns every validation dated after the new <code>now</code> to <code>"pending"</code> and masks its date, <code>.validation_num</code>, <code>.validation_delay</code> and censoring flag. The validator’s rule (nothing is known after <code>now</code>) is unchanged – what changed is that the verb now satisfies it instead of failing it.</li>
-<li>
-<strong><code>validation_type</code> holds four values and no others</strong>, and <code>validation_levels</code> is the only way in for anything else. The dictionary is applied by <code>.resolve_validation_type()</code> BEFORE the check, and it must be idempotent: it runs again on every rebuild, so <code>.check_validation_levels()</code> refuses a mapping that would move a canonical value.</li>
-<li>
-<strong>Censoring has two axes.</strong> <code>is_censored_report</code> is a bound on the reporting delay, <code>is_censored_validation</code> on the validation delay. Both are protected, both are grouping keys, and <code>.tbl_now_collapse_censoring()</code> collapses both. Neither ever deletes a case or rewrites an outcome – that is what makes it <em>censoring</em> rather than deletion.</li>
+<p><strong>A censored date is a bound, so no <em>test</em> of arrival times may count it as an arrival – and nothing else may drop it.</strong> The batch family (<code><a href="reference/diagnose_batches.html">diagnose_batches()</a></code>, <code><a href="reference/diagnose_batches2.html">diagnose_batches2()</a></code>, <code><a href="reference/transport_discriminant.html">transport_discriminant()</a></code>) defaults to <code>drop_censored = TRUE</code> and passes it to <code>.batch_report_increments()</code>, which drops the rows flagged on the axis being scanned via <code>.batch_drop_censored()</code>. Censoring is applied <em>because</em> something was known about those dates – often that they were batched – and the censored rows all carry the same bound, so left in they pile up on one date and the detector rediscovers, as a finding, the artefact it was already told about.</p>
+<p><strong>The helper’s own default is <code>FALSE</code>, and it must stay <code>FALSE</code>.</strong> This was shipped as <code>TRUE</code> for one version and it was wrong: <code>.batch_report_increments()</code> is shared by every reporting-process plot, so <code><a href="reference/plot_epidemic_process.html">plot_epidemic_process()</a></code> quietly deleted 58 real cases from an epidemic curve because their <em>report</em> date had been censored. The flag says nothing about the event date. A row censored on the report axis is still a case that happened, so anything answering <em>what happened, and when</em> keeps it; only a test of <em>when records arrived</em> may drop it. Ask which axis the question is about before reaching for the argument.</p>
+</li>
 </ol></div>
 <div class="section level3">
-<h3 id="is_tbl_now-is-not-validate_tbl_now">
-<code>is_tbl_now()</code> is not <code>validate_tbl_now()</code>
-<a class="anchor" aria-label="anchor" href="#is_tbl_now-is-not-validate_tbl_now"></a></h3>
-<p>Two questions, two functions, and they were conflated until #62:</p>
+<h3 id="checking-for-valid-tbl_now-s">Checking for valid tbl_now s<a class="anchor" aria-label="anchor" href="#checking-for-valid-tbl_now-s"></a></h3>
+<p>There are two functions used to validate an object:</p>
 <ul><li>
-<strong><code><a href="reference/validate_tbl_now.html">is_tbl_now()</a></code></strong> – <em>is this the class?</em> A class check, the attributes in <code>.TBL_NOW_REQUIRED_ATTRIBUTES</code>, and the columns those attributes name. Cheap, silent, no findings. It is what <code>.assert_tbl_now()</code> calls, which is to say nearly every exported function calls it.</li>
+<code><a href="reference/validate_tbl_now.html">is_tbl_now()</a></code> Checks the class, the attributes in <code>.TBL_NOW_REQUIRED_ATTRIBUTES</code>, and the columns those attributes name. Should remain cheap and silent. It is what <code>.assert_tbl_now()</code> calls, which is to say nearly every exported function calls it. Never put data checks here.</li>
 <li>
-<strong><code><a href="reference/validate_tbl_now.html">validate_tbl_now()</a></code></strong> – <em>is the data in it sane?</em> The findings engine, re-emitted as conditions. Called by <code><a href="reference/tbl_now.html">tbl_now()</a></code> when the object is built.</li>
-</ul><p><code><a href="reference/validate_tbl_now.html">is_tbl_now()</a></code> used to run the second, inside a <code><a href="https://rdrr.io/r/base/conditions.html" class="external-link">tryCatch()</a></code> that caught errors but not warnings – so the object’s findings escaped from wherever the predicate happened to be called, and a verb that fixed a problem warned about it twice, after the fix. Do not put data checks back into the predicate, and do not make the predicate the place a user learns their data is bad.</p>
-<p>The corollary is one to state plainly in documentation: an object can be a <code>tbl_now</code> and still have data <code><a href="reference/validate_tbl_now.html">validate_tbl_now()</a></code> warns about. The class is a container; it is not a claim about what is in it.</p>
+<code><a href="reference/validate_tbl_now.html">validate_tbl_now()</a></code> Checks the class and the data. This is the findings engine. Called by <code><a href="reference/tbl_now.html">tbl_now()</a></code> when the object is built.</li>
+</ul><p>An object can be a <code>tbl_now</code> and still have data <code><a href="reference/validate_tbl_now.html">validate_tbl_now()</a></code> warns about. When developing, however, one should aim to pass the <code><a href="reference/validate_tbl_now.html">validate_tbl_now()</a></code> unless there is a good reason.</p>
 </div>
 <div class="section level3">
 <h3 id="protected-columns">Protected columns<a class="anchor" aria-label="anchor" href="#protected-columns"></a></h3>
-<p><code>get_protected_cols()</code> = the user-given ones (event/report dates, censoring indicator, case count) plus the generated ones (<code>.event_num</code>, <code>.report_num</code>, <code>.delay</code>). Removing any of them <strong>downgrades the object to a plain tibble</strong>, with a warning. This is why <code><a href="https://dplyr.tidyverse.org/reference/summarise.html" class="external-link">dplyr::summarise()</a></code> on a <code>tbl_now</code> usually returns a tibble: it drops the protected columns.</p>
-<p>When you need to reshape inside the package, operate on <code>.strip_tbl_now(x)</code> (a bare data frame) and rebuild the attributes, rather than fighting the dplyr methods. See <code>.tbl_now_collapse_censoring()</code> for the pattern.</p>
-<hr></div>
+<p><code>get_protected_cols()</code> returns user-given columns (event/report/validation dates, validation type, censoring flags, case count) plus generated numeric columns (<code>.event_num</code>, <code>.report_num</code>, <code>.delay</code>, and, when validation exists, <code>.validation_num</code>, <code>.validation_delay</code>). Removing or renaming any generated protected column must demote with <code>.demote_to_tibble()</code>, so all <code>tbl_now</code> attributes are removed and only user metadata survives.</p>
+<p>When reshaping inside the package, operate on <code>.strip_tbl_now(x)</code> and rebuild with <code>.tbl_now_rebuild()</code> or <code>do.call(tbl_now, c(list(...), .validation_rebuild_args(x, data)))</code>.</p>
+</div>
 </div>
 <div class="section level2">
-<h2 id="id_4-function-choice-hierarchy">4. Function-choice hierarchy<a class="anchor" aria-label="anchor" href="#id_4-function-choice-hierarchy"></a></h2>
+<h2 id="id_4-functions">4. Functions<a class="anchor" aria-label="anchor" href="#id_4-functions"></a></h2>
 <p>When writing data-manipulation code <strong>inside this package</strong>, prefer in this order:</p>
 <ol style="list-style-type: decimal"><li>
-<strong><code>tbl.now</code>’s own functions</strong> — <code><a href="reference/to_count.html">to_count()</a></code>, <code><a href="reference/complete_zeroes.html">complete_zeroes()</a></code>, <code><a href="reference/align_weeks.html">align_weeks()</a></code>, <code>get_*()</code>, <code>add_*()</code> / <code>change_*()</code> / <code>remove_*()</code>. They know about the attributes and keep the object valid.</li>
+<strong><code>tbl.now</code>’s own functions</strong> — <code><a href="reference/to_count.html">to_count()</a></code>, <code><a href="reference/complete_zeroes.html">complete_zeroes()</a></code>, <code><a href="reference/align_weeks.html">align_weeks()</a></code>, <code>get_*()</code>, <code>add_*()</code> / <code>change_*()</code> / <code>remove_*()</code>, etcetera. They know about the attributes and keep the object valid.</li>
 <li>
 <strong><code>dplyr</code> / <code>tidyr</code> / <code>tibble</code></strong> — for anything the package does not already express. <code>dplyr</code> verbs have <code>tbl_now</code> methods and mostly preserve the class.</li>
 <li>
 <strong>base R</strong> — last resort, for things the tidyverse genuinely does not cover (<code><a href="https://rdrr.io/r/base/switch.html" class="external-link">switch()</a></code>, <code><a href="https://rdrr.io/r/base/lapply.html" class="external-link">vapply()</a></code>, <code><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq()</a></code>, matrix work, S3 plumbing).</li>
-</ol><p>Rewriting a <code>tbl.now</code> helper’s logic by hand is a bug waiting to happen: the helper handles the data types, the units and the <code>now</code> edge, and your inline version will handle whichever one you were thinking about that day.</p>
+</ol><p>Avoid rewriting a <code>tbl.now</code> helper’s logic by hand as much as possible. Justify whenever you do this and check it works for all data types, nows, and combinations of attributes (i.e. what if it doesn’t have strata, what if it has two and a validation date?).</p>
 <div class="section level3">
-<h3 id="before-you-write-a-new-function-prove-it-does-not-exist">Before you write a new function, prove it does not exist<a class="anchor" aria-label="anchor" href="#before-you-write-a-new-function-prove-it-does-not-exist"></a></h3>
-<p>This has gone wrong twice, in the same shape both times, and neither time did a test catch it – the duplicate had a <em>different body</em>, so nothing mechanical noticed.</p>
-<ul><li>
-<code>nowcast_truth()</code> was written, exported and documented before anyone noticed it was <code><a href="reference/get_latest_first.html">get_latest_reported_cases()</a></code> with the class stripped and the count column renamed. It shipped as a second public name for one idea.</li>
-<li>
-<code>.strata_from_labels()</code> and <code>.split_strata_labels()</code> were written a few hours apart, in the same file, by the same author, to split the same <code>" | "</code> label.</li>
-</ul><p>So the rule is a <strong>pre-flight grep, and you say in the commit what you grepped for</strong>:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="co"># 1. Does a getter already answer this question?</span></span>
-<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="fu">grep</span> <span class="at">-n</span> <span class="st">"^get_"</span> R/getters.R</span>
-<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a></span>
-<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a><span class="co"># 2. Does a helper already do this? Search the VERB, not your name for it.</span></span>
-<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a><span class="fu">grep</span> <span class="at">-rn</span> <span class="st">"split\|paste.*sep\|pool\|aggregate"</span> R/ <span class="kw">|</span> <span class="fu">grep</span> <span class="st">"&lt;- function"</span></span>
-<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a></span>
-<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a><span class="co"># 3. Is there already an exported function in this area?</span></span>
-<span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a><span class="fu">grep</span> <span class="at">-n</span> <span class="st">"^export"</span> NAMESPACE <span class="kw">|</span> <span class="fu">grep</span> <span class="at">-i</span> <span class="st">"&lt;the noun you are about to use&gt;"</span></span></code></pre></div>
-<p>Two questions decide it:</p>
-<ol style="list-style-type: decimal"><li>
-<strong>Could an existing function answer this with different arguments?</strong> Then add the argument. <code>score_nowcast(truth = )</code> learning to accept a <code>tbl_now</code> was the right fix; a <code>nowcast_truth()</code> to produce that input was not.</li>
-<li>
-<strong>Is the new thing a reshaping of an existing thing?</strong> Then it is internal at most, and its documentation must name what it wraps. A reshaping is not a concept, and the user should not have to learn it as one.</li>
-</ol><p>When you genuinely need both, there is <strong>one implementation</strong> and the other calls it. Two functions that split the same string are one bug waiting to be fixed in one place only.</p>
-<hr></div>
+<h3 id="duplicate-function-check-mandatory">Duplicate function check (mandatory)<a class="anchor" aria-label="anchor" href="#duplicate-function-check-mandatory"></a></h3>
+<p>You must not rely on training memory to know what functions exist in <code>tbl.now</code>. Before writing a new function, you must systematically verify it does not already exist.</p>
+<div class="section level4">
+<h4 id="rule-1-if-you-have-terminalshell-access">Rule 1: If you have terminal/shell access<a class="anchor" aria-label="anchor" href="#rule-1-if-you-have-terminalshell-access"></a></h4>
+<p>You MUST execute the following pre-flight searches using your shell tool and read the output before proposing code. State in your response exactly what you searched for.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a>Getters<span class="sc">:</span> </span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="st">```</span><span class="at">bash</span></span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a><span class="at">grep -n "^get_" R/getters.R</span></span>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a><span class="st">```</span></span>
+<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a></span>
+<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a>Helpers<span class="sc">:</span> Search the VERB, not your name <span class="cf">for</span> it.</span>
+<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a><span class="st">```</span></span>
+<span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a><span class="at">grep -rn "split\|paste.*sep\|pool\|aggregate" R/ | grep "&lt;- function"</span></span>
+<span id="cb1-9"><a href="#cb1-9" tabindex="-1"></a><span class="st">```</span></span>
+<span id="cb1-10"><a href="#cb1-10" tabindex="-1"></a></span>
+<span id="cb1-11"><a href="#cb1-11" tabindex="-1"></a>Exports<span class="sc">:</span> Search the NOUN.</span>
+<span id="cb1-12"><a href="#cb1-12" tabindex="-1"></a><span class="st">```</span></span>
+<span id="cb1-13"><a href="#cb1-13" tabindex="-1"></a><span class="at">grep -n "^export" NAMESPACE | grep -i "&lt;the noun you are about to use and synonyms&gt;"</span></span>
+<span id="cb1-14"><a href="#cb1-14" tabindex="-1"></a><span class="st">```</span></span></code></pre></div>
+</div>
+<div class="section level4">
+<h4 id="rule-2-if-you-do-not-have-terminal-access">Rule 2: If you do not have terminal access<a class="anchor" aria-label="anchor" href="#rule-2-if-you-do-not-have-terminal-access"></a></h4>
+<p>You must STOP. Do not generate the function. Output the exact grep commands you need to verify the namespace, and instruct the human user to run them and paste the results back to you.</p>
+</div>
+<div class="section level4">
+<h4 id="rule-3-evaluation">Rule 3: Evaluation<a class="anchor" aria-label="anchor" href="#rule-3-evaluation"></a></h4>
+<ol style="list-style-type: lower-alpha"><li><p>Could an existing function answer this with different arguments? (e.g., adding an argument to an existing verb rather than writing a new wrapper).</p></li>
+<li><p>Is the new thing just a reshaping of an existing thing? If so, it is internal (@noRd) and its documentation must name what it wraps.</p></li>
+</ol><p>If two functions do the same thing, one must call the other.</p>
+</div>
+</div>
 </div>
 <div class="section level2">
 <h2 id="id_5-style">5. Style<a class="anchor" aria-label="anchor" href="#id_5-style"></a></h2>
@@ -250,28 +257,55 @@
 <li>
 <strong>Style guide:</strong> the <a href="https://style.tidyverse.org" class="external-link">tidyverse style guide</a>. Snake case, <code>&lt;-</code> for assignment, spaces around infix operators. Aim for 80 characters, but this is a target rather than a rule the codebase already meets — do not reflow unrelated lines to chase it.</li>
 <li>
-<strong>Anonymous functions:</strong> package code uses <code>function(x) ...</code> almost everywhere (~400 occurrences against a single <code>\(x)</code>), so match that in <code>R/</code>. The shorthand <code>\(x)</code> is used in the <strong>vignettes</strong>, inside pipes, where it reads better. Consistency with the surrounding file beats personal preference either way.</li>
+<strong>Anonymous functions:</strong> package code uses <code>function(x) ...</code>. match that in <code>R/</code>. The shorthand <code>\(x)</code> is used in the <strong>vignettes</strong>, inside pipes, where it reads better.</li>
 <li>
-<strong>Documentation:</strong> <code>roxygen2</code> for everything. Regenerate with <code>devtools::document()</code> — never hand-edit <code>man/*.Rd</code> or <code>NAMESPACE</code>.</li>
+<strong>Avoid <code>x[]</code> calls for tibbles, tbl_nows, and data frames</strong>. Always prefer <strong>dplyr</strong> even if its more verbose. For example <code>x |&gt; pull(get_event_date(x))</code> is the correct call instead of <code>x[[get_event_date(x)]]</code>.</li>
 <li>
-<strong>Internal helpers</strong> are <code>.</code>-prefixed and <code>@noRd</code>.</li>
+<strong>Documentation:</strong> Use <code>roxygen2</code> for everything. Regenerate with <code>devtools::document()</code>. Never hand-edit <code>man/*.Rd</code> or <code>NAMESPACE</code>.</li>
 <li>
-<strong>Messages</strong> use <code>cli</code>. But see the pitfall in §9: <code>cli_*</code> writes to the <em>message</em> stream, which is invisible in a knitr chunk with <code>message=FALSE</code>. Anything a <code><a href="https://rdrr.io/r/base/print.html" class="external-link">print()</a></code> method emits must use <code><a href="https://cli.r-lib.org/reference/cat_line.html" class="external-link">cli::cat_line()</a></code> / <code>cat_rule()</code> / <code>cat_bullet()</code>.</li>
+<strong>Internal helpers</strong> are <code>.</code>-prefixed and utilize <code>@noRd</code>. They should all be documented.</li>
 <li>
-<strong>Comments explain <em>why</em>, not <em>what</em>.</strong> Match the density of the surrounding file. A comment restating the code is noise; a comment recording the non-obvious constraint that forced the code is the point.</li>
+<strong>Messages</strong> use <code>cli</code>. Anything a <code><a href="https://rdrr.io/r/base/print.html" class="external-link">print()</a></code> method emits must use <code><a href="https://cli.r-lib.org/reference/cat_line.html" class="external-link">cli::cat_line()</a></code> / <code><a href="https://cli.r-lib.org/reference/cat_line.html" class="external-link">cli::cat_rule()</a></code> / <code><a href="https://cli.r-lib.org/reference/cat_line.html" class="external-link">cli::cat_bullet()</a></code>.</li>
+<li><strong>Comments explain <em>why</em>, not <em>what</em>.</strong></li>
 <li>
-<strong>No emoji in R code or console output.</strong> (<code>SKILL.md</code>’s capability tables do use <code>✅</code>/<code>❌</code> as status markers; that is a deliberate local convention for those tables, not licence to use emoji elsewhere.)</li>
-</ul><hr></div>
+<strong>No emoji in R code or console output.</strong> (<code>SKILL.md</code>’s capability tables do use <code>✅</code>/<code>❌</code> as status markers; that is a deliberate local convention for those tables, not a licence to use emoji elsewhere.)</li>
+</ul></div>
 <div class="section level2">
-<h2 id="id_6-colours">6. Colours<a class="anchor" aria-label="anchor" href="#id_6-colours"></a></h2>
-<p>The default palette is <strong>the <code>tbl.now</code> palette</strong>, <code>.tbl_now_palette()</code>. Do not introduce new hex codes in plotting code; take them from the palette.</p>
+<h2 id="id_6-colours-and-sizes">6. Colours and sizes<a class="anchor" aria-label="anchor" href="#id_6-colours-and-sizes"></a></h2>
+<div class="section level3">
+<h3 id="the-palette-names-roles-never-hues">The palette names ROLES, never hues<a class="anchor" aria-label="anchor" href="#the-palette-names-roles-never-hues"></a></h3>
+<p>The default palette is the exported <strong><code><a href="reference/tbl_now_palette.html">tbl_now_palette()</a></code></strong>. Do not introduce new hex codes in plotting code; take them from the palette. <code>R/palette.R</code> is the only file in <code>R/</code> that may contain one.</p>
+<p>Every element is named for the <strong>role</strong> it plays, never for the colour it happens to be. This is the whole reason the names changed in 0.33.0: a palette whose slot is called <code>primary_green</code> cannot be re-themed, because a user with a blue-and-orange palette has to call their orange <code>primary_green</code> for the plots to find it. A role name survives a re-theme; a hue name does not.</p>
 <p>The package has one visual grammar, and every plot must obey it:</p>
 <ul><li>
-<strong>Red</strong> (<code>accent_red</code>, <code>light_red</code>) = the <strong>reporting</strong> process — report dates, delays, anything about <em>when we found out</em>.</li>
+<strong><code>reporting</code>, <code>reporting_light</code></strong> = the <strong>reporting</strong> process — report dates, delays, anything about <em>when we found out</em>. Red by default.</li>
 <li>
-<strong>Green</strong> (<code>primary_green</code>, <code>light_green</code>, <code>dark_green</code>) = the <strong>epidemic</strong> process — event dates, case counts, anything about <em>what happened</em>.</li>
-</ul><p>A new panel that draws delays in green is wrong even if it looks nice. The website CSS (<code>pkgdown/extra.css</code>) follows the same palette, which is why <code>.alert-info</code> is green (event-date process) and <code>.alert-warning</code> is the attenuated red used for intervals.</p>
-<hr></div>
+<strong><code>epidemic</code>, <code>epidemic_light</code>, <code>epidemic_mid</code>, <code>epidemic_dark</code></strong> = the <strong>epidemic</strong> process — event dates, case counts, anything about <em>what happened</em>. Green by default.</li>
+</ul><p>A new panel that draws delays with an <code>epidemic*</code> role is wrong even if it looks nice, and it stays wrong when somebody swaps the two hues. The remaining roles are furniture (<code>ink</code>, <code>ink_muted</code>, <code>ink_inverse</code>, <code>surface*</code>, <code>grid_major</code>, <code>grid_minor</code>, <code>guide</code>, <code>guide_strong</code>, <code>annotation</code>, <code>neutral</code>) plus the three data states that are not a process (<code>zero</code>, <code>pending</code>, <code>observed</code>).</p>
+<p>Rules that follow:</p>
+<ol style="list-style-type: decimal"><li>
+<strong>Add a role, add it to the constructor.</strong> <code>.tbl_now_palette_roles()</code> reads <code>formals(tbl_now_palette)</code>, so the constructor is the single source of the contract and cannot drift from the checker.</li>
+<li>
+<strong>Every exported plot calls <code>.tbl_now_check_palette()</code></strong> in its prologue. A missing role is an error naming what is missing, never a silent fall back to the default — falling back draws a plot in a colour the caller did not choose and cannot see they did not choose.</li>
+<li>
+<strong>Do not name a role after what it looks like.</strong> <code>guide_strong</code> is right; <code>dark_grey</code> would put us back where we started.</li>
+</ol><p>The website CSS (<code>pkgdown/extra.css</code>) follows the same palette, which is why <code>.alert-info</code> is green (event-date process) and <code>.alert-warning</code> is the attenuated red used for intervals.</p>
+</div>
+<div class="section level3">
+<h3 id="sizes-are-multipliers-grids-are-absolute">Sizes are multipliers; grids are absolute<a class="anchor" aria-label="anchor" href="#sizes-are-multipliers-grids-are-absolute"></a></h3>
+<p>Every plot exposes the sizes it draws, because a figure rendered large had marks sized for a small one and no way to change them.</p>
+<ul><li>
+<strong><code>size</code> and <code>linewidth</code> are MULTIPLIERS, default <code>1</code>.</strong> They scale the values the panel already uses. This is not a stylistic choice: most panels draw several layers whose <em>relative</em> sizes carry meaning — the transport plane’s flagged points are <code>2.6</code> against the unflagged <code>1.1</code> — and a single absolute size would erase that distinction at exactly the moment the user was trying to make the flagged ones stand out. A multiplier scales the hierarchy instead of flattening it, and leaves every existing figure identical at the default.</li>
+<li>
+<strong>A grid the package draws itself gets its own ABSOLUTE argument</strong> (<code>grid_linewidth</code>, or <code>grid_linewidth_major</code> / <code>grid_linewidth_minor</code> where there are two families). These are not ’s panel grid — the plots that have them switch that off — and there is exactly one value per family, so an absolute width is what the name promises.</li>
+<li>
+<strong><code><a href="reference/plot_reporting_hexamap.html">plot_reporting_hexamap()</a></code> is the one exception</strong>: its <code>size</code> is an absolute point size in millimetres, because the marks are millimetres and the lattice is data units, so no default can be right for every cell count and figure size. That mismatch is the argument’s reason for existing, and it is written in the <code>@details</code>.</li>
+<li>
+<strong>A plot that draws only bars, tiles or areas takes neither</strong>, and says so in its <code>@param palette</code>. An argument that does nothing is worse than no argument.</li>
+<li>
+<strong>Validate with <code>.tbl_now_check_size()</code>.</strong> One message for every one of them.</li>
+</ul><hr></div>
+</div>
 <div class="section level2">
 <h2 id="id_7-writing-a-converter">7. Writing a converter<a class="anchor" aria-label="anchor" href="#id_7-writing-a-converter"></a></h2>
 <p>Converters are the package’s main external surface, and they have the most rules. <code>R/converters.R</code> holds all of them.</p>
@@ -327,7 +361,11 @@
 <h3 id="other-converter-rules">Other converter rules<a class="anchor" aria-label="anchor" href="#other-converter-rules"></a></h3>
 <ul><li><p><strong>Warn about lossy conversions</strong> with <code>.warn_lossy_conversion()</code>.</p></li>
 <li><p><strong>Check the package is installed</strong> with <code>.need_pkg()</code>, and give the real install command (<code>nowcaster</code> is GitHub-only).</p></li>
-<li><p><strong>Accept line lists.</strong> At minimum a converter must work with <code>linelist</code> and <code>count-incidence</code> input. If the target needs incidence counts completed to the <code>now</code>, do it <em>inside</em> the converter (<code>complete = "auto"</code>), so the user does not have to remember <code>to_count() |&gt; complete_zeroes()</code>.</p></li>
+<li>
+<p><strong>Accept line lists.</strong> At minimum a converter must work with <code>linelist</code> and <code>count-incidence</code> input. If the target needs incidence counts completed to the <code>now</code>, do it <em>inside</em> the converter (<code>complete = "auto"</code>), so the user does not have to remember <code>to_count() |&gt; complete_zeroes()</code>.</p>
+<p><strong>To the <code>now</code>, not to the last row</strong>, and the rule binds the <strong>fit method</strong> as much as the converter. A line list cannot record a period in which nothing was reported – the rows are simply absent – so any grid built from the rows you were handed stops at the last period that HAS a report, which is precisely the period a nowcast is not about. This has now shipped twice: <code><a href="reference/nowcast_fit.html">nowcast_fit.baselinenowcast()</a></code> built its per-stratum triangles from <code>format = "long"</code>, which has no grid and so is deliberately never completed (#67), and <code>.epinow2_series_data()</code> handed its daily series straight on. Both looked right on every fixture whose last event period happens to carry a report, which is every shipped dataset.</p>
+<p>Two things follow. Test with a fixture whose <strong>last event periods are silent</strong>, so <code>now</code> is past the last event date present; <code>linelist_gap_pair()</code> in <code>tests/testthat/test-engines-linelist-equivalence.R</code> is that fixture, and that file asserts every engine returns the same nowcast, under one seed, from a line list and from the equivalent <code>to_count() |&gt; complete_zeroes()</code> object. And never let a <code><a href="reference/complete_zeroes.html">complete_zeroes()</a></code> failure pass silently: it <strong>refuses a line list</strong>, so a <code><a href="https://rdrr.io/r/base/conditions.html" class="external-link">tryCatch()</a></code> around it that returns the input unchanged turns “I could not complete this” into a short grid with no message at all – which is what <code>.epinow2_snapshots()</code> did.</p>
+</li>
 <li><p><strong>Respect <code>NA</code> vs <code>0</code>.</strong> In a reporting triangle an <code>NA</code> cell means <em>not yet observed</em>; a <code>0</code> means <em>observed, and it was zero</em>. Completing count data that the user did not ask to complete destroys that distinction. This is why <code>complete</code> defaults to <code>"auto"</code> (line lists only) rather than <code>TRUE</code>.</p></li>
 <li><p><strong>Resolve units from the attribute</strong>, never assume days. A weekly triangle whose <code>delays_unit</code> you ignore will read its delays as days and abort.</p></li>
 <li>
@@ -367,7 +405,7 @@
 <div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>NOT_CRAN<span class="ot">=</span>true Rscript <span class="sc">-</span>e <span class="st">'devtools::load_all("."); testthat::test_local()'</span></span></code></pre></div>
 </li>
 <li>
-<p><strong>You cannot measure the CRAN path with <code><a href="https://testthat.r-lib.org/reference/test_package.html" class="external-link">test_local()</a></code>, and the mistake is invisible.</strong> <code><a href="https://testthat.r-lib.org/reference/test_package.html" class="external-link">testthat::test_local()</a></code> calls <code>local_assume_not_on_cran()</code>, which sets <code>NOT_CRAN = "true"</code> whenever the variable is empty; <code>devtools::check()</code> sets it too (<code>formals(devtools::check)$env_vars</code>). So <code>env -u NOT_CRAN Rscript -e 'testthat::test_local()'</code> runs <strong>every</strong> <code><a href="https://testthat.r-lib.org/reference/skip.html" class="external-link">skip_on_cran()</a></code> test anyway. Use <code><a href="https://testthat.r-lib.org/reference/test_package.html" class="external-link">test_check()</a></code> – what <code>tests/testthat.R</code> runs under <code>R CMD check</code> – and assert you are on the path you think you are:</p>
+<p><strong>You cannot measure the CRAN path with <code><a href="https://testthat.r-lib.org/reference/test_package.html" class="external-link">test_local()</a></code>, and the mistake is invisible.</strong> <code><a href="https://testthat.r-lib.org/reference/test_package.html" class="external-link">testthat::test_local()</a></code> calls <code>local_assume_not_on_cran()</code>, which sets <code>NOT_CRAN = "true"</code> whenever the variable is empty; <code>devtools::check()</code> sets it too (<code>formals(devtools::check)$env_vars</code>). So <code>env -u NOT_CRAN Rscript   -e 'testthat::test_local()'</code> runs <strong>every</strong> <code><a href="https://testthat.r-lib.org/reference/skip.html" class="external-link">skip_on_cran()</a></code> test anyway. Use <code><a href="https://testthat.r-lib.org/reference/test_package.html" class="external-link">test_check()</a></code> – what <code>tests/testthat.R</code> runs under <code>R CMD check</code> – and assert you are on the path you think you are:</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://testthat.r-lib.org" class="external-link">testthat</a></span><span class="op">)</span>; <span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://rodrigozepeda.github.io/tbl.now/">tbl.now</a></span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/stopifnot.html" class="external-link">stopifnot</a></span><span class="op">(</span><span class="fu">testthat</span><span class="fu">:::</span><span class="fu">on_cran</span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
@@ -448,14 +486,27 @@
 <ul><li>
 <strong>A dry run must still be a model, not an absent one.</strong> <code>prior_only = TRUE</code> returns all-<code>NA</code> draws for <code>count-cumulative</code> — silently, with the shape still correct — so every shape assertion would pass on nothing. Assert non-NA values, and where a package genuinely cannot produce them, assert the NA-ness explicitly so an upstream fix shows up as a failure rather than passing unnoticed.</li>
 <li>
-<strong>Keep one real fit per data type.</strong> <code>"each data type is either modelled or refused with a reason"</code> is that tier, and it deliberately pays ~24 s for the <code>count-cumulative</code> fit: that is the shape needing <code>confirmation_process()</code>, without which the fit reports “Joint fit failed to converge for all init attempts”.</li>
+<strong>Keep one real fit per data type.</strong> <code>"each data type is either modelled or   refused with a reason"</code> is that tier, and it deliberately pays ~24 s for the <code>count-cumulative</code> fit: that is the shape needing <code>confirmation_process()</code>, without which the fit reports “Joint fit failed to converge for all init attempts”.</li>
 </ul><p>And one trap, now fixed but worth knowing: <code>engine_for()</code> used to combine overrides with <code>engine_args()</code> through <code><a href="https://rdrr.io/r/utils/modifyList.html" class="external-link">utils::modifyList()</a></code>, which <strong>recurses into list-valued arguments</strong>. Overriding one merged it with the default rather than replacing it, so <code>fit = enw_fit_opts(sampler = enw_pathfinder)</code> kept <code>epinowcast</code>’s default <code>chains</code>/<code>iter_sampling</code> and the pathfinder then refused them as unused arguments — a failure that reads as “the sampler is broken” rather than “the override did not take”. <code>engine_for()</code> now assigns overrides directly. Exported <code><a href="reference/engine.html">engine()</a></code> stores <code>list(...)</code> unmerged and never had the problem.</p>
 <hr></div>
 </div>
 <div class="section level2">
+<h2 id="documenting">Documenting<a class="anchor" aria-label="anchor" href="#documenting"></a></h2>
+<div class="section level3">
+<h3 id="examples">Examples<a class="anchor" aria-label="anchor" href="#examples"></a></h3>
+<p>No example should use <code>dontrun</code> or <code>donttest</code>. Nor should they use an <code>if(FALSE)</code> conditional to avoid running. When creating a new example time it so that it passes on CRAN.</p>
+</div>
+<div class="section level3">
+<h3 id="ending-articles-and-vignettes">Ending articles and vignettes<a class="anchor" aria-label="anchor" href="#ending-articles-and-vignettes"></a></h3>
+<p>Add the following at the end of every article or vignette: <code></code></p>
+<p><code>{r learning-more, echo=FALSE, results="asis"} cat(   knitr::knit_child(     system.file("fragments", "learning-more.Rmd", package = "tbl.now"),     quiet = TRUE   ),   sep = "\n" )</code></p>
+<p> Note that the fragment is looked up by ABSOLUTE path via system.file(), never by a relative one. pkgdown/rmarkdown render into an intermediates directory under tempdir() and copy relative resources alongside; a path containing “../..” escapes that directory (“cannot create file ‘/tmp/RtmpXXX/../../man/…’”), which fails wherever tempdir() sits near the filesystem root – as it does on CI. <code><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file()</a></code> also works under pkgload::load_all(), which shims it to find inst/ in the source tree.</p>
+<p>Every new article or vignette should be referenced in the <code>learning-more.Rmd</code> that is linked above.</p>
+</div>
+</div>
+<div class="section level2">
 <h2 id="id_9-pitfalls-that-have-already-bitten">9. Pitfalls that have already bitten<a class="anchor" aria-label="anchor" href="#id_9-pitfalls-that-have-already-bitten"></a></h2>
-<ul><li><p><strong><code>cli_*</code> vs <code>cat_*</code>.</strong> <code><a href="https://cli.r-lib.org/reference/cli_abort.html" class="external-link">cli::cli_inform()</a></code> writes to the <em>message</em> stream. Inside a knitr chunk with <code>message=FALSE</code> it vanishes. <code><a href="https://rdrr.io/r/base/print.html" class="external-link">print()</a></code> methods must use <code><a href="https://cli.r-lib.org/reference/cat_line.html" class="external-link">cli::cat_line()</a></code> / <code>cat_rule()</code> / <code>cat_bullet()</code>.</p></li>
-<li><p><strong><code>\\</code> line continuations render literally</strong> inside <code><a href="https://cli.r-lib.org/reference/format_inline.html" class="external-link">cli::format_inline()</a></code>. Use <code><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0()</a></code>.</p></li>
+<ul><li><p><strong><code>\\</code> line continuations render literally</strong> inside <code><a href="https://cli.r-lib.org/reference/format_inline.html" class="external-link">cli::format_inline()</a></code>. Use <code><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0()</a></code>.</p></li>
 <li><p><strong><code><a href="https://testthat.r-lib.org/reference/local_mocked_s3_method.html" class="external-link">local_mocked_s3_method()</a></code> DELETES the real method when the owning package is not attached.</strong> It restores whatever it found in the S3 methods table on exit; with the package merely loaded it finds nothing, and faithfully restores nothing — unregistering the real method for the rest of the R session. <code>test-converter-epinow2.R</code> did this to <code><a href="https://epiforecasts.io/EpiNow2/reference/get_predictions.html" class="external-link">EpiNow2::get_predictions.estimate_infections</a></code>, and nothing noticed until the engine matrix began fitting EpiNow2 for real: all 24 of its shapes died with “no applicable method for ‘get_predictions’”, in a file that passed on its own. <code>withr::local_package("EpiNow2")</code> before the mock fixes it — attached, the method is visible, so it is found and put back. Only bites generics OWNED by the package: mocking a base generic like <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> is safe, because the mock goes in base’s table and the package’s own entry is never touched.</p></li>
 <li><p><strong>A test file that passes alone is not isolated.</strong> That leak was invisible for as long as nothing downstream used the thing it broke. <code>devel/audit_test_isolation.R</code> now checks the whole suite for it: it runs every file in one process, as testthat does, and diffs the namespace and S3 tables of all fifteen watched packages between files. Audited 2026-08-28 — <strong>zero removals across 58 files</strong>; the two changes it does report are benign and documented in the script.</p></li>
 <li><p><strong>Validate a leak audit against a known leak before believing a clean run.</strong> An audit that cannot see the bug reports “all clear” exactly as cheerfully as one that can. Three sensitivity checks of that script came back empty for three different wrong reasons — comparing only the S3 table when the symptom was elsewhere, reverting the fix in a way that stopped the mock installing at all, and taking <code>git show HEAD:</code> for the pre-fix file after the fix had been committed. The clean result only meant something once restoring <code>435efad:tests/testthat/test-converter-epinow2.R</code> made it fail.</p></li>
@@ -463,16 +514,18 @@
 <li><p><strong>A findings message is a template, not a string.</strong> <code>.diagnose_text()</code> returns a deferred object so that a finding below the reporting floor is never formatted. <code><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste()</a></code> on one forces it (and returns something useless); <code>.diagnose_join()</code> is the concatenation that stays lazy. See §8.</p></li>
 <li><p><strong><code><a href="https://dplyr.tidyverse.org/reference/arrange.html" class="external-link">dplyr::arrange()</a></code> sorts in the C locale, <code><a href="https://rdrr.io/r/base/order.html" class="external-link">order()</a></code> in the session’s.</strong> Swapping one for the other to save time silently changes row order for anybody outside an ASCII locale. <code>order(..., method = "radix")</code> is the match.</p></li>
 <li><p><strong>S7 classes break S3 method naming.</strong> <code><a href="https://rdrr.io/r/base/class.html" class="external-link">class()</a></code> is <code>"pkg::thing"</code>, and <code>::</code> cannot appear in a method name. Register in <code>.onLoad()</code>.</p></li>
+<li>
+<p><strong>A <code><a href="https://rdrr.io/r/base/print.html" class="external-link">print()</a></code> method needs <code>@exportS3Method base::print</code>, never a plain <code>@export</code>.</strong> The package namespace defines an S7 <code>print</code> generic (<code>S7::method(print, tbl_nowcast)</code>, <code>S7::method(print, temporal_effects)</code>), which <strong>shadows <code><a href="https://rdrr.io/r/base/print.html" class="external-link">base::print</a></code> for an attached session</strong>. A plainly-exported method is written to NAMESPACE as <code>S3method(print, &lt;cls&gt;)</code> – the package’s own table – so auto-print never finds it and the object falls through to the default. There is no error and no warning: the object simply comes back as a bare tibble, which is easy to read as “that class has no print method yet”. <code>print.diagnose_batches</code> and <code>print.transport_discriminant</code> shipped this way and nobody noticed, because the only symptom is output that looks plausible.</p>
+<p>Two things follow. First, <strong>test auto-print, not <code>print(x)</code></strong>: <code>capture.output(x)</code> auto-prints its argument and reproduces the failure; <code>tbl.now:::print.&lt;cls&gt;(x)</code> calls the method directly and passes either way, so it proves nothing. Second, <strong>check NAMESPACE after <code>document()</code></strong> – every entry should read <code>S3method(base::print, ...)</code>, and a bare <code>S3method(print, ...)</code> is the bug.</p>
+</li>
 <li><p><strong><code>fileEncoding = "UTF-8"</code></strong> truncates a <code><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv()</a></code> at the first non-ASCII byte on some platforms. Use <code>encoding = "UTF-8"</code>.</p></li>
-<li><p><strong>Do not poll for a background job at all.</strong> The harness notifies you when a backgrounded command exits; a watch loop adds nothing and can outlive the work by hours. <code>while pgrep -f "job.R"; do sleep 30; done</code> never terminates, because the loop’s <em>own</em> command line contains <code>job.R</code>, so <code>pgrep</code> matches itself. The <code>[j]ob.R</code> bracket trick does not save you either: any <em>second</em> watcher carrying the same string keeps every one of them alive. If you truly must poll, match on a PID you captured, never on a name. And when cleaning up, enumerate what you actually spawned – grepping for one loop syntax silently leaves the others running.</p></li>
 <li><p><strong>pkgdown builds against the <em>installed</em> package, not the source.</strong> A <code>devtools::load_all()</code> session will show a fixed converter while the rendered site still shows the old behaviour. <code>R CMD INSTALL .</code> before building docs.</p></li>
 <li><p><strong><code><a href="https://pkgdown.r-lib.org/reference/build_articles.html" class="external-link">pkgdown::build_article()</a></code> does not re-copy <code>pkgdown/extra.css</code>.</strong> CSS edits need <code><a href="https://pkgdown.r-lib.org/reference/init_site.html" class="external-link">pkgdown::init_site()</a></code> (or a full <code>build_site()</code>) or you will be looking at a stale stylesheet and debugging a fixed bug.</p></li>
 <li><p><strong>Never point a knitr <code>child =</code> at a path containing <code>../</code>.</strong>  renders into an intermediates directory under <code><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir()</a></code> and copies relative resources alongside it, so <code>../..</code> escapes that directory. It appears to work on macOS, where <code><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir()</a></code> is deep enough that the escape lands somewhere writable (it silently creates stray directories there), and fails on CI, where <code><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir()</a></code> is two levels from <code>/</code>. Put shared fragments in <code>inst/</code> and load them with <code><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file()</a></code>, which is path-independent and is shimmed by <code><a href="https://pkgload.r-lib.org/reference/load_all.html" class="external-link">pkgload::load_all()</a></code> to find the source tree.</p></li>
-<li><p><strong>A local render is not proof when paths are involved.</strong> Reproduce with the same <code>TMPDIR</code> CI uses (<code>TMPDIR=/tmp Rscript -e '...'</code>) before concluding a path bug is fixed – or unfixed.</p></li>
-<li><p><strong>Weekly data with fractional <code>.delay</code></strong> means the two date columns are on different weekday grids. Use <code><a href="reference/align_weeks.html">align_weeks()</a></code>; do not round. The package no longer rounds either: <code>.reconstruct_date_from_delay()</code> refuses a fractional delay through <code>.assert_whole_delay()</code>, on the calendar axes as well as the numeric one. It used to <code><a href="https://rdrr.io/r/base/Round.html" class="external-link">round()</a></code> – which is round-half-to-<strong>even</strong>, so <code>2.5</code> went down and <code>3.5</code> went up, silently, while the numeric axis refused the same value with a clear error. One argument, one value, two opposite fates is the part that was wrong, whichever rounding rule you prefer.</p></li>
+<li><p><strong>A local render is not proof when paths are involved.</strong> Reproduce with the same <code>TMPDIR</code> CI uses (<code>TMPDIR=/tmp Rscript -e '...'</code>) before any conclusion regarding a path bug.</p></li>
+<li><p><strong>Weekly data with fractional <code>.delay</code></strong> means the two date columns are on different weekday grids. Use <code><a href="reference/align_weeks.html">align_weeks()</a></code>.</p></li>
 <li><p><strong>A package that declares its own <code><a href="reference/tidy.nowcast.html">tidy()</a></code> generic silently breaks every other package’s methods.</strong> The broom convention is to re-export <code><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">generics::tidy</a></code>, so all methods land on one generic; declaring a fresh <code>UseMethod("tidy")</code> makes methods registered on the <code>generics</code> one invisible, with no error — just a different table. <code>diseasenowcasting</code> did this before 2.1.0. <code>broom</code> still overwrites <code>tbl.now</code>’s <code><a href="reference/tidy.nowcast.html">tidy.list()</a></code> method (the one <code>NobBS</code> and <code>nowcaster</code> need). Write <code><a href="reference/tidy.nowcast.html">tbl.now::tidy()</a></code> in article code where another package is attached, and re-export the generic in any package you write.</p></li>
 <li><p><strong>Register a method for another package’s class only if that package has not.</strong> <code>.onLoad()</code> checks <code>getS3method(..., optional = TRUE)</code> before registering the <code>diseasenowcasting</code> method, so tbl.now fills the gap on old versions without overriding the method newer ones ship.</p></li>
-<li><p><strong>Never edit a script a background job is reading.</strong> <code>Rscript</code> streams the file as it evaluates, so an edit mid-run corrupts its read position and produces a parse error at a line that is perfectly valid on disk. Copy the script somewhere frozen and run that copy if you need to keep editing.</p></li>
 <li><p><strong>A vignette that displays cached results must not have TWO sources of truth.</strong> <code>nowcasting-models.Rmd</code> used to show one call and cache the output of another, kept in step by a comment asking whoever edited one to remember the other. Nobody did, and nothing caught it: the article never runs what it prints, so the drift is invisible until a reader copies a line off the page. The fix is structural, not a reminder – purl the article and run <em>its</em> code (§7). If you find yourself writing “keep this in step with”, you are building the bug.</p></li>
 <li><p><strong>A test can assert the right fact and still miss the bug.</strong> “The strata columns are present in the converter’s output” was true, passing, and useless: <code>NobBS.strat()</code> needs <em>one</em> column and there was none, so a multiply stratified object could not be fitted at all. Assert that the destination’s own entry point can be <strong>called</strong> with what the converter returns.</p></li>
 <li><p><strong>A Stan fit that does not converge does not error – it returns numbers.</strong> <code>run_engine()</code> wraps every fit in <code>suppressWarnings(suppressMessages(...))</code>, so divergent-transition and low-ESS warnings never reach the log and a broken fit records as <code>ok</code>. One EpiNow2 fit was cached with its upper credible bound at <code>1e8</code> for all 181 days of a stratum whose observed maximum was 842. Nothing caught it until the numbers were read. Look at the numbers, and keep a plausibility guard on anything written to a cache.</p></li>
@@ -481,24 +534,31 @@
 <p>Seed per <code>(engine, stratum)</code> <strong>immediately before each fit</strong>, so a fit depends only on which fit it is, not on what ran before it or whether anything did. <code>nowcast_models_precompute.R</code> seeds once before the run; both engines then reproduce to <code>max abs diff == 0</code> with the RNG deliberately perturbed in between.</p>
 </li>
 <li><p><strong>A uniqueness key that omits an attribute reports real rows as duplicates.</strong> <code><a href="reference/validate_tbl_now.html">validate_tbl_now()</a></code>’s non-uniqueness warning built its <code>distinct()</code> key from the dates, strata, covariates and effect columns. When validation arrived, a case and its own retraction – same event, same report, opposite outcome – came out as “exact duplicates”, advising <code><a href="https://dplyr.tidyverse.org/reference/distinct.html" class="external-link">dplyr::distinct()</a></code>, which would have <strong>deleted the retraction</strong>. Any column that legitimately distinguishes two rows belongs in that key.</p></li>
-<li><p><strong><code>.quietly_if()</code>/<code><a href="https://rdrr.io/r/base/warning.html" class="external-link">suppressWarnings()</a></code> around a backend hides the warnings that matter.</strong> Suppress messages only. (Recorded twice now: <code>run_engine()</code> and <code><a href="reference/nowcast_fit.html">nowcast_fit()</a></code>.)</p></li>
+<li><p><strong><code>.quietly_if()</code>/<code><a href="https://rdrr.io/r/base/warning.html" class="external-link">suppressWarnings()</a></code> around a backend hides the warnings that matter.</strong> Use suppress messages only.</p></li>
 </ul><hr></div>
 <div class="section level2">
 <h2 id="id_10-definition-of-done">10. Definition of done<a class="anchor" aria-label="anchor" href="#id_10-definition-of-done"></a></h2>
 <p>Before calling a change finished:</p>
 <ul class="task-list"><li><label><input type="checkbox"><code>devtools::document()</code> run; <code>NAMESPACE</code> and <code>man/</code> regenerated, not hand-edited.</label></li>
 <li><label><input type="checkbox"><code>NOT_CRAN=true</code> test suite passes; new behaviour has new tests.</label></li>
+<li><label><input type="checkbox"><code>devtools::run_examples(run_donttest = T, run_dontrun = T)</code> runs without any error</label></li>
 <li><label><input type="checkbox"><strong>Any new function taking a <code>tbl_now</code> has a grouped test</strong> – it did not abort, the groups came back, and the answer matches the ungrouped one. See §8 and <code>devel/audit_grouped_verbs.R</code>; this bug has shipped six times.</label></li>
+<li>
+<label><input type="checkbox">Any new functionality using the report-date or the validation-date handles the cases when those dates are censored either because: 1) censoring doesn’t matter, 2) it warns or errors about the censoring, or</label>
+<ol start="3" style="list-style-type: decimal"><li>it handles the censoring in a specific way consistent with their status. The choice is justified.</li>
+</ol></li>
 <li><label><input type="checkbox">Any new attribute has an exported, documented, tested getter.</label></li>
 <li><label><input type="checkbox">A new converter has: <code>to</code>, <code>from</code> (where meaningful), an <code><a href="reference/as_tbl_now.html">as_tbl_now()</a></code> method, the target package’s own coercion generic (or an entry in the registry in <code>test-coercion-methods.R</code> saying why there is none), a round-trip test, a <code><a href="reference/tidy.nowcast.html">tidy()</a></code> method (unless it returns only delays), a censoring-collapse call, a <code>.pool_undeclared()</code> call, and a vignette section covering both the plain and the stratified case.</label></li>
 <li><label><input type="checkbox"><strong>No new function duplicates an existing one</strong> – see the pre-flight grep in §4, and say in the commit message what you checked against.</label></li>
 <li><label><input type="checkbox"><code>NEWS.md</code> updated for anything user-visible, including deliberate behaviour changes.</label></li>
+<li><label><input type="checkbox">Any new article or vignette contains the <code>learning-more.Rmd</code> as explained in the Documenting section of this document.</label></li>
 <li><label><input type="checkbox"><code>SKILL.md</code> updated if the <em>user-facing</em> API changed.</label></li>
 <li><label><input type="checkbox"><strong>Every new exported topic added to <code>reference:</code> in <code>_pkgdown.yml</code>.</strong> The index is explicit, so <code>pkgdown</code> <strong>fails the build</strong> on a topic that is not listed. Check with <code><a href="https://pkgdown.r-lib.org/reference/check_pkgdown.html" class="external-link">pkgdown::check_pkgdown()</a></code>, which is fast and needs no site build.</label></li>
 <li><label><input type="checkbox">A new check or statistic goes <strong>into the findings engine</strong>, not beside it — see §11.</label></li>
-<li><label><input type="checkbox">Plots use <code>.tbl_now_palette()</code> and the red/green grammar.</label></li>
-<li><label><input type="checkbox"><strong><code>R CMD check</code> clean</strong> — the test suite passing is not the same check.</label></li>
-<li><label><input type="checkbox"><strong><code>checktor::checkup()</code> clean</strong> — the extra CRAN-submission checks.</label></li>
+<li><label><input type="checkbox">Plots use <code><a href="reference/tbl_now_palette.html">tbl_now_palette()</a></code> <strong>by role name</strong> and the reporting/epidemic grammar; no hex code outside <code>R/palette.R</code>; the prologue calls <code>.tbl_now_check_palette()</code>, and any <code>size</code>/<code>linewidth</code> it offers is validated with <code>.tbl_now_check_size()</code> and multiplies rather than replaces — see §6.</label></li>
+<li><label><input type="checkbox">No examples use <code>\donttest{}</code> or <code>\dontrun{}</code>. Nor do they use <code>if (FALSE)</code>.</label></li>
+<li><label><input type="checkbox"><strong><code>R CMD check</code> clean</strong>. The test suite passing is not the same as this check.</label></li>
+<li><label><input type="checkbox"><strong><code>checktor::checkup()</code> clean</strong>. The extra CRAN-submission checks.</label></li>
 </ul><div class="section level3">
 <h3 id="the-two-checks-and-why-the-suite-does-not-cover-them">The two checks, and why the suite does not cover them<a class="anchor" aria-label="anchor" href="#the-two-checks-and-why-the-suite-does-not-cover-them"></a></h3>
 <p><code>testthat</code> runs your code. <code>R CMD check</code> checks the <em>package</em>: the things that only break for someone installing it fresh.</p>
@@ -530,7 +590,15 @@
 <p>Every function in each family returns the same columns, so <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> and <code><a href="reference/diagnose.html">diagnose()</a></code> are literally the <code>bind_rows()</code> of their components — and there is a test asserting exactly that. When you add a block:</p>
 <ul><li>return the <strong>full schema</strong>, and let blocks <strong>omit</strong> columns they do not populate. <code>bind_rows()</code> then infers each column’s type. Handing it a logical <code>NA</code> where a <code>Date</code> belongs is an error, not a coercion — which is why <code>date_min</code>/<code>date_max</code> appear only when a coverage row is present.</li>
 <li>put the <em>subset being described</em> in <code>stratum</code> and the <em>category</em> in <code>quantity</code>. <code>"validation_type = confirmed"</code> is a quantity; <code>"Female"</code> is a stratum. Mixing them makes a compositional row impossible to interpret.</li>
+<li>
+<strong>say what <code>n</code> counts.</strong> One shared schema means the two count columns necessarily mean different things per block: <code>total</code> is always <strong>cases</strong>, and <code>n</code> is always the block’s own unit – dates for <code>"cases"</code>, runs for <code>"zero_run"</code>, (event, report) cells for <code>"delay"</code> and <code>"composition"</code>. Two unexplained integers side by side is a reader guessing, so <code>.summary_block_gloss()</code> prints one grey line per block saying which is which, and a new block adds its entry there in the same commit.</li>
 </ul></div>
+<div class="section level3">
+<h3 id="an-unreviewed-statistic-does-not-go-in-the-default-report">An unreviewed statistic does not go in the default report<a class="anchor" aria-label="anchor" href="#an-unreviewed-statistic-does-not-go-in-the-default-report"></a></h3>
+<p><code><a href="reference/nowcast_summary_components.html">case_autocorrelation()</a></code> and <code><a href="reference/nowcast_summary_components.html">reporting_completeness()</a></code> were written by an LLM and never checked by a human. They were part of <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code>, which means every user who printed a summary read two numbers nobody had verified, with nothing in the output saying so. In 0.33.0 they were taken out of <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> and now warn – <strong>on every call, deliberately not throttled with <code>.frequency</code></strong>, unlike the experimental diagnostics – via <code>.summary_unreviewed_warning()</code>.</p>
+<p>The corollary, and it was missed the first time: <strong>do not then suppress that warning in the documentation.</strong> Adding <code>warning=FALSE</code> to the vignette chunk that calls one, or <code><a href="https://rdrr.io/r/base/warning.html" class="external-link">suppressWarnings()</a></code> to its <code>@examples</code>, hides the caveat from exactly the reader it was written for – and makes the warning look broken to anyone who notices it is missing from the rendered page.</p>
+<p>The rule that follows: a block joins <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> (or <code><a href="reference/diagnose.html">diagnose()</a></code>) only once a human has checked what it computes. Until then it can be exported, and it must say what it is every time it produces a number. A warning that fires once per session is the wrong tool here: the point is that the <em>number</em> carries the caveat, and a number copied into a report outlives the session that made it.</p>
+</div>
 <div class="section level3">
 <h3 id="skipped-is-not-ok-and-the-difference-is-load-bearing">
 <code>skipped</code> is not <code>ok</code>, and the difference is load-bearing<a class="anchor" aria-label="anchor" href="#skipped-is-not-ok-and-the-difference-is-load-bearing"></a></h3>
@@ -546,7 +614,7 @@
 <h3 id="statistical-tests-live-outside-diagnose">Statistical tests live outside <code>diagnose()</code>
 <a class="anchor" aria-label="anchor" href="#statistical-tests-live-outside-diagnose"></a></h3>
 <p><code><a href="reference/diagnose.html">diagnose()</a></code> is structural and deterministic: no test, no seed, no optional package, no runtime that depends on the data size. Drift and batching are statements about a distribution, and answering them means choosing a method, a window and a multiplicity correction — decisions a health check has no business making silently.</p>
-<p>They come back as <code>not_run</code> <strong>signposts</strong> carrying the call that answers them (<code><a href="reference/diagnose_drift.html">diagnose_drift()</a></code>, <code><a href="reference/diagnose_batches.html">diagnose_batches()</a></code>). If you add a statistical diagnostic, add a signpost row for it; do not wire it into <code><a href="reference/diagnose.html">diagnose()</a></code>.</p>
+<p>So they are not in the report at all. <code><a href="reference/diagnose.html">diagnose()</a></code> used to emit <code>not_run</code> <strong>signposts</strong> carrying the call that answers each one; those were removed in 0.32.0, because a health check that lists what it did not do adds a block of rows the reader must skip on every single run to say something a <code>@seealso</code> already says once. A statistical diagnostic is its own exported function (<code><a href="reference/diagnose_drift.html">diagnose_drift()</a></code>, <code><a href="reference/diagnose_batches.html">diagnose_batches()</a></code>), documented under <code>@seealso</code> on <code><a href="reference/diagnose.html">diagnose()</a></code>; do not wire it into <code><a href="reference/diagnose.html">diagnose()</a></code>, and do not add a row announcing that you did not.</p>
 </div>
 <div class="section level3">
 <h3 id="grids-run-to-now-globally">Grids run to <code>now</code>, globally<a class="anchor" aria-label="anchor" href="#grids-run-to-now-globally"></a></h3>
@@ -562,9 +630,8 @@
 </div>
 </div>
 <div class="section level2">
-<h2 id="documenting">Documenting<a class="anchor" aria-label="anchor" href="#documenting"></a></h2>
-<p>Add the following at the end of every article or vignette: <code> <code>{r learning-more, echo=FALSE, results="asis"} cat(   knitr::knit_child(     system.file("fragments", "learning-more.Rmd", package = "tbl.now"),     quiet = TRUE   ),   sep = "\n" )</code> </code> Note that the fragment is looked up by ABSOLUTE path via system.file(), never by a relative one. pkgdown/rmarkdown render into an intermediates directory under tempdir() and copy relative resources alongside; a path containing “../..” escapes that directory (“cannot create file ‘/tmp/RtmpXXX/../../man/…’”), which fails wherever tempdir() sits near the filesystem root – as it does on CI. <code><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file()</a></code> also works under pkgload::load_all(), which shims it to find inst/ in the source tree.</p>
-<p>Every new article or vignette should be referenced in the <code>learning-more.Rmd</code> that is linked above.</p>
+<h2 id="editing-instructions-for-llms">Editing Instructions for LLMs<a class="anchor" aria-label="anchor" href="#editing-instructions-for-llms"></a></h2>
+<p>When updating or adding rules to this document: - State the <strong>Rule</strong> and <strong>Constraint</strong> clearly first. - Keep context/rationale to 1–2 sentences maximum. - Do NOT write long post-mortems or historical narratives about how a bug was discovered unless explicitly asked.</p>
 </div>
 </div>
 

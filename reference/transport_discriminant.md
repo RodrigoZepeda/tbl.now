@@ -19,7 +19,8 @@ transport_discriminant(
   baseline_window = NULL,
   period = NULL,
   alpha = 0.05,
-  axis = c("report", "validation")
+  axis = c("report", "validation"),
+  drop_censored = TRUE
 )
 ```
 
@@ -52,6 +53,14 @@ transport_discriminant(
   `"validation"`. Needs a validation process (see
   [`add_validation_date()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md));
   cases still `"pending"` are left out.
+
+- drop_censored:
+
+  Logical. Ignore the rows whose date on `axis` is flagged censored
+  (`is_censored_report`, or `is_censored_validation` on the validation
+  axis). Default `TRUE`: a censored date is a *bound*, not the date the
+  record arrived, so those rows would pile up on the censoring date and
+  be rediscovered as the very batch the censoring already recorded.
 
 ## Value
 
@@ -88,6 +97,7 @@ data(denguedat)
 dn <- tbl_now(denguedat, onset_week, report_week, verbose = FALSE)
 td <- transport_discriminant(dn)
 td[td$batch, ]
+#> <transport_discriminant>: 3 report dates, look-back 7, 3 batches and 0 surges at alpha = 0.05.
 #> # A tibble: 3 × 14
 #>   report_date stratum reported baseline window_total spike deficit delta
 #>   <date>      <chr>      <dbl>    <dbl>        <dbl> <dbl>   <dbl> <dbl>

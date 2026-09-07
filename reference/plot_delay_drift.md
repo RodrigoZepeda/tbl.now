@@ -24,6 +24,8 @@ plot_delay_drift(
   level = 0.95,
   plotly = FALSE,
   axis = c("report", "validation"),
+  linewidth = 1,
+  grid_linewidth = 0.5,
   palette = .tbl_now_palette()
 )
 ```
@@ -92,9 +94,22 @@ plot_delay_drift(
   [`add_validation_date()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md));
   cases still `"pending"` are left out.
 
+- linewidth:
+
+  Multiplier on the width of the mean and median delay lines. Default
+  `1` (drawn at `0.6` and `0.8`, so the median stays the heavier of the
+  two at any setting).
+
+- grid_linewidth:
+
+  Line width of the dashed maturity line and of the `changepoint` marker
+  – the reference lines the package draws itself, not ggplot2's panel
+  grid. Default `0.5`.
+
 - palette:
 
-  A named colour palette (defaults to the package palette).
+  A named colour palette (see
+  [`tbl_now_palette()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_palette.md)).
 
 ## Value
 

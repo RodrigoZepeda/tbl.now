@@ -27,7 +27,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.31.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.33.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -44,7 +44,7 @@
 <li><a class="dropdown-item" href="../articles/custom-nowcast-models.html">Adding your own nowcasting model</a></li>
     <li><a class="dropdown-item" href="../articles/diagnosing-a-tbl-now.html">Diagnosing a tbl_now</a></li>
     <li><a class="dropdown-item" href="../articles/ensemble-nowcasting.html">One call, many models: run_nowcast(), custom backends and ensembles</a></li>
-    <li><a class="dropdown-item" href="../articles/example.html">A complete nowcasting workflow: hospital-acquired infections in Bucaramanga</a></li>
+    <li><a class="dropdown-item" href="../articles/example.html">The nowcasting workflow: hospital-acquired infections in Bucaramanga, Colombia</a></li>
     <li><a class="dropdown-item" href="../articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with different modelling packages</a></li>
     <li><a class="dropdown-item" href="../articles/tbl.now.html">tbl.now</a></li>
   </ul>
@@ -107,9 +107,10 @@ answers this, deterministically and with no model.</li>
 <li>
 <strong>What needs a statistical test?</strong> – has the reporting
 delay drifted, did reports arrive in batches, is a spike real cases or
-released backlog. <code><a href="../reference/diagnose.html">diagnose()</a></code> deliberately refuses these and
-hands you a signpost instead, because answering them means choosing a
-method, a window and a multiplicity correction.</li>
+released backlog. <code><a href="../reference/diagnose.html">diagnose()</a></code> deliberately refuses these –
+answering them means choosing a method, a window and a multiplicity
+correction – and leaves them to <code><a href="../reference/diagnose_drift.html">diagnose_drift()</a></code> and
+<code><a href="../reference/diagnose_batches.html">diagnose_batches()</a></code>.</li>
 </ol>
 <p>This article walks the three in order. The first two return a
 <strong>tibble</strong>, not printed text, which is the design decision
@@ -141,9 +142,10 @@ it:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">dengue_now</span><span class="op">)</span></span>
 <span><span class="co">#&gt; ── Summary of a <span style="color: #0000BB;">&lt;tbl_now&gt;</span> ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────</span></span>
-<span><span class="co">#&gt; <span style="color: #555555;">76 rows in 7 components; strata: </span><span style="color: #0000BB;">"Female"</span><span style="color: #555555;"> and </span><span style="color: #0000BB;">"Male"</span><span style="color: #555555;">.</span></span></span>
+<span><span class="co">#&gt; <span style="color: #555555;">46 rows in 5 components; strata: </span><span style="color: #0000BB;">"Female"</span><span style="color: #555555;"> and </span><span style="color: #0000BB;">"Male"</span><span style="color: #555555;">.</span></span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; <span style="font-weight: bold;">cases</span></span></span>
+<span><span class="co">#&gt; <span style="color: #555555;">  n = dates on the grid; total = cases</span></span></span>
 <span><span class="co">#&gt;   quantity        stratum     n total  mean    sd   min   q25   q50   q75   q90   max prop_zero</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> per_event_date  all      <span style="text-decoration: underline;">1</span>095 <span style="text-decoration: underline;">52</span>987  48.4  53.3     0    14    30    64   104   358   0.003<span style="text-decoration: underline;">65</span></span></span>
@@ -154,6 +156,7 @@ it:</p>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> per_report_date Male     <span style="text-decoration: underline;">1</span>095 <span style="text-decoration: underline;">26</span>395  24.1  27.5     0     7    15    32    54   203   0.020<span style="text-decoration: underline;">1</span> </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; <span style="font-weight: bold;">zero_run</span></span></span>
+<span><span class="co">#&gt; <span style="color: #555555;">  n = runs of consecutive zero dates; total = zero dates in those runs</span></span></span>
 <span><span class="co">#&gt;   quantity    stratum     n total  mean    sd   min   q25   q50   q75   q90   max</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> event_date  all         2     4  2    1.41      1     1     1     3     3     3</span></span>
@@ -163,23 +166,15 @@ it:</p>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> report_date Female     15    17  1.13 0.352     1     1     1     1     2     2</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> report_date Male       19    22  1.16 0.501     1     1     1     1     2     3</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; <span style="font-weight: bold;">autocorrelation</span></span></span>
-<span><span class="co">#&gt;   quantity              stratum     n value</span></span>
-<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                 <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> per_event_date lag 1  all      <span style="text-decoration: underline;">1</span>094 0.958</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> per_event_date lag 1  Female   <span style="text-decoration: underline;">1</span>094 0.944</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> per_event_date lag 1  Male     <span style="text-decoration: underline;">1</span>094 0.941</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> per_report_date lag 1 all      <span style="text-decoration: underline;">1</span>094 0.885</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> per_report_date lag 1 Female   <span style="text-decoration: underline;">1</span>094 0.867</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> per_report_date lag 1 Male     <span style="text-decoration: underline;">1</span>094 0.878</span></span>
-<span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; <span style="font-weight: bold;">composition</span></span></span>
+<span><span class="co">#&gt; <span style="color: #555555;">  n = (event, report) cells in the category; total = cases in the category</span></span></span>
 <span><span class="co">#&gt;   quantity            n total  prop</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> strata = Female  <span style="text-decoration: underline;">4</span>133 <span style="text-decoration: underline;">26</span>592 0.502</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> strata = Male    <span style="text-decoration: underline;">4</span>132 <span style="text-decoration: underline;">26</span>395 0.498</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; <span style="font-weight: bold;">coverage</span></span></span>
+<span><span class="co">#&gt; <span style="color: #555555;">  n = cells, or distinct dates on a date row; total = cases</span></span></span>
 <span><span class="co">#&gt;    quantity    stratum     n total date_min   date_max  </span></span>
 <span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>    </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> total_cases all      <span style="text-decoration: underline;">8</span>265 <span style="text-decoration: underline;">52</span>987 <span style="color: #BB0000;">NA</span>         <span style="color: #BB0000;">NA</span>        </span></span>
@@ -194,22 +189,8 @@ it:</p>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> now         all        <span style="color: #BB0000;">NA</span>    <span style="color: #BB0000;">NA</span> 2010-12-20 2010-12-20</span></span>
 <span><span class="co">#&gt; <span style="color: #555555;">ℹ 19 more rows.</span></span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; <span style="font-weight: bold;">completeness</span></span></span>
-<span><span class="co">#&gt;    quantity   stratum     n total   mean     sd   min   q25    q50    q75   q90   max   prop</span></span>
-<span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> delay &lt;= 0 all      <span style="text-decoration: underline;">1</span>090  <span style="text-decoration: underline;">2</span>099 0.038<span style="text-decoration: underline;">1</span> 0.053<span style="text-decoration: underline;">3</span> 0     0     0.022<span style="text-decoration: underline;">0</span> 0.059<span style="text-decoration: underline;">4</span> 0.1     0.5 0.039<span style="text-decoration: underline;">6</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> delay &lt;= 1 all      <span style="text-decoration: underline;">1</span>090 <span style="text-decoration: underline;">26</span>595 0.510  0.175  0     0.410 0.510  0.618  0.710   1   0.502 </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> delay &lt;= 2 all      <span style="text-decoration: underline;">1</span>090 <span style="text-decoration: underline;">44</span>988 0.844  0.130  0     0.781 0.867  0.930  1       1   0.850 </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> delay &lt;= 3 all      <span style="text-decoration: underline;">1</span>090 <span style="text-decoration: underline;">49</span>837 0.931  0.085<span style="text-decoration: underline;">0</span> 0.104 0.9   0.953  1      1       1   0.941 </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> delay &lt;= 4 all      <span style="text-decoration: underline;">1</span>090 <span style="text-decoration: underline;">51</span>451 0.963  0.059<span style="text-decoration: underline;">7</span> 0.5   0.949 0.984  1      1       1   0.972 </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> delay &lt;= 5 all      <span style="text-decoration: underline;">1</span>090 <span style="text-decoration: underline;">52</span>126 0.978  0.044<span style="text-decoration: underline;">9</span> 0.5   0.972 1      1      1       1   0.984 </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> delay &lt;= 6 all      <span style="text-decoration: underline;">1</span>090 <span style="text-decoration: underline;">52</span>505 0.988  0.033<span style="text-decoration: underline;">0</span> 0.5   0.990 1      1      1       1   0.992 </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> delay &lt;= 7 all      <span style="text-decoration: underline;">1</span>090 <span style="text-decoration: underline;">52</span>668 0.992  0.027<span style="text-decoration: underline;">5</span> 0.5   1     1      1      1       1   0.995 </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> delay &lt;= 0 Female   <span style="text-decoration: underline;">1</span>081  <span style="text-decoration: underline;">1</span>039 0.036<span style="text-decoration: underline;">7</span> 0.067<span style="text-decoration: underline;">0</span> 0     0     0      0.055<span style="text-decoration: underline;">6</span> 0.111   1   0.039<span style="text-decoration: underline;">1</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> delay &lt;= 1 Female   <span style="text-decoration: underline;">1</span>081 <span style="text-decoration: underline;">13</span>313 0.509  0.214  0     0.384 0.514  0.635  0.75    1   0.501 </span></span>
-<span><span class="co">#&gt; <span style="color: #555555;">ℹ 14 more rows.</span></span></span>
-<span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; <span style="font-weight: bold;">delay</span></span></span>
+<span><span class="co">#&gt; <span style="color: #555555;">  n = (event, report) cells; total = cases</span></span></span>
 <span><span class="co">#&gt;   quantity        stratum     n total  mean    sd   min   q25   q50   q75   q90   max</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> event_to_report all      <span style="text-decoration: underline;">8</span>265 <span style="text-decoration: underline;">52</span>987  1.74  1.21     0     1     1     2     3    26</span></span>
@@ -224,16 +205,14 @@ to:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">dengue_now</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/count.html" class="external-link">count</a></span><span class="op">(</span><span class="va">component</span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 7 × 2</span></span></span>
-<span><span class="co">#&gt;   component           n</span></span>
-<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;int&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> autocorrelation     6</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> cases               6</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> completeness       24</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> composition         2</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> coverage           29</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> delay               3</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">7</span> zero_run            6</span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 5 × 2</span></span></span>
+<span><span class="co">#&gt;   component       n</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;int&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> cases           6</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> composition     2</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> coverage       29</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> delay           3</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> zero_run        6</span></span></code></pre></div>
 <p>Every row is one quantity, described by up to eighteen columns. Not
 every column applies to every row — a delay distribution has a
 <code>mean</code> but no <code>prop</code>, a proportion has a
@@ -247,6 +226,7 @@ sparse:</p>
 <span><span class="co">#&gt; <span style="color: #555555;">6 rows in 1 component; strata: </span><span style="color: #0000BB;">"Female"</span><span style="color: #555555;"> and </span><span style="color: #0000BB;">"Male"</span><span style="color: #555555;">.</span></span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; <span style="font-weight: bold;">cases</span></span></span>
+<span><span class="co">#&gt; <span style="color: #555555;">  n = dates on the grid; total = cases</span></span></span>
 <span><span class="co">#&gt;   quantity        stratum     n total  mean    sd   min   q50   q90   max prop_zero</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> per_event_date  all      <span style="text-decoration: underline;">1</span>095 <span style="text-decoration: underline;">52</span>987  48.4  53.3     0    30   104   358   0.003<span style="text-decoration: underline;">65</span></span></span>
@@ -287,10 +267,14 @@ counts to one row per case”, so it needs no separate explanation:</p>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> event_to_report all      <span style="text-decoration: underline;">8</span>265 <span style="text-decoration: underline;">52</span>987  1.74  1.21     1     3    26</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> event_to_report Female   <span style="text-decoration: underline;">4</span>133 <span style="text-decoration: underline;">26</span>592  1.74  1.20     1     3    15</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> event_to_report Male     <span style="text-decoration: underline;">4</span>132 <span style="text-decoration: underline;">26</span>395  1.74  1.22     1     3    26</span></span></code></pre></div>
-<p><strong><code>completeness</code></strong> — the share of each event
-date’s eventual total that had arrived by delay <code>d</code>. This is
-usually the most decision-relevant block in the table, because it says
-how far back a nowcast has anything left to estimate:</p>
+<p><strong><code><a href="../reference/nowcast_summary_components.html">reporting_completeness()</a></code></strong> — the share of
+each event date’s eventual total that had arrived by delay
+<code>d</code>. It says how far back a nowcast has anything left to
+estimate, and it is the one number here that most often changes a
+decision. It is <strong>not</strong> part of <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code>, and
+it warns on every call: it was written by an AI and has not yet been
+checked by a human, so read it as a starting point rather than as a
+verified statistic.</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/nowcast_summary_components.html">reporting_completeness</a></span><span class="op">(</span><span class="va">dengue_now</span>, delays <span class="op">=</span> <span class="fl">0</span><span class="op">:</span><span class="fl">4</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">stratum</span> <span class="op">==</span> <span class="st">"all"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
@@ -354,9 +338,11 @@ without computing the rest:</p>
 <code><a href="../reference/nowcast_summary_components.html">delay_summary()</a></code>, <code><a href="../reference/nowcast_summary_components.html">zero_run_summary()</a></code>,
 <code><a href="../reference/nowcast_summary_components.html">prop_censored()</a></code>, <code><a href="../reference/nowcast_summary_components.html">prop_validation_type()</a></code>,
 <code><a href="../reference/nowcast_summary_components.html">prop_strata()</a></code>, <code><a href="../reference/nowcast_summary_components.html">prop_covariate_levels()</a></code>,
-<code><a href="../reference/nowcast_summary_components.html">case_autocorrelation()</a></code>, <code><a href="../reference/nowcast_summary_components.html">date_ranges()</a></code>,
-<code><a href="../reference/nowcast_summary_components.html">triangle_occupancy()</a></code>, <code><a href="../reference/nowcast_summary_components.html">reporting_completeness()</a></code>
-and <code><a href="../reference/nowcast_summary_components.html">cumulative_growth()</a></code>.</p>
+<code><a href="../reference/nowcast_summary_components.html">date_ranges()</a></code>, <code><a href="../reference/nowcast_summary_components.html">triangle_occupancy()</a></code> and
+<code><a href="../reference/nowcast_summary_components.html">cumulative_growth()</a></code>, plus the two unreviewed ones –
+<code><a href="../reference/nowcast_summary_components.html">case_autocorrelation()</a></code> and
+<code><a href="../reference/nowcast_summary_components.html">reporting_completeness()</a></code> – which share the schema but are
+not part of <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code>.</p>
 <div class="alert alert-info">
 <p><strong>Quantiles are inverse-ECDF (type 1).</strong>
 <code>q50</code> is the smallest value whose cumulative weight reaches
@@ -381,7 +367,7 @@ passed, that were deliberately not run, and that could not be assessed.
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/diagnose.html">diagnose</a></span><span class="op">(</span><span class="va">dengue_now</span><span class="op">)</span></span>
 <span><span class="co">#&gt; ── Diagnosis of a <span style="color: #0000BB;">&lt;tbl_now&gt;</span> ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────</span></span>
-<span><span class="co">#&gt; <span style="color: #0000BB;">9 notes</span><span style="color: #555555;">, </span><span style="color: #00BB00;">14 passed</span><span style="color: #555555;">, </span><span style="color: #00BBBB;">3 not run</span><span style="color: #555555;">, 6 skipped.</span></span></span>
+<span><span class="co">#&gt; <span style="color: #0000BB;">9 notes</span><span style="color: #555555;">, </span><span style="color: #00BB00;">15 passed</span><span style="color: #555555;">, 5 skipped.</span></span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; <span style="font-weight: bold;">Notes (9)</span></span></span>
 <span><span class="co">#&gt; <span style="color: #0000BB;">ℹ</span> <span style="font-weight: bold;">now/now_gap_event [Female]:</span> The last event date is 3 weeks before now ("2010-12-20").</span></span>
@@ -390,41 +376,33 @@ passed, that were deliberately not run, and that could not be assessed.
 <span><span class="co">#&gt; <span style="color: #0000BB;">ℹ</span> <span style="font-weight: bold;">now/now_gap_event:</span> The last event date is 3 weeks before now ("2010-12-20").</span></span>
 <span><span class="co">#&gt; <span style="color: #0000BB;">ℹ</span> <span style="font-weight: bold;">now/now_gap_report [Male]:</span> The last report date is 1 week before now ("2010-12-20").</span></span>
 <span><span class="co">#&gt; <span style="color: #0000BB;">ℹ</span> <span style="font-weight: bold;">strata/size [Male]:</span> The smallest stratum is "Male" with 26395 cases, 49.8% of the total.</span></span>
-<span><span class="co">#&gt; <span style="color: #0000BB;">ℹ</span> <span style="font-weight: bold;">strata/sparsity [Female]:</span> The sparsest stratum is "Female": 1.2% of the event dates on the grid carry no cases at all.</span></span>
-<span><span class="co">#&gt;   <span style="color: #555555;">→</span> <span style="color: #555555;">A stratum that is mostly zeros is the one a per-stratum fit will struggle with; pooling it is often better than fitting it.</span></span></span>
+<span><span class="co">#&gt; <span style="color: #0000BB;">ℹ</span> <span style="font-weight: bold;">strata/sparsity [Female]:</span> The sparsest stratum is "Female": 13 of the 1095 weeks between the minimum event (1990-01-01) and the now (2010-12-20) carry no cases at all (1.2%, against 0.4% pooled over every stratum).</span></span>
+<span><span class="co">#&gt;   <span style="color: #555555;">→</span> <span style="color: #555555;">A stratum that is mostly zeros is the one a per-stratum fit will struggle with; pooling it is often better than fitting it. When every stratum is mostly zeros the grid is finer than the data -- `aggregate_time_units()` coarsens it.</span></span></span>
 <span><span class="co">#&gt; <span style="color: #0000BB;">ℹ</span> <span style="font-weight: bold;">truncation/event_date [Female]:</span> 1 event date is younger than the 95th percentile of the delay, so its counts are still filling in; an estimated 5.8% of its eventual total has not arrived.</span></span>
 <span><span class="co">#&gt;   <span style="color: #555555;">→</span> <span style="color: #555555;">This is right-truncation, and it is the reason to nowcast rather than a defect. Cut the series at "2010-11-22" to describe it instead.</span></span></span>
 <span><span class="co">#&gt; <span style="color: #0000BB;">ℹ</span> <span style="font-weight: bold;">truncation/event_date [Male]:</span> 1 event date is younger than the 95th percentile of the delay, so its counts are still filling in; an estimated 5.9% of its eventual total has not arrived.</span></span>
 <span><span class="co">#&gt; <span style="color: #0000BB;">ℹ</span> <span style="font-weight: bold;">truncation/event_date:</span> 1 event date is younger than the 95th percentile of the delay, so its counts are still filling in; an estimated 5.9% of its eventual total has not arrived.</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; <span style="font-weight: bold;">Not run (3)</span></span></span>
-<span><span class="co">#&gt; <span style="color: #00BBBB;">→</span> <span style="font-weight: bold;">signposts/report:</span> Run: diagnose_drift(x, axis = "report")</span></span>
-<span><span class="co">#&gt;   <span style="color: #555555;">→</span> <span style="color: #555555;">`diagnose()` runs no statistical test: a trend test needs a method, a maturity window and an alpha, and those are the caller's to choose.</span></span></span>
-<span><span class="co">#&gt; <span style="color: #00BBBB;">→</span> <span style="font-weight: bold;">signposts/report_batches:</span> Run: diagnose_batches(x, axis = "report")</span></span>
-<span><span class="co">#&gt;   <span style="color: #555555;">→</span> <span style="color: #555555;">`diagnose()` runs no statistical test: batch detection needs a look-back, a null model and a multiplicity correction.</span></span></span>
-<span><span class="co">#&gt; <span style="color: #00BBBB;">→</span> <span style="font-weight: bold;">signposts/validation_batches:</span> Run: diagnose_batches(x, axis = "validation")</span></span>
+<span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> 15 passed: <span style="color: #00BB00;">declarations/temporal_effects</span>, <span style="color: #00BB00;">declarations/undeclared</span>, <span style="color: #00BB00;">missing/gender</span>, <span style="color: #00BB00;">missing/onset_week</span>, <span style="color: #00BB00;">missing/report_week</span>, <span style="color: #00BB00;">now/event_date</span>, <span style="color: #00BB00;">now/now_gap_report</span>, <span style="color: #00BB00;">now/report_date</span>, <span style="color: #00BB00;">ordering/event_to_report</span>, <span style="color: #00BB00;">simultaneously missing/event and report dates</span>, <span style="color: #00BB00;">units/declared</span>, <span style="color: #00BB00;">units/delay</span>, <span style="color: #00BB00;">units/event_grid</span>, and <span style="color: #00BB00;">units/report_grid</span></span></span>
+<span><span class="co">#&gt; <span style="color: #555555;">─</span> 5 skipped: <span style="color: #00BB00;">duplicates/key</span>, <span style="color: #00BB00;">negatives/count</span>, <span style="color: #00BB00;">ordering/event_to_validation</span>, <span style="color: #00BB00;">ordering/report_to_validation</span>, and <span style="color: #00BB00;">strata/pending</span></span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> 14 passed: <span style="color: #00BB00;">declarations/temporal_effects</span>, <span style="color: #00BB00;">declarations/undeclared</span>, <span style="color: #00BB00;">missing/gender</span>, <span style="color: #00BB00;">missing/onset_week</span>, <span style="color: #00BB00;">missing/report_week</span>, <span style="color: #00BB00;">now/event_date</span>, <span style="color: #00BB00;">now/now_gap_report</span>, <span style="color: #00BB00;">now/report_date</span>, <span style="color: #00BB00;">ordering/event_to_report</span>, <span style="color: #00BB00;">units/declared</span>, <span style="color: #00BB00;">units/delay</span>, <span style="color: #00BB00;">units/event_grid</span>, and <span style="color: #00BB00;">units/report_grid</span></span></span>
-<span><span class="co">#&gt; <span style="color: #555555;">─</span> 6 skipped: <span style="color: #00BB00;">duplicates/key</span>, <span style="color: #00BB00;">negatives/count</span>, <span style="color: #00BB00;">ordering/event_to_validation</span>, <span style="color: #00BB00;">ordering/report_to_validation</span>, <span style="color: #00BB00;">signposts/validation</span>, and <span style="color: #00BB00;">strata/pending</span></span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; <span style="color: #555555;">ℹ 32 findings. Use `dplyr::filter()` or `tibble::as_tibble()` for the table.</span></span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #555555;">ℹ 29 findings. Use `dplyr::filter()` or `tibble::as_tibble()` for the table.</span></span></span></code></pre></div>
 <p>It is a tibble underneath, in the schema the rest of this section
 reads:</p>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/diagnose.html">diagnose</a></span><span class="op">(</span><span class="va">dengue_now</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/count.html" class="external-link">count</a></span><span class="op">(</span><span class="va">status</span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 4 × 2</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 3 × 2</span></span></span>
 <span><span class="co">#&gt;   status      n</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;ord&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;int&gt;</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> note        9</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> ok         14</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> not_run     3</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> skipped     6</span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> ok         15</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> skipped     5</span></span></code></pre></div>
 <p><code>status</code> is an <strong>ordered factor</strong> —
 <code>error</code> &gt; <code>warning</code> &gt; <code>note</code> &gt;
-<code>ok</code> &gt; <code>not_run</code> &gt; <code>skipped</code> — so
-the table sorts itself and filtering to what needs acting on is a
-comparison rather than a set membership test:</p>
+<code>ok</code> &gt; <code>skipped</code> — so the table sorts itself
+and filtering to what needs acting on is a comparison rather than a set
+membership test:</p>
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/diagnose.html">diagnose</a></span><span class="op">(</span><span class="va">dengue_now</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">status</span> <span class="op">&lt;=</span> <span class="st">"note"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
@@ -437,7 +415,7 @@ comparison rather than a set membership test:</p>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> now        now_gap_event  all     note            3      <span style="color: #BB0000;">NA</span> <span style="color: #949494;">"</span>The last event date is 3 weeks before now (\"2010-12-20\").<span style="color: #949494;">"</span>                                     </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> now        now_gap_report Male    note            1      <span style="color: #BB0000;">NA</span> <span style="color: #949494;">"</span>The last report date is 1 week before now (\"2010-12-20\").<span style="color: #949494;">"</span>                                     </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> strata     size           Male    note        <span style="text-decoration: underline;">26</span>395   <span style="text-decoration: underline;">52</span>987 <span style="color: #949494;">"</span>The smallest stratum is \"Male\" with 26395 cases, 49.8% of the total.<span style="color: #949494;">"</span>                          </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> strata     sparsity       Female  note           13    <span style="text-decoration: underline;">1</span>095 <span style="color: #949494;">"</span>The sparsest stratum is \"Female\": 1.2% of the event dates on the grid carry no cases at all.<span style="color: #949494;">"</span>  </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> strata     sparsity       Female  note           13    <span style="text-decoration: underline;">1</span>095 <span style="color: #949494;">"</span>The sparsest stratum is \"Female\": 13 of the 1095 weeks between the minimum event (1990-01-01) …</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">7</span> truncation event_date     Female  note            1    <span style="text-decoration: underline;">1</span>082 <span style="color: #949494;">"</span>1 event date is younger than the 95th percentile of the delay, so its counts are still filling i…</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">8</span> truncation event_date     Male    note            1    <span style="text-decoration: underline;">1</span>082 <span style="color: #949494;">"</span>1 event date is younger than the 95th percentile of the delay, so its counts are still filling i…</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">9</span> truncation event_date     all     note            1    <span style="text-decoration: underline;">1</span>091 <span style="color: #949494;">"</span>1 event date is younger than the 95th percentile of the delay, so its counts are still filling i…</span></span></code></pre></div>
@@ -451,8 +429,8 @@ you can go straight to them:</p>
 <span><span class="co">#&gt; character(0)</span></span></code></pre></div>
 </div>
 <div class="section level3">
-<h3 id="the-six-statuses-and-why-skipped-is-not-ok">The six statuses, and why <code>skipped</code> is not
-<code>ok</code><a class="anchor" aria-label="anchor" href="#the-six-statuses-and-why-skipped-is-not-ok"></a>
+<h3 id="the-five-statuses-and-why-skipped-is-not-ok">The five statuses, and why <code>skipped</code> is not
+<code>ok</code><a class="anchor" aria-label="anchor" href="#the-five-statuses-and-why-skipped-is-not-ok"></a>
 </h3>
 <p>The distinction that matters most is between a check that <strong>ran
 and found nothing</strong> and one that <strong>could not
@@ -461,15 +439,14 @@ run</strong>:</p>
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/diagnose.html">diagnose</a></span><span class="op">(</span><span class="va">dengue_now</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">status</span> <span class="op">==</span> <span class="st">"skipped"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">check</span>, <span class="va">scope</span>, <span class="va">message</span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 6 × 3</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 5 × 3</span></span></span>
 <span><span class="co">#&gt;   check      scope                message                                                                               </span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                                                                                 </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> duplicates key                  A line list is one row per case, so identical rows are two cases rather than a repeat.</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> negatives  count                A line list has no count column to go negative.                                       </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> ordering   event_to_validation  The object carries no validation process.                                             </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> ordering   report_to_validation The object carries no validation process.                                             </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> signposts  validation           The object carries no validation process.                                             </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> strata     pending              The object carries no validation process.</span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> strata     pending              The object carries no validation process.</span></span></code></pre></div>
 <p><code>dengue_now</code> is a line list with no validation process, so
 four checks have nothing to work on. None of them is a pass. Reporting
 them as <code>ok</code> would be a quiet lie, and this is the single
@@ -486,22 +463,11 @@ have (a record id, say), so that check stays yours.</p>
 </h3>
 <p><code><a href="../reference/diagnose.html">diagnose()</a></code> runs no statistical tests at all. It is fast,
 and its answer never depends on a random seed or an optional package.
-The questions that <em>do</em> need a test come back as
-<code>not_run</code> signposts naming the call that answers each
-one:</p>
-<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/nowcast_diagnose_components.html">diagnose_signposts</a></span><span class="op">(</span><span class="va">dengue_now</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">scope</span>, <span class="va">status</span>, <span class="va">message</span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 4 × 3</span></span></span>
-<span><span class="co">#&gt;   scope              status  message                                          </span></span>
-<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>              <span style="color: #949494; font-style: italic;">&lt;ord&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                                            </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> report             not_run <span style="color: #949494;">"</span>Run: diagnose_drift(x, axis = \"report\")<span style="color: #949494;">"</span>      </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> report_batches     not_run <span style="color: #949494;">"</span>Run: diagnose_batches(x, axis = \"report\")<span style="color: #949494;">"</span>    </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> validation_batches not_run <span style="color: #949494;">"</span>Run: diagnose_batches(x, axis = \"validation\")<span style="color: #949494;">"</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> validation         skipped <span style="color: #949494;">"</span>The object carries no validation process.<span style="color: #949494;">"</span></span></span></code></pre></div>
+The questions that <em>do</em> need a test are simply not in it: they
+have their own functions, and you call one when you want its answer.</p>
 <p>Those calls — <code><a href="../reference/diagnose_drift.html">diagnose_drift()</a></code>,
 <code><a href="../reference/diagnose_changepoint.html">diagnose_changepoint()</a></code>, <code><a href="../reference/diagnose_batches.html">diagnose_batches()</a></code>,
-<code><a href="../reference/diagnose_batch_shape.html">diagnose_batch_shape()</a></code> — are Part 3 of this article. They
+<code><a href="../reference/diagnose_batches2.html">diagnose_batches2()</a></code> — are Part 3 of this article. They
 return their own shapes rather than the findings schema, because a
 hypothesis test has a p-value and an effect size that a findings row has
 nowhere to put.</p>
@@ -514,7 +480,7 @@ becomes a <strong>negative increment</strong> the moment the series is
 de-accumulated. Anything consuming incidence has to cope with that, so
 <code><a href="../reference/diagnose.html">diagnose()</a></code> counts them. FluSight is the standard
 example:</p>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">flusight</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">flu_now</span> <span class="op">&lt;-</span> <span class="va">flusight</span> <span class="op">|&gt;</span></span>
@@ -543,7 +509,7 @@ example:</p>
 one delay’s running total to the previous one’s — because a cumulative
 total is not additive across delays and a case-weighted delay
 distribution would be meaningless:</p>
-<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/nowcast_summary_components.html">cumulative_growth</a></span><span class="op">(</span><span class="va">flu_now</span>, k <span class="op">=</span> <span class="fl">3</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">stratum</span> <span class="op">==</span> <span class="st">"all"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">quantity</span>, <span class="va">n</span>, <span class="va">total</span>, <span class="va">mean</span>, <span class="va">q50</span>, <span class="va">max</span><span class="op">)</span></span>
@@ -566,7 +532,7 @@ as <code><a href="../reference/diagnose.html">diagnose()</a></code>. It does not
 the <code>error</code> rows as an abort and the <code>warning</code>
 rows as warnings. That is why a malformed object complains the moment
 you build it, and why the two can never drift apart:</p>
-<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">bad</span> <span class="op">&lt;-</span> <span class="va">denguedat</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>report_week <span class="op">=</span> <span class="va">report_week</span> <span class="op">-</span> <span class="fl">400</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/tbl_now.html">tbl_now</a></span><span class="op">(</span>event_date <span class="op">=</span> <span class="st">"onset_week"</span>, report_date <span class="op">=</span> <span class="st">"report_week"</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
@@ -585,12 +551,12 @@ for data that has always been accepted.</p>
 </h2>
 <p>Everything above is structural: it can be decided by looking at the
 object, it gives the same answer every time, and it costs nothing. The
-<code>not_run</code> signposts at the end of Part 2 are where that
-stops. Whether the reporting delay has drifted, and whether a spike is
-released backlog or genuine new cases, are statements about a
-<strong>distribution</strong> — and answering them means picking a
-method, a window and a multiplicity correction, which is not a decision
-a health check should make on your behalf.</p>
+questions Part 2 would not touch are where that stops. Whether the
+reporting delay has drifted, and whether a spike is released backlog or
+genuine new cases, are statements about a <strong>distribution</strong>
+— and answering them means picking a method, a window and a multiplicity
+correction, which is not a decision a health check should make on your
+behalf.</p>
 <p>So the rest of this article is the other half of the toolkit: the
 tests and the pictures for the questions <code><a href="../reference/diagnose.html">diagnose()</a></code> refuses
 to answer.</p>
@@ -631,7 +597,7 @@ each case reported within a few days. For one week near the peak, the
 reporting system slows down with <strong>half</strong> of each day’s
 reports being held back and released days after. That release is the
 <strong>batch</strong>.</p>
-<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">82495</span><span class="op">)</span></span>
 <span><span class="co">#Simulate a curve</span></span>
 <span><span class="va">onset_days</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2024-01-01"</span><span class="op">)</span> <span class="op">+</span> <span class="fl">0</span><span class="op">:</span><span class="fl">99</span></span>
@@ -650,7 +616,7 @@ reports being held back and released days after. That release is the
 <span>  held_fraction <span class="op">=</span> <span class="fl">0.5</span><span class="op">)</span></span></code></pre></div>
 <p>We can see the simulated data both from the event-date and the
 report-date perspectives:</p>
-<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_epidemic_process.html">plot_epidemic_process</a></span><span class="op">(</span><span class="va">ideal</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/plot_epidemic_process.html">plot_reporting_process</a></span><span class="op">(</span><span class="va">ideal</span><span class="op">)</span></span></code></pre></div>
 <p><img src="diagnosing-a-tbl-now_files/figure-html/unnamed-chunk-4-1.png" class="r-plt" alt="" width="1200"></p>
@@ -666,7 +632,7 @@ report. The middle one, <code>pos_spec_dt</code>, is the specimen
 collection, and it is pooled away along with <code>current_status</code>
 and <code>sex</code> – the batch question is about when reports
 <em>arrived</em>, not about who they were.</p>
-<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">covid_us</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">covid_early</span> <span class="op">&lt;-</span> <span class="va">covid_us</span> <span class="op">|&gt;</span></span>
@@ -677,13 +643,13 @@ and <code>sex</code> – the batch question is about when reports
 <span>              data_type <span class="op">=</span> <span class="st">"count-incidence"</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
 <p>Half of all cases were reported within a few days, but the tail is
 long: some cases take weeks or months to surface.</p>
-<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">stats</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/stats/quantile.html" class="external-link">quantile</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="va">tn</span><span class="op">$</span><span class="va">.delay</span>, <span class="va">tn</span><span class="op">$</span><span class="va">n</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.5</span>, <span class="fl">0.75</span>, <span class="fl">0.9</span>, <span class="fl">0.99</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; 50% 75% 90% 99% </span></span>
 <span><span class="co">#&gt;   6  12  30 149</span></span></code></pre></div>
 <p>We can see this dataset again from both the event-date and the
 report-date perspectives:</p>
-<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_epidemic_process.html">plot_epidemic_process</a></span><span class="op">(</span><span class="va">tn</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/plot_epidemic_process.html">plot_reporting_process</a></span><span class="op">(</span><span class="va">tn</span><span class="op">)</span></span></code></pre></div>
 <p><img src="diagnosing-a-tbl-now_files/figure-html/unnamed-chunk-6-1.png" class="r-plt" alt="" width="1200"></p>
@@ -695,7 +661,7 @@ report-date perspectives:</p>
 <p>This plot, which we have previously shown, shows how many reports
 arrived by date. Batches or surges might correspond to spikes towering
 over their neighbours.</p>
-<div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_epidemic_process.html">plot_reporting_process</a></span><span class="op">(</span><span class="va">ideal</span><span class="op">)</span></span></code></pre></div>
 <div class="figure">
 <img src="diagnosing-a-tbl-now_files/figure-html/unnamed-chunk-7-1.png" class="r-plt" alt="Reporting process of the simulated data" width="1200"><p class="caption">
@@ -709,7 +675,7 @@ surge (we’ll come back to this characterization later). The tallest is a
 single day of about 50K reports on 12 December 2020, sixteen times the
 3K that arrive on a typical day; 10 June and 5 September are the other
 conspicuous ones.</p>
-<div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_epidemic_process.html">plot_reporting_process</a></span><span class="op">(</span><span class="va">tn</span><span class="op">)</span></span></code></pre></div>
 <div class="figure">
 <img src="diagnosing-a-tbl-now_files/figure-html/proc-covid-1.png" class="r-plt" alt="Reporting process of the COVID-19 data" width="1200"><p class="caption">
@@ -734,7 +700,7 @@ shows reports that arrive on the same day.<br>
 An indicator of a batch is <strong>a bright diagonal reaching high
 up</strong> which reporesents many delayed cases being all reported on
 the same day.</p>
-<div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_reporting_triangle.html">plot_reporting_triangle</a></span><span class="op">(</span><span class="va">ideal</span><span class="op">)</span></span></code></pre></div>
 <div class="figure">
 <img src="diagnosing-a-tbl-now_files/figure-html/unnamed-chunk-8-1.png" class="r-plt" alt="Classical reporting triangle of the simulated data" width="1200"><p class="caption">
@@ -744,7 +710,7 @@ Classical reporting triangle of the simulated data
 <p>On COVID-19, the triangle is a broad blue-grey haze (most cases
 reported over many months) crossed by bright diagonals. They correspond
 to the same spikes seen in the reporting process:</p>
-<div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_reporting_triangle.html">plot_reporting_triangle</a></span><span class="op">(</span><span class="va">tn</span><span class="op">)</span></span></code></pre></div>
 <div class="figure">
 <img src="diagnosing-a-tbl-now_files/figure-html/unnamed-chunk-9-1.png" class="r-plt" alt="Classical reporting triangle of the COVID-19 data" width="1200"><p class="caption">
@@ -760,15 +726,23 @@ Classical reporting triangle of the COVID-19 data
 (<code>report = event + delay</code>, exactly
 <code>period = cohort + age</code>), so the reporting triangle can be
 drawn as a hexamap in the style of <a href="https://doi.org/10.1097/EDE.0000000000001236" class="external-link">Jalal and Burke
-(2020)</a>: each <code>(event, delay)</code> cell is a hexagon, coloured
-by its report count, with event date, report date and delay running
-along the three 60-degree axes. Because a batch is a happens in the
-<strong>report date</strong>, it shows up as a <strong>vertical
-stripe</strong>; the fast reporting bulk sits along the short-delay
-bottom edge.</p>
-<div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
+(2020)</a>: each <code>(event, delay)</code> cell is a point on a
+hexagonal lattice, coloured by its report count, with event date, report
+date and delay running along the three 60-degree axes. Because a batch
+is a happens in the <strong>report date</strong>, it shows up as a
+<strong>vertical stripe</strong>; the fast reporting bulk sits along the
+short-delay bottom edge.</p>
+<div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_reporting_hexamap.html">plot_reporting_hexamap</a></span><span class="op">(</span><span class="va">ideal</span><span class="op">)</span></span></code></pre></div>
 <p><img src="diagnosing-a-tbl-now_files/figure-html/hex-sim-1.png" class="r-plt" alt="" width="960"></p>
+<p>The marks are sized in millimetres while the lattice is sized in data
+units, so no default can suit every combination of cell count and figure
+size. <code>size</code> is the knob: raise it until the points nearly
+touch at the size you are actually drawing, and <code>shape = 15</code>
+swaps the circles for squares, which tile more closely.</p>
+<div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_reporting_hexamap.html">plot_reporting_hexamap</a></span><span class="op">(</span><span class="va">ideal</span>, size <span class="op">=</span> <span class="fl">3</span>, shape <span class="op">=</span> <span class="fl">15</span><span class="op">)</span></span></code></pre></div>
+<p><img src="diagnosing-a-tbl-now_files/figure-html/hex-sim-big-1.png" class="r-plt" alt="" width="960"></p>
 <p>On covid the vertical stripes are the 2020 backlog releases. The
 delay axis is capped with <code>max_delay</code> to keep the map to
 where the reports are.</p>

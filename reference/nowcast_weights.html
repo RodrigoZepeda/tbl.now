@@ -11,7 +11,7 @@ weights for nowcast_ensemble()."><meta property="og:image" content="https://rodr
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.31.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.33.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -26,7 +26,7 @@ weights for nowcast_ensemble()."><meta property="og:image" content="https://rodr
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/custom-nowcast-models.html">Adding your own nowcasting model</a></li>
     <li><a class="dropdown-item" href="../articles/diagnosing-a-tbl-now.html">Diagnosing a tbl_now</a></li>
     <li><a class="dropdown-item" href="../articles/ensemble-nowcasting.html">One call, many models: run_nowcast(), custom backends and ensembles</a></li>
-    <li><a class="dropdown-item" href="../articles/example.html">A complete nowcasting workflow: hospital-acquired infections in Bucaramanga</a></li>
+    <li><a class="dropdown-item" href="../articles/example.html">The nowcasting workflow: hospital-acquired infections in Bucaramanga, Colombia</a></li>
     <li><a class="dropdown-item" href="../articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with different modelling packages</a></li>
     <li><a class="dropdown-item" href="../articles/tbl.now.html">tbl.now</a></li>
   </ul></li>
@@ -61,7 +61,13 @@ weights for <code><a href="nowcast_ensemble.html">nowcast_ensemble()</a></code>.
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">nowcast_weights</span><span class="op">(</span><span class="va">backtest</span>, type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"inverse_score"</span>, <span class="st">"optim"</span>, <span class="st">"equal"</span><span class="op">)</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">nowcast_weights</span><span class="op">(</span></span>
+<span>  <span class="va">backtest</span>,</span>
+<span>  type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"inverse_score"</span>, <span class="st">"optim"</span>, <span class="st">"equal"</span><span class="op">)</span>,</span>
+<span>  now <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  include_now <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  <span class="va">...</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -89,6 +95,19 @@ produce the unweighted ensemble.</p></dd>
 
 
 </dl></dd>
+
+
+<dt id="arg-now">now<a class="anchor" aria-label="anchor" href="#arg-now"></a></dt>
+<dd><p>Optional Date vector of nowcast origins to exclude from the
+weight-training window when <code>include_now = FALSE</code>. <code><a href="nowcast_ensemble.html">nowcast_ensemble()</a></code>
+passes its members' own <code>now</code> values here when deriving performance
+weights.</p></dd>
+
+
+<dt id="arg-include-now">include_now<a class="anchor" aria-label="anchor" href="#arg-include-now"></a></dt>
+<dd><p>Logical. Should rows at <code>now</code> be allowed into the
+weight-training window? Default <code>FALSE</code>; set <code>TRUE</code> for an in-sample
+diagnostic.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>

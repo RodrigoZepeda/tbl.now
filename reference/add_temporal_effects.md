@@ -38,7 +38,8 @@ add_temporal_effects(
   date_col = NULL,
   numeric_col = NULL,
   name_prefix = paste0(".", date_col),
-  weekend_days = c("Sat", "Sun")
+  weekend_days = c("Sat", "Sun"),
+  units = "days"
 )
 
 # S3 method for class 'tbl_now'
@@ -104,6 +105,15 @@ compute_temporal_effects(x, overwrite = FALSE)
   - Numeric: integers 1-7 in
     [`lubridate::wday()`](https://lubridate.tidyverse.org/reference/day.html)
     numbering with `week_start = 1`, so **1 = Monday** and 7 = Sunday.
+
+- units:
+
+  Character. The time units `date_col` is measured in: `"days"` (the
+  default), `"weeks"`, `"months"` or `"years"`. It only affects the
+  **holiday** column, which on a grid coarser than days becomes the
+  *share* of the period's days that are holidays rather than a 0/1
+  indicator. For a `tbl_now`, `compute_temporal_effects()` reads this
+  off the object.
 
 - date_type:
 

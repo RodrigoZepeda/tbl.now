@@ -27,7 +27,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.31.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.33.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -44,7 +44,7 @@
 <li><a class="dropdown-item" href="../articles/custom-nowcast-models.html">Adding your own nowcasting model</a></li>
     <li><a class="dropdown-item" href="../articles/diagnosing-a-tbl-now.html">Diagnosing a tbl_now</a></li>
     <li><a class="dropdown-item" href="../articles/ensemble-nowcasting.html">One call, many models: run_nowcast(), custom backends and ensembles</a></li>
-    <li><a class="dropdown-item" href="../articles/example.html">A complete nowcasting workflow: hospital-acquired infections in Bucaramanga</a></li>
+    <li><a class="dropdown-item" href="../articles/example.html">The nowcasting workflow: hospital-acquired infections in Bucaramanga, Colombia</a></li>
     <li><a class="dropdown-item" href="../articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with different modelling packages</a></li>
     <li><a class="dropdown-item" href="../articles/tbl.now.html">tbl.now</a></li>
   </ul>
@@ -177,21 +177,25 @@ list</strong>: one row per case, with an onset and a report week.</p>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">baseline</span></span></code></pre></div>
-<pre><code><span><span class="co">#&gt; -- A &lt;tbl_nowcast&gt; from method "baselinenowcast" -------------------------------</span></span>
-<span><span class="co">#&gt; * now: "2010-10-04"</span></span>
-<span><span class="co">#&gt; * event dates: 144</span></span>
-<span><span class="co">#&gt; * quantile levels: 0.025, 0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95, and 0.975</span></span>
-<span><span class="co">#&gt; * draws: 1000</span></span>
-<span><span class="co">#&gt; # A tibble: 6 x 3</span></span>
+<pre><code><span><span class="co">#&gt; ── A &lt;tbl_nowcast&gt; from method "baselinenowcast" ─────────────────────────────────────────────────────────────────────────────</span></span>
+<span><span class="co">#&gt; • now: "2010-10-04"</span></span>
+<span><span class="co">#&gt; • event dates: 1084</span></span>
+<span><span class="co">#&gt; • quantile levels: 0.025, 0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95, and 0.975</span></span>
+<span><span class="co">#&gt; • draws: 1000</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Nowcast at "2010-10-04" (q50, 2.5-97.5% interval):</span></span>
+<span><span class="co">#&gt; • 502 [80.9, 1,619]</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; # A tibble: 6 × 3</span></span>
 <span><span class="co">#&gt;   onset_week .quantile_level .value</span></span>
 <span><span class="co">#&gt;   &lt;date&gt;               &lt;dbl&gt;  &lt;dbl&gt;</span></span>
-<span><span class="co">#&gt; 1 2008-01-07           0.025     22</span></span>
-<span><span class="co">#&gt; 2 2008-01-07           0.05      22</span></span>
-<span><span class="co">#&gt; 3 2008-01-07           0.1       22</span></span>
-<span><span class="co">#&gt; 4 2008-01-07           0.25      22</span></span>
-<span><span class="co">#&gt; 5 2008-01-07           0.5       22</span></span>
-<span><span class="co">#&gt; 6 2008-01-07           0.75      22</span></span>
-<span><span class="co">#&gt; i 1290 more rows. Use `as_tibble()` for all of them.</span></span></code></pre>
+<span><span class="co">#&gt; 1 1990-01-01           0.025     61</span></span>
+<span><span class="co">#&gt; 2 1990-01-01           0.05      61</span></span>
+<span><span class="co">#&gt; 3 1990-01-01           0.1       61</span></span>
+<span><span class="co">#&gt; 4 1990-01-01           0.25      61</span></span>
+<span><span class="co">#&gt; 5 1990-01-01           0.5       61</span></span>
+<span><span class="co">#&gt; 6 1990-01-01           0.75      61</span></span>
+<span><span class="co">#&gt; ℹ 9750 more rows. Use `as_tibble()` for all of them.</span></span></code></pre>
 <p>An engine is <em>the model and everything it needs</em>:
 <code><a href="../reference/nowcast_engines.html">engine_baselinenowcast()</a></code> names
 <code>baselinenowcast</code>’s own arguments, and there is one such
@@ -248,21 +252,25 @@ columns off the object, so there is nothing to pass.</p>
 <code class="sourceCode R"><span><span class="va">dnc</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/run_nowcast.html">run_nowcast</a></span><span class="op">(</span><span class="va">snapshot</span>, <span class="fu"><a href="../reference/nowcast_engines.html">engine_diseasenowcasting</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">dnc</span></span></code></pre></div>
-<pre><code><span><span class="co">#&gt; -- A &lt;tbl_nowcast&gt; from method "diseasenowcasting" -----------------------------</span></span>
-<span><span class="co">#&gt; * now: "2010-10-04"</span></span>
-<span><span class="co">#&gt; * event dates: 144</span></span>
-<span><span class="co">#&gt; * quantile levels: 0.025, 0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95, and 0.975</span></span>
-<span><span class="co">#&gt; * draws: 2000</span></span>
-<span><span class="co">#&gt; # A tibble: 6 x 3</span></span>
+<pre><code><span><span class="co">#&gt; ── A &lt;tbl_nowcast&gt; from method "diseasenowcasting" ───────────────────────────────────────────────────────────────────────────</span></span>
+<span><span class="co">#&gt; • now: "2010-10-04"</span></span>
+<span><span class="co">#&gt; • event dates: 1084</span></span>
+<span><span class="co">#&gt; • quantile levels: 0.025, 0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95, and 0.975</span></span>
+<span><span class="co">#&gt; • draws: 2000</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Nowcast at "2010-10-04" (q50, 2.5-97.5% interval):</span></span>
+<span><span class="co">#&gt; • 264 [127.0, 484.1]</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; # A tibble: 6 × 3</span></span>
 <span><span class="co">#&gt;   onset_week .quantile_level .value</span></span>
 <span><span class="co">#&gt;   &lt;date&gt;               &lt;dbl&gt;  &lt;dbl&gt;</span></span>
-<span><span class="co">#&gt; 1 2008-01-07           0.025     22</span></span>
-<span><span class="co">#&gt; 2 2008-01-07           0.05      22</span></span>
-<span><span class="co">#&gt; 3 2008-01-07           0.1       22</span></span>
-<span><span class="co">#&gt; 4 2008-01-07           0.25      22</span></span>
-<span><span class="co">#&gt; 5 2008-01-07           0.5       22</span></span>
-<span><span class="co">#&gt; 6 2008-01-07           0.75      22</span></span>
-<span><span class="co">#&gt; i 1290 more rows. Use `as_tibble()` for all of them.</span></span></code></pre>
+<span><span class="co">#&gt; 1 1990-01-01           0.025     61</span></span>
+<span><span class="co">#&gt; 2 1990-01-01           0.05      61</span></span>
+<span><span class="co">#&gt; 3 1990-01-01           0.1       61</span></span>
+<span><span class="co">#&gt; 4 1990-01-01           0.25      61</span></span>
+<span><span class="co">#&gt; 5 1990-01-01           0.5       61</span></span>
+<span><span class="co">#&gt; 6 1990-01-01           0.75      61</span></span>
+<span><span class="co">#&gt; ℹ 9750 more rows. Use `as_tibble()` for all of them.</span></span></code></pre>
 <p><strong>Watch for:</strong> it is also the one engine whose
 <em>model</em> you can swap without changing packages — see the ensemble
 below, which uses two of them. On <code>count-cumulative</code> data
@@ -289,12 +297,16 @@ delay and the reference process. Preprocessing arguments go through
 <span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">enw</span></span></code></pre></div>
-<pre><code><span><span class="co">#&gt; -- A &lt;tbl_nowcast&gt; from method "epinowcast" ------------------------------------</span></span>
-<span><span class="co">#&gt; * now: "2010-10-04"</span></span>
-<span><span class="co">#&gt; * event dates: 10</span></span>
-<span><span class="co">#&gt; * quantile levels: 0.025, 0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95, and 0.975</span></span>
-<span><span class="co">#&gt; * draws: 1000</span></span>
-<span><span class="co">#&gt; # A tibble: 6 x 3</span></span>
+<pre><code><span><span class="co">#&gt; ── A &lt;tbl_nowcast&gt; from method "epinowcast" ──────────────────────────────────────────────────────────────────────────────────</span></span>
+<span><span class="co">#&gt; • now: "2010-10-04"</span></span>
+<span><span class="co">#&gt; • event dates: 10</span></span>
+<span><span class="co">#&gt; • quantile levels: 0.025, 0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95, and 0.975</span></span>
+<span><span class="co">#&gt; • draws: 1000</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Nowcast at "2010-10-04" (q50, 2.5-97.5% interval):</span></span>
+<span><span class="co">#&gt; • 349 [172, 450]</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; # A tibble: 6 × 3</span></span>
 <span><span class="co">#&gt;   onset_week .quantile_level .value</span></span>
 <span><span class="co">#&gt;   &lt;date&gt;               &lt;dbl&gt;  &lt;dbl&gt;</span></span>
 <span><span class="co">#&gt; 1 2010-08-02           0.025    328</span></span>
@@ -303,7 +315,7 @@ delay and the reference process. Preprocessing arguments go through
 <span><span class="co">#&gt; 4 2010-08-02           0.25     328</span></span>
 <span><span class="co">#&gt; 5 2010-08-02           0.5      328</span></span>
 <span><span class="co">#&gt; 6 2010-08-02           0.75     328</span></span>
-<span><span class="co">#&gt; i 84 more rows. Use `as_tibble()` for all of them.</span></span></code></pre>
+<span><span class="co">#&gt; ℹ 84 more rows. Use `as_tibble()` for all of them.</span></span></code></pre>
 <p><strong>Watch for:</strong> it is <strong>unseeded</strong> unless
 you say otherwise. <code><a href="https://package.epinowcast.org/reference/enw_fit_opts.html" class="external-link">enw_fit_opts()</a></code> passes <code>...</code>
 to the sampler, so <code>seed =</code> reaches Stan — without it, the
@@ -321,12 +333,16 @@ installed as a separate program.</p>
 <code class="sourceCode R"><span><span class="va">nobbs</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/run_nowcast.html">run_nowcast</a></span><span class="op">(</span><span class="va">snapshot</span>, <span class="fu"><a href="../reference/nowcast_engines.html">engine_nobbs</a></span><span class="op">(</span>max_D <span class="op">=</span> <span class="fl">10</span>, moving_window <span class="op">=</span> <span class="fl">64</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">nobbs</span></span></code></pre></div>
-<pre><code><span><span class="co">#&gt; -- A &lt;tbl_nowcast&gt; from method "NobBS" -----------------------------------------</span></span>
-<span><span class="co">#&gt; * now: "2010-10-04"</span></span>
-<span><span class="co">#&gt; * event dates: 64</span></span>
-<span><span class="co">#&gt; * quantile levels: 0.025, 0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95, and 0.975</span></span>
-<span><span class="co">#&gt; * draws: none (quantiles only)</span></span>
-<span><span class="co">#&gt; # A tibble: 6 x 3</span></span>
+<pre><code><span><span class="co">#&gt; ── A &lt;tbl_nowcast&gt; from method "NobBS" ───────────────────────────────────────────────────────────────────────────────────────</span></span>
+<span><span class="co">#&gt; • now: "2010-10-04"</span></span>
+<span><span class="co">#&gt; • event dates: 64</span></span>
+<span><span class="co">#&gt; • quantile levels: 0.025, 0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95, and 0.975</span></span>
+<span><span class="co">#&gt; • draws: none (quantiles only)</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Nowcast at "2010-10-04" (q50, 2.5-97.5% interval):</span></span>
+<span><span class="co">#&gt; • 360 [255, 521.0]</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; # A tibble: 6 × 3</span></span>
 <span><span class="co">#&gt;   onset_week .quantile_level .value</span></span>
 <span><span class="co">#&gt;   &lt;date&gt;               &lt;dbl&gt;  &lt;dbl&gt;</span></span>
 <span><span class="co">#&gt; 1 2009-07-20           0.025     28</span></span>
@@ -335,7 +351,7 @@ installed as a separate program.</p>
 <span><span class="co">#&gt; 4 2009-07-20           0.25      28</span></span>
 <span><span class="co">#&gt; 5 2009-07-20           0.5       28</span></span>
 <span><span class="co">#&gt; 6 2009-07-20           0.75      28</span></span>
-<span><span class="co">#&gt; i 570 more rows. Use `as_tibble()` for all of them.</span></span></code></pre>
+<span><span class="co">#&gt; ℹ 570 more rows. Use `as_tibble()` for all of them.</span></span></code></pre>
 <p><strong>Watch for:</strong> it keeps <strong>no draws per event
 date</strong>, so it cannot join a <code>type = "linear_pool"</code>
 ensemble, and it can only report quantiles it was asked for <em>at fit
@@ -354,21 +370,25 @@ for the method used here.</p>
 <code class="sourceCode R"><span><span class="va">sur</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/run_nowcast.html">run_nowcast</a></span><span class="op">(</span><span class="va">snapshot</span>, <span class="fu"><a href="../reference/nowcast_engines.html">engine_surveillance</a></span><span class="op">(</span>D <span class="op">=</span> <span class="fl">10</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">sur</span></span></code></pre></div>
-<pre><code><span><span class="co">#&gt; -- A &lt;tbl_nowcast&gt; from method "surveillance" ----------------------------------</span></span>
-<span><span class="co">#&gt; * now: "2010-10-04"</span></span>
-<span><span class="co">#&gt; * event dates: 11</span></span>
-<span><span class="co">#&gt; * quantile levels: 0.025, 0.5, and 0.975</span></span>
-<span><span class="co">#&gt; * draws: none (quantiles only)</span></span>
-<span><span class="co">#&gt; # A tibble: 6 x 3</span></span>
+<pre><code><span><span class="co">#&gt; ── A &lt;tbl_nowcast&gt; from method "surveillance" ────────────────────────────────────────────────────────────────────────────────</span></span>
+<span><span class="co">#&gt; • now: "2010-10-04"</span></span>
+<span><span class="co">#&gt; • event dates: 11</span></span>
+<span><span class="co">#&gt; • quantile levels: 0.025, 0.5, and 0.975</span></span>
+<span><span class="co">#&gt; • draws: none (quantiles only)</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Nowcast at "2010-10-04" (q50, 2.5-97.5% interval):</span></span>
+<span><span class="co">#&gt; • 216 [105, 391]</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; # A tibble: 6 × 3</span></span>
 <span><span class="co">#&gt;   onset_week .quantile_level .value</span></span>
 <span><span class="co">#&gt;   &lt;date&gt;               &lt;dbl&gt;  &lt;dbl&gt;</span></span>
 <span><span class="co">#&gt; 1 2010-07-26           0.025    302</span></span>
 <span><span class="co">#&gt; 2 2010-07-26           0.5      302</span></span>
 <span><span class="co">#&gt; 3 2010-07-26           0.975    302</span></span>
 <span><span class="co">#&gt; 4 2010-08-02           0.025    328</span></span>
-<span><span class="co">#&gt; 5 2010-08-02           0.5      328</span></span>
-<span><span class="co">#&gt; 6 2010-08-02           0.975    329</span></span>
-<span><span class="co">#&gt; i 27 more rows. Use `as_tibble()` for all of them.</span></span></code></pre>
+<span><span class="co">#&gt; 5 2010-08-02           0.5      329</span></span>
+<span><span class="co">#&gt; 6 2010-08-02           0.975    332</span></span>
+<span><span class="co">#&gt; ℹ 27 more rows. Use `as_tibble()` for all of them.</span></span></code></pre>
 <p><strong>Watch for:</strong> <code><a href="https://rdrr.io/pkg/surveillance/man/nowcast.html" class="external-link">surveillance::nowcast()</a></code> has
 <strong>no strata argument at all</strong>, so
 <code><a href="../reference/run_nowcast.html">run_nowcast()</a></code> fits one model per stratum and labels the
@@ -394,21 +414,25 @@ reporting correction supplied separately.</p>
 <span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">en2</span></span></code></pre></div>
-<pre><code><span><span class="co">#&gt; -- A &lt;tbl_nowcast&gt; from method "EpiNow2" ---------------------------------------</span></span>
-<span><span class="co">#&gt; * now: "2010-10-04"</span></span>
-<span><span class="co">#&gt; * event dates: 96</span></span>
-<span><span class="co">#&gt; * quantile levels: 0.025, 0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95, and 0.975</span></span>
-<span><span class="co">#&gt; * draws: 500</span></span>
-<span><span class="co">#&gt; # A tibble: 6 x 3</span></span>
+<pre><code><span><span class="co">#&gt; ── A &lt;tbl_nowcast&gt; from method "EpiNow2" ─────────────────────────────────────────────────────────────────────────────────────</span></span>
+<span><span class="co">#&gt; • now: "2010-10-04"</span></span>
+<span><span class="co">#&gt; • event dates: 96</span></span>
+<span><span class="co">#&gt; • quantile levels: 0.025, 0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95, and 0.975</span></span>
+<span><span class="co">#&gt; • draws: 500</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Nowcast at "2010-10-04" (q50, 2.5-97.5% interval):</span></span>
+<span><span class="co">#&gt; • 90 [90, 90]</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; # A tibble: 6 × 3</span></span>
 <span><span class="co">#&gt;   onset_week .quantile_level .value</span></span>
 <span><span class="co">#&gt;   &lt;date&gt;               &lt;dbl&gt;  &lt;dbl&gt;</span></span>
-<span><span class="co">#&gt; 1 2008-12-08           0.025     37</span></span>
-<span><span class="co">#&gt; 2 2008-12-08           0.05      37</span></span>
-<span><span class="co">#&gt; 3 2008-12-08           0.1       37</span></span>
-<span><span class="co">#&gt; 4 2008-12-08           0.25      37</span></span>
-<span><span class="co">#&gt; 5 2008-12-08           0.5       37</span></span>
-<span><span class="co">#&gt; 6 2008-12-08           0.75      37</span></span>
-<span><span class="co">#&gt; i 858 more rows. Use `as_tibble()` for all of them.</span></span></code></pre>
+<span><span class="co">#&gt; 1 2008-12-08           0.025     19</span></span>
+<span><span class="co">#&gt; 2 2008-12-08           0.05      19</span></span>
+<span><span class="co">#&gt; 3 2008-12-08           0.1       19</span></span>
+<span><span class="co">#&gt; 4 2008-12-08           0.25      19</span></span>
+<span><span class="co">#&gt; 5 2008-12-08           0.5       19</span></span>
+<span><span class="co">#&gt; 6 2008-12-08           0.75      28</span></span>
+<span><span class="co">#&gt; ℹ 858 more rows. Use `as_tibble()` for all of them.</span></span></code></pre>
 <p><strong>Watch for:</strong> EpiNow2 has no <code>timestep</code> — it
 always models a <em>daily</em> process. The converter therefore lays a
 weekly object onto EpiNow2’s daily grid, putting each week’s count on
@@ -509,37 +533,37 @@ produced — a Stan fit, a matrix of samples, a data frame of quantiles —
 the predictions are always in the same tidy shape:</p>
 <div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://tibble.tidyverse.org/reference/as_tibble.html" class="external-link">as_tibble</a></span><span class="op">(</span><span class="va">baseline</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1,296 × 3</span></span></span>
+<pre><code><span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 9,756 × 3</span></span></span>
 <span><span class="co">#&gt;    onset_week .quantile_level .value</span></span>
 <span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>               <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> 2008-01-07           0.025     22</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> 2008-01-07           0.05      22</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> 2008-01-07           0.1       22</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> 2008-01-07           0.25      22</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> 2008-01-07           0.5       22</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> 2008-01-07           0.75      22</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> 2008-01-07           0.9       22</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> 2008-01-07           0.95      22</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> 2008-01-07           0.975     22</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> 2008-01-14           0.025     19</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 1,286 more rows</span></span></span></code></pre>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> 1990-01-01           0.025     61</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> 1990-01-01           0.05      61</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> 1990-01-01           0.1       61</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> 1990-01-01           0.25      61</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> 1990-01-01           0.5       61</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> 1990-01-01           0.75      61</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> 1990-01-01           0.9       61</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> 1990-01-01           0.95      61</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> 1990-01-01           0.975     61</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> 1990-01-08           0.025     50</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 9,746 more rows</span></span></span></code></pre>
 <p>and, when the backend is sample-based, the draws are there too:</p>
 <div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://tibble.tidyverse.org/reference/as_tibble.html" class="external-link">as_tibble</a></span><span class="op">(</span><span class="va">baseline</span>, type <span class="op">=</span> <span class="st">"draws"</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 144,000 × 3</span></span></span>
+<pre><code><span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1,084,000 × 3</span></span></span>
 <span><span class="co">#&gt;    onset_week .draw .value</span></span>
 <span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> 2008-01-07     1     22</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> 2008-01-07     2     22</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> 2008-01-07     3     22</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> 2008-01-07     4     22</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> 2008-01-07     5     22</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> 2008-01-07     6     22</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> 2008-01-07     7     22</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> 2008-01-07     8     22</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> 2008-01-07     9     22</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> 2008-01-07    10     22</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 143,990 more rows</span></span></span></code></pre>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> 1990-01-01     1     61</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> 1990-01-01     2     61</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> 1990-01-01     3     61</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> 1990-01-01     4     61</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> 1990-01-01     5     61</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> 1990-01-01     6     61</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> 1990-01-01     7     61</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> 1990-01-01     8     61</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> 1990-01-01     9     61</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> 1990-01-01    10     61</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 1,083,990 more rows</span></span></span></code></pre>
 </div>
 <div class="section level3">
 <h3 id="tidy-works-here-too">
@@ -553,20 +577,20 @@ engine in this package produces</strong> — the one documented at
 are read the same way:</p>
 <div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/tidy.nowcast.html">tidy</a></span><span class="op">(</span><span class="va">baseline</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 144 × 7</span></span></span>
+<pre><code><span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1,084 × 7</span></span></span>
 <span><span class="co">#&gt;    event_date stratum estimate conf.low conf.high level engine         </span></span>
 <span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>          </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> 2008-01-07 all           22       22        22  0.95 baselinenowcast</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> 2008-01-14 all           19       19        19  0.95 baselinenowcast</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> 2008-01-21 all            8        8         8  0.95 baselinenowcast</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> 2008-01-28 all           14       14        14  0.95 baselinenowcast</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> 2008-02-04 all            5        5         5  0.95 baselinenowcast</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> 2008-02-11 all            5        5         5  0.95 baselinenowcast</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> 2008-02-18 all            4        4         4  0.95 baselinenowcast</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> 2008-02-25 all           11       11        11  0.95 baselinenowcast</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> 2008-03-03 all            2        2         2  0.95 baselinenowcast</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> 2008-03-10 all            2        2         2  0.95 baselinenowcast</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 134 more rows</span></span></span></code></pre>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> 1990-01-01 all           61       61        61  0.95 baselinenowcast</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> 1990-01-08 all           50       50        50  0.95 baselinenowcast</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> 1990-01-15 all           44       44        44  0.95 baselinenowcast</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> 1990-01-22 all           46       46        46  0.95 baselinenowcast</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> 1990-01-29 all           39       39        39  0.95 baselinenowcast</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> 1990-02-05 all           34       34        34  0.95 baselinenowcast</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> 1990-02-12 all           24       24        24  0.95 baselinenowcast</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> 1990-02-19 all           17       17        17  0.95 baselinenowcast</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> 1990-02-26 all           17       17        17  0.95 baselinenowcast</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> 1990-03-05 all           16       16        16  0.95 baselinenowcast</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 1,074 more rows</span></span></span></code></pre>
 <p>Those first weeks look odd until you notice what they are:
 <code>estimate</code>, <code>conf.low</code> and <code>conf.high</code>
 are identical because early 2008 was <strong>settled</strong> long
@@ -618,7 +642,7 @@ ordinary column of the output:</p>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">report_week</span> <span class="op">&lt;=</span> <span class="va">now</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/add.html">change_now</a></span><span class="op">(</span>now <span class="op">=</span> <span class="va">now</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">by_sex</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/run_nowcast.html">run_nowcast</a></span><span class="op">(</span><span class="va">dengue_by_sex</span>, <span class="st">"baselinenowcast"</span>, draws <span class="op">=</span> <span class="fl">1000</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span><span class="va">by_sex</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/run_nowcast.html">run_nowcast</a></span><span class="op">(</span><span class="va">dengue_by_sex</span>, engine <span class="op">=</span> <span class="fu"><a href="../reference/nowcast_engines.html">engine_baselinenowcast</a></span><span class="op">(</span>draws <span class="op">=</span> <span class="fl">1000</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://tibble.tidyverse.org/reference/as_tibble.html" class="external-link">as_tibble</a></span><span class="op">(</span><span class="va">by_sex</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 2,556 × 4</span></span></span>
@@ -670,31 +694,39 @@ is why <code>snapshot</code> was truncated at <code>now</code> and the
 truth comes from the full series:</p>
 <div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/score_nowcast.html">score_nowcast</a></span><span class="op">(</span><span class="va">baseline</span>, truth <span class="op">=</span> <span class="va">dengue</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 144 × 7</span></span></span>
-<span><span class="co">#&gt;    .method         onset_week .observed   wis ae_median coverage_50 coverage_90</span></span>
-<span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;lgl&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;lgl&gt;</span>      </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> baselinenowcast 2008-01-07        22     0         0 TRUE        TRUE       </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> baselinenowcast 2008-01-14        19     0         0 TRUE        TRUE       </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> baselinenowcast 2008-01-21         8     0         0 TRUE        TRUE       </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> baselinenowcast 2008-01-28        14     0         0 TRUE        TRUE       </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> baselinenowcast 2008-02-04         5     0         0 TRUE        TRUE       </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> baselinenowcast 2008-02-11         5     0         0 TRUE        TRUE       </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> baselinenowcast 2008-02-18         4     0         0 TRUE        TRUE       </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> baselinenowcast 2008-02-25        11     0         0 TRUE        TRUE       </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> baselinenowcast 2008-03-03         2     0         0 TRUE        TRUE       </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> baselinenowcast 2008-03-10         2     0         0 TRUE        TRUE       </span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 134 more rows</span></span></span></code></pre>
+<pre><code><span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 8 × 7</span></span></span>
+<span><span class="co">#&gt;   .method         onset_week .observed     wis ae_median coverage_50 coverage_90</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;lgl&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;lgl&gt;</span>      </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> baselinenowcast 2010-08-16       355 2.22<span style="color: #949494;">e</span><span style="color: #BB0000;">-2</span>         0 TRUE        TRUE       </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> baselinenowcast 2010-08-23       258 4.44<span style="color: #949494;">e</span><span style="color: #BB0000;">-2</span>         0 TRUE        TRUE       </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> baselinenowcast 2010-08-30       287 2.67<span style="color: #949494;">e</span><span style="color: #BB0000;">-1</span>         1 TRUE        TRUE       </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> baselinenowcast 2010-09-06       298 4.22<span style="color: #949494;">e</span><span style="color: #BB0000;">-1</span>         1 TRUE        TRUE       </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> baselinenowcast 2010-09-13       275 1.08<span style="color: #949494;">e</span>+0         2 TRUE        TRUE       </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> baselinenowcast 2010-09-20       250 9.45<span style="color: #949494;">e</span>+0        21 FALSE       FALSE      </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">7</span> baselinenowcast 2010-09-27       201 3.59<span style="color: #949494;">e</span>+1        70 FALSE       TRUE       </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">8</span> baselinenowcast 2010-10-04       147 1.49<span style="color: #949494;">e</span>+2       355 FALSE       TRUE</span></span></code></pre>
 <p>Lower WIS is better; <code>coverage_90</code> should be
 <code>TRUE</code> about nine times in ten if the intervals are
 honest.</p>
-<p>If you would rather use the full score suite,
-<code><a href="../reference/score_nowcast.html">as_scoringutils()</a></code> reshapes the same object into the format
-it expects:</p>
+<p>If you would rather use the full score suite, its coercion generic
+accepts the nowcast directly. Supply the later, full
+<code>tbl_now</code> as <code>truth</code>:</p>
 <div class="sourceCode" id="cb34"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">baseline</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="../reference/score_nowcast.html">as_scoringutils</a></span><span class="op">(</span>truth <span class="op">=</span> <span class="va">dengue</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu">scoringutils</span><span class="fu">::</span><span class="fu"><a href="https://epiforecasts.io/scoringutils/reference/as_forecast_quantile.html" class="external-link">as_forecast_quantile</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">scoringutils</span><span class="fu">::</span><span class="fu"><a href="https://epiforecasts.io/scoringutils/reference/as_forecast_quantile.html" class="external-link">as_forecast_quantile</a></span><span class="op">(</span>truth <span class="op">=</span> <span class="va">dengue</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">scoringutils</span><span class="fu">::</span><span class="fu"><a href="https://epiforecasts.io/scoringutils/reference/score.html" class="external-link">score</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<p><code>as_scoringutils(baseline, truth = dengue)</code> is the long
+tibble underneath that object when you want to inspect or alter the
+forecast units first.</p>
+<p>When the nowcast retains posterior draws, it can instead become a
+sample forecast. This follows the same adapter pattern used by :</p>
+<div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">baseline</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">scoringutils</span><span class="fu">::</span><span class="fu"><a href="https://epiforecasts.io/scoringutils/reference/as_forecast_sample.html" class="external-link">as_forecast_sample</a></span><span class="op">(</span>truth <span class="op">=</span> <span class="va">dengue</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">scoringutils</span><span class="fu">::</span><span class="fu"><a href="https://epiforecasts.io/scoringutils/reference/score.html" class="external-link">score</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<p>Sample conversion is deliberately unavailable for a quantile-only
+nowcast: samples cannot be reconstructed from a handful of
+quantiles.</p>
 <p><code>tbl.now</code>’s own <code>wis</code> and the one computes
 agree to machine precision — the package’s test suite checks exactly
 that, on the same numbers, rather than trusting either implementation on
@@ -713,7 +745,7 @@ deliberately. Because every <code><a href="../reference/run_nowcast.html">run_no
 same shape, combining them is one call.</p>
 <p>The members below are the fits from the cards above, so nothing is
 refitted:</p>
-<div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb36"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">members</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
 <span>  baselinenowcast   <span class="op">=</span> <span class="va">baseline</span>,</span>
 <span>  diseasenowcasting <span class="op">=</span> <span class="va">dnc</span>,</span>
@@ -735,21 +767,25 @@ refitted:</p>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">ensemble</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/nowcast_ensemble.html">nowcast_ensemble</a></span><span class="op">(</span><span class="va">members</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">#&gt; -- A &lt;tbl_nowcast&gt; from method "ensemble" --------------------------------------</span></span>
-<span><span class="co">#&gt; * now: "2010-10-04"</span></span>
-<span><span class="co">#&gt; * event dates: 10</span></span>
-<span><span class="co">#&gt; * quantile levels: 0.025, 0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95, and 0.975</span></span>
-<span><span class="co">#&gt; * draws: none (quantiles only)</span></span>
-<span><span class="co">#&gt; # A tibble: 6 x 3</span></span>
+<pre><code><span><span class="co">#&gt; ── A &lt;tbl_nowcast&gt; from method "ensemble" ────────────────────────────────────────────────────────────────────────────────────</span></span>
+<span><span class="co">#&gt; • now: "2010-10-04"</span></span>
+<span><span class="co">#&gt; • event dates: 10</span></span>
+<span><span class="co">#&gt; • quantile levels: 0.025, 0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95, and 0.975</span></span>
+<span><span class="co">#&gt; • draws: none (quantiles only)</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Nowcast at "2010-10-04" (q50, 2.5-97.5% interval):</span></span>
+<span><span class="co">#&gt; • 290.7 [135.2, 574.7]</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; # A tibble: 6 × 3</span></span>
 <span><span class="co">#&gt;   onset_week .quantile_level .value</span></span>
 <span><span class="co">#&gt;   &lt;date&gt;               &lt;dbl&gt;  &lt;dbl&gt;</span></span>
-<span><span class="co">#&gt; 1 2010-08-02           0.025   324.</span></span>
-<span><span class="co">#&gt; 2 2010-08-02           0.05    324.</span></span>
-<span><span class="co">#&gt; 3 2010-08-02           0.1     324.</span></span>
-<span><span class="co">#&gt; 4 2010-08-02           0.25    354.</span></span>
-<span><span class="co">#&gt; 5 2010-08-02           0.5     354.</span></span>
-<span><span class="co">#&gt; 6 2010-08-02           0.75    354.</span></span>
-<span><span class="co">#&gt; i 84 more rows. Use `as_tibble()` for all of them.</span></span></code></pre>
+<span><span class="co">#&gt; 1 2010-08-02           0.025   308 </span></span>
+<span><span class="co">#&gt; 2 2010-08-02           0.05    308 </span></span>
+<span><span class="co">#&gt; 3 2010-08-02           0.1     308 </span></span>
+<span><span class="co">#&gt; 4 2010-08-02           0.25    308 </span></span>
+<span><span class="co">#&gt; 5 2010-08-02           0.5     320.</span></span>
+<span><span class="co">#&gt; 6 2010-08-02           0.75    320.</span></span>
+<span><span class="co">#&gt; ℹ 84 more rows. Use `as_tibble()` for all of them.</span></span></code></pre>
 <div class="section level3">
 <h3 id="the-ensemble-against-its-parts">The ensemble against its parts<a class="anchor" aria-label="anchor" href="#the-ensemble-against-its-parts"></a>
 </h3>
@@ -807,21 +843,27 @@ that package’s considered answer.</p>
 <p>An ensemble is a <code>tbl_nowcast</code> like any other, so it
 scores, plots and tidies the same way. Its <code>engine</code> is the
 ensemble’s name rather than a package:</p>
-<div class="sourceCode" id="cb37"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb38"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/tidy.nowcast.html">tidy</a></span><span class="op">(</span><span class="va">ensemble</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 10 × 7</span></span></span>
 <span><span class="co">#&gt;    event_date stratum estimate conf.low conf.high level engine  </span></span>
 <span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> 2010-08-02 all         354.     324.      355.  0.95 ensemble</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> 2010-08-09 all         354.     354.      364.  0.95 ensemble</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> 2010-08-16 all         361.     361.      370.  0.95 ensemble</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> 2010-08-23 all         252.     252.      264.  0.95 ensemble</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> 2010-08-30 all         282.     282       300.  0.95 ensemble</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> 2010-09-06 all         289.     283       292.  0.95 ensemble</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> 2010-09-13 all         267.     264.      292.  0.95 ensemble</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> 2010-09-20 all         257.     245.      320.  0.95 ensemble</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> 2010-09-27 all         229.     179.      402.  0.95 ensemble</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> 2010-10-04 all         226.     108.      549.  0.95 ensemble</span></span></code></pre>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> 2010-08-02 all         320.     308       320.  0.95 ensemble</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> 2010-08-09 all         371.     349.      371.  0.95 ensemble</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> 2010-08-16 all         346      346       353.  0.95 ensemble</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> 2010-08-23 all         264.     262.      265.  0.95 ensemble</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> 2010-08-30 all         286      275.      288.  0.95 ensemble</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> 2010-09-06 all         304.     293.      308.  0.95 ensemble</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> 2010-09-13 all         277      261.      287   0.95 ensemble</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> 2010-09-20 all         263.     244.      298.  0.95 ensemble</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> 2010-09-27 all         264.     196.      414.  0.95 ensemble</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> 2010-10-04 all         291.     135.      575.  0.95 ensemble</span></span></code></pre>
+<p>It can also be a member of another ensemble. This makes it possible,
+for example, to combine a <code>diseasenowcasting</code> HSGP/AR
+ensemble with an <code>epinowcast</code> random walk and a baseline.
+Quantile ensembles can always be nested; a nested member of a
+<code>linear_pool</code> must itself have draws, so its inner ensemble
+must also use <code>type = "linear_pool"</code>.</p>
 </div>
 <div class="section level3">
 <h3 id="two-ways-of-combining">Two ways of combining<a class="anchor" aria-label="anchor" href="#two-ways-of-combining"></a>
@@ -836,7 +878,7 @@ into a mixture distribution and re-summarises it. It needs draws from
 every member and generally produces <strong>wider</strong> intervals,
 because disagreement between models becomes extra spread rather than
 being averaged away.</p>
-<div class="sourceCode" id="cb39"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb40"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">sharp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/nowcast_ensemble.html">nowcast_ensemble</a></span><span class="op">(</span><span class="va">members</span>, type <span class="op">=</span> <span class="st">"quantile"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># The pool needs draws, so it takes the members that have them.</span></span>
@@ -892,7 +934,7 @@ treats it specially.</p>
 </h3>
 <p>By default every member counts the same. You can also give weights
 directly:</p>
-<div class="sourceCode" id="cb40"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb41"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/nowcast_ensemble.html">nowcast_ensemble</a></span><span class="op">(</span><span class="va">members</span>, weights <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
 <span>  baselinenowcast <span class="op">=</span> <span class="fl">0.3</span>, diseasenowcasting <span class="op">=</span> <span class="fl">0.2</span>, dnc_ar1 <span class="op">=</span> <span class="fl">0.1</span>,</span>
 <span>  epinowcast <span class="op">=</span> <span class="fl">0.2</span>, NobBS <span class="op">=</span> <span class="fl">0.1</span>, EpiNow2 <span class="op">=</span> <span class="fl">0.1</span></span>
@@ -907,7 +949,7 @@ is no second place to keep the arguments in step. An engine’s
 <code>label</code> becomes its name in the result — which is how one
 package appears twice, so the two <code>diseasenowcasting</code> models
 above can be weighted separately rather than sharing one weight:</p>
-<div class="sourceCode" id="cb41"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb42"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">backtest</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/nowcast_backtest.html">nowcast_backtest</a></span><span class="op">(</span></span>
 <span>  <span class="va">dengue</span>,</span>
 <span>  <span class="fu"><a href="../reference/nowcast_engines.html">engine_baselinenowcast</a></span><span class="op">(</span>draws <span class="op">=</span> <span class="fl">1000</span><span class="op">)</span>,</span>
@@ -924,16 +966,17 @@ above can be weighted separately rather than sharing one weight:</p>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="../reference/tidy.nowcast.html">tidy</a></span><span class="op">(</span><span class="va">backtest</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 6 × 9</span></span></span>
-<span><span class="co">#&gt;   method now        event_date stratum observed   wis ae_median coverage_50</span></span>
-<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;lgl&gt;</span>      </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> NobBS  2010-04-19 2009-02-02 all           48     0         0 TRUE       </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> NobBS  2010-04-19 2009-02-09 all           47     0         0 TRUE       </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> NobBS  2010-04-19 2009-02-16 all           43     0         0 TRUE       </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> NobBS  2010-04-19 2009-02-23 all           42     0         0 TRUE       </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> NobBS  2010-04-19 2009-03-02 all           24     0         0 TRUE       </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> NobBS  2010-04-19 2009-03-09 all           27     0         0 TRUE       </span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 1 more variable: coverage_90 &lt;lgl&gt;</span></span></span></code></pre>
+<pre><code><span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 6 × 13</span></span></span>
+<span><span class="co">#&gt;   method now        event_date stratum observed estimate conf.low conf.high</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> NobBS  2010-04-19 2009-02-02 all           48       48       48        48</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> NobBS  2010-04-19 2009-02-09 all           47       47       47        47</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> NobBS  2010-04-19 2009-02-16 all           43       43       43        43</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> NobBS  2010-04-19 2009-02-23 all           42       42       42        42</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> NobBS  2010-04-19 2009-03-02 all           24       24       24        24</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> NobBS  2010-04-19 2009-03-09 all           27       27       27        27</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 5 more variables: level &lt;dbl&gt;, wis &lt;dbl&gt;, ae_median &lt;dbl&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   coverage_50 &lt;lgl&gt;, coverage_90 &lt;lgl&gt;</span></span></span></code></pre>
 <div class="alert alert-info">
 <p><strong>Why not every ensemble member is backtested here.</strong> A
 backtest is <code>length(methods) × length(now_dates)</code> model fits.
@@ -945,14 +988,40 @@ every member, give the uncovered ones weights yourself;
 <code><a href="../reference/nowcast_ensemble.html">nowcast_ensemble()</a></code> will not invent them.</p>
 </div>
 <p><code><a href="../reference/tidy.nowcast.html">tidy()</a></code> on a backtest gives one row per (method,
-<code>now</code> date, target), which goes straight into
-<code>dplyr</code> or <code>ggplot2</code>:</p>
-<pre><code><span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 3 × 4</span></span></span>
-<span><span class="co">#&gt;   method            mean_wis mean_ae_median coverage_90</span></span>
-<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> diseasenowcasting     0.5            0.97        0.99</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> baselinenowcast       0.7            1.39        0.99</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> NobBS                 1.91           2.86        0.97</span></span></code></pre>
+<code>now</code> date, target), carrying the retrospective prediction
+(<code>estimate</code>, <code>conf.low</code>, <code>conf.high</code>)
+next to what was eventually <code>observed</code> and the scores that
+comparison earned. It goes straight into <code>dplyr</code> or
+<code>ggplot2</code>:</p>
+<pre><code><span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 12 × 4</span></span></span>
+<span><span class="co">#&gt;    method            now        mean_wis coverage_90</span></span>
+<span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>             <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> baselinenowcast   2010-04-19      0          1   </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> diseasenowcasting 2010-04-19      0          1   </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> dnc_ar1           2010-04-19      0          1   </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> NobBS             2010-04-19      0.2        0.94</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> baselinenowcast   2010-06-14      0.1        1   </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> diseasenowcasting 2010-06-14      0.1        1   </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> dnc_ar1           2010-06-14      0.2        1   </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> NobBS             2010-06-14      1.7        0.91</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> diseasenowcasting 2010-08-09      0.1        1   </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> dnc_ar1           2010-08-09      0.1        1   </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">11</span> baselinenowcast   2010-08-09      0.2        1   </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">12</span> NobBS             2010-08-09      4          0.89</span></span></code></pre>
+<p>The backtest also converts directly to ; it already stores the truth,
+and <code>now</code> remains a forecast unit so repeated retrospective
+predictions of one target stay distinct:</p>
+<div class="sourceCode" id="cb45"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">backtest</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">scoringutils</span><span class="fu">::</span><span class="fu"><a href="https://epiforecasts.io/scoringutils/reference/as_forecast_quantile.html" class="external-link">as_forecast_quantile</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">scoringutils</span><span class="fu">::</span><span class="fu"><a href="https://epiforecasts.io/scoringutils/reference/score.html" class="external-link">score</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">scoringutils</span><span class="fu">::</span><span class="fu"><a href="https://epiforecasts.io/scoringutils/reference/add_relative_skill.html" class="external-link">add_relative_skill</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<p>Quantile conversion above needs no extra storage. To use
+<code>as_forecast_sample()</code> instead, build the backtest with
+<code>keep_draws = TRUE</code>. This can make the object much larger,
+and every included engine must return draws; a mixed backtest containing
+a quantile-only engine is refused rather than scored on only a subset of
+its methods.</p>
 <p>This is the expensive part of the workflow — it is
 <code>length(methods) × length(now_dates)</code> model fits — so keep
 <code>now_dates</code> short when the members are Bayesian. Pass
@@ -962,13 +1031,13 @@ every method draws the same random numbers in the same order, which
 stops being true the moment you drop a method.</p>
 <p>From the backtest, <code><a href="../reference/nowcast_weights.html">nowcast_weights()</a></code> offers two
 rules:</p>
-<div class="sourceCode" id="cb44"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb46"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fitted_weights</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/nowcast_weights.html">nowcast_weights</a></span><span class="op">(</span><span class="va">backtest</span>, type <span class="op">=</span> <span class="st">"inverse_score"</span><span class="op">)</span></span>
 <span><span class="va">fitted_weights</span>                                    <span class="co"># w proportional to 1 / mean WIS</span></span>
 <span></span>
 <span><span class="fu"><a href="../reference/nowcast_weights.html">nowcast_weights</a></span><span class="op">(</span><span class="va">backtest</span>, type <span class="op">=</span> <span class="st">"optim"</span><span class="op">)</span>         <span class="co"># w minimising the ensemble's WIS</span></span></code></pre></div>
-<pre><code><span><span class="co">#&gt;             NobBS   baselinenowcast diseasenowcasting </span></span>
-<span><span class="co">#&gt;             0.132             0.360             0.508</span></span></code></pre>
+<pre><code><span><span class="co">#&gt;             NobBS   baselinenowcast diseasenowcasting           dnc_ar1 </span></span>
+<span><span class="co">#&gt;             0.013             0.284             0.493             0.211</span></span></code></pre>
 <p><code>"inverse_score"</code> is the safe default: it is monotone in
 performance, never collapses onto a single model, and cannot overfit.
 <code>"optim"</code> searches the simplex for the weights that would
@@ -976,7 +1045,7 @@ have minimised the ensemble’s WIS over the training window; it is better
 in principle, but with only a handful of retrospective dates it happily
 overfits, so prefer it when the training window is long.</p>
 <p>Either rule plugs straight into the ensemble:</p>
-<div class="sourceCode" id="cb46"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb48"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/nowcast_ensemble.html">nowcast_ensemble</a></span><span class="op">(</span><span class="va">members</span>, weights <span class="op">=</span> <span class="st">"inverse_score"</span>, backtest <span class="op">=</span> <span class="va">backtest</span><span class="op">)</span></span></code></pre></div>
 </div>
 </div>
@@ -987,8 +1056,8 @@ overfits, so prefer it when the training window is long.</p>
 back-end is <strong>two S3 methods</strong>, and they can live in your
 own package, your analysis script, or a one-off chunk. Nothing inside
 <code>tbl.now</code> needs to change.</p>
-<p><code>run_nowcast(x, method = "mymodel")</code> builds a little
-object of class <code>c("mymodel", "nowcast_method")</code> and
+<p><code>run_nowcast(x, engine = engine("mymodel"))</code> builds a
+little object of class <code>c("mymodel", "nowcast_method")</code> and
 calls</p>
 <ul>
 <li>

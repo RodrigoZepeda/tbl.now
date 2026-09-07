@@ -101,6 +101,8 @@ validate_tbl_now(ndata)
 # warns about -- and which does not stop it being a `tbl_now`.
 messy <- ndata
 messy$report_week[1] <- NA
+#> Warning: 1 row has NA values in the report_date column "report_week".
+#> ℹ A row with no report date cannot be placed on the reporting triangle.
 is_tbl_now(messy)
 #> [1] TRUE
 

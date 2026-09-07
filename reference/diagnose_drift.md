@@ -242,8 +242,8 @@ for an abrupt shift rather than a gradual trend;
 to see the series being tested;
 [`censor_reporting_delays_above()`](https://rodrigozepeda.github.io/tbl.now/reference/censoring.md)
 once you decide some delays are not to be believed;
-[diagnose_signposts()](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_diagnose_components.md),
-which tells you when this test is worth running.
+[`diagnose()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose.md)
+for the structural checks, which this test deliberately sits outside of.
 
 ## Examples
 

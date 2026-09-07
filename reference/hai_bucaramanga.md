@@ -1,10 +1,11 @@
-# Healthcare-Associated Infections – Bucaramanga, Colombia 2016-2023
+# Healthcare-Associated Infections – Bucaramanga, Colombia 2020-2023
 
 A line list of healthcare-associated infections (IAAS, *Infecciones
 Asociadas a la Atencion en Salud*) notified in the municipality of
-Bucaramanga, Santander, Colombia, between January 2016 and January 2023.
-Each row is one notified infection: a specimen taken from a hospitalised
-patient, the laboratory result, and the isolated microorganism.
+Bucaramanga, Santander, Colombia, between January 2020 and January 2023
+as reported by March 19th 2026. Each row is one notified infection: a
+specimen taken from a hospitalised patient, the laboratory result, and
+the isolated microorganism.
 
 ## Usage
 
@@ -196,7 +197,7 @@ iaas_clean <- dplyr::distinct(hai_bucaramanga) |>
     report_date >= specimen_date
   )
 nrow(iaas_clean)
-#> [1] 673
+#> [1] 471
 
 # Roughly 1.5 cases per event date, so aggregate to weeks before building a
 # tbl_now for anything model-shaped.
@@ -207,32 +208,32 @@ iaas_now <- tbl_now(
   verbose     = FALSE
 )
 iaas_now
-#> # A tibble:  673 × 16
+#> # A tibble:  471 × 16
 #> # Data type: "linelist"
 #> # Frequency: Event: `days` | Report: `days`
 #>       id specimen_date received_date report_date   specimen  test  microorganism
 #>    <int> <date>        <date>        <date>        <fct>     <fct> <chr>        
 #>    [...] [event_date]  [...]         [report_date] [...]     [...] [...]        
-#>  1     3 2018-01-27    2018-01-27    2018-01-31    Whole bl… Bloo… Stenotrophom…
-#>  2     4 2018-01-27    2018-01-27    2018-01-30    Whole bl… Bloo… Klebsiella p…
-#>  3     5 2018-04-20    2018-04-20    2018-04-26    Urine     Urin… Klebsiella p…
-#>  4     6 2018-01-22    2018-01-22    2018-01-25    Whole bl… Bloo… Klebsiella p…
-#>  5     7 2018-01-02    2018-01-02    2018-03-02    Whole bl… Bloo… Klebsiella p…
-#>  6     8 2018-06-28    2018-06-28    2018-06-30    Whole bl… Bloo… Acinetobacte…
-#>  7    13 2018-10-03    2018-10-03    2018-12-03    Urine     Urin… Enterobacter…
-#>  8    14 2018-05-03    2018-05-03    2018-08-03    Urine     Urin… Candida albi…
-#>  9    15 2018-07-03    2018-07-03    2018-08-03    Whole bl… Bloo… Acinetobacte…
-#> 10    16 2018-03-17    2018-03-17    2018-03-20    Urine     Urin… Staphylococc…
+#>  1   587 2020-03-07    NA            2020-07-07    Urine     Urin… Pseudomonas …
+#>  2   588 2020-06-07    NA            2020-06-07    Whole bl… Bloo… Staphylococc…
+#>  3   589 2020-07-07    NA            2020-11-07    Whole bl… Bloo… Klebsiella p…
+#>  4   591 2020-07-14    NA            2020-07-18    Whole bl… Bloo… Klebsiella p…
+#>  5   592 2020-07-14    NA            2020-07-18    Whole bl… Bloo… Candida albi…
+#>  6   593 2020-07-13    NA            2020-07-17    Whole bl… Bloo… Candida albi…
+#>  7   594 2020-07-19    NA            2020-07-19    Whole bl… Bloo… Klebsiella p…
+#>  8   595 2020-07-19    NA            2020-07-19    Whole bl… Bloo… Klebsiella p…
+#>  9   596 2020-07-19    NA            2020-07-23    Whole bl… Bloo… Klebsiella p…
+#> 10   597 2020-07-25    NA            2020-07-25    Whole bl… Bloo… Stenotrophom…
 #> # ────────────────────────────────────────────────────────────────────────────────
 #> # Now: 2023-02-01 | Event date: "specimen_date" | Report date: "report_date"
 #> # ────────────────────────────────────────────────────────────────────────────────
-#> # ℹ 663 more rows
+#> # ℹ 461 more rows
 #> # ℹ 9 more variables: sex <fct>, age_group <ord>, case_type <fct>,
 #> #   final_condition <fct>, icu_type <fct>, institution <int>, .event_num <dbl>,
 #> #   .report_num <dbl>, .delay <dbl>
 
 # The delay is strongly bimodal: a 3-day median with a long secondary mode.
 quantile(iaas_now$.delay, c(0.5, 0.75, 0.9, 0.99), na.rm = TRUE)
-#> 50% 75% 90% 99% 
-#>   3  31  92 153 
+#>   50%   75%   90%   99% 
+#>   3.0  30.5  92.0 161.4 
 ```

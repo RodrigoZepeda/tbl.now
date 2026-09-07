@@ -24,18 +24,49 @@ so there is no column to name.
 ## Usage
 
 ``` r
-score_nowcast(x, truth = NULL)
+score_nowcast(
+  x,
+  truth = NULL,
+  truth_axis = c("report", "validation"),
+  truth_type = "total"
+)
 
-as_scoringutils(x, truth = NULL)
+as_scoringutils(
+  x,
+  truth = NULL,
+  truth_axis = c("report", "validation"),
+  truth_type = "total"
+)
+
+# S3 method for class 'nowcast_backtest'
+as_forecast_quantile(
+  data,
+  ...,
+  truth = NULL,
+  truth_axis = c("report", "validation"),
+  truth_type = "total"
+)
+
+# S3 method for class 'nowcast_backtest'
+as_forecast_sample(
+  data,
+  ...,
+  truth = NULL,
+  truth_axis = c("report", "validation"),
+  truth_type = "total"
+)
 ```
 
 ## Arguments
 
 - x:
 
-  A
+  For `score_nowcast()`, a
+  [tbl_nowcast](https://rodrigozepeda.github.io/tbl.now/reference/tbl_nowcast.md).
+  For `as_scoringutils()`, a
   [tbl_nowcast](https://rodrigozepeda.github.io/tbl.now/reference/tbl_nowcast.md)
-  object.
+  (including an ensemble) or a
+  [`nowcast_backtest()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_backtest.md).
 
 - truth:
 
@@ -49,8 +80,37 @@ as_scoringutils(x, truth = NULL)
   ([`get_case_count()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)).
   A **line list** is aggregated first, so it needs no special handling.
 
-  `NULL` (default) uses the `tbl_now` the nowcast was built from, which
-  is only meaningful when that object still holds the later reports.
+  For a single nowcast, `NULL` (default) uses the `tbl_now` it was built
+  from, which is only meaningful when that object still holds the later
+  reports. A backtest instead uses the truth table it already stores.
+
+- truth_axis:
+
+  Which process defines the observed counts. `"report"` (default) scores
+  counts eventually reported. `"validation"` scores counts eventually
+  resolved on the validation axis and requires a validation-aware
+  `truth`.
+
+- truth_type:
+
+  Which case type to score. Defaults to `"total"`. Validation types such
+  as `"confirmed"`, `"retracted"`, `"pending"`, `"unknown"` and `"net"`
+  follow the same meanings as
+  [`get_latest_reported_cases()`](https://rodrigozepeda.github.io/tbl.now/reference/get_latest_first.md)
+  and
+  [`get_latest_validated_cases()`](https://rodrigozepeda.github.io/tbl.now/reference/validated_cases.md).
+  `"by_type"` is refused because scoring needs one observed value per
+  event-date/stratum target.
+
+- data:
+
+  A
+  [`nowcast_backtest()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_backtest.md).
+
+- ...:
+
+  Passed to the corresponding scoringutils coercion generic, most
+  commonly `forecast_unit`.
 
 ## Value
 
@@ -58,10 +118,36 @@ as_scoringutils(x, truth = NULL)
 strata columns, and the columns `.observed`, `wis`, `ae_median`,
 `coverage_50` and `coverage_90` – one row per event date and stratum.
 
-`as_scoringutils()` returns a long `tibble` with the columns `observed`,
-`predicted`, `quantile_level` and `model`, plus the event date and
-strata as forecast units – one row per quantile, ready for
+`as_scoringutils()` accepts either a single
+[tbl_nowcast](https://rodrigozepeda.github.io/tbl.now/reference/tbl_nowcast.md)
+(including one returned by
+[`nowcast_ensemble()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_ensemble.md))
+or a
+[`nowcast_backtest()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_backtest.md).
+It returns a long `tibble` with the columns `observed`, `predicted`,
+`quantile_level` and `model`, plus the event date and strata as forecast
+units. A backtest also carries `now`, because the same target was
+predicted retrospectively at more than one date. There is one row per
+quantile, ready for
 [`scoringutils::as_forecast_quantile()`](https://epiforecasts.io/scoringutils/reference/as_forecast_quantile.html).
+
+The two `scoringutils::as_forecast_*()` methods return the corresponding
+`forecast_quantile` or `forecast_sample` object from scoringutils.
+
+When scoringutils is installed, calling its coercion generic directly is
+equivalent: `scoringutils::as_forecast_quantile(x, truth = truth)` works
+for a
+[tbl_nowcast](https://rodrigozepeda.github.io/tbl.now/reference/tbl_nowcast.md),
+an ensemble, and a
+[`nowcast_backtest()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_backtest.md).
+A backtest already carries the truth it was scored against, so its
+`truth` can normally be omitted.
+
+[`scoringutils::as_forecast_sample()`](https://epiforecasts.io/scoringutils/reference/as_forecast_sample.html)
+also accepts those objects when they carry posterior draws. Draws are
+retained by a `linear_pool` ensemble, but not by a quantile ensemble. A
+backtest retains them only when run with `keep_draws = TRUE`; every
+engine in the backtest must return draws.
 
 ## References
 
@@ -135,14 +221,14 @@ score_nowcast(nc, truth = truth)
 # The same comparison handed to scoringutils instead, one row per quantile.
 head(as_scoringutils(nc, truth = truth))
 #> # A tibble: 6 × 5
-#>   onset      quantile_level predicted observed model
-#>   <date>              <dbl>     <dbl>    <dbl> <chr>
-#> 1 2024-03-04           0.25         8       10 toy  
-#> 2 2024-03-04           0.5         10       10 toy  
-#> 3 2024-03-04           0.75        13       10 toy  
-#> 4 2024-03-11           0.25         8       13 toy  
-#> 5 2024-03-11           0.5         10       13 toy  
-#> 6 2024-03-11           0.75        13       13 toy  
+#>   onset      quantile_level predicted model observed
+#>   <date>              <dbl>     <dbl> <chr>    <dbl>
+#> 1 2024-03-04           0.25         8 toy         10
+#> 2 2024-03-04           0.5         10 toy         10
+#> 3 2024-03-04           0.75        13 toy         10
+#> 4 2024-03-11           0.25         8 toy         13
+#> 5 2024-03-11           0.5         10 toy         13
+#> 6 2024-03-11           0.75        13 toy         13
 
 # With a real model, `truth` is the full object and the nowcast is fitted to
 # a snapshot of it taken at an earlier `now`.

@@ -16,6 +16,8 @@ plot_transport_discriminant(
   x,
   ...,
   plotly = FALSE,
+  size = 1,
+  grid_linewidth = 0.3,
   palette = .tbl_now_palette()
 )
 ```
@@ -39,9 +41,23 @@ plot_transport_discriminant(
   If `TRUE`, return an interactive plotly widget instead of a static
   plot. Default `FALSE`.
 
+- size:
+
+  Multiplier on the size of the points and their date labels. Default
+  `1`: unflagged points are drawn at `1.1`, confirmed batches at `2.6`.
+  It is a multiplier rather than an absolute size precisely so that
+  enlarging the marks keeps the flagged ones bigger than the rest.
+
+- grid_linewidth:
+
+  Line width of the zero lines and the dashed significance thresholds
+  this function draws – the package's own reference grid, not ggplot2's.
+  Default `0.3`.
+
 - palette:
 
-  A named colour palette. Defaults to the package palette.
+  A named colour palette (see
+  [`tbl_now_palette()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_palette.md)).
 
 ## Value
 

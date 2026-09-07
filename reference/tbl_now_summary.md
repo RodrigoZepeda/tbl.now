@@ -18,16 +18,7 @@ of those pieces.
 
 ``` r
 # S3 method for class 'tbl_now'
-summary(
-  object,
-  ...,
-  by_strata = NULL,
-  strata = NULL,
-  lags = 1,
-  completeness_delays = NULL,
-  growth_k = 7,
-  mature_only = TRUE
-)
+summary(object, ..., by_strata = NULL, strata = NULL, growth_k = 7)
 ```
 
 ## Arguments
@@ -39,7 +30,7 @@ summary(
 - ...:
 
   Unused, for compatibility with the
-  [`summary()`](https://rdrr.io/r/base/summary.html) generic.
+  [`base::summary()`](https://rdrr.io/r/base/summary.html) generic.
 
 - by_strata:
 
@@ -51,24 +42,9 @@ summary(
   Character vector of columns to stratify by. Defaults to
   `get_strata(object)`.
 
-- lags:
-
-  Integer vector of lags for the autocorrelation rows.
-
-- completeness_delays:
-
-  Integer vector of delays for the reporting completeness rows. Defaults
-  to `0:7`, trimmed to the observed delays.
-
 - growth_k:
 
   Number of delays for the cumulative growth rows.
-
-- mature_only:
-
-  Logical. Restrict the completeness rows to event dates old enough to
-  have been fully reported (see
-  [`reporting_completeness()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md)).
 
 ## Value
 
@@ -131,8 +107,13 @@ and filtered with
 - `component`:
 
   Which block the row belongs to: `"cases"`, `"delay"`, `"zero_run"`,
-  `"composition"`, `"autocorrelation"`, `"completeness"`, `"growth"` or
-  `"coverage"`.
+  `"composition"`, `"growth"` or `"coverage"`. The `"autocorrelation"`
+  and `"completeness"` blocks are no longer part of
+  [`summary()`](https://rdrr.io/r/base/summary.html); call
+  [`case_autocorrelation()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md)
+  and
+  [`reporting_completeness()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md)
+  directly for those.
 
 - `quantity`:
 
@@ -146,12 +127,19 @@ and filtered with
 
 - `n`:
 
-  Number of observations behind the row – dates for `"cases"`, runs for
-  `"zero_run"`, data rows for `"delay"` and `"composition"`.
+  How many **things of the block's own kind** the row counts. It is
+  never a case count, and what it counts changes with the block: dates
+  on the grid for `"cases"`, runs of zeros for `"zero_run"`, and (event
+  date, report date) cells for `"delay"` and `"composition"`.
 
 - `total`:
 
-  Number of **cases** behind the row.
+  How many **cases** are behind the row: records for a line list, the
+  sum of the case-count column otherwise. So `n` and `total` answer
+  different questions and are equal only when every cell holds exactly
+  one case. In the `"composition"` block, for instance, `n` is how many
+  cells carry that category and `total` is how many cases do – and
+  `prop` is computed from `total`, the cases.
 
 - `mean`, `sd`:
 
@@ -174,8 +162,8 @@ and filtered with
 
 - `value`:
 
-  A single scalar that is not a distribution: an autocorrelation, a gap,
-  an occupancy. The `"completeness"` and `"growth"` rows are
+  A single scalar that is not a distribution: a gap, an occupancy, an
+  autocorrelation. The `"completeness"` and `"growth"` rows are
   distributions over event dates, so they populate `mean`/`sd`/the
   quantiles (and `prop`) instead and leave `value` empty.
 
@@ -208,9 +196,10 @@ ndata <- tbl_now(denguedat,
 overview <- summary(ndata)
 overview
 #> ── Summary of a <tbl_now> ──────────────────────────────────────────────────────
-#> 76 rows in 7 components; strata: "Female" and "Male".
+#> 46 rows in 5 components; strata: "Female" and "Male".
 #> 
 #> cases
+#>   n = dates on the grid; total = cases
 #>   quantity   stratum     n total  mean    sd   min   q25   q50   q75   q90   max
 #>   <chr>      <chr>   <int> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl>
 #> 1 per_event… all      1095 52987  48.4  53.3     0    14    30    64   104   358
@@ -222,6 +211,7 @@ overview
 #> # ℹ 1 more variable: prop_zero <dbl>
 #> 
 #> zero_run
+#>   n = runs of consecutive zero dates; total = zero dates in those runs
 #>   quantity   stratum     n total  mean    sd   min   q25   q50   q75   q90   max
 #>   <chr>      <chr>   <int> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl>
 #> 1 event_date all         2     4  2    1.41      1     1     1     3     3     3
@@ -231,23 +221,15 @@ overview
 #> 5 report_da… Female     15    17  1.13 0.352     1     1     1     1     2     2
 #> 6 report_da… Male       19    22  1.16 0.501     1     1     1     1     2     3
 #> 
-#> autocorrelation
-#>   quantity              stratum     n value
-#>   <chr>                 <chr>   <int> <dbl>
-#> 1 per_event_date lag 1  all      1094 0.958
-#> 2 per_event_date lag 1  Female   1094 0.944
-#> 3 per_event_date lag 1  Male     1094 0.941
-#> 4 per_report_date lag 1 all      1094 0.885
-#> 5 per_report_date lag 1 Female   1094 0.867
-#> 6 per_report_date lag 1 Male     1094 0.878
-#> 
 #> composition
+#>   n = (event, report) cells in the category; total = cases in the category
 #>   quantity            n total  prop
 #>   <chr>           <int> <dbl> <dbl>
 #> 1 strata = Female  4133 26592 0.502
 #> 2 strata = Male    4132 26395 0.498
 #> 
 #> coverage
+#>   n = cells, or distinct dates on a date row; total = cases
 #>    quantity    stratum     n total date_min   date_max  
 #>    <chr>       <chr>   <int> <dbl> <date>     <date>    
 #>  1 total_cases all      8265 52987 NA         NA        
@@ -262,23 +244,8 @@ overview
 #> 10 now         all        NA    NA 2010-12-20 2010-12-20
 #> ℹ 19 more rows.
 #> 
-#> completeness
-#>    quantity   stratum     n total   mean     sd   min   q25    q50    q75   q90
-#>    <chr>      <chr>   <int> <dbl>  <dbl>  <dbl> <dbl> <dbl>  <dbl>  <dbl> <dbl>
-#>  1 delay <= 0 all      1090  2099 0.0381 0.0533 0     0     0.0220 0.0594 0.1  
-#>  2 delay <= 1 all      1090 26595 0.510  0.175  0     0.410 0.510  0.618  0.710
-#>  3 delay <= 2 all      1090 44988 0.844  0.130  0     0.781 0.867  0.930  1    
-#>  4 delay <= 3 all      1090 49837 0.931  0.0850 0.104 0.9   0.953  1      1    
-#>  5 delay <= 4 all      1090 51451 0.963  0.0597 0.5   0.949 0.984  1      1    
-#>  6 delay <= 5 all      1090 52126 0.978  0.0449 0.5   0.972 1      1      1    
-#>  7 delay <= 6 all      1090 52505 0.988  0.0330 0.5   0.990 1      1      1    
-#>  8 delay <= 7 all      1090 52668 0.992  0.0275 0.5   1     1      1      1    
-#>  9 delay <= 0 Female   1081  1039 0.0367 0.0670 0     0     0      0.0556 0.111
-#> 10 delay <= 1 Female   1081 13313 0.509  0.214  0     0.384 0.514  0.635  0.75 
-#> # ℹ 2 more variables: max <dbl>, prop <dbl>
-#> ℹ 14 more rows.
-#> 
 #> delay
+#>   n = (event, report) cells; total = cases
 #>   quantity   stratum     n total  mean    sd   min   q25   q50   q75   q90   max
 #>   <chr>      <chr>   <int> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl>
 #> 1 event_to_… all      8265 52987  1.74  1.21     0     1     1     2     3    26
@@ -293,6 +260,7 @@ overview |> dplyr::filter(component == "delay")
 #> 3 rows in 1 component; strata: "Female" and "Male".
 #> 
 #> delay
+#>   n = (event, report) cells; total = cases
 #>   quantity   stratum     n total  mean    sd   min   q25   q50   q75   q90   max
 #>   <chr>      <chr>   <int> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl>
 #> 1 event_to_… all      8265 52987  1.74  1.21     0     1     1     2     3    26
@@ -301,49 +269,39 @@ overview |> dplyr::filter(component == "delay")
 #> 
 #> ℹ Use `dplyr::filter()` or `tibble::as_tibble()` for the full schema.
 
-# How much of each week's eventual total had arrived by delay d? This is the
-# reporting-delay problem, in one table. Completeness is a distribution over
-# event dates, so it lives in `mean`/`q50` (the typical event date) and
-# `prop` (the pooled share), not in the scalar `value` column.
+# `n` and `total` are different questions. In the compositional block `n`
+# counts the (event, report) cells carrying the category and `total` counts
+# the cases in them.
 overview |>
-  dplyr::filter(component == "completeness", stratum == "all") |>
-  dplyr::select(quantity, n, mean, q50, prop)
-#> # A tibble: 8 × 5
-#>   quantity       n   mean    q50   prop
-#>   <chr>      <int>  <dbl>  <dbl>  <dbl>
-#> 1 delay <= 0  1090 0.0381 0.0220 0.0396
-#> 2 delay <= 1  1090 0.510  0.510  0.502 
-#> 3 delay <= 2  1090 0.844  0.867  0.850 
-#> 4 delay <= 3  1090 0.931  0.953  0.941 
-#> 5 delay <= 4  1090 0.963  0.984  0.972 
-#> 6 delay <= 5  1090 0.978  1      0.984 
-#> 7 delay <= 6  1090 0.988  1      0.992 
-#> 8 delay <= 7  1090 0.992  1      0.995 
+  dplyr::filter(component == "composition") |>
+  dplyr::select(quantity, stratum, n, total, prop)
+#> # A tibble: 2 × 5
+#>   quantity        stratum     n total  prop
+#>   <chr>           <chr>   <int> <dbl> <dbl>
+#> 1 strata = Female all      4133 26592 0.502
+#> 2 strata = Male   all      4132 26395 0.498
 
 # Pooled rows only, ignoring the strata.
 summary(ndata, by_strata = FALSE)
 #> ── Summary of a <tbl_now> ──────────────────────────────────────────────────────
-#> 26 rows in 6 components.
+#> 16 rows in 4 components.
 #> 
 #> cases
+#>   n = dates on the grid; total = cases
 #>   quantity     n total  mean    sd   min   q25   q50   q75   q90   max prop_zero
 #>   <chr>    <int> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl>     <dbl>
 #> 1 per_eve…  1095 52987  48.4  53.3     0    14    30    64   104   358   0.00365
 #> 2 per_rep…  1095 52987  48.4  54.3     0    14    29    64   111   420   0.00274
 #> 
 #> zero_run
+#>   n = runs of consecutive zero dates; total = zero dates in those runs
 #>   quantity        n total  mean    sd   min   q25   q50   q75   q90   max
 #>   <chr>       <int> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl>
 #> 1 event_date      2     4     2  1.41     1     1     1     3     3     3
 #> 2 report_date     3     3     1  0        1     1     1     1     1     1
 #> 
-#> autocorrelation
-#>   quantity                  n value
-#>   <chr>                 <int> <dbl>
-#> 1 per_event_date lag 1   1094 0.958
-#> 2 per_report_date lag 1  1094 0.885
-#> 
 #> coverage
+#>   n = cells, or distinct dates on a date row; total = cases
 #>    quantity                    n total  value date_min   date_max  
 #>    <chr>                   <int> <dbl>  <dbl> <date>     <date>    
 #>  1 total_cases              8265 52987 NA     NA         NA        
@@ -358,20 +316,8 @@ summary(ndata, by_strata = FALSE)
 #> 10 now_gap_event              NA    NA  3     NA         NA        
 #> ℹ 1 more row.
 #> 
-#> completeness
-#>   quantity       n total   mean     sd   min   q25    q50    q75   q90   max
-#>   <chr>      <int> <dbl>  <dbl>  <dbl> <dbl> <dbl>  <dbl>  <dbl> <dbl> <dbl>
-#> 1 delay <= 0  1090  2099 0.0381 0.0533 0     0     0.0220 0.0594 0.1     0.5
-#> 2 delay <= 1  1090 26595 0.510  0.175  0     0.410 0.510  0.618  0.710   1  
-#> 3 delay <= 2  1090 44988 0.844  0.130  0     0.781 0.867  0.930  1       1  
-#> 4 delay <= 3  1090 49837 0.931  0.0850 0.104 0.9   0.953  1      1       1  
-#> 5 delay <= 4  1090 51451 0.963  0.0597 0.5   0.949 0.984  1      1       1  
-#> 6 delay <= 5  1090 52126 0.978  0.0449 0.5   0.972 1      1      1       1  
-#> 7 delay <= 6  1090 52505 0.988  0.0330 0.5   0.990 1      1      1       1  
-#> 8 delay <= 7  1090 52668 0.992  0.0275 0.5   1     1      1      1       1  
-#> # ℹ 1 more variable: prop <dbl>
-#> 
 #> delay
+#>   n = (event, report) cells; total = cases
 #>   quantity            n total  mean    sd   min   q25   q50   q75   q90   max
 #>   <chr>           <int> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl>
 #> 1 event_to_report  8265 52987  1.74  1.21     0     1     1     2     3    26

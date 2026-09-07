@@ -1141,6 +1141,12 @@ one label:
 covid_regional <- covid_seasonal |>
   filter(notification_date >= cutoff - 60) |>
   tbl_now_to_EpiNow2(target = "regional_epinow", verbose = FALSE, quiet = TRUE)
+#> Warning: `tbl_now_to_EpiNow2()`: declared temporal effects are not carried into this
+#> format.
+#> ℹ They are stored lazily, so there are no columns to keep or name yet.
+#> ℹ When called through `engine_epinow2()`, supported report-date weekly effects
+#>   are added through `EpiNow2::obs_opts()` instead.
+#> ℹ The model will not see them from the converted data.
 
 head(covid_regional)
 #>         date confirm region

@@ -24,9 +24,11 @@ are different questions that want different tools:
     drifted, did reports arrive in batches, is a spike real cases or
     released backlog.
     [`diagnose()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose.md)
-    deliberately refuses these and hands you a signpost instead, because
-    answering them means choosing a method, a window and a multiplicity
-    correction.
+    deliberately refuses these – answering them means choosing a method,
+    a window and a multiplicity correction – and leaves them to
+    [`diagnose_drift()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_drift.md)
+    and
+    [`diagnose_batches()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_batches.md).
 
 This article walks the three in order. The first two return a
 **tibble**, not printed text, which is the design decision everything
@@ -63,9 +65,10 @@ it:
 
 summary(dengue_now)
 #> ── Summary of a <tbl_now> ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-#> 76 rows in 7 components; strata: "Female" and "Male".
+#> 46 rows in 5 components; strata: "Female" and "Male".
 #> 
 #> cases
+#>   n = dates on the grid; total = cases
 #>   quantity        stratum     n total  mean    sd   min   q25   q50   q75   q90   max prop_zero
 #>   <chr>           <chr>   <int> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl>     <dbl>
 #> 1 per_event_date  all      1095 52987  48.4  53.3     0    14    30    64   104   358   0.00365
@@ -76,6 +79,7 @@ summary(dengue_now)
 #> 6 per_report_date Male     1095 26395  24.1  27.5     0     7    15    32    54   203   0.0201 
 #> 
 #> zero_run
+#>   n = runs of consecutive zero dates; total = zero dates in those runs
 #>   quantity    stratum     n total  mean    sd   min   q25   q50   q75   q90   max
 #>   <chr>       <chr>   <int> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl>
 #> 1 event_date  all         2     4  2    1.41      1     1     1     3     3     3
@@ -85,23 +89,15 @@ summary(dengue_now)
 #> 5 report_date Female     15    17  1.13 0.352     1     1     1     1     2     2
 #> 6 report_date Male       19    22  1.16 0.501     1     1     1     1     2     3
 #> 
-#> autocorrelation
-#>   quantity              stratum     n value
-#>   <chr>                 <chr>   <int> <dbl>
-#> 1 per_event_date lag 1  all      1094 0.958
-#> 2 per_event_date lag 1  Female   1094 0.944
-#> 3 per_event_date lag 1  Male     1094 0.941
-#> 4 per_report_date lag 1 all      1094 0.885
-#> 5 per_report_date lag 1 Female   1094 0.867
-#> 6 per_report_date lag 1 Male     1094 0.878
-#> 
 #> composition
+#>   n = (event, report) cells in the category; total = cases in the category
 #>   quantity            n total  prop
 #>   <chr>           <int> <dbl> <dbl>
 #> 1 strata = Female  4133 26592 0.502
 #> 2 strata = Male    4132 26395 0.498
 #> 
 #> coverage
+#>   n = cells, or distinct dates on a date row; total = cases
 #>    quantity    stratum     n total date_min   date_max  
 #>    <chr>       <chr>   <int> <dbl> <date>     <date>    
 #>  1 total_cases all      8265 52987 NA         NA        
@@ -116,22 +112,8 @@ summary(dengue_now)
 #> 10 now         all        NA    NA 2010-12-20 2010-12-20
 #> ℹ 19 more rows.
 #> 
-#> completeness
-#>    quantity   stratum     n total   mean     sd   min   q25    q50    q75   q90   max   prop
-#>    <chr>      <chr>   <int> <dbl>  <dbl>  <dbl> <dbl> <dbl>  <dbl>  <dbl> <dbl> <dbl>  <dbl>
-#>  1 delay <= 0 all      1090  2099 0.0381 0.0533 0     0     0.0220 0.0594 0.1     0.5 0.0396
-#>  2 delay <= 1 all      1090 26595 0.510  0.175  0     0.410 0.510  0.618  0.710   1   0.502 
-#>  3 delay <= 2 all      1090 44988 0.844  0.130  0     0.781 0.867  0.930  1       1   0.850 
-#>  4 delay <= 3 all      1090 49837 0.931  0.0850 0.104 0.9   0.953  1      1       1   0.941 
-#>  5 delay <= 4 all      1090 51451 0.963  0.0597 0.5   0.949 0.984  1      1       1   0.972 
-#>  6 delay <= 5 all      1090 52126 0.978  0.0449 0.5   0.972 1      1      1       1   0.984 
-#>  7 delay <= 6 all      1090 52505 0.988  0.0330 0.5   0.990 1      1      1       1   0.992 
-#>  8 delay <= 7 all      1090 52668 0.992  0.0275 0.5   1     1      1      1       1   0.995 
-#>  9 delay <= 0 Female   1081  1039 0.0367 0.0670 0     0     0      0.0556 0.111   1   0.0391
-#> 10 delay <= 1 Female   1081 13313 0.509  0.214  0     0.384 0.514  0.635  0.75    1   0.501 
-#> ℹ 14 more rows.
-#> 
 #> delay
+#>   n = (event, report) cells; total = cases
 #>   quantity        stratum     n total  mean    sd   min   q25   q50   q75   q90   max
 #>   <chr>           <chr>   <int> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl>
 #> 1 event_to_report all      8265 52987  1.74  1.21     0     1     1     2     3    26
@@ -151,16 +133,14 @@ row belongs to:
 
 summary(dengue_now) |>
   count(component)
-#> # A tibble: 7 × 2
-#>   component           n
-#>   <chr>           <int>
-#> 1 autocorrelation     6
-#> 2 cases               6
-#> 3 completeness       24
-#> 4 composition         2
-#> 5 coverage           29
-#> 6 delay               3
-#> 7 zero_run            6
+#> # A tibble: 5 × 2
+#>   component       n
+#>   <chr>       <int>
+#> 1 cases           6
+#> 2 composition     2
+#> 3 coverage       29
+#> 4 delay           3
+#> 5 zero_run        6
 ```
 
 Every row is one quantity, described by up to eighteen columns. Not
@@ -177,6 +157,7 @@ summary(dengue_now) |>
 #> 6 rows in 1 component; strata: "Female" and "Male".
 #> 
 #> cases
+#>   n = dates on the grid; total = cases
 #>   quantity        stratum     n total  mean    sd   min   q50   q90   max prop_zero
 #>   <chr>           <chr>   <int> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl>     <dbl>
 #> 1 per_event_date  all      1095 52987  48.4  53.3     0    30   104   358   0.00365
@@ -224,10 +205,14 @@ delay_summary(dengue_now) |>
 #> 3 event_to_report Male     4132 26395  1.74  1.22     1     3    26
 ```
 
-**`completeness`** — the share of each event date’s eventual total that
-had arrived by delay `d`. This is usually the most decision-relevant
-block in the table, because it says how far back a nowcast has anything
-left to estimate:
+**[`reporting_completeness()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md)**
+— the share of each event date’s eventual total that had arrived by
+delay `d`. It says how far back a nowcast has anything left to estimate,
+and it is the one number here that most often changes a decision. It is
+**not** part of [`summary()`](https://rdrr.io/r/base/summary.html), and
+it warns on every call: it was written by an AI and has not yet been
+checked by a human, so read it as a starting point rather than as a
+verified statistic.
 
 ``` r
 
@@ -309,12 +294,16 @@ The full set is
 [`prop_validation_type()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md),
 [`prop_strata()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md),
 [`prop_covariate_levels()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md),
-[`case_autocorrelation()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md),
 [`date_ranges()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md),
-[`triangle_occupancy()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md),
-[`reporting_completeness()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md)
+[`triangle_occupancy()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md)
 and
-[`cumulative_growth()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md).
+[`cumulative_growth()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md),
+plus the two unreviewed ones –
+[`case_autocorrelation()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md)
+and
+[`reporting_completeness()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md)
+– which share the schema but are not part of
+[`summary()`](https://rdrr.io/r/base/summary.html).
 
 **Quantiles are inverse-ECDF (type 1).** `q50` is the smallest value
 whose cumulative weight reaches 0.5 — for an even number of
@@ -341,7 +330,7 @@ deliberately not run, and that could not be assessed.
 
 diagnose(dengue_now)
 #> ── Diagnosis of a <tbl_now> ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-#> 9 notes, 14 passed, 3 not run, 6 skipped.
+#> 9 notes, 15 passed, 5 skipped.
 #> 
 #> Notes (9)
 #> ℹ now/now_gap_event [Female]: The last event date is 3 weeks before now ("2010-12-20").
@@ -350,24 +339,17 @@ diagnose(dengue_now)
 #> ℹ now/now_gap_event: The last event date is 3 weeks before now ("2010-12-20").
 #> ℹ now/now_gap_report [Male]: The last report date is 1 week before now ("2010-12-20").
 #> ℹ strata/size [Male]: The smallest stratum is "Male" with 26395 cases, 49.8% of the total.
-#> ℹ strata/sparsity [Female]: The sparsest stratum is "Female": 1.2% of the event dates on the grid carry no cases at all.
-#>   → A stratum that is mostly zeros is the one a per-stratum fit will struggle with; pooling it is often better than fitting it.
+#> ℹ strata/sparsity [Female]: The sparsest stratum is "Female": 13 of the 1095 weeks between the minimum event (1990-01-01) and the now (2010-12-20) carry no cases at all (1.2%, against 0.4% pooled over every stratum).
+#>   → A stratum that is mostly zeros is the one a per-stratum fit will struggle with; pooling it is often better than fitting it. When every stratum is mostly zeros the grid is finer than the data -- `aggregate_time_units()` coarsens it.
 #> ℹ truncation/event_date [Female]: 1 event date is younger than the 95th percentile of the delay, so its counts are still filling in; an estimated 5.8% of its eventual total has not arrived.
 #>   → This is right-truncation, and it is the reason to nowcast rather than a defect. Cut the series at "2010-11-22" to describe it instead.
 #> ℹ truncation/event_date [Male]: 1 event date is younger than the 95th percentile of the delay, so its counts are still filling in; an estimated 5.9% of its eventual total has not arrived.
 #> ℹ truncation/event_date: 1 event date is younger than the 95th percentile of the delay, so its counts are still filling in; an estimated 5.9% of its eventual total has not arrived.
 #> 
-#> Not run (3)
-#> → signposts/report: Run: diagnose_drift(x, axis = "report")
-#>   → `diagnose()` runs no statistical test: a trend test needs a method, a maturity window and an alpha, and those are the caller's to choose.
-#> → signposts/report_batches: Run: diagnose_batches(x, axis = "report")
-#>   → `diagnose()` runs no statistical test: batch detection needs a look-back, a null model and a multiplicity correction.
-#> → signposts/validation_batches: Run: diagnose_batches(x, axis = "validation")
+#> ✔ 15 passed: declarations/temporal_effects, declarations/undeclared, missing/gender, missing/onset_week, missing/report_week, now/event_date, now/now_gap_report, now/report_date, ordering/event_to_report, simultaneously missing/event and report dates, units/declared, units/delay, units/event_grid, and units/report_grid
+#> ─ 5 skipped: duplicates/key, negatives/count, ordering/event_to_validation, ordering/report_to_validation, and strata/pending
 #> 
-#> ✔ 14 passed: declarations/temporal_effects, declarations/undeclared, missing/gender, missing/onset_week, missing/report_week, now/event_date, now/now_gap_report, now/report_date, ordering/event_to_report, units/declared, units/delay, units/event_grid, and units/report_grid
-#> ─ 6 skipped: duplicates/key, negatives/count, ordering/event_to_validation, ordering/report_to_validation, signposts/validation, and strata/pending
-#> 
-#> ℹ 32 findings. Use `dplyr::filter()` or `tibble::as_tibble()` for the table.
+#> ℹ 29 findings. Use `dplyr::filter()` or `tibble::as_tibble()` for the table.
 ```
 
 It is a tibble underneath, in the schema the rest of this section reads:
@@ -376,19 +358,17 @@ It is a tibble underneath, in the schema the rest of this section reads:
 
 diagnose(dengue_now) |>
   count(status)
-#> # A tibble: 4 × 2
+#> # A tibble: 3 × 2
 #>   status      n
 #>   <ord>   <int>
 #> 1 note        9
-#> 2 ok         14
-#> 3 not_run     3
-#> 4 skipped     6
+#> 2 ok         15
+#> 3 skipped     5
 ```
 
 `status` is an **ordered factor** — `error` \> `warning` \> `note` \>
-`ok` \> `not_run` \> `skipped` — so the table sorts itself and filtering
-to what needs acting on is a comparison rather than a set membership
-test:
+`ok` \> `skipped` — so the table sorts itself and filtering to what
+needs acting on is a comparison rather than a set membership test:
 
 ``` r
 
@@ -403,7 +383,7 @@ diagnose(dengue_now) |>
 #> 3 now        now_gap_event  all     note            3      NA "The last event date is 3 weeks before now (\"2010-12-20\")."                                     
 #> 4 now        now_gap_report Male    note            1      NA "The last report date is 1 week before now (\"2010-12-20\")."                                     
 #> 5 strata     size           Male    note        26395   52987 "The smallest stratum is \"Male\" with 26395 cases, 49.8% of the total."                          
-#> 6 strata     sparsity       Female  note           13    1095 "The sparsest stratum is \"Female\": 1.2% of the event dates on the grid carry no cases at all."  
+#> 6 strata     sparsity       Female  note           13    1095 "The sparsest stratum is \"Female\": 13 of the 1095 weeks between the minimum event (1990-01-01) …
 #> 7 truncation event_date     Female  note            1    1082 "1 event date is younger than the 95th percentile of the delay, so its counts are still filling i…
 #> 8 truncation event_date     Male    note            1    1082 "1 event date is younger than the 95th percentile of the delay, so its counts are still filling i…
 #> 9 truncation event_date     all     note            1    1091 "1 event date is younger than the 95th percentile of the delay, so its counts are still filling i…
@@ -421,7 +401,7 @@ finding$hint
 #> character(0)
 ```
 
-### The six statuses, and why `skipped` is not `ok`
+### The five statuses, and why `skipped` is not `ok`
 
 The distinction that matters most is between a check that **ran and
 found nothing** and one that **could not run**:
@@ -431,15 +411,14 @@ found nothing** and one that **could not run**:
 diagnose(dengue_now) |>
   filter(status == "skipped") |>
   select(check, scope, message)
-#> # A tibble: 6 × 3
+#> # A tibble: 5 × 3
 #>   check      scope                message                                                                               
 #>   <chr>      <chr>                <chr>                                                                                 
 #> 1 duplicates key                  A line list is one row per case, so identical rows are two cases rather than a repeat.
 #> 2 negatives  count                A line list has no count column to go negative.                                       
 #> 3 ordering   event_to_validation  The object carries no validation process.                                             
 #> 4 ordering   report_to_validation The object carries no validation process.                                             
-#> 5 signposts  validation           The object carries no validation process.                                             
-#> 6 strata     pending              The object carries no validation process.
+#> 5 strata     pending              The object carries no validation process.
 ```
 
 `dengue_now` is a line list with no validation process, so four checks
@@ -459,27 +438,14 @@ repeat. Deduplicating a line list needs a key the object does not have
 [`diagnose()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose.md)
 runs no statistical tests at all. It is fast, and its answer never
 depends on a random seed or an optional package. The questions that *do*
-need a test come back as `not_run` signposts naming the call that
-answers each one:
-
-``` r
-
-diagnose_signposts(dengue_now) |>
-  select(scope, status, message)
-#> # A tibble: 4 × 3
-#>   scope              status  message                                          
-#>   <chr>              <ord>   <chr>                                            
-#> 1 report             not_run "Run: diagnose_drift(x, axis = \"report\")"      
-#> 2 report_batches     not_run "Run: diagnose_batches(x, axis = \"report\")"    
-#> 3 validation_batches not_run "Run: diagnose_batches(x, axis = \"validation\")"
-#> 4 validation         skipped "The object carries no validation process."
-```
+need a test are simply not in it: they have their own functions, and you
+call one when you want its answer.
 
 Those calls —
 [`diagnose_drift()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_drift.md),
 [`diagnose_changepoint()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_changepoint.md),
 [`diagnose_batches()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_batches.md),
-[`diagnose_batch_shape()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_batch_shape.md)
+[`diagnose_batches2()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_batches2.md)
 — are Part 3 of this article. They return their own shapes rather than
 the findings schema, because a hypothesis test has a p-value and an
 effect size that a findings row has nowhere to put.
@@ -574,9 +540,9 @@ construction into a noisy one for data that has always been accepted.
 
 Everything above is structural: it can be decided by looking at the
 object, it gives the same answer every time, and it costs nothing. The
-`not_run` signposts at the end of Part 2 are where that stops. Whether
-the reporting delay has drifted, and whether a spike is released backlog
-or genuine new cases, are statements about a **distribution** — and
+questions Part 2 would not touch are where that stops. Whether the
+reporting delay has drifted, and whether a spike is released backlog or
+genuine new cases, are statements about a **distribution** — and
 answering them means picking a method, a window and a multiplicity
 correction, which is not a decision a health check should make on your
 behalf.
@@ -778,11 +744,11 @@ Event date, report date and reporting delay can be seen as an
 `period = cohort + age`), so the reporting triangle can be drawn as a
 hexamap in the style of [Jalal and Burke
 (2020)](https://doi.org/10.1097/EDE.0000000000001236): each
-`(event, delay)` cell is a hexagon, coloured by its report count, with
-event date, report date and delay running along the three 60-degree
-axes. Because a batch is a happens in the **report date**, it shows up
-as a **vertical stripe**; the fast reporting bulk sits along the
-short-delay bottom edge.
+`(event, delay)` cell is a point on a hexagonal lattice, coloured by its
+report count, with event date, report date and delay running along the
+three 60-degree axes. Because a batch is a happens in the **report
+date**, it shows up as a **vertical stripe**; the fast reporting bulk
+sits along the short-delay bottom edge.
 
 ``` r
 
@@ -790,6 +756,19 @@ plot_reporting_hexamap(ideal)
 ```
 
 ![](diagnosing-a-tbl-now_files/figure-html/hex-sim-1.png)
+
+The marks are sized in millimetres while the lattice is sized in data
+units, so no default can suit every combination of cell count and figure
+size. `size` is the knob: raise it until the points nearly touch at the
+size you are actually drawing, and `shape = 15` swaps the circles for
+squares, which tile more closely.
+
+``` r
+
+plot_reporting_hexamap(ideal, size = 3, shape = 15)
+```
+
+![](diagnosing-a-tbl-now_files/figure-html/hex-sim-big-1.png)
 
 On covid the vertical stripes are the 2020 backlog releases. The delay
 axis is capped with `max_delay` to keep the map to where the reports

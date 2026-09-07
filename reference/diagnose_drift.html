@@ -13,7 +13,7 @@ way that respects the fact that a delay series is correlated with itself.'><meta
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.31.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.33.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -28,7 +28,7 @@ way that respects the fact that a delay series is correlated with itself.'><meta
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/custom-nowcast-models.html">Adding your own nowcasting model</a></li>
     <li><a class="dropdown-item" href="../articles/diagnosing-a-tbl-now.html">Diagnosing a tbl_now</a></li>
     <li><a class="dropdown-item" href="../articles/ensemble-nowcasting.html">One call, many models: run_nowcast(), custom backends and ensembles</a></li>
-    <li><a class="dropdown-item" href="../articles/example.html">A complete nowcasting workflow: hospital-acquired infections in Bucaramanga</a></li>
+    <li><a class="dropdown-item" href="../articles/example.html">The nowcasting workflow: hospital-acquired infections in Bucaramanga, Colombia</a></li>
     <li><a class="dropdown-item" href="../articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with different modelling packages</a></li>
     <li><a class="dropdown-item" href="../articles/tbl.now.html">tbl.now</a></li>
   </ul></li>
@@ -273,8 +273,8 @@ result with <code>method = "block-bootstrap"</code> on a restricted window.</p>
     <div class="dont-index"><p><code><a href="diagnose_changepoint.html">diagnose_changepoint()</a></code> for an abrupt shift rather than a gradual trend;
 <code><a href="plot_delay_drift.html">plot_delay_drift()</a></code> to see the series being tested;
 <code><a href="censoring.html">censor_reporting_delays_above()</a></code> once you decide some delays are not to be believed;
-<a href="nowcast_diagnose_components.html">diagnose_signposts()</a>, which tells you when this
-test is worth running.</p></div>
+<code><a href="diagnose.html">diagnose()</a></code> for the structural checks, which this test deliberately sits
+outside of.</p></div>
     </div>
 
     <div class="section level2">

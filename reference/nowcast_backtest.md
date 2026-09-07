@@ -23,8 +23,11 @@ nowcast_backtest(
   now_dates = NULL,
   horizon = 4,
   seed = NULL,
+  keep_draws = FALSE,
   on_error = c("warn", "abort"),
-  verbose = TRUE
+  verbose = TRUE,
+  truth_axis = c("report", "validation"),
+  truth_type = "total"
 )
 ```
 
@@ -55,9 +58,10 @@ nowcast_backtest(
 
 - now_dates:
 
-  Vector of Dates to nowcast at. Defaults to the four most recent event
-  dates that are at least `horizon` units before the object's `now`, so
-  that some later reports exist to score against.
+  Vector of retrospective nowcast origins. Defaults to the four most
+  recent report-axis dates that are at least `horizon` units before the
+  object's `now`; these dates are used as as-of origins, not as a filter
+  on target event dates.
 
 - horizon:
 
@@ -74,6 +78,15 @@ nowcast_backtest(
   refitting one date, silently moves every other fit. Seeding per
   (label, date) makes a fit depend only on which fit it is.
 
+- keep_draws:
+
+  Logical. Whether to retain every posterior draw from every successful
+  fit. Default `FALSE`, because this can make a backtest much larger.
+  Set it to `TRUE` when the backtest should be passed directly to
+  [`scoringutils::as_forecast_sample()`](https://epiforecasts.io/scoringutils/reference/as_forecast_sample.html).
+  Engines that return only quantiles still cannot be converted to
+  samples.
+
 - on_error:
 
   Either `"warn"` (default) to skip a model/date that fails with a
@@ -82,6 +95,24 @@ nowcast_backtest(
 - verbose:
 
   Logical. Whether to report progress.
+
+- truth_axis:
+
+  Which process defines the observed counts. `"report"` (default) scores
+  counts eventually reported. `"validation"` scores counts eventually
+  resolved on the validation axis and requires a validation-aware
+  `truth`.
+
+- truth_type:
+
+  Which case type to score. Defaults to `"total"`. Validation types such
+  as `"confirmed"`, `"retracted"`, `"pending"`, `"unknown"` and `"net"`
+  follow the same meanings as
+  [`get_latest_reported_cases()`](https://rodrigozepeda.github.io/tbl.now/reference/get_latest_first.md)
+  and
+  [`get_latest_validated_cases()`](https://rodrigozepeda.github.io/tbl.now/reference/validated_cases.md).
+  `"by_type"` is refused because scoring needs one observed value per
+  event-date/stratum target.
 
 ## Value
 
@@ -94,6 +125,11 @@ An object of class `nowcast_backtest`: a list with
 - predictions:
 
   A `tibble` of every retrospective quantile prediction.
+
+- draws:
+
+  When `keep_draws = TRUE`, a `tibble` of the retained draws; otherwise
+  `NULL`.
 
 - truth:
 

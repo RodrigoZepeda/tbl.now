@@ -21,7 +21,7 @@ is about driving it through run_nowcast()."><meta property="og:image" content="h
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.31.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.33.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -36,7 +36,7 @@ is about driving it through run_nowcast()."><meta property="og:image" content="h
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/custom-nowcast-models.html">Adding your own nowcasting model</a></li>
     <li><a class="dropdown-item" href="../articles/diagnosing-a-tbl-now.html">Diagnosing a tbl_now</a></li>
     <li><a class="dropdown-item" href="../articles/ensemble-nowcasting.html">One call, many models: run_nowcast(), custom backends and ensembles</a></li>
-    <li><a class="dropdown-item" href="../articles/example.html">A complete nowcasting workflow: hospital-acquired infections in Bucaramanga</a></li>
+    <li><a class="dropdown-item" href="../articles/example.html">The nowcasting workflow: hospital-acquired infections in Bucaramanga, Colombia</a></li>
     <li><a class="dropdown-item" href="../articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with different modelling packages</a></li>
     <li><a class="dropdown-item" href="../articles/tbl.now.html">tbl.now</a></li>
   </ul></li>
@@ -135,6 +135,7 @@ is about driving it through <code><a href="run_nowcast.html">run_nowcast()</a></
 <span>  delays <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  truncation <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  rt <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  obs <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  stan <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  convert_args <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  min_date <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -231,7 +232,7 @@ to <code><a href="surveillance_grids.html">get_surveillance_range()</a></code> â
 stratum is fitted on the same time axis.</p></dd>
 
 
-<dt id="arg-generation-time-delays-truncation-rt-stan-convert-args">generation_time, delays, truncation, rt, stan, convert_args<a class="anchor" aria-label="anchor" href="#arg-generation-time-delays-truncation-rt-stan-convert-args"></a></dt>
+<dt id="arg-generation-time-delays-truncation-rt-obs-stan-convert-args">generation_time, delays, truncation, rt, obs, stan, convert_args<a class="anchor" aria-label="anchor" href="#arg-generation-time-delays-truncation-rt-obs-stan-convert-args"></a></dt>
 <dd><p>(<code>engine_epinow2()</code>) Arguments of <code><a href="https://epiforecasts.io/EpiNow2/reference/estimate_infections.html" class="external-link">EpiNow2::estimate_infections()</a></code> /
 <code><a href="https://epiforecasts.io/EpiNow2/reference/regional_epinow.html" class="external-link">EpiNow2::regional_epinow()</a></code>, plus <code>convert_args</code> for
 <code><a href="tbl_now_EpiNow2.html">tbl_now_to_EpiNow2()</a></code>. <strong>Read this before trusting the output</strong>:

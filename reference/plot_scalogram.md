@@ -71,7 +71,10 @@ plot_scalogram(
 
 - palette:
 
-  A named colour palette. Defaults to the package palette.
+  A named colour palette (see
+  [`tbl_now_palette()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_palette.md)).
+  The scalogram is drawn entirely with tiles, so it takes no `size` or
+  `linewidth`.
 
 ## Value
 

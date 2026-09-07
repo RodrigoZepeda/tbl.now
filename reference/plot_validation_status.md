@@ -14,7 +14,12 @@ that is 80% pending is a day whose confirmed count means very little.
 ## Usage
 
 ``` r
-plot_validation_status(x, by = NULL, proportion = TRUE)
+plot_validation_status(
+  x,
+  by = NULL,
+  proportion = TRUE,
+  palette = .tbl_now_palette()
+)
 ```
 
 ## Arguments
@@ -31,6 +36,13 @@ plot_validation_status(x, by = NULL, proportion = TRUE)
 
   When `TRUE` (default) the bands are shares summing to 1; `FALSE` shows
   the counts instead, which keeps the epidemic curve visible.
+
+- palette:
+
+  A named colour palette (see
+  [`tbl_now_palette()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_palette.md)).
+  The plot is drawn entirely with stacked areas, so it takes no `size`
+  or `linewidth`.
 
 ## Value
 
@@ -51,9 +63,11 @@ that the disease did.
 
 ## Colours
 
-`confirmed` is drawn in the palette's green (it is a real case – the
-epidemic process), `retracted` in the accent red (it was removed by the
-reporting process), and `pending` in grey (not yet known either way).
+`confirmed` is drawn with the palette's `epidemic` role (it is a real
+case – the epidemic process), `retracted` with `reporting` (it was
+removed by the reporting process), and `pending` with the neutral
+`pending` role (not yet known either way). Override any of them through
+`palette`.
 
 ## See also
 

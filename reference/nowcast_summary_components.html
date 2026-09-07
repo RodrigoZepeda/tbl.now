@@ -5,7 +5,10 @@ once. When you only want one of them – for a report, a dashboard, or a check
 inside a script – call that block directly instead of computing the rest and
 filtering it away.
 Every one of these returns the same schema as summary() itself, so they can
-be stacked with dplyr::bind_rows(), compared across datasets, or used alone:
+be stacked with dplyr::bind_rows(), compared across datasets, or used alone.
+Two of them – case_autocorrelation() and reporting_completeness() – were
+written by an AI and have not been checked by a human, so they are not
+part of summary() and warn on every call:
 cases_per_date() – case counts per date on one axis.
 delay_summary() – the case-weighted delay distribution.
 zero_run_summary() – lengths of the runs of consecutive zero dates.
@@ -15,12 +18,14 @@ prop_strata() – proportion of cases per stratum.
 prop_covariate_levels() – proportion of cases per level of each
 categorical covariate.
 case_autocorrelation() – lagged autocorrelation of the case series.
+Unreviewed: not part of summary(), and warns on every call.
 date_ranges() – totals, date ranges and now.
 triangle_occupancy() – how full the reporting triangle is, and how
 stale the object is.
 reporting_completeness() – share of each event date's eventual total
 that had arrived by delay d, as a distribution over event dates
 (mean, sd, the quantiles) plus the pooled share in prop.
+Unreviewed: not part of summary(), and warns on every call.
 cumulative_growth() – ratio of one delay's running total to the
 previous one's.
 
@@ -30,7 +35,10 @@ once. When you only want one of them – for a report, a dashboard, or a check
 inside a script – call that block directly instead of computing the rest and
 filtering it away.
 Every one of these returns the same schema as summary() itself, so they can
-be stacked with dplyr::bind_rows(), compared across datasets, or used alone:
+be stacked with dplyr::bind_rows(), compared across datasets, or used alone.
+Two of them – case_autocorrelation() and reporting_completeness() – were
+written by an AI and have not been checked by a human, so they are not
+part of summary() and warn on every call:
 cases_per_date() – case counts per date on one axis.
 delay_summary() – the case-weighted delay distribution.
 zero_run_summary() – lengths of the runs of consecutive zero dates.
@@ -40,12 +48,14 @@ prop_strata() – proportion of cases per stratum.
 prop_covariate_levels() – proportion of cases per level of each
 categorical covariate.
 case_autocorrelation() – lagged autocorrelation of the case series.
+Unreviewed: not part of summary(), and warns on every call.
 date_ranges() – totals, date ranges and now.
 triangle_occupancy() – how full the reporting triangle is, and how
 stale the object is.
 reporting_completeness() – share of each event date's eventual total
 that had arrived by delay d, as a distribution over event dates
 (mean, sd, the quantiles) plus the pooled share in prop.
+Unreviewed: not part of summary(), and warns on every call.
 cumulative_growth() – ratio of one delay's running total to the
 previous one's.
 
@@ -57,7 +67,7 @@ previous one's.
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.31.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.33.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -72,7 +82,7 @@ previous one's.
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/custom-nowcast-models.html">Adding your own nowcasting model</a></li>
     <li><a class="dropdown-item" href="../articles/diagnosing-a-tbl-now.html">Diagnosing a tbl_now</a></li>
     <li><a class="dropdown-item" href="../articles/ensemble-nowcasting.html">One call, many models: run_nowcast(), custom backends and ensembles</a></li>
-    <li><a class="dropdown-item" href="../articles/example.html">A complete nowcasting workflow: hospital-acquired infections in Bucaramanga</a></li>
+    <li><a class="dropdown-item" href="../articles/example.html">The nowcasting workflow: hospital-acquired infections in Bucaramanga, Colombia</a></li>
     <li><a class="dropdown-item" href="../articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with different modelling packages</a></li>
     <li><a class="dropdown-item" href="../articles/tbl.now.html">tbl.now</a></li>
   </ul></li>
@@ -106,7 +116,10 @@ once. When you only want one of them – for a report, a dashboard, or a check
 inside a script – call that block directly instead of computing the rest and
 filtering it away.</p>
 <p>Every one of these returns the same schema as <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> itself, so they can
-be stacked with <code><a href="https://dplyr.tidyverse.org/reference/bind_rows.html" class="external-link">dplyr::bind_rows()</a></code>, compared across datasets, or used alone:</p><ul><li><p><code>cases_per_date()</code> – case counts per date on one axis.</p></li>
+be stacked with <code><a href="https://dplyr.tidyverse.org/reference/bind_rows.html" class="external-link">dplyr::bind_rows()</a></code>, compared across datasets, or used alone.
+Two of them – <code>case_autocorrelation()</code> and <code>reporting_completeness()</code> – were
+written by an AI and have not been checked by a human, so they are <strong>not</strong>
+part of <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> and warn on every call:</p><ul><li><p><code>cases_per_date()</code> – case counts per date on one axis.</p></li>
 <li><p><code>delay_summary()</code> – the case-weighted delay distribution.</p></li>
 <li><p><code>zero_run_summary()</code> – lengths of the runs of consecutive zero dates.</p></li>
 <li><p><code>prop_censored()</code> – proportion of cases flagged censored.</p></li>
@@ -114,13 +127,15 @@ be stacked with <code><a href="https://dplyr.tidyverse.org/reference/bind_rows.h
 <li><p><code>prop_strata()</code> – proportion of cases per stratum.</p></li>
 <li><p><code>prop_covariate_levels()</code> – proportion of cases per level of each
 categorical covariate.</p></li>
-<li><p><code>case_autocorrelation()</code> – lagged autocorrelation of the case series.</p></li>
+<li><p><code>case_autocorrelation()</code> – lagged autocorrelation of the case series.
+<strong>Unreviewed:</strong> not part of <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code>, and warns on every call.</p></li>
 <li><p><code>date_ranges()</code> – totals, date ranges and <code>now</code>.</p></li>
 <li><p><code>triangle_occupancy()</code> – how full the reporting triangle is, and how
 stale the object is.</p></li>
 <li><p><code>reporting_completeness()</code> – share of each event date's eventual total
 that had arrived by delay <code>d</code>, as a distribution over event dates
-(<code>mean</code>, <code>sd</code>, the quantiles) plus the pooled share in <code>prop</code>.</p></li>
+(<code>mean</code>, <code>sd</code>, the quantiles) plus the pooled share in <code>prop</code>.
+<strong>Unreviewed:</strong> not part of <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code>, and warns on every call.</p></li>
 <li><p><code>cumulative_growth()</code> – ratio of one delay's running total to the
 previous one's.</p></li>
 </ul></div>
@@ -260,6 +275,7 @@ walks through them in order.</p></div>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #555555;">3 rows in 1 component; strata: </span><span style="color: #0000BB;">"Female"</span><span style="color: #555555;"> and </span><span style="color: #0000BB;">"Male"</span><span style="color: #555555;">.</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="font-weight: bold;">cases</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #555555;">  n = dates on the grid; total = cases</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   quantity   stratum     n total  mean    sd   min   q25   q50   q75   q90   max</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> per_event… all      <span style="text-decoration: underline;">1</span>095 <span style="text-decoration: underline;">52</span>987  48.4  53.3     0    14    30    64   104   358</span>
@@ -273,6 +289,7 @@ walks through them in order.</p></div>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #555555;">3 rows in 1 component; strata: </span><span style="color: #0000BB;">"Female"</span><span style="color: #555555;"> and </span><span style="color: #0000BB;">"Male"</span><span style="color: #555555;">.</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="font-weight: bold;">delay</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #555555;">  n = (event, report) cells; total = cases</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   quantity   stratum     n total  mean    sd   min   q25   q50   q75   q90   max</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> event_to_… all      <span style="text-decoration: underline;">8</span>265 <span style="text-decoration: underline;">52</span>987  1.74  1.21     0     1     1     2     3    26</span>
@@ -282,11 +299,14 @@ walks through them in order.</p></div>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #555555;">ℹ Use `dplyr::filter()` or `tibble::as_tibble()` for the full schema.</span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># How sparse the series is, and how strongly one week predicts the next.</span></span></span>
+<span class="r-in"><span><span class="co"># `case_autocorrelation()` warns because it is unreviewed; the warning is</span></span></span>
+<span class="r-in"><span><span class="co"># deliberately not suppressed here, since it belongs with the number.</span></span></span>
 <span class="r-in"><span><span class="fu">zero_run_summary</span><span class="op">(</span><span class="va">ndata</span>, axis <span class="op">=</span> <span class="st">"event"</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── Summary of a <span style="color: #0000BB;">&lt;tbl_now&gt;</span> ──────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #555555;">3 rows in 1 component; strata: </span><span style="color: #0000BB;">"Female"</span><span style="color: #555555;"> and </span><span style="color: #0000BB;">"Male"</span><span style="color: #555555;">.</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="font-weight: bold;">zero_run</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #555555;">  n = runs of consecutive zero dates; total = zero dates in those runs</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   quantity   stratum     n total  mean    sd   min   q25   q50   q75   q90   max</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> event_date all         2     4  2    1.41      1     1     1     3     3     3</span>
@@ -295,10 +315,15 @@ walks through them in order.</p></div>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #555555;">ℹ Use `dplyr::filter()` or `tibble::as_tibble()` for the full schema.</span></span>
 <span class="r-in"><span><span class="fu">case_autocorrelation</span><span class="op">(</span><span class="va">ndata</span>, lags <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span></span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span><span style="color: #BBBB00;">!</span> `case_autocorrelation()` is <span style="font-style: italic;">experimental</span> and was written by an AI; it has not</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span>   yet been reviewed by a human.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> It is no longer part of `summary()`. Check the numbers before you rely on</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span>   them.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── Summary of a <span style="color: #0000BB;">&lt;tbl_now&gt;</span> ──────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #555555;">3 rows in 1 component; strata: </span><span style="color: #0000BB;">"Female"</span><span style="color: #555555;"> and </span><span style="color: #0000BB;">"Male"</span><span style="color: #555555;">.</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="font-weight: bold;">autocorrelation</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #555555;">  n = lagged date pairs</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   quantity             stratum     n value</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> per_event_date lag 1 all      <span style="text-decoration: underline;">1</span>094 0.958</span>
@@ -313,6 +338,7 @@ walks through them in order.</p></div>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #555555;">2 rows in 1 component.</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="font-weight: bold;">composition</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #555555;">  n = (event, report) cells in the category; total = cases in the category</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   quantity            n total  prop</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> strata = Female  <span style="text-decoration: underline;">4</span>133 <span style="text-decoration: underline;">26</span>592 0.502</span>
@@ -327,6 +353,7 @@ walks through them in order.</p></div>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #555555;">11 rows in 1 component; strata: </span><span style="color: #0000BB;">"Female"</span><span style="color: #555555;"> and </span><span style="color: #0000BB;">"Male"</span><span style="color: #555555;">.</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="font-weight: bold;">coverage</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #555555;">  n = cells, or distinct dates on a date row; total = cases</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    quantity    stratum     n total date_min   date_max  </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 1</span> total_cases all      <span style="text-decoration: underline;">8</span>265 <span style="text-decoration: underline;">52</span>987 <span style="color: #BB0000;">NA</span>         <span style="color: #BB0000;">NA</span>        </span>
@@ -347,6 +374,7 @@ walks through them in order.</p></div>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #555555;">18 rows in 1 component; strata: </span><span style="color: #0000BB;">"Female"</span><span style="color: #555555;"> and </span><span style="color: #0000BB;">"Male"</span><span style="color: #555555;">.</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="font-weight: bold;">coverage</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #555555;">  n = cells, or distinct dates on a date row</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    quantity                stratum     n  value</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 1</span> max_delay               all        <span style="color: #BB0000;">NA</span> 26    </span>
@@ -363,13 +391,17 @@ walks through them in order.</p></div>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #555555;">ℹ Use `dplyr::filter()` or `tibble::as_tibble()` for the full schema.</span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># The two that matter most for nowcasting: what share of a week's eventual</span></span></span>
-<span class="r-in"><span><span class="co"># total had arrived by delay d, and how fast the total is still growing.</span></span></span>
-<span class="r-in"><span><span class="co"># Both are distributions over event dates, so they fill `mean`/`q50` -- and</span></span></span>
-<span class="r-in"><span><span class="co"># completeness also `prop`, the pooled share -- rather than the scalar</span></span></span>
-<span class="r-in"><span><span class="co"># `value` column.</span></span></span>
+<span class="r-in"><span><span class="co"># What share of a week's eventual total had arrived by delay d, and how fast</span></span></span>
+<span class="r-in"><span><span class="co"># the total is still growing. Both are distributions over event dates, so</span></span></span>
+<span class="r-in"><span><span class="co"># they fill `mean`/`q50` -- and completeness also `prop`, the pooled share --</span></span></span>
+<span class="r-in"><span><span class="co"># rather than the scalar `value` column. `reporting_completeness()` is</span></span></span>
+<span class="r-in"><span><span class="co"># unreviewed and warns; see above.</span></span></span>
 <span class="r-in"><span><span class="fu">reporting_completeness</span><span class="op">(</span><span class="va">ndata</span>, delays <span class="op">=</span> <span class="fl">0</span><span class="op">:</span><span class="fl">3</span><span class="op">)</span> <span class="op">|&gt;</span></span></span>
 <span class="r-in"><span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">quantity</span>, <span class="va">stratum</span>, <span class="va">n</span>, <span class="va">mean</span>, <span class="va">q50</span>, <span class="va">prop</span><span class="op">)</span></span></span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span><span style="color: #BBBB00;">!</span> `reporting_completeness()` is <span style="font-style: italic;">experimental</span> and was written by an AI; it has</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span>   not yet been reviewed by a human.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> It is no longer part of `summary()`. Check the numbers before you rely on</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span>   them.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 12 × 6</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    quantity   stratum     n   mean    q50   prop</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span>
@@ -390,6 +422,7 @@ walks through them in order.</p></div>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #555555;">9 rows in 1 component; strata: </span><span style="color: #0000BB;">"Female"</span><span style="color: #555555;"> and </span><span style="color: #0000BB;">"Male"</span><span style="color: #555555;">.</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="font-weight: bold;">growth</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #555555;">  n = event dates; total = cases added</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   quantity stratum     n total  mean    sd   min   q25   q50   q75   q90   max</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> delay 1  all       631  <span style="text-decoration: underline;">9</span>752  9.93 9.16      1  5     7.6  12    18    104  </span>
@@ -413,6 +446,7 @@ walks through them in order.</p></div>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #555555;">14 rows in 2 components; strata: </span><span style="color: #0000BB;">"Female"</span><span style="color: #555555;"> and </span><span style="color: #0000BB;">"Male"</span><span style="color: #555555;">.</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="font-weight: bold;">coverage</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #555555;">  n = cells, or distinct dates on a date row; total = cases</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    quantity    stratum     n total date_min   date_max  </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 1</span> total_cases all      <span style="text-decoration: underline;">8</span>265 <span style="text-decoration: underline;">52</span>987 <span style="color: #BB0000;">NA</span>         <span style="color: #BB0000;">NA</span>        </span>
@@ -428,6 +462,7 @@ walks through them in order.</p></div>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #555555;">ℹ 1 more row.</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="font-weight: bold;">delay</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #555555;">  n = (event, report) cells; total = cases</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   quantity   stratum     n total  mean    sd   min   q25   q50   q75   q90   max</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> event_to_… all      <span style="text-decoration: underline;">8</span>265 <span style="text-decoration: underline;">52</span>987  1.74  1.21     0     1     1     2     3    26</span>

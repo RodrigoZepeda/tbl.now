@@ -105,21 +105,25 @@ baseline <- run_nowcast(
 baseline
 ```
 
-    #> -- A <tbl_nowcast> from method "baselinenowcast" -------------------------------
-    #> * now: "2010-10-04"
-    #> * event dates: 144
-    #> * quantile levels: 0.025, 0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95, and 0.975
-    #> * draws: 1000
-    #> # A tibble: 6 x 3
+    #> ── A <tbl_nowcast> from method "baselinenowcast" ─────────────────────────────────────────────────────────────────────────────
+    #> • now: "2010-10-04"
+    #> • event dates: 1084
+    #> • quantile levels: 0.025, 0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95, and 0.975
+    #> • draws: 1000
+    #> 
+    #> Nowcast at "2010-10-04" (q50, 2.5-97.5% interval):
+    #> • 502 [80.9, 1,619]
+    #> 
+    #> # A tibble: 6 × 3
     #>   onset_week .quantile_level .value
     #>   <date>               <dbl>  <dbl>
-    #> 1 2008-01-07           0.025     22
-    #> 2 2008-01-07           0.05      22
-    #> 3 2008-01-07           0.1       22
-    #> 4 2008-01-07           0.25      22
-    #> 5 2008-01-07           0.5       22
-    #> 6 2008-01-07           0.75      22
-    #> i 1290 more rows. Use `as_tibble()` for all of them.
+    #> 1 1990-01-01           0.025     61
+    #> 2 1990-01-01           0.05      61
+    #> 3 1990-01-01           0.1       61
+    #> 4 1990-01-01           0.25      61
+    #> 5 1990-01-01           0.5       61
+    #> 6 1990-01-01           0.75      61
+    #> ℹ 9750 more rows. Use `as_tibble()` for all of them.
 
 An engine is *the model and everything it needs*:
 [`engine_baselinenowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_engines.md)
@@ -193,21 +197,25 @@ dnc <- run_nowcast(snapshot, engine_diseasenowcasting())
 dnc
 ```
 
-    #> -- A <tbl_nowcast> from method "diseasenowcasting" -----------------------------
-    #> * now: "2010-10-04"
-    #> * event dates: 144
-    #> * quantile levels: 0.025, 0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95, and 0.975
-    #> * draws: 2000
-    #> # A tibble: 6 x 3
+    #> ── A <tbl_nowcast> from method "diseasenowcasting" ───────────────────────────────────────────────────────────────────────────
+    #> • now: "2010-10-04"
+    #> • event dates: 1084
+    #> • quantile levels: 0.025, 0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95, and 0.975
+    #> • draws: 2000
+    #> 
+    #> Nowcast at "2010-10-04" (q50, 2.5-97.5% interval):
+    #> • 264 [127.0, 484.1]
+    #> 
+    #> # A tibble: 6 × 3
     #>   onset_week .quantile_level .value
     #>   <date>               <dbl>  <dbl>
-    #> 1 2008-01-07           0.025     22
-    #> 2 2008-01-07           0.05      22
-    #> 3 2008-01-07           0.1       22
-    #> 4 2008-01-07           0.25      22
-    #> 5 2008-01-07           0.5       22
-    #> 6 2008-01-07           0.75      22
-    #> i 1290 more rows. Use `as_tibble()` for all of them.
+    #> 1 1990-01-01           0.025     61
+    #> 2 1990-01-01           0.05      61
+    #> 3 1990-01-01           0.1       61
+    #> 4 1990-01-01           0.25      61
+    #> 5 1990-01-01           0.5       61
+    #> 6 1990-01-01           0.75      61
+    #> ℹ 9750 more rows. Use `as_tibble()` for all of them.
 
 **Watch for:** it is also the one engine whose *model* you can swap
 without changing packages — see the ensemble below, which uses two of
@@ -238,12 +246,16 @@ enw <- run_nowcast(snapshot, engine_epinowcast(
 enw
 ```
 
-    #> -- A <tbl_nowcast> from method "epinowcast" ------------------------------------
-    #> * now: "2010-10-04"
-    #> * event dates: 10
-    #> * quantile levels: 0.025, 0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95, and 0.975
-    #> * draws: 1000
-    #> # A tibble: 6 x 3
+    #> ── A <tbl_nowcast> from method "epinowcast" ──────────────────────────────────────────────────────────────────────────────────
+    #> • now: "2010-10-04"
+    #> • event dates: 10
+    #> • quantile levels: 0.025, 0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95, and 0.975
+    #> • draws: 1000
+    #> 
+    #> Nowcast at "2010-10-04" (q50, 2.5-97.5% interval):
+    #> • 349 [172, 450]
+    #> 
+    #> # A tibble: 6 × 3
     #>   onset_week .quantile_level .value
     #>   <date>               <dbl>  <dbl>
     #> 1 2010-08-02           0.025    328
@@ -252,7 +264,7 @@ enw
     #> 4 2010-08-02           0.25     328
     #> 5 2010-08-02           0.5      328
     #> 6 2010-08-02           0.75     328
-    #> i 84 more rows. Use `as_tibble()` for all of them.
+    #> ℹ 84 more rows. Use `as_tibble()` for all of them.
 
 **Watch for:** it is **unseeded** unless you say otherwise.
 [`enw_fit_opts()`](https://package.epinowcast.org/reference/enw_fit_opts.html)
@@ -274,12 +286,16 @@ nobbs <- run_nowcast(snapshot, engine_nobbs(max_D = 10, moving_window = 64))
 nobbs
 ```
 
-    #> -- A <tbl_nowcast> from method "NobBS" -----------------------------------------
-    #> * now: "2010-10-04"
-    #> * event dates: 64
-    #> * quantile levels: 0.025, 0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95, and 0.975
-    #> * draws: none (quantiles only)
-    #> # A tibble: 6 x 3
+    #> ── A <tbl_nowcast> from method "NobBS" ───────────────────────────────────────────────────────────────────────────────────────
+    #> • now: "2010-10-04"
+    #> • event dates: 64
+    #> • quantile levels: 0.025, 0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95, and 0.975
+    #> • draws: none (quantiles only)
+    #> 
+    #> Nowcast at "2010-10-04" (q50, 2.5-97.5% interval):
+    #> • 360 [255, 521.0]
+    #> 
+    #> # A tibble: 6 × 3
     #>   onset_week .quantile_level .value
     #>   <date>               <dbl>  <dbl>
     #> 1 2009-07-20           0.025     28
@@ -288,7 +304,7 @@ nobbs
     #> 4 2009-07-20           0.25      28
     #> 5 2009-07-20           0.5       28
     #> 6 2009-07-20           0.75      28
-    #> i 570 more rows. Use `as_tibble()` for all of them.
+    #> ℹ 570 more rows. Use `as_tibble()` for all of them.
 
 **Watch for:** it keeps **no draws per event date**, so it cannot join a
 `type = "linear_pool"` ensemble, and it can only report quantiles it was
@@ -310,21 +326,25 @@ sur <- run_nowcast(snapshot, engine_surveillance(D = 10))
 sur
 ```
 
-    #> -- A <tbl_nowcast> from method "surveillance" ----------------------------------
-    #> * now: "2010-10-04"
-    #> * event dates: 11
-    #> * quantile levels: 0.025, 0.5, and 0.975
-    #> * draws: none (quantiles only)
-    #> # A tibble: 6 x 3
+    #> ── A <tbl_nowcast> from method "surveillance" ────────────────────────────────────────────────────────────────────────────────
+    #> • now: "2010-10-04"
+    #> • event dates: 11
+    #> • quantile levels: 0.025, 0.5, and 0.975
+    #> • draws: none (quantiles only)
+    #> 
+    #> Nowcast at "2010-10-04" (q50, 2.5-97.5% interval):
+    #> • 216 [105, 391]
+    #> 
+    #> # A tibble: 6 × 3
     #>   onset_week .quantile_level .value
     #>   <date>               <dbl>  <dbl>
     #> 1 2010-07-26           0.025    302
     #> 2 2010-07-26           0.5      302
     #> 3 2010-07-26           0.975    302
     #> 4 2010-08-02           0.025    328
-    #> 5 2010-08-02           0.5      328
-    #> 6 2010-08-02           0.975    329
-    #> i 27 more rows. Use `as_tibble()` for all of them.
+    #> 5 2010-08-02           0.5      329
+    #> 6 2010-08-02           0.975    332
+    #> ℹ 27 more rows. Use `as_tibble()` for all of them.
 
 **Watch for:**
 [`surveillance::nowcast()`](https://rdrr.io/pkg/surveillance/man/nowcast.html)
@@ -357,21 +377,25 @@ en2 <- run_nowcast(snapshot, engine_epinow2(
 en2
 ```
 
-    #> -- A <tbl_nowcast> from method "EpiNow2" ---------------------------------------
-    #> * now: "2010-10-04"
-    #> * event dates: 96
-    #> * quantile levels: 0.025, 0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95, and 0.975
-    #> * draws: 500
-    #> # A tibble: 6 x 3
+    #> ── A <tbl_nowcast> from method "EpiNow2" ─────────────────────────────────────────────────────────────────────────────────────
+    #> • now: "2010-10-04"
+    #> • event dates: 96
+    #> • quantile levels: 0.025, 0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95, and 0.975
+    #> • draws: 500
+    #> 
+    #> Nowcast at "2010-10-04" (q50, 2.5-97.5% interval):
+    #> • 90 [90, 90]
+    #> 
+    #> # A tibble: 6 × 3
     #>   onset_week .quantile_level .value
     #>   <date>               <dbl>  <dbl>
-    #> 1 2008-12-08           0.025     37
-    #> 2 2008-12-08           0.05      37
-    #> 3 2008-12-08           0.1       37
-    #> 4 2008-12-08           0.25      37
-    #> 5 2008-12-08           0.5       37
-    #> 6 2008-12-08           0.75      37
-    #> i 858 more rows. Use `as_tibble()` for all of them.
+    #> 1 2008-12-08           0.025     19
+    #> 2 2008-12-08           0.05      19
+    #> 3 2008-12-08           0.1       19
+    #> 4 2008-12-08           0.25      19
+    #> 5 2008-12-08           0.5       19
+    #> 6 2008-12-08           0.75      28
+    #> ℹ 858 more rows. Use `as_tibble()` for all of them.
 
 **Watch for:** EpiNow2 has no `timestep` — it always models a *daily*
 process. The converter therefore lays a weekly object onto EpiNow2’s
@@ -457,20 +481,20 @@ predictions are always in the same tidy shape:
 as_tibble(baseline)
 ```
 
-    #> # A tibble: 1,296 × 3
+    #> # A tibble: 9,756 × 3
     #>    onset_week .quantile_level .value
     #>    <date>               <dbl>  <dbl>
-    #>  1 2008-01-07           0.025     22
-    #>  2 2008-01-07           0.05      22
-    #>  3 2008-01-07           0.1       22
-    #>  4 2008-01-07           0.25      22
-    #>  5 2008-01-07           0.5       22
-    #>  6 2008-01-07           0.75      22
-    #>  7 2008-01-07           0.9       22
-    #>  8 2008-01-07           0.95      22
-    #>  9 2008-01-07           0.975     22
-    #> 10 2008-01-14           0.025     19
-    #> # ℹ 1,286 more rows
+    #>  1 1990-01-01           0.025     61
+    #>  2 1990-01-01           0.05      61
+    #>  3 1990-01-01           0.1       61
+    #>  4 1990-01-01           0.25      61
+    #>  5 1990-01-01           0.5       61
+    #>  6 1990-01-01           0.75      61
+    #>  7 1990-01-01           0.9       61
+    #>  8 1990-01-01           0.95      61
+    #>  9 1990-01-01           0.975     61
+    #> 10 1990-01-08           0.025     50
+    #> # ℹ 9,746 more rows
 
 and, when the backend is sample-based, the draws are there too:
 
@@ -479,20 +503,20 @@ and, when the backend is sample-based, the draws are there too:
 as_tibble(baseline, type = "draws")
 ```
 
-    #> # A tibble: 144,000 × 3
+    #> # A tibble: 1,084,000 × 3
     #>    onset_week .draw .value
     #>    <date>     <int>  <dbl>
-    #>  1 2008-01-07     1     22
-    #>  2 2008-01-07     2     22
-    #>  3 2008-01-07     3     22
-    #>  4 2008-01-07     4     22
-    #>  5 2008-01-07     5     22
-    #>  6 2008-01-07     6     22
-    #>  7 2008-01-07     7     22
-    #>  8 2008-01-07     8     22
-    #>  9 2008-01-07     9     22
-    #> 10 2008-01-07    10     22
-    #> # ℹ 143,990 more rows
+    #>  1 1990-01-01     1     61
+    #>  2 1990-01-01     2     61
+    #>  3 1990-01-01     3     61
+    #>  4 1990-01-01     4     61
+    #>  5 1990-01-01     5     61
+    #>  6 1990-01-01     6     61
+    #>  7 1990-01-01     7     61
+    #>  8 1990-01-01     8     61
+    #>  9 1990-01-01     9     61
+    #> 10 1990-01-01    10     61
+    #> # ℹ 1,083,990 more rows
 
 ### `tidy()` works here too
 
@@ -511,20 +535,20 @@ and one fitted by calling a package by hand are read the same way:
 tidy(baseline)
 ```
 
-    #> # A tibble: 144 × 7
+    #> # A tibble: 1,084 × 7
     #>    event_date stratum estimate conf.low conf.high level engine         
     #>    <date>     <chr>      <dbl>    <dbl>     <dbl> <dbl> <chr>          
-    #>  1 2008-01-07 all           22       22        22  0.95 baselinenowcast
-    #>  2 2008-01-14 all           19       19        19  0.95 baselinenowcast
-    #>  3 2008-01-21 all            8        8         8  0.95 baselinenowcast
-    #>  4 2008-01-28 all           14       14        14  0.95 baselinenowcast
-    #>  5 2008-02-04 all            5        5         5  0.95 baselinenowcast
-    #>  6 2008-02-11 all            5        5         5  0.95 baselinenowcast
-    #>  7 2008-02-18 all            4        4         4  0.95 baselinenowcast
-    #>  8 2008-02-25 all           11       11        11  0.95 baselinenowcast
-    #>  9 2008-03-03 all            2        2         2  0.95 baselinenowcast
-    #> 10 2008-03-10 all            2        2         2  0.95 baselinenowcast
-    #> # ℹ 134 more rows
+    #>  1 1990-01-01 all           61       61        61  0.95 baselinenowcast
+    #>  2 1990-01-08 all           50       50        50  0.95 baselinenowcast
+    #>  3 1990-01-15 all           44       44        44  0.95 baselinenowcast
+    #>  4 1990-01-22 all           46       46        46  0.95 baselinenowcast
+    #>  5 1990-01-29 all           39       39        39  0.95 baselinenowcast
+    #>  6 1990-02-05 all           34       34        34  0.95 baselinenowcast
+    #>  7 1990-02-12 all           24       24        24  0.95 baselinenowcast
+    #>  8 1990-02-19 all           17       17        17  0.95 baselinenowcast
+    #>  9 1990-02-26 all           17       17        17  0.95 baselinenowcast
+    #> 10 1990-03-05 all           16       16        16  0.95 baselinenowcast
+    #> # ℹ 1,074 more rows
 
 Those first weeks look odd until you notice what they are: `estimate`,
 `conf.low` and `conf.high` are identical because early 2008 was
@@ -588,7 +612,7 @@ dengue_by_sex <- denguedat |>
   filter(report_week <= now) |>
   change_now(now = now)
 
-by_sex <- run_nowcast(dengue_by_sex, "baselinenowcast", draws = 1000, verbose = FALSE)
+by_sex <- run_nowcast(dengue_by_sex, engine = engine_baselinenowcast(draws = 1000))
 
 as_tibble(by_sex)
 ```
@@ -652,35 +676,48 @@ series:
 score_nowcast(baseline, truth = dengue)
 ```
 
-    #> # A tibble: 144 × 7
-    #>    .method         onset_week .observed   wis ae_median coverage_50 coverage_90
-    #>    <chr>           <date>         <int> <dbl>     <dbl> <lgl>       <lgl>      
-    #>  1 baselinenowcast 2008-01-07        22     0         0 TRUE        TRUE       
-    #>  2 baselinenowcast 2008-01-14        19     0         0 TRUE        TRUE       
-    #>  3 baselinenowcast 2008-01-21         8     0         0 TRUE        TRUE       
-    #>  4 baselinenowcast 2008-01-28        14     0         0 TRUE        TRUE       
-    #>  5 baselinenowcast 2008-02-04         5     0         0 TRUE        TRUE       
-    #>  6 baselinenowcast 2008-02-11         5     0         0 TRUE        TRUE       
-    #>  7 baselinenowcast 2008-02-18         4     0         0 TRUE        TRUE       
-    #>  8 baselinenowcast 2008-02-25        11     0         0 TRUE        TRUE       
-    #>  9 baselinenowcast 2008-03-03         2     0         0 TRUE        TRUE       
-    #> 10 baselinenowcast 2008-03-10         2     0         0 TRUE        TRUE       
-    #> # ℹ 134 more rows
+    #> # A tibble: 8 × 7
+    #>   .method         onset_week .observed     wis ae_median coverage_50 coverage_90
+    #>   <chr>           <date>         <dbl>   <dbl>     <dbl> <lgl>       <lgl>      
+    #> 1 baselinenowcast 2010-08-16       355 2.22e-2         0 TRUE        TRUE       
+    #> 2 baselinenowcast 2010-08-23       258 4.44e-2         0 TRUE        TRUE       
+    #> 3 baselinenowcast 2010-08-30       287 2.67e-1         1 TRUE        TRUE       
+    #> 4 baselinenowcast 2010-09-06       298 4.22e-1         1 TRUE        TRUE       
+    #> 5 baselinenowcast 2010-09-13       275 1.08e+0         2 TRUE        TRUE       
+    #> 6 baselinenowcast 2010-09-20       250 9.45e+0        21 FALSE       FALSE      
+    #> 7 baselinenowcast 2010-09-27       201 3.59e+1        70 FALSE       TRUE       
+    #> 8 baselinenowcast 2010-10-04       147 1.49e+2       355 FALSE       TRUE
 
 Lower WIS is better; `coverage_90` should be `TRUE` about nine times in
 ten if the intervals are honest.
 
-If you would rather use the full score suite,
-[`as_scoringutils()`](https://rodrigozepeda.github.io/tbl.now/reference/score_nowcast.md)
-reshapes the same object into the format it expects:
+If you would rather use the full score suite, its coercion generic
+accepts the nowcast directly. Supply the later, full `tbl_now` as
+`truth`:
 
 ``` r
 
 baseline |>
-  as_scoringutils(truth = dengue) |>
-  scoringutils::as_forecast_quantile() |>
+  scoringutils::as_forecast_quantile(truth = dengue) |>
   scoringutils::score()
 ```
+
+`as_scoringutils(baseline, truth = dengue)` is the long tibble
+underneath that object when you want to inspect or alter the forecast
+units first.
+
+When the nowcast retains posterior draws, it can instead become a sample
+forecast. This follows the same adapter pattern used by :
+
+``` r
+
+baseline |>
+  scoringutils::as_forecast_sample(truth = dengue) |>
+  scoringutils::score()
+```
+
+Sample conversion is deliberately unavailable for a quantile-only
+nowcast: samples cannot be reconstructed from a handful of quantiles.
 
 `tbl.now`’s own `wis` and the one computes agree to machine precision —
 the package’s test suite checks exactly that, on the same numbers,
@@ -726,21 +763,25 @@ members <- list(
 ensemble <- nowcast_ensemble(members)
 ```
 
-    #> -- A <tbl_nowcast> from method "ensemble" --------------------------------------
-    #> * now: "2010-10-04"
-    #> * event dates: 10
-    #> * quantile levels: 0.025, 0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95, and 0.975
-    #> * draws: none (quantiles only)
-    #> # A tibble: 6 x 3
+    #> ── A <tbl_nowcast> from method "ensemble" ────────────────────────────────────────────────────────────────────────────────────
+    #> • now: "2010-10-04"
+    #> • event dates: 10
+    #> • quantile levels: 0.025, 0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95, and 0.975
+    #> • draws: none (quantiles only)
+    #> 
+    #> Nowcast at "2010-10-04" (q50, 2.5-97.5% interval):
+    #> • 290.7 [135.2, 574.7]
+    #> 
+    #> # A tibble: 6 × 3
     #>   onset_week .quantile_level .value
     #>   <date>               <dbl>  <dbl>
-    #> 1 2010-08-02           0.025   324.
-    #> 2 2010-08-02           0.05    324.
-    #> 3 2010-08-02           0.1     324.
-    #> 4 2010-08-02           0.25    354.
-    #> 5 2010-08-02           0.5     354.
-    #> 6 2010-08-02           0.75    354.
-    #> i 84 more rows. Use `as_tibble()` for all of them.
+    #> 1 2010-08-02           0.025   308 
+    #> 2 2010-08-02           0.05    308 
+    #> 3 2010-08-02           0.1     308 
+    #> 4 2010-08-02           0.25    308 
+    #> 5 2010-08-02           0.5     320.
+    #> 6 2010-08-02           0.75    320.
+    #> ℹ 84 more rows. Use `as_tibble()` for all of them.
 
 ### The ensemble against its parts
 
@@ -807,16 +848,22 @@ tidy(ensemble)
     #> # A tibble: 10 × 7
     #>    event_date stratum estimate conf.low conf.high level engine  
     #>    <date>     <chr>      <dbl>    <dbl>     <dbl> <dbl> <chr>   
-    #>  1 2010-08-02 all         354.     324.      355.  0.95 ensemble
-    #>  2 2010-08-09 all         354.     354.      364.  0.95 ensemble
-    #>  3 2010-08-16 all         361.     361.      370.  0.95 ensemble
-    #>  4 2010-08-23 all         252.     252.      264.  0.95 ensemble
-    #>  5 2010-08-30 all         282.     282       300.  0.95 ensemble
-    #>  6 2010-09-06 all         289.     283       292.  0.95 ensemble
-    #>  7 2010-09-13 all         267.     264.      292.  0.95 ensemble
-    #>  8 2010-09-20 all         257.     245.      320.  0.95 ensemble
-    #>  9 2010-09-27 all         229.     179.      402.  0.95 ensemble
-    #> 10 2010-10-04 all         226.     108.      549.  0.95 ensemble
+    #>  1 2010-08-02 all         320.     308       320.  0.95 ensemble
+    #>  2 2010-08-09 all         371.     349.      371.  0.95 ensemble
+    #>  3 2010-08-16 all         346      346       353.  0.95 ensemble
+    #>  4 2010-08-23 all         264.     262.      265.  0.95 ensemble
+    #>  5 2010-08-30 all         286      275.      288.  0.95 ensemble
+    #>  6 2010-09-06 all         304.     293.      308.  0.95 ensemble
+    #>  7 2010-09-13 all         277      261.      287   0.95 ensemble
+    #>  8 2010-09-20 all         263.     244.      298.  0.95 ensemble
+    #>  9 2010-09-27 all         264.     196.      414.  0.95 ensemble
+    #> 10 2010-10-04 all         291.     135.      575.  0.95 ensemble
+
+It can also be a member of another ensemble. This makes it possible, for
+example, to combine a `diseasenowcasting` HSGP/AR ensemble with an
+`epinowcast` random walk and a baseline. Quantile ensembles can always
+be nested; a nested member of a `linear_pool` must itself have draws, so
+its inner ensemble must also use `type = "linear_pool"`.
 
 ### Two ways of combining
 
@@ -926,16 +973,17 @@ backtest <- nowcast_backtest(
 tidy(backtest)
 ```
 
-    #> # A tibble: 6 × 9
-    #>   method now        event_date stratum observed   wis ae_median coverage_50
-    #>   <chr>  <date>     <date>     <chr>      <dbl> <dbl>     <dbl> <lgl>      
-    #> 1 NobBS  2010-04-19 2009-02-02 all           48     0         0 TRUE       
-    #> 2 NobBS  2010-04-19 2009-02-09 all           47     0         0 TRUE       
-    #> 3 NobBS  2010-04-19 2009-02-16 all           43     0         0 TRUE       
-    #> 4 NobBS  2010-04-19 2009-02-23 all           42     0         0 TRUE       
-    #> 5 NobBS  2010-04-19 2009-03-02 all           24     0         0 TRUE       
-    #> 6 NobBS  2010-04-19 2009-03-09 all           27     0         0 TRUE       
-    #> # ℹ 1 more variable: coverage_90 <lgl>
+    #> # A tibble: 6 × 13
+    #>   method now        event_date stratum observed estimate conf.low conf.high
+    #>   <chr>  <date>     <date>     <chr>      <dbl>    <dbl>    <dbl>     <dbl>
+    #> 1 NobBS  2010-04-19 2009-02-02 all           48       48       48        48
+    #> 2 NobBS  2010-04-19 2009-02-09 all           47       47       47        47
+    #> 3 NobBS  2010-04-19 2009-02-16 all           43       43       43        43
+    #> 4 NobBS  2010-04-19 2009-02-23 all           42       42       42        42
+    #> 5 NobBS  2010-04-19 2009-03-02 all           24       24       24        24
+    #> 6 NobBS  2010-04-19 2009-03-09 all           27       27       27        27
+    #> # ℹ 5 more variables: level <dbl>, wis <dbl>, ae_median <dbl>,
+    #> #   coverage_50 <lgl>, coverage_90 <lgl>
 
 **Why not every ensemble member is backtested here.** A backtest is
 `length(methods) × length(now_dates)` model fits. `epinowcast` and
@@ -948,15 +996,45 @@ yourself;
 will not invent them.
 
 [`tidy()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast.md)
-on a backtest gives one row per (method, `now` date, target), which goes
-straight into `dplyr` or `ggplot2`:
+on a backtest gives one row per (method, `now` date, target), carrying
+the retrospective prediction (`estimate`, `conf.low`, `conf.high`) next
+to what was eventually `observed` and the scores that comparison earned.
+It goes straight into `dplyr` or `ggplot2`:
 
-    #> # A tibble: 3 × 4
-    #>   method            mean_wis mean_ae_median coverage_90
-    #>   <chr>                <dbl>          <dbl>       <dbl>
-    #> 1 diseasenowcasting     0.5            0.97        0.99
-    #> 2 baselinenowcast       0.7            1.39        0.99
-    #> 3 NobBS                 1.91           2.86        0.97
+    #> # A tibble: 12 × 4
+    #>    method            now        mean_wis coverage_90
+    #>    <chr>             <date>        <dbl>       <dbl>
+    #>  1 baselinenowcast   2010-04-19      0          1   
+    #>  2 diseasenowcasting 2010-04-19      0          1   
+    #>  3 dnc_ar1           2010-04-19      0          1   
+    #>  4 NobBS             2010-04-19      0.2        0.94
+    #>  5 baselinenowcast   2010-06-14      0.1        1   
+    #>  6 diseasenowcasting 2010-06-14      0.1        1   
+    #>  7 dnc_ar1           2010-06-14      0.2        1   
+    #>  8 NobBS             2010-06-14      1.7        0.91
+    #>  9 diseasenowcasting 2010-08-09      0.1        1   
+    #> 10 dnc_ar1           2010-08-09      0.1        1   
+    #> 11 baselinenowcast   2010-08-09      0.2        1   
+    #> 12 NobBS             2010-08-09      4          0.89
+
+The backtest also converts directly to ; it already stores the truth,
+and `now` remains a forecast unit so repeated retrospective predictions
+of one target stay distinct:
+
+``` r
+
+backtest |>
+  scoringutils::as_forecast_quantile() |>
+  scoringutils::score() |>
+  scoringutils::add_relative_skill()
+```
+
+Quantile conversion above needs no extra storage. To use
+`as_forecast_sample()` instead, build the backtest with
+`keep_draws = TRUE`. This can make the object much larger, and every
+included engine must return draws; a mixed backtest containing a
+quantile-only engine is refused rather than scored on only a subset of
+its methods.
 
 This is the expensive part of the workflow — it is
 `length(methods) × length(now_dates)` model fits — so keep `now_dates`
@@ -978,8 +1056,8 @@ fitted_weights                                    # w proportional to 1 / mean W
 nowcast_weights(backtest, type = "optim")         # w minimising the ensemble's WIS
 ```
 
-    #>             NobBS   baselinenowcast diseasenowcasting 
-    #>             0.132             0.360             0.508
+    #>             NobBS   baselinenowcast diseasenowcasting           dnc_ar1 
+    #>             0.013             0.284             0.493             0.211
 
 `"inverse_score"` is the safe default: it is monotone in performance,
 never collapses onto a single model, and cannot overfit. `"optim"`
@@ -1002,8 +1080,8 @@ is **two S3 methods**, and they can live in your own package, your
 analysis script, or a one-off chunk. Nothing inside `tbl.now` needs to
 change.
 
-`run_nowcast(x, method = "mymodel")` builds a little object of class
-`c("mymodel", "nowcast_method")` and calls
+`run_nowcast(x, engine = engine("mymodel"))` builds a little object of
+class `c("mymodel", "nowcast_method")` and calls
 
 - `nowcast_fit(method, x, ...)` — run the model, return whatever it
   returns;

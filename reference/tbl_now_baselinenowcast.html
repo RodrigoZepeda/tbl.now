@@ -35,7 +35,7 @@ use format = "triangle_list" to get one triangle per stratum instead.'><meta pro
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.31.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.33.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -50,7 +50,7 @@ use format = "triangle_list" to get one triangle per stratum instead.'><meta pro
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/custom-nowcast-models.html">Adding your own nowcasting model</a></li>
     <li><a class="dropdown-item" href="../articles/diagnosing-a-tbl-now.html">Diagnosing a tbl_now</a></li>
     <li><a class="dropdown-item" href="../articles/ensemble-nowcasting.html">One call, many models: run_nowcast(), custom backends and ensembles</a></li>
-    <li><a class="dropdown-item" href="../articles/example.html">A complete nowcasting workflow: hospital-acquired infections in Bucaramanga</a></li>
+    <li><a class="dropdown-item" href="../articles/example.html">The nowcasting workflow: hospital-acquired infections in Bucaramanga, Colombia</a></li>
     <li><a class="dropdown-item" href="../articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with different modelling packages</a></li>
     <li><a class="dropdown-item" href="../articles/tbl.now.html">tbl.now</a></li>
   </ul></li>
@@ -188,8 +188,12 @@ input only, so you do not have to remember
 <code>to_count() |&gt; complete_zeroes()</code> first. Count data is left exactly as
 supplied, because it <em>can</em> distinguish an observed zero from a cell that
 could not be observed yet (<code>NA</code>) and filling those would claim reporting was
-complete when it was not. <code>TRUE</code> / <code>FALSE</code> force either behaviour. Ignored
-for <code>format = "long"</code>.</p></dd>
+complete when it was not. <code>TRUE</code> / <code>FALSE</code> force either behaviour.</p>
+<p><strong>Ignored for <code>format = "long"</code></strong>, which is a tidy data frame with no grid
+to complete. If you build a triangle from the long output yourself, a line
+list will be missing every event period in which nothing was reported –
+call <code>to_count() |&gt; complete_zeroes()</code> first, or ask for
+<code>format = "triangle_list"</code>, which does it for you.</p></dd>
 
 
 <dt id="arg-negatives">negatives<a class="anchor" aria-label="anchor" href="#arg-negatives"></a></dt>

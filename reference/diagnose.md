@@ -10,11 +10,11 @@ findings, sorted worst first.
 
 It is **deterministic and runs no statistical test.** Whether the
 reporting delay drifts, and whether reports arrive in batches, are
-questions about a *distribution*, not about the object's structure;
-`diagnose()` emits a `"not_run"` signpost naming the function to call
-instead
-([`diagnose_drift()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_drift.md),
-[`diagnose_batches()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_batches.md))
+questions about a *distribution*, not about the object's structure, so
+`diagnose()` leaves them to
+[`diagnose_drift()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_drift.md)
+and
+[`diagnose_batches()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_batches.md)
 rather than quietly running a test whose method, window and multiplicity
 correction you did not choose.
 
@@ -56,7 +56,7 @@ diagnose(
 - checks:
 
   Character vector of checks to run, a subset of
-  `c("declarations", "ordering", "missing", "duplicates", "units", "negatives", "now", "truncation", "strata", "signposts")`.
+  `c("declarations", "ordering", "missing", "duplicates", "units", "negatives", "now", "truncation", "strata")`.
   Defaults to all of them.
 
 - by_strata:
@@ -95,7 +95,7 @@ and filtered with
 
   Which block the row belongs to: `"declarations"`, `"ordering"`,
   `"missing"`, `"duplicates"`, `"units"`, `"negatives"`, `"now"`,
-  `"truncation"`, `"strata"` or `"signposts"`.
+  `"truncation"` or `"strata"`.
 
 - `scope`:
 
@@ -110,8 +110,8 @@ and filtered with
 - `status`:
 
   An **ordered factor**, worst first, so the tibble sorts itself:
-  `error` \> `warning` \> `note` \> `ok` \> `not_run` \> `skipped`. See
-  the section below.
+  `error` \> `warning` \> `note` \> `ok` \> `skipped`. See the section
+  below.
 
 - `n_affected`:
 
@@ -164,11 +164,6 @@ and filtered with
 
   The check ran and found nothing.
 
-- `not_run`:
-
-  A signpost: this question needs a statistical test, and `message`
-  names the call that answers it.
-
 - `skipped`:
 
   Could not be assessed – no validation process, the wrong data type, or
@@ -202,7 +197,7 @@ ndata <- tbl_now(denguedat,
 # Everything, worst first
 diagnose(ndata)
 #> ── Diagnosis of a <tbl_now> ────────────────────────────────────────────────────
-#> 9 notes, 14 passed, 3 not run, 6 skipped.
+#> 9 notes, 15 passed, 5 skipped.
 #> 
 #> Notes (9)
 #> ℹ now/now_gap_event [Female]: The last event date is 3 weeks before now ("2010-12-20").
@@ -211,24 +206,17 @@ diagnose(ndata)
 #> ℹ now/now_gap_event: The last event date is 3 weeks before now ("2010-12-20").
 #> ℹ now/now_gap_report [Male]: The last report date is 1 week before now ("2010-12-20").
 #> ℹ strata/size [Male]: The smallest stratum is "Male" with 26395 cases, 49.8% of the total.
-#> ℹ strata/sparsity [Female]: The sparsest stratum is "Female": 1.2% of the event dates on the grid carry no cases at all.
-#>   → A stratum that is mostly zeros is the one a per-stratum fit will struggle with; pooling it is often better than fitting it.
+#> ℹ strata/sparsity [Female]: The sparsest stratum is "Female": 13 of the 1095 weeks between the minimum event (1990-01-01) and the now (2010-12-20) carry no cases at all (1.2%, against 0.4% pooled over every stratum).
+#>   → A stratum that is mostly zeros is the one a per-stratum fit will struggle with; pooling it is often better than fitting it. When every stratum is mostly zeros the grid is finer than the data -- `aggregate_time_units()` coarsens it.
 #> ℹ truncation/event_date [Female]: 1 event date is younger than the 95th percentile of the delay, so its counts are still filling in; an estimated 5.8% of its eventual total has not arrived.
 #>   → This is right-truncation, and it is the reason to nowcast rather than a defect. Cut the series at "2010-11-22" to describe it instead.
 #> ℹ truncation/event_date [Male]: 1 event date is younger than the 95th percentile of the delay, so its counts are still filling in; an estimated 5.9% of its eventual total has not arrived.
 #> ℹ truncation/event_date: 1 event date is younger than the 95th percentile of the delay, so its counts are still filling in; an estimated 5.9% of its eventual total has not arrived.
 #> 
-#> Not run (3)
-#> → signposts/report: Run: diagnose_drift(x, axis = "report")
-#>   → `diagnose()` runs no statistical test: a trend test needs a method, a maturity window and an alpha, and those are the caller's to choose.
-#> → signposts/report_batches: Run: diagnose_batches(x, axis = "report")
-#>   → `diagnose()` runs no statistical test: batch detection needs a look-back, a null model and a multiplicity correction.
-#> → signposts/validation_batches: Run: diagnose_batches(x, axis = "validation")
+#> ✔ 15 passed: declarations/temporal_effects, declarations/undeclared, missing/gender, missing/onset_week, missing/report_week, now/event_date, now/now_gap_report, now/report_date, ordering/event_to_report, simultaneously missing/event and report dates, units/declared, units/delay, units/event_grid, and units/report_grid
+#> ─ 5 skipped: duplicates/key, negatives/count, ordering/event_to_validation, ordering/report_to_validation, and strata/pending
 #> 
-#> ✔ 14 passed: declarations/temporal_effects, declarations/undeclared, missing/gender, missing/onset_week, missing/report_week, now/event_date, now/now_gap_report, now/report_date, ordering/event_to_report, units/declared, units/delay, units/event_grid, and units/report_grid
-#> ─ 6 skipped: duplicates/key, negatives/count, ordering/event_to_validation, ordering/report_to_validation, signposts/validation, and strata/pending
-#> 
-#> ℹ 32 findings. Use `dplyr::filter()` or `tibble::as_tibble()` for the table.
+#> ℹ 29 findings. Use `dplyr::filter()` or `tibble::as_tibble()` for the table.
 
 # Only what needs acting on
 diagnose(ndata) |> dplyr::filter(status <= "note")
@@ -242,8 +230,8 @@ diagnose(ndata) |> dplyr::filter(status <= "note")
 #> ℹ now/now_gap_event: The last event date is 3 weeks before now ("2010-12-20").
 #> ℹ now/now_gap_report [Male]: The last report date is 1 week before now ("2010-12-20").
 #> ℹ strata/size [Male]: The smallest stratum is "Male" with 26395 cases, 49.8% of the total.
-#> ℹ strata/sparsity [Female]: The sparsest stratum is "Female": 1.2% of the event dates on the grid carry no cases at all.
-#>   → A stratum that is mostly zeros is the one a per-stratum fit will struggle with; pooling it is often better than fitting it.
+#> ℹ strata/sparsity [Female]: The sparsest stratum is "Female": 13 of the 1095 weeks between the minimum event (1990-01-01) and the now (2010-12-20) carry no cases at all (1.2%, against 0.4% pooled over every stratum).
+#>   → A stratum that is mostly zeros is the one a per-stratum fit will struggle with; pooling it is often better than fitting it. When every stratum is mostly zeros the grid is finer than the data -- `aggregate_time_units()` coarsens it.
 #> ℹ truncation/event_date [Female]: 1 event date is younger than the 95th percentile of the delay, so its counts are still filling in; an estimated 5.8% of its eventual total has not arrived.
 #>   → This is right-truncation, and it is the reason to nowcast rather than a defect. Cut the series at "2010-11-22" to describe it instead.
 #> ℹ truncation/event_date [Male]: 1 event date is younger than the 95th percentile of the delay, so its counts are still filling in; an estimated 5.9% of its eventual total has not arrived.
@@ -267,5 +255,5 @@ diagnose(ndata, checks = "units")
 ## `diagnose()` never stops your pipeline -- it hands back a table for you to
 ## read. Use validate_tbl_now() when you want a broken object to be an error.
 nrow(diagnose(ndata))
-#> [1] 32
+#> [1] 29
 ```

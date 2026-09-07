@@ -129,8 +129,13 @@ tbl_now_to_baselinenowcast(
   data is left exactly as supplied, because it *can* distinguish an
   observed zero from a cell that could not be observed yet (`NA`) and
   filling those would claim reporting was complete when it was not.
-  `TRUE` / `FALSE` force either behaviour. Ignored for
-  `format = "long"`.
+  `TRUE` / `FALSE` force either behaviour.
+
+  **Ignored for `format = "long"`**, which is a tidy data frame with no
+  grid to complete. If you build a triangle from the long output
+  yourself, a line list will be missing every event period in which
+  nothing was reported – call `to_count() |> complete_zeroes()` first,
+  or ask for `format = "triangle_list"`, which does it for you.
 
 - negatives:
 

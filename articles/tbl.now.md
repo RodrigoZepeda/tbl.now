@@ -745,7 +745,7 @@ df_computed
 #> # ────────────────────────────────────────────────────────────────────────────────
 #> # ℹ 52,977 more rows
 #> # ℹ 3 more variables: .event_day_of_week <fct>, .event_week_of_year <fct>,
-#> #   .event_holiday <int>
+#> #   .event_holiday <dbl>
 ```
 
 After
@@ -781,6 +781,20 @@ get_temporal_effects(df_computed) # The spec (list of configs)
 get_temporal_effect_cols(df_computed) # The computed column names
 #> [1] ".event_day_of_week"  ".event_week_of_year" ".event_holiday"
 ```
+
+> **Holidays on a grid coarser than days.** `denguedat` is weekly, and a
+> week is not a holiday – it *contains* holidays. On daily data
+> `.event_holiday` is the usual `0`/`1` indicator; on weekly, monthly or
+> yearly data it is the **share of the period’s days** the calendar
+> marks, so a week containing Christmas Day scores `1/7`. The units are
+> read off the object, so there is nothing extra to call.
+
+Because the effects are computed from the object’s own grid, they also
+travel with it:
+[aggregate_time_units()](https://rodrigozepeda.github.io/tbl.now/reference/aggregate_time_units.html)
+drops from the specification the effects the coarser grid cannot express
+(a day-of-week term on weekly dates), rescales the Fourier `seasons`
+onto the new unit, and keeps the holiday calendar.
 
 #### Around-holiday and around-weekend effects
 
@@ -1633,10 +1647,24 @@ Each calendar/holiday twin takes a `type` argument choosing the process:
 | `plot_week_of_year_effects(x, type = )` | `calendar_week` / `delay_week` |
 | `plot_month_of_year_effects(x, type = )` | `calendar_month` / `delay_month` |
 | `plot_holiday_effects(x, type = )` | `calendar_holiday` / `delay_holiday` |
+| `plot_weekend_effects(x, type = )` | `calendar_holiday` / `delay_holiday`, attaching `temporal_effects(weekend = TRUE)` first |
 | `plot_holiday_lag_effects(x, type = )` | `calendar_holiday_lag` / `delay_holiday_lag` |
 | `plot_cycles(x, type = )` | `seasonality` / `delay_seasonality` |
 | `plot_delay_distribution(x)` | `delay_distribution` |
 | `plot_observed_cases(x)` | `epidemic` |
+
+[`plot_weekend_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/calendar_effect_plots.md)
+and
+[`plot_holiday_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/calendar_effect_plots.md)
+draw the same panel; the first one attaches the weekend effect for you
+when the object does not already carry one (daily data only), the second
+describes whatever specification is already there. Both, and
+[`plot_holiday_lag_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/calendar_effect_plots.md),
+are always *normalized* and take no `measure` argument: their categories
+are not equal-sized parts of a week, so a percentage share — “29% of the
+cases at the weekend” — would restate the calendar rather than the data.
+The day-of-week, week-of-year and month-of-year twins keep both
+measures.
 
 ``` r
 
@@ -1682,6 +1710,14 @@ autoplot(holiday_now, panels = c("calendar_holiday", "calendar_holiday_lag",
 
 ![](tbl.now_files/figure-html/holiday-panels-1.png)
 
+These four panels are always drawn *normalized* against the mean,
+whatever `measure` you pass
+[`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html): a
+day type is not an equal-sized slice of a week, so a percentage share
+would mostly restate the calendar. The day-type pair is titled
+**“Weekend and/or holiday effects”** because that is what its categories
+are.
+
 The **holiday effect** panel splits the days by *type*. The categories
 you get follow the
 [`temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/temporal_effects.md):
@@ -1718,27 +1754,36 @@ into one table. `component` says which block a row belongs to:
 
 summary(dengue_now) |>
   count(component)
-#> # A tibble: 6 × 2
-#>   component           n
-#>   <chr>           <int>
-#> 1 autocorrelation     2
-#> 2 cases               2
-#> 3 completeness        8
-#> 4 coverage           11
-#> 5 delay               1
-#> 6 zero_run            2
+#> # A tibble: 4 × 2
+#>   component     n
+#>   <chr>     <int>
+#> 1 cases         2
+#> 2 coverage     11
+#> 3 delay         1
+#> 4 zero_run      2
 ```
 
-The `completeness` block is often the most useful of them: it says how
-much of each event date’s eventual total had arrived by delay `d`, which
-is what decides how far back a nowcast is even meaningful.
+`n` and `total` answer different questions, and each block prints a line
+saying which: `total` always counts **cases**, while `n` counts the
+block’s own unit — dates on the grid for `cases`, runs for `zero_run`,
+and (event, report) cells for `delay` and `composition`.
+
+How much of each event date’s eventual total had arrived by delay `d` —
+which is what decides how far back a nowcast is even meaningful — is
+[`reporting_completeness()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md).
+It is **not** part of
+[`summary()`](https://rdrr.io/r/base/summary.html): it was written by an
+AI and has not been reviewed by a human, so it warns every time it is
+called.
 
 ``` r
 
-summary(dengue_now) |>
-  filter(component == "completeness") |>
-  select(quantity, n, mean, q50, prop) |>
-  head(4)
+reporting_completeness(dengue_now, delays = 0:3) |>
+  select(quantity, n, mean, q50, prop)
+#> Warning: ! `reporting_completeness()` is experimental and was written by an AI; it has
+#>   not yet been reviewed by a human.
+#> ℹ It is no longer part of `summary()`. Check the numbers before you rely on
+#>   them.
 #> # A tibble: 4 × 5
 #>   quantity       n   mean    q50   prop
 #>   <chr>      <int>  <dbl>  <dbl>  <dbl>
@@ -1774,13 +1819,17 @@ The others are
 [`prop_validation_type()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md),
 [`prop_strata()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md),
 [`prop_covariate_levels()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md),
-[`case_autocorrelation()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md),
 [`date_ranges()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md),
-[`triangle_occupancy()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md),
-[`reporting_completeness()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md)
+[`triangle_occupancy()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md)
 and
 [`cumulative_growth()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md).
-See
+Two more –
+[`case_autocorrelation()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md)
+and
+[`reporting_completeness()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md)
+– share the schema but are **not** part of
+[`summary()`](https://rdrr.io/r/base/summary.html): they were written by
+an AI, have not been reviewed by a human, and warn on every call. See
 [`?nowcast_summary_components`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md).
 
 Quantiles in [`summary()`](https://rdrr.io/r/base/summary.html) are
@@ -1797,8 +1846,8 @@ use, so the table and the figures always agree.
 
 [`diagnose()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose.md)
 returns findings **sorted worst first**. `status` is an ordered factor —
-`error` \> `warning` \> `note` \> `ok` \> `not_run` \> `skipped` — so
-filtering to what needs acting on is a comparison:
+`error` \> `warning` \> `note` \> `ok` \> `skipped` — so filtering to
+what needs acting on is a comparison:
 
 ``` r
 
@@ -1821,21 +1870,11 @@ date still too young to be trusted.
 [`diagnose()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose.md)
 is deliberately **structural**. It never runs a statistical test, so it
 is fast and its answer never depends on a random seed. The questions
-that *do* need a test come back as `not_run` signposts naming the call
-that answers each one — the two sections that follow:
-
-``` r
-
-diagnose_signposts(dengue_now) |>
-  select(scope, status, message)
-#> # A tibble: 4 × 3
-#>   scope              status  message                                          
-#>   <chr>              <ord>   <chr>                                            
-#> 1 report             not_run "Run: diagnose_drift(x, axis = \"report\")"      
-#> 2 report_batches     not_run "Run: diagnose_batches(x, axis = \"report\")"    
-#> 3 validation_batches not_run "Run: diagnose_batches(x, axis = \"validation\")"
-#> 4 validation         skipped "The object carries no validation process."
-```
+that *do* need a test are left out of it entirely and answered by
+[`diagnose_drift()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_drift.md)
+and
+[`diagnose_batches()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_batches.md)
+— the two sections that follow.
 
 `skipped` is a distinct status from `ok`, and the difference matters:
 `ok` means the check ran and found nothing, whereas `skipped` means it
@@ -1852,10 +1891,9 @@ callable on its own —
 [`diagnose_units()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_diagnose_components.md),
 [`diagnose_negatives()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_diagnose_components.md),
 [`diagnose_now()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_diagnose_components.md),
-[`diagnose_truncation()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_diagnose_components.md),
-[`diagnose_strata()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_diagnose_components.md)
+[`diagnose_truncation()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_diagnose_components.md)
 and
-[`diagnose_signposts()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_diagnose_components.md).
+[`diagnose_strata()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_diagnose_components.md).
 See
 [`?nowcast_diagnose_components`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_diagnose_components.md).
 
@@ -1952,14 +1990,13 @@ batches <- diagnose_batches(dengue_now, lookback = 2)
 batches |>
   filter(batch) |>
   select(report_date, reported, baseline, everything())
-#> # A tibble: 4 × 9
-#>   report_date reported baseline stratum deficit  delta p_transport
-#>   <date>         <dbl>    <dbl> <chr>     <dbl>  <dbl>       <dbl>
-#> 1 1991-08-12        61     50.2 all        37.3 -26.6    0.00200  
-#> 2 2007-11-26       152     86.5 all        68.0  -2.50   0.000526 
-#> 3 2009-11-16       127     83.5 all        60.5 -17      0.000347 
-#> 4 2010-09-13       383    272.  all       132.  -21.0    0.0000639
-#> # ℹ 2 more variables: p_transport_bh <dbl>, batch <lgl>
+#> ── Batch screen ────────────────────────────────────────────────────────────────
+#> 4 (report date, stratum) pairs; look-back 2; null "robust"
+#> ⚠ 4 batches flagged at alpha = 0.05 (BH-adjusted):
+#> • 1991-08-12 [all] -- reported 61, baseline 50.2, deficit 37.3, delta -26.6
+#> • 2007-11-26 [all] -- reported 152, baseline 86.5, deficit 68, delta -2.5
+#> • 2009-11-16 [all] -- reported 127, baseline 83.5, deficit 60.5, delta -17
+#> • 2010-09-13 [all] -- reported 383, baseline 272.1, deficit 131.8, delta -21
 ```
 
 Additional information on dealing with batches and other reporting delay

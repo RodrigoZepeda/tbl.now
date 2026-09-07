@@ -289,6 +289,5 @@ get_validation_date(hai)
 get_validation_units(hai)
 #> [1] "days"
 head(hai[[get_validation_date(hai)]])
-#> [1] "2018-10-01" "2018-01-27" "2018-01-27" "2018-04-20" "2018-01-22"
-#> [6] "2018-01-02"
+#> [1] NA NA NA NA NA NA
 ```

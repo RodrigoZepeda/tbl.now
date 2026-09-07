@@ -15,7 +15,7 @@ background) since only the batch call is of interest."><meta property="og:image"
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.31.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.33.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -30,7 +30,7 @@ background) since only the batch call is of interest."><meta property="og:image"
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/custom-nowcast-models.html">Adding your own nowcasting model</a></li>
     <li><a class="dropdown-item" href="../articles/diagnosing-a-tbl-now.html">Diagnosing a tbl_now</a></li>
     <li><a class="dropdown-item" href="../articles/ensemble-nowcasting.html">One call, many models: run_nowcast(), custom backends and ensembles</a></li>
-    <li><a class="dropdown-item" href="../articles/example.html">A complete nowcasting workflow: hospital-acquired infections in Bucaramanga</a></li>
+    <li><a class="dropdown-item" href="../articles/example.html">The nowcasting workflow: hospital-acquired infections in Bucaramanga, Colombia</a></li>
     <li><a class="dropdown-item" href="../articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with different modelling packages</a></li>
     <li><a class="dropdown-item" href="../articles/tbl.now.html">tbl.now</a></li>
   </ul></li>
@@ -71,6 +71,8 @@ background) since only the batch call is of interest.</p>
 <span>  <span class="va">x</span>,</span>
 <span>  <span class="va">...</span>,</span>
 <span>  plotly <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  size <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  grid_linewidth <span class="op">=</span> <span class="fl">0.3</span>,</span>
 <span>  palette <span class="op">=</span> <span class="fu">.tbl_now_palette</span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -93,8 +95,21 @@ background) since only the batch call is of interest.</p>
 static plot. Default <code>FALSE</code>.</p></dd>
 
 
+<dt id="arg-size">size<a class="anchor" aria-label="anchor" href="#arg-size"></a></dt>
+<dd><p>Multiplier on the size of the points and their date labels.
+Default <code>1</code>: unflagged points are drawn at <code>1.1</code>, confirmed batches at
+<code>2.6</code>. It is a multiplier rather than an absolute size precisely so that
+enlarging the marks keeps the flagged ones bigger than the rest.</p></dd>
+
+
+<dt id="arg-grid-linewidth">grid_linewidth<a class="anchor" aria-label="anchor" href="#arg-grid-linewidth"></a></dt>
+<dd><p>Line width of the zero lines and the dashed
+significance thresholds this function draws – the package's own reference
+grid, not <span class="pkg">ggplot2</span>'s. Default <code>0.3</code>.</p></dd>
+
+
 <dt id="arg-palette">palette<a class="anchor" aria-label="anchor" href="#arg-palette"></a></dt>
-<dd><p>A named colour palette. Defaults to the package palette.</p></dd>
+<dd><p>A named colour palette (see <code><a href="tbl_now_palette.html">tbl_now_palette()</a></code>).</p></dd>
 
 </dl></div>
     <div class="section level2">

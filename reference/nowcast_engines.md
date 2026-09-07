@@ -75,6 +75,7 @@ engine_epinow2(
   delays = NULL,
   truncation = NULL,
   rt = NULL,
+  obs = NULL,
   stan = NULL,
   convert_args = list(),
   min_date = NULL,
@@ -189,7 +190,7 @@ engine_epinow2(
   – both built from the whole object, so every stratum is fitted on the
   same time axis.
 
-- generation_time, delays, truncation, rt, stan, convert_args:
+- generation_time, delays, truncation, rt, obs, stan, convert_args:
 
   (`engine_epinow2()`) Arguments of
   [`EpiNow2::estimate_infections()`](https://epiforecasts.io/EpiNow2/reference/estimate_infections.html)

@@ -15,6 +15,7 @@ plot_delay_profiles(
   max_delay = NULL,
   plotly = FALSE,
   axis = c("report", "validation"),
+  linewidth = 1,
   palette = .tbl_now_palette()
 )
 ```
@@ -52,9 +53,17 @@ plot_delay_profiles(
   [`add_validation_date()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md));
   cases still `"pending"` are left out.
 
+- linewidth:
+
+  Multiplier on the width of the per-date curves. Default `1` (drawn at
+  `0.4`). The curves are deliberately faint and overplotted – it is
+  their envelope that carries the message – so raising this on a long
+  series fills the panel in.
+
 - palette:
 
-  A named colour palette. Defaults to the package palette.
+  A named colour palette (see
+  [`tbl_now_palette()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_palette.md)).
 
 ## Value
 
@@ -66,7 +75,7 @@ A ggplot2 object (or a plotly widget when `plotly = TRUE`).
 for the pooled delay distribution rather than one curve per date;
 [`plot_delay_drift()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_delay_drift.md)
 for whether those curves move over time;
-[`diagnose_batch_shape()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_batch_shape.md)
+[`diagnose_batches2()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_batches2.md)
 for the test behind the eyeball;
 [`diagnostic_plot()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnostic_plot.md)
 for the whole gallery.

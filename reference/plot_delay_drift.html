@@ -19,7 +19,7 @@ are spread drift.'><meta property="og:image" content="https://rodrigozepeda.gith
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.31.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.33.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -34,7 +34,7 @@ are spread drift.'><meta property="og:image" content="https://rodrigozepeda.gith
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/custom-nowcast-models.html">Adding your own nowcasting model</a></li>
     <li><a class="dropdown-item" href="../articles/diagnosing-a-tbl-now.html">Diagnosing a tbl_now</a></li>
     <li><a class="dropdown-item" href="../articles/ensemble-nowcasting.html">One call, many models: run_nowcast(), custom backends and ensembles</a></li>
-    <li><a class="dropdown-item" href="../articles/example.html">A complete nowcasting workflow: hospital-acquired infections in Bucaramanga</a></li>
+    <li><a class="dropdown-item" href="../articles/example.html">The nowcasting workflow: hospital-acquired infections in Bucaramanga, Colombia</a></li>
     <li><a class="dropdown-item" href="../articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with different modelling packages</a></li>
     <li><a class="dropdown-item" href="../articles/tbl.now.html">tbl.now</a></li>
   </ul></li>
@@ -85,6 +85,8 @@ are <em>spread</em> drift.</p>
 <span>  level <span class="op">=</span> <span class="fl">0.95</span>,</span>
 <span>  plotly <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  axis <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"report"</span>, <span class="st">"validation"</span><span class="op">)</span>,</span>
+<span>  linewidth <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  grid_linewidth <span class="op">=</span> <span class="fl">0.5</span>,</span>
 <span>  palette <span class="op">=</span> <span class="fu">.tbl_now_palette</span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -153,8 +155,20 @@ measured from the report.) Needs a validation process (see
 <code><a href="add.html">add_validation_date()</a></code>); cases still <code>"pending"</code> are left out.</p></dd>
 
 
+<dt id="arg-linewidth">linewidth<a class="anchor" aria-label="anchor" href="#arg-linewidth"></a></dt>
+<dd><p>Multiplier on the width of the mean and median delay lines.
+Default <code>1</code> (drawn at <code>0.6</code> and <code>0.8</code>, so the median stays the heavier of
+the two at any setting).</p></dd>
+
+
+<dt id="arg-grid-linewidth">grid_linewidth<a class="anchor" aria-label="anchor" href="#arg-grid-linewidth"></a></dt>
+<dd><p>Line width of the dashed maturity line and of the
+<code>changepoint</code> marker – the reference lines the package draws itself, not
+<span class="pkg">ggplot2</span>'s panel grid. Default <code>0.5</code>.</p></dd>
+
+
 <dt id="arg-palette">palette<a class="anchor" aria-label="anchor" href="#arg-palette"></a></dt>
-<dd><p>A named colour palette (defaults to the package palette).</p></dd>
+<dd><p>A named colour palette (see <code><a href="tbl_now_palette.html">tbl_now_palette()</a></code>).</p></dd>
 
 </dl></div>
     <div class="section level2">

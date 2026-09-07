@@ -19,7 +19,8 @@ temporal_effects() spec are marked with dots.
 &quot;calendar_weekday&quot;, &quot;calendar_week&quot;, &quot;calendar_month&quot; — boxplots of
 the normalized case effect (each event date's cases divided by the overall
 mean, so 1 is average) by day of week, epidemiological week, or month.
-&quot;calendar_holiday&quot; — the same normalized boxplots by day type. The
+&quot;calendar_holiday&quot; — the same normalized boxplots by day type, titled
+&quot;Weekend and/or holiday effects&quot; because that is what the day types are. The
 categories follow the attached temporal_effects() spec: a holiday calendar
 and a weekend effect together give Weekday / Weekend / Holiday, a
 calendar alone gives Non-holiday / Holiday, and a weekend effect alone
@@ -87,7 +88,8 @@ temporal_effects() spec are marked with dots.
 &quot;calendar_weekday&quot;, &quot;calendar_week&quot;, &quot;calendar_month&quot; — boxplots of
 the normalized case effect (each event date's cases divided by the overall
 mean, so 1 is average) by day of week, epidemiological week, or month.
-&quot;calendar_holiday&quot; — the same normalized boxplots by day type. The
+&quot;calendar_holiday&quot; — the same normalized boxplots by day type, titled
+&quot;Weekend and/or holiday effects&quot; because that is what the day types are. The
 categories follow the attached temporal_effects() spec: a holiday calendar
 and a weekend effect together give Weekday / Weekend / Holiday, a
 calendar alone gives Non-holiday / Holiday, and a weekend effect alone
@@ -143,7 +145,7 @@ does not bias them."><meta property="og:image" content="https://rodrigozepeda.gi
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.31.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.33.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -158,7 +160,7 @@ does not bias them."><meta property="og:image" content="https://rodrigozepeda.gi
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/custom-nowcast-models.html">Adding your own nowcasting model</a></li>
     <li><a class="dropdown-item" href="../articles/diagnosing-a-tbl-now.html">Diagnosing a tbl_now</a></li>
     <li><a class="dropdown-item" href="../articles/ensemble-nowcasting.html">One call, many models: run_nowcast(), custom backends and ensembles</a></li>
-    <li><a class="dropdown-item" href="../articles/example.html">A complete nowcasting workflow: hospital-acquired infections in Bucaramanga</a></li>
+    <li><a class="dropdown-item" href="../articles/example.html">The nowcasting workflow: hospital-acquired infections in Bucaramanga, Colombia</a></li>
     <li><a class="dropdown-item" href="../articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with different modelling packages</a></li>
     <li><a class="dropdown-item" href="../articles/tbl.now.html">tbl.now</a></li>
   </ul></li>
@@ -205,7 +207,8 @@ dashed vertical line marking where the data become incomplete (less than
 <li><p><code>"calendar_weekday"</code>, <code>"calendar_week"</code>, <code>"calendar_month"</code> — boxplots of
 the <em>normalized</em> case effect (each event date's cases divided by the overall
 mean, so 1 is average) by day of week, epidemiological week, or month.</p></li>
-<li><p><code>"calendar_holiday"</code> — the same normalized boxplots by <strong>day type</strong>. The
+<li><p><code>"calendar_holiday"</code> — the same normalized boxplots by <strong>day type</strong>, titled
+"Weekend and/or holiday effects" because that is what the day types are. The
 categories follow the attached <code><a href="temporal_effects.html">temporal_effects()</a></code> spec: a holiday calendar
 and a <code>weekend</code> effect together give <code>Weekday</code> / <code>Weekend</code> / <code>Holiday</code>, a
 calendar alone gives <code>Non-holiday</code> / <code>Holiday</code>, and a <code>weekend</code> effect alone
@@ -263,6 +266,8 @@ does not bias them.</p>
 <span>  measure <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"percent"</span>, <span class="st">"normalized"</span><span class="op">)</span>,</span>
 <span>  level <span class="op">=</span> <span class="fl">0.95</span>,</span>
 <span>  plotly <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  size <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  linewidth <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  palette <span class="op">=</span> <span class="fu">.tbl_now_palette</span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  delay_distribution_xlim <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  event_date_xlim <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -311,8 +316,8 @@ some of them. Ignored when <code>by_strata = FALSE</code>.</p></dd>
 
 <dt id="arg-measure">measure<a class="anchor" aria-label="anchor" href="#arg-measure"></a></dt>
 <dd><p>How to express the calendar-effect boxplots (the day-of-week,
-week-of-year, month-of-year, holiday and holiday-lag panels; every other
-panel ignores it).</p><ul><li><p><code>"normalized"</code>  — the value divided by its overall mean, so <code>1</code>
+week-of-year and month-of-year panels; every other panel ignores it, and the
+two <strong>holiday</strong> pairs are always <code>"normalized"</code> — see below).</p><ul><li><p><code>"normalized"</code>  — the value divided by its overall mean, so <code>1</code>
 (the dashed line) marks an average level. Case-count panels normalize the
 cases per event date; delay panels normalize the mean reporting delay.</p></li>
 <li><p><code>"percent"</code> (default) — the <strong>share of cases</strong> falling in each group, as a
@@ -324,7 +329,12 @@ epidemiological weeks and months within each <strong>year</strong>. The reportin
 panels then switch from the event date to the <strong>report date</strong>, so they
 answer "what share of the reports <em>arrive</em> on a weekend?". Needs <code>Date</code>
 event/report columns.</p></li>
-</ul></dd>
+</ul><p>The four holiday panels (<code>"calendar_holiday"</code>, <code>"calendar_holiday_lag"</code> and
+their delay twins) ignore <code>measure</code> and are always drawn <code>"normalized"</code>.
+Their categories are not equal-sized parts of a calendar block — the weekend
+is two days in seven — so a share would mostly report how the calendar is
+built rather than how the data behave: "29% of cases at the weekend" is
+average, not low.</p></dd>
 
 
 <dt id="arg-level">level<a class="anchor" aria-label="anchor" href="#arg-level"></a></dt>
@@ -340,9 +350,22 @@ yet to arrive.</p></dd>
 stacked) instead of a static <span class="pkg">patchwork</span>. Default <code>FALSE</code>.</p></dd>
 
 
+<dt id="arg-size">size<a class="anchor" aria-label="anchor" href="#arg-size"></a></dt>
+<dd><p>Multiplier on every point, outlier and annotation-label size the
+panels draw. Default <code>1</code>. It multiplies rather than replaces, so a panel
+that deliberately draws one mark larger than another keeps that difference
+at any setting.</p></dd>
+
+
+<dt id="arg-linewidth">linewidth<a class="anchor" aria-label="anchor" href="#arg-linewidth"></a></dt>
+<dd><p>Multiplier on every line, boxplot outline and reference-line
+width the panels draw. Default <code>1</code>.</p></dd>
+
+
 <dt id="arg-palette">palette<a class="anchor" aria-label="anchor" href="#arg-palette"></a></dt>
-<dd><p>A named character vector of colours. Defaults to the package
-palette.</p></dd>
+<dd><p>A named colour palette (see <code><a href="tbl_now_palette.html">tbl_now_palette()</a></code>). Every colour
+is named for the role it plays, so overriding one role re-themes every
+panel that uses it.</p></dd>
 
 
 <dt id="arg-delay-distribution-xlim-event-date-xlim-calendar-effect-xlim-seasonality-xlim">delay_distribution_xlim, event_date_xlim, calendar_effect_xlim, seasonality_xlim<a class="anchor" aria-label="anchor" href="#arg-delay-distribution-xlim-event-date-xlim-calendar-effect-xlim-seasonality-xlim"></a></dt>

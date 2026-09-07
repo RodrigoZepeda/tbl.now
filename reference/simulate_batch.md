@@ -9,7 +9,7 @@ axis, so no cases are created or destroyed – the defining property of a
 batch. Useful for checking that
 [`diagnose_batches()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_batches.md)
 and
-[`diagnose_batch_shape()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_batch_shape.md)
+[`diagnose_batches2()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_batches2.md)
 recover a batch you planted.
 
 ## Usage
@@ -103,7 +103,7 @@ on the total.
 
 [`diagnose_batches()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_batches.md)
 and
-[`diagnose_batch_shape()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_batch_shape.md),
+[`diagnose_batches2()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_batches2.md),
 the tests this exists to validate;
 [`censor_reporting_delays_above()`](https://rodrigozepeda.github.io/tbl.now/reference/censoring.md)
 for recording a real batch rather than planting one. The [*Diagnosing a

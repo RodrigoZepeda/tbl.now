@@ -51,6 +51,7 @@ tbl_now_to_EpiNow2(
     "estimate_dist"),
   snapshots = NULL,
   accumulate = "auto",
+  complete = "auto",
   verbose = TRUE,
   quiet = FALSE
 )
@@ -89,6 +90,23 @@ tbl_now_from_EpiNow2(data, ..., report_dates = NULL, verbose = TRUE)
   the rows through unchanged, which is almost always wrong (see
   *Non-daily data*). Ignored for `"estimate_dist"`, which works in
   censoring windows rather than on a grid.
+
+- complete:
+
+  For the series targets: fill event periods that have no reports at all
+  with zeroes, out to the object's
+  [`get_now()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md),
+  via
+  [`complete_zeroes()`](https://rodrigozepeda.github.io/tbl.now/reference/complete_zeroes.md).
+  `"auto"` (the default) does this for **line-list** input only. A line
+  list has no row for a period in which nothing was reported, so a
+  series built from one stops at the last period that *has* a report –
+  short of the `now`, which is the period the nowcast is about. Count
+  data is left exactly as supplied, because it can say "observed zero"
+  itself. `TRUE` / `FALSE` force either behaviour; `TRUE` on
+  `count-cumulative` input de-accumulates it first. Ignored for
+  `"estimate_dist"`, which works in censoring windows rather than on a
+  grid.
 
 - verbose:
 
@@ -180,8 +198,8 @@ snaps <- tbl_now_to_EpiNow2(nowobj,
 )
 snaps
 #> ── 5 reporting snapshots from a <tbl_now> ──────────────────────────────────────
-#> • One per report date: "1991-01-21", "1991-01-28", "1991-02-11", "1991-02-25", and "1991-03-04"
-#> • Rows each: 357, 357, 357, 357, and 357
+#> • One per report date: "1991-02-04", "1991-02-11", "1991-02-18", "1991-02-25", and "1991-03-04"
+#> • Rows each: 406, 413, 420, 427, and 434
 #> • Now: "1991-03-04"
 #> ℹ Pass this to `EpiNow2::estimate_truncation()`. `EpiNow2::estimate_secondary()` wants a single data frame of linked series instead -- not this.
 ```

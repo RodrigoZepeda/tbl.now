@@ -30,8 +30,9 @@ choose which to draw with the `panels` argument.
   the overall mean, so 1 is average) by day of week, epidemiological
   week, or month.
 
-- `"calendar_holiday"` — the same normalized boxplots by **day type**.
-  The categories follow the attached
+- `"calendar_holiday"` — the same normalized boxplots by **day type**,
+  titled "Weekend and/or holiday effects" because that is what the day
+  types are. The categories follow the attached
   [`temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/temporal_effects.md)
   spec: a holiday calendar and a `weekend` effect together give
   `Weekday` / `Weekend` / `Holiday`, a calendar alone gives
@@ -110,6 +111,8 @@ autoplot(
   measure = c("percent", "normalized"),
   level = 0.95,
   plotly = FALSE,
+  size = 1,
+  linewidth = 1,
   palette = .tbl_now_palette(),
   delay_distribution_xlim = NULL,
   event_date_xlim = NULL,
@@ -161,8 +164,8 @@ autoplot(
 - measure:
 
   How to express the calendar-effect boxplots (the day-of-week,
-  week-of-year, month-of-year, holiday and holiday-lag panels; every
-  other panel ignores it).
+  week-of-year and month-of-year panels; every other panel ignores it,
+  and the two **holiday** pairs are always `"normalized"` — see below).
 
   - `"normalized"` — the value divided by its overall mean, so `1` (the
     dashed line) marks an average level. Case-count panels normalize the
@@ -179,6 +182,13 @@ autoplot(
     to the **report date**, so they answer "what share of the reports
     *arrive* on a weekend?". Needs `Date` event/report columns.
 
+  The four holiday panels (`"calendar_holiday"`,
+  `"calendar_holiday_lag"` and their delay twins) ignore `measure` and
+  are always drawn `"normalized"`. Their categories are not equal-sized
+  parts of a calendar block — the weekend is two days in seven — so a
+  share would mostly report how the calendar is built rather than how
+  the data behave: "29% of cases at the weekend" is average, not low.
+
 - level:
 
   Completeness level used for the incompleteness line in the
@@ -192,9 +202,24 @@ autoplot(
   If `TRUE`, return an interactive plotly widget (the panels stacked)
   instead of a static patchwork. Default `FALSE`.
 
+- size:
+
+  Multiplier on every point, outlier and annotation-label size the
+  panels draw. Default `1`. It multiplies rather than replaces, so a
+  panel that deliberately draws one mark larger than another keeps that
+  difference at any setting.
+
+- linewidth:
+
+  Multiplier on every line, boxplot outline and reference-line width the
+  panels draw. Default `1`.
+
 - palette:
 
-  A named character vector of colours. Defaults to the package palette.
+  A named colour palette (see
+  [`tbl_now_palette()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_palette.md)).
+  Every colour is named for the role it plays, so overriding one role
+  re-themes every panel that uses it.
 
 - delay_distribution_xlim, event_date_xlim, calendar_effect_xlim,
   seasonality_xlim:

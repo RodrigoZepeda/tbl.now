@@ -13,7 +13,7 @@ with the number of cases n."><meta property="og:image" content="https://rodrigoz
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.31.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.33.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -28,7 +28,7 @@ with the number of cases n."><meta property="og:image" content="https://rodrigoz
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/custom-nowcast-models.html">Adding your own nowcasting model</a></li>
     <li><a class="dropdown-item" href="../articles/diagnosing-a-tbl-now.html">Diagnosing a tbl_now</a></li>
     <li><a class="dropdown-item" href="../articles/ensemble-nowcasting.html">One call, many models: run_nowcast(), custom backends and ensembles</a></li>
-    <li><a class="dropdown-item" href="../articles/example.html">A complete nowcasting workflow: hospital-acquired infections in Bucaramanga</a></li>
+    <li><a class="dropdown-item" href="../articles/example.html">The nowcasting workflow: hospital-acquired infections in Bucaramanga, Colombia</a></li>
     <li><a class="dropdown-item" href="../articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with different modelling packages</a></li>
     <li><a class="dropdown-item" href="../articles/tbl.now.html">tbl.now</a></li>
   </ul></li>
@@ -114,20 +114,19 @@ benchmark the diseasenowcasting / diseasenowcast2 engine.</p>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co">## Build a stratified tbl_now (event = notification, report = diagnosis,</span></span></span>
-<span class="r-in"><span><span class="co"># strata = sex).  Pipe through temporal effects for day-of-week covariates.</span></span></span>
-<span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/ns-load.html" class="external-link">requireNamespace</a></span><span class="op">(</span><span class="st">"tbl.now"</span>, quietly <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span></span>
-<span class="r-in"><span>  <span class="va">tn</span> <span class="op">&lt;-</span> <span class="fu">tbl.now</span><span class="fu">::</span><span class="fu"><a href="tbl_now.html">tbl_now</a></span><span class="op">(</span></span></span>
-<span class="r-in"><span>    <span class="va">covid_colombia</span>,</span></span>
-<span class="r-in"><span>    event_date  <span class="op">=</span> <span class="va">notification_date</span>,</span></span>
-<span class="r-in"><span>    report_date <span class="op">=</span> <span class="va">diagnosis_date</span>,</span></span>
-<span class="r-in"><span>    strata      <span class="op">=</span> <span class="va">sex</span>,</span></span>
-<span class="r-in"><span>    case_count  <span class="op">=</span> <span class="va">n</span>,</span></span>
-<span class="r-in"><span>    data_type   <span class="op">=</span> <span class="st">"count-incidence"</span>,</span></span>
-<span class="r-in"><span>    verbose     <span class="op">=</span> <span class="cn">FALSE</span></span></span>
-<span class="r-in"><span>  <span class="op">)</span></span></span>
-<span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">tn</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="op">}</span></span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">covid_colombia</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># A stratified tbl_now: event = notification, report = diagnosis.</span></span></span>
+<span class="r-in"><span><span class="va">tn</span> <span class="op">&lt;-</span> <span class="fu"><a href="tbl_now.html">tbl_now</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  <span class="va">covid_colombia</span>,</span></span>
+<span class="r-in"><span>  event_date  <span class="op">=</span> <span class="va">notification_date</span>,</span></span>
+<span class="r-in"><span>  report_date <span class="op">=</span> <span class="va">diagnosis_date</span>,</span></span>
+<span class="r-in"><span>  strata      <span class="op">=</span> <span class="va">sex</span>,</span></span>
+<span class="r-in"><span>  case_count  <span class="op">=</span> <span class="va">n</span>,</span></span>
+<span class="r-in"><span>  data_type   <span class="op">=</span> <span class="st">"count-incidence"</span>,</span></span>
+<span class="r-in"><span>  verbose     <span class="op">=</span> <span class="cn">FALSE</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">tn</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble:  35,501 × 7</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># Data type: </span><span style="color: #0000BB;">"count-incidence"</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># Frequency: Event: `days` | Report: `days`</span></span>

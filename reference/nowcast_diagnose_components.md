@@ -38,10 +38,6 @@ or used on their own.
 - `diagnose_strata()` – the smallest and the sparsest stratum, and the
   validations still pending.
 
-- `diagnose_signposts()` – the questions
-  [`diagnose()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose.md)
-  deliberately does not answer, and the call that answers each one.
-
 ## Usage
 
 ``` r
@@ -67,8 +63,6 @@ diagnose_now(x, by_strata = NULL, strata = NULL)
 diagnose_truncation(x, by_strata = NULL, strata = NULL)
 
 diagnose_strata(x, by_strata = NULL, strata = NULL)
-
-diagnose_signposts(x, by_strata = NULL, strata = NULL)
 ```
 
 ## Arguments
@@ -114,8 +108,9 @@ for what *is* in the data rather than what is wrong with it;
 [`diagnose_changepoint()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_changepoint.md)
 and
 [`diagnose_batches()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_batches.md)
-for the statistical tests `diagnose_signposts()` points you at. The
-[*Diagnosing a tbl_now*
+for the statistical tests
+[`diagnose()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose.md)
+deliberately does not run. The [*Diagnosing a tbl_now*
 article](https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html)
 explains how to read each finding.
 
@@ -181,14 +176,15 @@ diagnose_now(ndata)
 # Is anything missing, repeated, negative, or cut off at the recent edge?
 diagnose_missing(ndata)
 #> ── Diagnosis of a <tbl_now> ────────────────────────────────────────────────────
-#> 3 passed.
+#> 4 passed.
 #> 
-#> Passed (3)
+#> Passed (4)
 #> ✔ missing/gender: No missing values in the stratum column "gender".
 #> ✔ missing/onset_week: No missing values in the event_date column "onset_week".
 #> ✔ missing/report_week: No missing values in the report_date column "report_week".
+#> ✔ simultaneously missing/event and report dates: No simultaneously missing values in the event and report date columns "onset_week" and "report_week".
 #> 
-#> ℹ 3 findings. Use `dplyr::filter()` or `tibble::as_tibble()` for the table.
+#> ℹ 4 findings. Use `dplyr::filter()` or `tibble::as_tibble()` for the table.
 diagnose_duplicates(ndata)
 #> ── Diagnosis of a <tbl_now> ────────────────────────────────────────────────────
 #> 1 skipped.
@@ -217,33 +213,19 @@ diagnose_truncation(ndata)
 #> 
 #> ℹ 3 findings. Use `dplyr::filter()` or `tibble::as_tibble()` for the table.
 
-# Are the strata usable, and which statistical tests does the data call for?
+# Are the strata usable?
 diagnose_strata(ndata)
 #> ── Diagnosis of a <tbl_now> ────────────────────────────────────────────────────
 #> 2 notes, 1 skipped.
 #> 
 #> Notes (2)
 #> ℹ strata/size [Male]: The smallest stratum is "Male" with 26395 cases, 49.8% of the total.
-#> ℹ strata/sparsity [Female]: The sparsest stratum is "Female": 1.2% of the event dates on the grid carry no cases at all.
-#>   → A stratum that is mostly zeros is the one a per-stratum fit will struggle with; pooling it is often better than fitting it.
+#> ℹ strata/sparsity [Female]: The sparsest stratum is "Female": 13 of the 1095 weeks between the minimum event (1990-01-01) and the now (2010-12-20) carry no cases at all (1.2%, against 0.4% pooled over every stratum).
+#>   → A stratum that is mostly zeros is the one a per-stratum fit will struggle with; pooling it is often better than fitting it. When every stratum is mostly zeros the grid is finer than the data -- `aggregate_time_units()` coarsens it.
 #> 
 #> ─ 1 skipped: strata/pending
 #> 
 #> ℹ 3 findings. Use `dplyr::filter()` or `tibble::as_tibble()` for the table.
-diagnose_signposts(ndata)
-#> ── Diagnosis of a <tbl_now> ────────────────────────────────────────────────────
-#> 3 not run, 1 skipped.
-#> 
-#> Not run (3)
-#> → signposts/report: Run: diagnose_drift(x, axis = "report")
-#>   → `diagnose()` runs no statistical test: a trend test needs a method, a maturity window and an alpha, and those are the caller's to choose.
-#> → signposts/report_batches: Run: diagnose_batches(x, axis = "report")
-#>   → `diagnose()` runs no statistical test: batch detection needs a look-back, a null model and a multiplicity correction.
-#> → signposts/validation_batches: Run: diagnose_batches(x, axis = "validation")
-#> 
-#> ─ 1 skipped: signposts/validation
-#> 
-#> ℹ 4 findings. Use `dplyr::filter()` or `tibble::as_tibble()` for the table.
 
 ## Each returns the same schema, so they stack the way diagnose() stacks them.
 dplyr::bind_rows(

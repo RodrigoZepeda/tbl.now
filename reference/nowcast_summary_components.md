@@ -12,7 +12,11 @@ Every one of these returns the same schema as
 [`summary()`](https://rdrr.io/r/base/summary.html) itself, so they can
 be stacked with
 [`dplyr::bind_rows()`](https://dplyr.tidyverse.org/reference/bind_rows.html),
-compared across datasets, or used alone:
+compared across datasets, or used alone. Two of them –
+`case_autocorrelation()` and `reporting_completeness()` – were written
+by an AI and have not been checked by a human, so they are **not** part
+of [`summary()`](https://rdrr.io/r/base/summary.html) and warn on every
+call:
 
 - `cases_per_date()` – case counts per date on one axis.
 
@@ -30,6 +34,9 @@ compared across datasets, or used alone:
   categorical covariate.
 
 - `case_autocorrelation()` – lagged autocorrelation of the case series.
+  **Unreviewed:** not part of
+  [`summary()`](https://rdrr.io/r/base/summary.html), and warns on every
+  call.
 
 - `date_ranges()` – totals, date ranges and `now`.
 
@@ -39,6 +46,9 @@ compared across datasets, or used alone:
 - `reporting_completeness()` – share of each event date's eventual total
   that had arrived by delay `d`, as a distribution over event dates
   (`mean`, `sd`, the quantiles) plus the pooled share in `prop`.
+  **Unreviewed:** not part of
+  [`summary()`](https://rdrr.io/r/base/summary.html), and warns on every
+  call.
 
 - `cumulative_growth()` – ratio of one delay's running total to the
   previous one's.
@@ -182,6 +192,7 @@ cases_per_date(ndata, axis = "event")
 #> 3 rows in 1 component; strata: "Female" and "Male".
 #> 
 #> cases
+#>   n = dates on the grid; total = cases
 #>   quantity   stratum     n total  mean    sd   min   q25   q50   q75   q90   max
 #>   <chr>      <chr>   <int> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl>
 #> 1 per_event… all      1095 52987  48.4  53.3     0    14    30    64   104   358
@@ -195,6 +206,7 @@ delay_summary(ndata)
 #> 3 rows in 1 component; strata: "Female" and "Male".
 #> 
 #> delay
+#>   n = (event, report) cells; total = cases
 #>   quantity   stratum     n total  mean    sd   min   q25   q50   q75   q90   max
 #>   <chr>      <chr>   <int> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl>
 #> 1 event_to_… all      8265 52987  1.74  1.21     0     1     1     2     3    26
@@ -204,11 +216,14 @@ delay_summary(ndata)
 #> ℹ Use `dplyr::filter()` or `tibble::as_tibble()` for the full schema.
 
 # How sparse the series is, and how strongly one week predicts the next.
+# `case_autocorrelation()` warns because it is unreviewed; the warning is
+# deliberately not suppressed here, since it belongs with the number.
 zero_run_summary(ndata, axis = "event")
 #> ── Summary of a <tbl_now> ──────────────────────────────────────────────────────
 #> 3 rows in 1 component; strata: "Female" and "Male".
 #> 
 #> zero_run
+#>   n = runs of consecutive zero dates; total = zero dates in those runs
 #>   quantity   stratum     n total  mean    sd   min   q25   q50   q75   q90   max
 #>   <chr>      <chr>   <int> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl>
 #> 1 event_date all         2     4  2    1.41      1     1     1     3     3     3
@@ -217,10 +232,15 @@ zero_run_summary(ndata, axis = "event")
 #> 
 #> ℹ Use `dplyr::filter()` or `tibble::as_tibble()` for the full schema.
 case_autocorrelation(ndata, lags = 1)
+#> Warning: ! `case_autocorrelation()` is experimental and was written by an AI; it has not
+#>   yet been reviewed by a human.
+#> ℹ It is no longer part of `summary()`. Check the numbers before you rely on
+#>   them.
 #> ── Summary of a <tbl_now> ──────────────────────────────────────────────────────
 #> 3 rows in 1 component; strata: "Female" and "Male".
 #> 
 #> autocorrelation
+#>   n = lagged date pairs
 #>   quantity             stratum     n value
 #>   <chr>                <chr>   <int> <dbl>
 #> 1 per_event_date lag 1 all      1094 0.958
@@ -235,6 +255,7 @@ prop_strata(ndata)
 #> 2 rows in 1 component.
 #> 
 #> composition
+#>   n = (event, report) cells in the category; total = cases in the category
 #>   quantity            n total  prop
 #>   <chr>           <int> <dbl> <dbl>
 #> 1 strata = Female  4133 26592 0.502
@@ -249,6 +270,7 @@ date_ranges(ndata)
 #> 11 rows in 1 component; strata: "Female" and "Male".
 #> 
 #> coverage
+#>   n = cells, or distinct dates on a date row; total = cases
 #>    quantity    stratum     n total date_min   date_max  
 #>    <chr>       <chr>   <int> <dbl> <date>     <date>    
 #>  1 total_cases all      8265 52987 NA         NA        
@@ -269,6 +291,7 @@ triangle_occupancy(ndata)
 #> 18 rows in 1 component; strata: "Female" and "Male".
 #> 
 #> coverage
+#>   n = cells, or distinct dates on a date row
 #>    quantity                stratum     n  value
 #>    <chr>                   <chr>   <int>  <dbl>
 #>  1 max_delay               all        NA 26    
@@ -285,13 +308,17 @@ triangle_occupancy(ndata)
 #> 
 #> ℹ Use `dplyr::filter()` or `tibble::as_tibble()` for the full schema.
 
-# The two that matter most for nowcasting: what share of a week's eventual
-# total had arrived by delay d, and how fast the total is still growing.
-# Both are distributions over event dates, so they fill `mean`/`q50` -- and
-# completeness also `prop`, the pooled share -- rather than the scalar
-# `value` column.
+# What share of a week's eventual total had arrived by delay d, and how fast
+# the total is still growing. Both are distributions over event dates, so
+# they fill `mean`/`q50` -- and completeness also `prop`, the pooled share --
+# rather than the scalar `value` column. `reporting_completeness()` is
+# unreviewed and warns; see above.
 reporting_completeness(ndata, delays = 0:3) |>
   dplyr::select(quantity, stratum, n, mean, q50, prop)
+#> Warning: ! `reporting_completeness()` is experimental and was written by an AI; it has
+#>   not yet been reviewed by a human.
+#> ℹ It is no longer part of `summary()`. Check the numbers before you rely on
+#>   them.
 #> # A tibble: 12 × 6
 #>    quantity   stratum     n   mean    q50   prop
 #>    <chr>      <chr>   <int>  <dbl>  <dbl>  <dbl>
@@ -312,6 +339,7 @@ cumulative_growth(ndata, k = 3)
 #> 9 rows in 1 component; strata: "Female" and "Male".
 #> 
 #> growth
+#>   n = event dates; total = cases added
 #>   quantity stratum     n total  mean    sd   min   q25   q50   q75   q90   max
 #>   <chr>    <chr>   <int> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl>
 #> 1 delay 1  all       631  9752  9.93 9.16      1  5     7.6  12    18    104  
@@ -335,6 +363,7 @@ dplyr::bind_rows(
 #> 14 rows in 2 components; strata: "Female" and "Male".
 #> 
 #> coverage
+#>   n = cells, or distinct dates on a date row; total = cases
 #>    quantity    stratum     n total date_min   date_max  
 #>    <chr>       <chr>   <int> <dbl> <date>     <date>    
 #>  1 total_cases all      8265 52987 NA         NA        
@@ -350,6 +379,7 @@ dplyr::bind_rows(
 #> ℹ 1 more row.
 #> 
 #> delay
+#>   n = (event, report) cells; total = cases
 #>   quantity   stratum     n total  mean    sd   min   q25   q50   q75   q90   max
 #>   <chr>      <chr>   <int> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl>
 #> 1 event_to_… all      8265 52987  1.74  1.21     0     1     1     2     3    26

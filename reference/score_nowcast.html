@@ -37,7 +37,7 @@ column to name."><meta property="og:image" content="https://rodrigozepeda.github
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.31.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.33.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -52,7 +52,7 @@ column to name."><meta property="og:image" content="https://rodrigozepeda.github
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/custom-nowcast-models.html">Adding your own nowcasting model</a></li>
     <li><a class="dropdown-item" href="../articles/diagnosing-a-tbl-now.html">Diagnosing a tbl_now</a></li>
     <li><a class="dropdown-item" href="../articles/ensemble-nowcasting.html">One call, many models: run_nowcast(), custom backends and ensembles</a></li>
-    <li><a class="dropdown-item" href="../articles/example.html">A complete nowcasting workflow: hospital-acquired infections in Bucaramanga</a></li>
+    <li><a class="dropdown-item" href="../articles/example.html">The nowcasting workflow: hospital-acquired infections in Bucaramanga, Colombia</a></li>
     <li><a class="dropdown-item" href="../articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with different modelling packages</a></li>
     <li><a class="dropdown-item" href="../articles/tbl.now.html">tbl.now</a></li>
   </ul></li>
@@ -97,9 +97,37 @@ column to name.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">score_nowcast</span><span class="op">(</span><span class="va">x</span>, truth <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">score_nowcast</span><span class="op">(</span></span>
+<span>  <span class="va">x</span>,</span>
+<span>  truth <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  truth_axis <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"report"</span>, <span class="st">"validation"</span><span class="op">)</span>,</span>
+<span>  truth_type <span class="op">=</span> <span class="st">"total"</span></span>
+<span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">as_scoringutils</span><span class="op">(</span><span class="va">x</span>, truth <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu">as_scoringutils</span><span class="op">(</span></span>
+<span>  <span class="va">x</span>,</span>
+<span>  truth <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  truth_axis <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"report"</span>, <span class="st">"validation"</span><span class="op">)</span>,</span>
+<span>  truth_type <span class="op">=</span> <span class="st">"total"</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># S3 method for class 'nowcast_backtest'</span></span>
+<span><span class="fu">as_forecast_quantile</span><span class="op">(</span></span>
+<span>  <span class="va">data</span>,</span>
+<span>  <span class="va">...</span>,</span>
+<span>  truth <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  truth_axis <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"report"</span>, <span class="st">"validation"</span><span class="op">)</span>,</span>
+<span>  truth_type <span class="op">=</span> <span class="st">"total"</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># S3 method for class 'nowcast_backtest'</span></span>
+<span><span class="fu">as_forecast_sample</span><span class="op">(</span></span>
+<span>  <span class="va">data</span>,</span>
+<span>  <span class="va">...</span>,</span>
+<span>  truth <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  truth_axis <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"report"</span>, <span class="st">"validation"</span><span class="op">)</span>,</span>
+<span>  truth_type <span class="op">=</span> <span class="st">"total"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -107,7 +135,8 @@ column to name.</p>
 
 
 <dl><dt id="arg-x">x<a class="anchor" aria-label="anchor" href="#arg-x"></a></dt>
-<dd><p>A <a href="tbl_nowcast.html">tbl_nowcast</a> object.</p></dd>
+<dd><p>For <code>score_nowcast()</code>, a <a href="tbl_nowcast.html">tbl_nowcast</a>. For <code>as_scoringutils()</code>, a
+<a href="tbl_nowcast.html">tbl_nowcast</a> (including an ensemble) or a <code><a href="nowcast_backtest.html">nowcast_backtest()</a></code>.</p></dd>
 
 
 <dt id="arg-truth">truth<a class="anchor" aria-label="anchor" href="#arg-truth"></a></dt>
@@ -118,8 +147,33 @@ column to name.</p>
 stratum, with the count column read off the object
 (<code><a href="nowcast_data_getters.html">get_case_count()</a></code>). A <strong>line list</strong> is aggregated first, so it needs no
 special handling.</p>
-<p><code>NULL</code> (default) uses the <code>tbl_now</code> the nowcast was built from, which is
-only meaningful when that object still holds the later reports.</p></dd>
+<p>For a single nowcast, <code>NULL</code> (default) uses the <code>tbl_now</code> it was built from,
+which is only meaningful when that object still holds the later reports.
+A backtest instead uses the truth table it already stores.</p></dd>
+
+
+<dt id="arg-truth-axis">truth_axis<a class="anchor" aria-label="anchor" href="#arg-truth-axis"></a></dt>
+<dd><p>Which process defines the observed counts. <code>"report"</code>
+(default) scores counts eventually reported. <code>"validation"</code> scores counts
+eventually resolved on the validation axis and requires a validation-aware
+<code>truth</code>.</p></dd>
+
+
+<dt id="arg-truth-type">truth_type<a class="anchor" aria-label="anchor" href="#arg-truth-type"></a></dt>
+<dd><p>Which case type to score. Defaults to <code>"total"</code>. Validation
+types such as <code>"confirmed"</code>, <code>"retracted"</code>, <code>"pending"</code>, <code>"unknown"</code> and
+<code>"net"</code> follow the same meanings as <code><a href="get_latest_first.html">get_latest_reported_cases()</a></code> and
+<code><a href="validated_cases.html">get_latest_validated_cases()</a></code>. <code>"by_type"</code> is refused because scoring needs
+one observed value per event-date/stratum target.</p></dd>
+
+
+<dt id="arg-data">data<a class="anchor" aria-label="anchor" href="#arg-data"></a></dt>
+<dd><p>A <code><a href="nowcast_backtest.html">nowcast_backtest()</a></code>.</p></dd>
+
+
+<dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
+<dd><p>Passed to the corresponding <span class="pkg">scoringutils</span> coercion generic,
+most commonly <code>forecast_unit</code>.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -127,10 +181,24 @@ only meaningful when that object still holds the later reports.</p></dd>
     <p><code>score_nowcast()</code> returns a <code>tibble</code> with the event-date column, the strata
 columns, and the columns <code>.observed</code>, <code>wis</code>, <code>ae_median</code>, <code>coverage_50</code> and
 <code>coverage_90</code> – one row per event date and stratum.</p>
-<p><code>as_scoringutils()</code> returns a long <code>tibble</code> with the columns <code>observed</code>,
-<code>predicted</code>, <code>quantile_level</code> and <code>model</code>, plus the event date and strata as
-forecast units – one row per quantile, ready for
+<p><code>as_scoringutils()</code> accepts either a single <a href="tbl_nowcast.html">tbl_nowcast</a> (including one
+returned by <code><a href="nowcast_ensemble.html">nowcast_ensemble()</a></code>) or a <code><a href="nowcast_backtest.html">nowcast_backtest()</a></code>. It returns a
+long <code>tibble</code> with the columns <code>observed</code>, <code>predicted</code>, <code>quantile_level</code> and
+<code>model</code>, plus the event date and strata as forecast units. A backtest also
+carries <code>now</code>, because the same target was predicted retrospectively at more
+than one date. There is one row per quantile, ready for
 <code><a href="https://epiforecasts.io/scoringutils/reference/as_forecast_quantile.html" class="external-link">scoringutils::as_forecast_quantile()</a></code>.</p>
+<p>The two <code>scoringutils::as_forecast_*()</code> methods return the corresponding
+<code>forecast_quantile</code> or <code>forecast_sample</code> object from <span class="pkg">scoringutils</span>.</p>
+<p>When <span class="pkg">scoringutils</span> is installed, calling its coercion generic directly
+is equivalent: <code>scoringutils::as_forecast_quantile(x, truth = truth)</code> works
+for a <a href="tbl_nowcast.html">tbl_nowcast</a>, an ensemble, and a <code><a href="nowcast_backtest.html">nowcast_backtest()</a></code>. A backtest
+already carries the truth it was scored against, so its <code>truth</code> can normally
+be omitted.</p>
+<p><code><a href="https://epiforecasts.io/scoringutils/reference/as_forecast_sample.html" class="external-link">scoringutils::as_forecast_sample()</a></code> also accepts those objects when they
+carry posterior draws. Draws are retained by a <code>linear_pool</code> ensemble, but
+not by a quantile ensemble. A backtest retains them only when run with
+<code>keep_draws = TRUE</code>; every engine in the backtest must return draws.</p>
     </div>
     <div class="section level2">
     <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>
@@ -200,14 +268,14 @@ read off <code>truth</code>; <code><a href="nowcast_quantile_levels.html">nowcas
 <span class="r-in"><span><span class="co"># The same comparison handed to scoringutils instead, one row per quantile.</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu">as_scoringutils</span><span class="op">(</span><span class="va">nc</span>, truth <span class="op">=</span> <span class="va">truth</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 6 × 5</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   onset      quantile_level predicted observed model</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>              <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> 2024-03-04           0.25         8       10 toy  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> 2024-03-04           0.5         10       10 toy  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span> 2024-03-04           0.75        13       10 toy  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">4</span> 2024-03-11           0.25         8       13 toy  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">5</span> 2024-03-11           0.5         10       13 toy  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">6</span> 2024-03-11           0.75        13       13 toy  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   onset      quantile_level predicted model observed</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>              <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> 2024-03-04           0.25         8 toy         10</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> 2024-03-04           0.5         10 toy         10</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span> 2024-03-04           0.75        13 toy         10</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">4</span> 2024-03-11           0.25         8 toy         13</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">5</span> 2024-03-11           0.5         10 toy         13</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">6</span> 2024-03-11           0.75        13 toy         13</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># With a real model, `truth` is the full object and the nowcast is fitted to</span></span></span>
 <span class="r-in"><span><span class="co"># a snapshot of it taken at an earlier `now`.</span></span></span>

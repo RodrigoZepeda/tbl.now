@@ -71,7 +71,7 @@ distribution is not case data."><meta property="og:image" content="https://rodri
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.31.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.33.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -86,7 +86,7 @@ distribution is not case data."><meta property="og:image" content="https://rodri
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/custom-nowcast-models.html">Adding your own nowcasting model</a></li>
     <li><a class="dropdown-item" href="../articles/diagnosing-a-tbl-now.html">Diagnosing a tbl_now</a></li>
     <li><a class="dropdown-item" href="../articles/ensemble-nowcasting.html">One call, many models: run_nowcast(), custom backends and ensembles</a></li>
-    <li><a class="dropdown-item" href="../articles/example.html">A complete nowcasting workflow: hospital-acquired infections in Bucaramanga</a></li>
+    <li><a class="dropdown-item" href="../articles/example.html">The nowcasting workflow: hospital-acquired infections in Bucaramanga, Colombia</a></li>
     <li><a class="dropdown-item" href="../articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with different modelling packages</a></li>
     <li><a class="dropdown-item" href="../articles/tbl.now.html">tbl.now</a></li>
   </ul></li>
@@ -155,6 +155,7 @@ distribution is not case data.</p>
 <span>    <span class="st">"estimate_dist"</span><span class="op">)</span>,</span>
 <span>  snapshots <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  accumulate <span class="op">=</span> <span class="st">"auto"</span>,</span>
+<span>  complete <span class="op">=</span> <span class="st">"auto"</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  quiet <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span>
@@ -191,6 +192,19 @@ weekly series on <span class="pkg">EpiNow2</span>'s daily grid with an <code>acc
 <code>FALSE</code> passes the rows through unchanged, which is almost always wrong (see
 <em>Non-daily data</em>). Ignored for <code>"estimate_dist"</code>, which works in censoring
 windows rather than on a grid.</p></dd>
+
+
+<dt id="arg-complete">complete<a class="anchor" aria-label="anchor" href="#arg-complete"></a></dt>
+<dd><p>For the series targets: fill event periods that have no
+reports at all with zeroes, out to the object's <code><a href="nowcast_data_getters.html">get_now()</a></code>, via
+<code><a href="complete_zeroes.html">complete_zeroes()</a></code>. <code>"auto"</code> (the default) does this for <strong>line-list</strong>
+input only. A line list has no row for a period in which nothing was
+reported, so a series built from one stops at the last period that <em>has</em> a
+report – short of the <code>now</code>, which is the period the nowcast is about.
+Count data is left exactly as supplied, because it can say "observed zero"
+itself. <code>TRUE</code> / <code>FALSE</code> force either behaviour; <code>TRUE</code> on
+<code>count-cumulative</code> input de-accumulates it first. Ignored for
+<code>"estimate_dist"</code>, which works in censoring windows rather than on a grid.</p></dd>
 
 
 <dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>
@@ -278,8 +292,8 @@ delay-distribution schema.</p></div>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">snaps</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── 5 reporting snapshots from a <span style="color: #0000BB;">&lt;tbl_now&gt;</span> ──────────────────────────────────────</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> • One per report date: <span style="color: #0000BB;">"1991-01-21"</span>, <span style="color: #0000BB;">"1991-01-28"</span>, <span style="color: #0000BB;">"1991-02-11"</span>, <span style="color: #0000BB;">"1991-02-25"</span>, and <span style="color: #0000BB;">"1991-03-04"</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> • Rows each: <span style="color: #0000BB;">357</span>, <span style="color: #0000BB;">357</span>, <span style="color: #0000BB;">357</span>, <span style="color: #0000BB;">357</span>, and <span style="color: #0000BB;">357</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> • One per report date: <span style="color: #0000BB;">"1991-02-04"</span>, <span style="color: #0000BB;">"1991-02-11"</span>, <span style="color: #0000BB;">"1991-02-18"</span>, <span style="color: #0000BB;">"1991-02-25"</span>, and <span style="color: #0000BB;">"1991-03-04"</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> • Rows each: <span style="color: #0000BB;">406</span>, <span style="color: #0000BB;">413</span>, <span style="color: #0000BB;">420</span>, <span style="color: #0000BB;">427</span>, and <span style="color: #0000BB;">434</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> • Now: <span style="color: #0000BB;">"1991-03-04"</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ℹ Pass this to `EpiNow2::estimate_truncation()`. `EpiNow2::estimate_secondary()` wants a single data frame of linked series instead -- not this.</span>
 </code></pre></div>

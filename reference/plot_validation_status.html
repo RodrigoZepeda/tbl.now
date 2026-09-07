@@ -21,7 +21,7 @@ a day whose confirmed count means very little."><meta property="og:image" conten
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.31.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.33.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -36,7 +36,7 @@ a day whose confirmed count means very little."><meta property="og:image" conten
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/custom-nowcast-models.html">Adding your own nowcasting model</a></li>
     <li><a class="dropdown-item" href="../articles/diagnosing-a-tbl-now.html">Diagnosing a tbl_now</a></li>
     <li><a class="dropdown-item" href="../articles/ensemble-nowcasting.html">One call, many models: run_nowcast(), custom backends and ensembles</a></li>
-    <li><a class="dropdown-item" href="../articles/example.html">A complete nowcasting workflow: hospital-acquired infections in Bucaramanga</a></li>
+    <li><a class="dropdown-item" href="../articles/example.html">The nowcasting workflow: hospital-acquired infections in Bucaramanga, Colombia</a></li>
     <li><a class="dropdown-item" href="../articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with different modelling packages</a></li>
     <li><a class="dropdown-item" href="../articles/tbl.now.html">tbl.now</a></li>
   </ul></li>
@@ -76,7 +76,12 @@ a day whose confirmed count means very little.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">plot_validation_status</span><span class="op">(</span><span class="va">x</span>, by <span class="op">=</span> <span class="cn">NULL</span>, proportion <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">plot_validation_status</span><span class="op">(</span></span>
+<span>  <span class="va">x</span>,</span>
+<span>  by <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  proportion <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  palette <span class="op">=</span> <span class="fu">.tbl_now_palette</span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -94,6 +99,11 @@ a day whose confirmed count means very little.</p>
 <dt id="arg-proportion">proportion<a class="anchor" aria-label="anchor" href="#arg-proportion"></a></dt>
 <dd><p>When <code>TRUE</code> (default) the bands are shares summing to 1;
 <code>FALSE</code> shows the counts instead, which keeps the epidemic curve visible.</p></dd>
+
+
+<dt id="arg-palette">palette<a class="anchor" aria-label="anchor" href="#arg-palette"></a></dt>
+<dd><p>A named colour palette (see <code><a href="tbl_now_palette.html">tbl_now_palette()</a></code>). The plot is
+drawn entirely with stacked areas, so it takes no <code>size</code> or <code>linewidth</code>.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -119,9 +129,10 @@ disease did.</p>
 
 
 
-<p><code>confirmed</code> is drawn in the palette's green (it is a real case – the
-epidemic process), <code>retracted</code> in the accent red (it was removed by the
-reporting process), and <code>pending</code> in grey (not yet known either way).</p>
+<p><code>confirmed</code> is drawn with the palette's <code>epidemic</code> role (it is a real case –
+the epidemic process), <code>retracted</code> with <code>reporting</code> (it was removed by the
+reporting process), and <code>pending</code> with the neutral <code>pending</code> role (not yet
+known either way). Override any of them through <code>palette</code>.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

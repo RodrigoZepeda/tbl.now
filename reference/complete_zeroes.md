@@ -49,14 +49,29 @@ complete_zeroes(x, max_delay = NULL, until = NULL)
 ## Value
 
 A `tbl_now` object with the same columns as `x`, plus the rows that were
-implicitly zero, carrying `0` in the `case_count` column. The data type
-is preserved.
+implicitly zero, carrying `0` in the `case_count` column. Explicit
+missing counts in the input remain `NA`; only cells created by
+`complete_zeroes()` are filled. The data type is preserved.
 
 ## Details
 
 Zeros are only filled where a report *could* have arrived: cells with a
 report date on or before the event date's `now`, and within `max_delay`.
 Filling beyond that would invent observations from the future.
+
+### Rows with a missing date
+
+A row whose event or report date is `NA` has no cell on the rectangle,
+so it takes no part in the grid: the bounds (`max_delay`, the first and
+last event date, the last report date) are all computed ignoring it. It
+is still a case, though, so it is **carried through unchanged** rather
+than dropped – use
+[`censor_reports()`](https://rodrigozepeda.github.io/tbl.now/reference/censoring.md)
+to give it a bound, or
+[`dplyr::filter()`](https://dplyr.tidyverse.org/reference/filter.html)
+to remove it, if you would rather it were on the grid or gone. Only an
+object in which *every* row is missing one of the two dates is refused,
+because then there is no grid to complete at all.
 
 ## See also
 

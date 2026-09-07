@@ -20,6 +20,9 @@ diagnostic_plot(
   ...,
   plotly = FALSE,
   axis = c("report", "validation"),
+  size = 1,
+  linewidth = 1,
+  grid_linewidth = 0.3,
   palette = .tbl_now_palette()
 )
 ```
@@ -68,9 +71,26 @@ diagnostic_plot(
   [`add_validation_date()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md));
   cases still `"pending"` are left out.
 
+- size:
+
+  Multiplier on point and label sizes, forwarded to every panel that
+  draws them (`"triangle"`, `"transport"`). Default `1`.
+
+- linewidth:
+
+  Multiplier on data line widths, forwarded to every panel that draws
+  them (`"profiles"`, `"delay_drift"`). Default `1`.
+
+- grid_linewidth:
+
+  Line width of the reference grids the package draws itself – not
+  ggplot2's panel grid. Forwarded to `"triangle"`, `"transport"` and
+  `"delay_drift"`. Default `0.3`.
+
 - palette:
 
-  A named colour palette. Defaults to the package palette.
+  A named colour palette (see
+  [`tbl_now_palette()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_palette.md)).
 
 ## Value
 

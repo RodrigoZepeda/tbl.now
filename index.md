@@ -5,8 +5,12 @@ extension of the [`tibble()`](https://tibble.tidyverse.org/) for
 storing, validating, and manipulating epidemiological nowcasting data.
 It standardizes the representation of event dates, report dates, strata,
 temporal covariates, etc and in a way that is compatible with many
-frameworks including diseasenowcasting, epinowcast, NobBS, surveillance,
-EpiNow2, and more.
+frameworks including
+[diseasenowcasting](https://rodrigozepeda.github.io/diseasenowcasting/),
+[epinowcast](https://package.epinowcast.org/),
+[NobBS](https://cran.r-project.org/web/packages/NobBS/index.html),
+[surveillance](https://cran.r-project.org/web/packages/surveillance/index.html),
+[EpiNow2](https://epiforecasts.io/EpiNow2/), and more.
 
 Specifically a `tbl_now` is a data structure that keeps track of the
 following attributes relevant for a nowcasting excercise so that all
@@ -19,7 +23,7 @@ relevant nowcasting variables:
 | ![report_date](reference/figures/report_date.svg) | `report_date` | The column storing **report dates**; i.e. when that event became known to the surveillance system. **Required**, unless it is reconstructed from `delay`. |
 | ![validation](reference/figures/validation_date.svg) | `validation_date` | An optional third date indicating when the report was resolved (see `validation_type`). *Optional*. |
 | ![validation](reference/figures/validation_type.svg) | `validation_type` | What the validation date resolved to. Only `confirmed`, `retracted`, `pending` or `NA` are ever stored; use `validation_levels` for data recorded in other words. *Optional*. |
-| ![validation_levels](reference/figures/validation_type.svg) | `validation_levels` | A named dictionary translating the labels in `validation_type` into those four, e.g. `c(confirmado = “confirmed”)`. *Optional*. |
+| ![validation_levels](reference/figures/validation_type.svg) | `validation_levels` | A named dictionary translating the labels in `validation_type` into those four, e.g. `c(positive = “confirmed”)`. *Optional*. |
 | ![now](reference/figures/now.svg) | `now` | The date the nowcast is anchored to — “today” from the model’s point of view. *Optional*; defaults to the latest date. |
 | ![strata](reference/figures/strata.svg) | `strata` | Columns you want a separate nowcast for (e.g. gender, region). *Optional*. |
 | ![covariates](reference/figures/covariates.svg) | `covariates` | Columns that inform the nowcast but that you do *not* want it broken down by (e.g. temperature or precipitation). *Optional*. |
@@ -40,8 +44,11 @@ data(denguedat)
 
 #Here we use just a few dates for the example
 denguedat <- denguedat |> 
-  filter(onset_week >= as.Date("2005/01/01")) |> 
-  filter(onset_week <= as.Date("2005/10/01")  & report_week <= as.Date("2005/10/01")) |> 
+  filter(onset_week >= as.Date("2005/01/01"),
+         report_week <= as.Date("2005/10/01")) 
+
+#And we specify as a tbl_now:
+denguedat <- denguedat |> 
   tbl_now(
     report_date = report_week,
     event_date = onset_week,
@@ -49,8 +56,9 @@ denguedat <- denguedat |>
   ) 
 ```
 
-Once transformed, it can help you diagnose data problems or modeling
-requirements with your database:
+Once transformed, it can help you diagnose data problems (see [this
+article](https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html))
+or modeling requirements with your database:
 
 ``` r
 
@@ -61,7 +69,9 @@ autoplot(denguedat)
 
 And it can be used to run any of multiple nowcast libraries through the
 [`engine()`](https://rodrigozepeda.github.io/tbl.now/reference/engine.md)
-and `run_nowcast` specifications. For example, baselinenowcast:
+and `run_nowcast` specifications (see [this
+article](https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html).
+For example, [baselinenowcast](https://baselinenowcast.epinowcast.org/):
 
 ``` r
 
@@ -76,7 +86,8 @@ autoplot(dengue_nowcast_1)
 
 ![](reference/figures/README-unnamed-chunk-5-1.png)
 
-or diseasenowcasting:
+or
+[diseasenowcasting](https://rodrigozepeda.github.io/diseasenowcasting/):
 
 ``` r
 
@@ -92,7 +103,8 @@ autoplot(dengue_nowcast_2)
 ![](reference/figures/README-unnamed-chunk-7-1.png)
 
 It can also generate ensemble nowcasts combining multiple engines or
-multiple realizations from the same engine:
+multiple realizations from the same engine as you can see [in this
+article](https://rodrigozepeda.github.io/tbl.now/articles/ensemble-nowcasting.html):
 
 ``` r
 
@@ -109,8 +121,8 @@ autoplot(dengue_ensemble)
 
 ![](reference/figures/README-unnamed-chunk-9-1.png)
 
-If this seems exciting to you, install the development version from
-[GitHub](https://github.com/):
+If this seems as exciting to you as it is to us, install the development
+version from [GitHub](https://github.com/):
 
 ``` r
 

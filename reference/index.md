@@ -184,8 +184,8 @@ returns a tibble, and every block of it is also a function of its own.
 
 What is wrong with the data.
 [`diagnose()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose.md)
-is structural and deterministic; the statistical tests it signposts are
-listed after it.
+is structural and deterministic; the statistical tests are listed after
+it.
 
 - [`diagnose()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose.md)
   **\[experimental\]** :
@@ -201,7 +201,6 @@ listed after it.
   [`diagnose_now()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_diagnose_components.md)
   [`diagnose_truncation()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_diagnose_components.md)
   [`diagnose_strata()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_diagnose_components.md)
-  [`diagnose_signposts()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_diagnose_components.md)
   **\[experimental\]** :
 
   Individual blocks of a `tbl_now` diagnosis
@@ -222,7 +221,7 @@ listed after it.
 - [`diagnose_batches()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_batches.md)
   **\[experimental\]** : Screen the report axis for batched reporting
 
-- [`diagnose_batch_shape()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_batch_shape.md)
+- [`diagnose_batches2()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_batches2.md)
   **\[experimental\]** : Test whether one report date drew from
   unusually old event dates
 
@@ -240,6 +239,11 @@ listed after it.
 
 One grid, or any panel of it on its own.
 
+- [`tbl_now_palette()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_palette.md)
+  :
+
+  The `tbl.now` colour palette
+
 - [`autoplot(`*`<tbl_now>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/autoplot.tbl_now.md)
   **\[experimental\]** :
 
@@ -252,6 +256,7 @@ One grid, or any panel of it on its own.
   [`plot_week_of_year_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/calendar_effect_plots.md)
   [`plot_month_of_year_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/calendar_effect_plots.md)
   [`plot_holiday_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/calendar_effect_plots.md)
+  [`plot_weekend_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/calendar_effect_plots.md)
   [`plot_holiday_lag_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/calendar_effect_plots.md)
   **\[experimental\]** : Calendar effects on the case counts or on the
   reporting delay
@@ -369,6 +374,8 @@ One interface over the modelling packages.
 
 - [`score_nowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/score_nowcast.md)
   [`as_scoringutils()`](https://rodrigozepeda.github.io/tbl.now/reference/score_nowcast.md)
+  [`as_forecast_quantile(`*`<nowcast_backtest>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/score_nowcast.md)
+  [`as_forecast_sample(`*`<nowcast_backtest>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/score_nowcast.md)
   **\[experimental\]** : Score a nowcast against observed data
 
 ## Converters
@@ -470,7 +477,7 @@ Every engine’s result, in one shape.
 - [`tidy(`*`<nowcast_backtest>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast_backtest.md)
   **\[experimental\]** :
 
-  Tidy the scores of a
+  Tidy the predictions and scores of a
   [`nowcast_backtest()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_backtest.md)
 
 - [`tidy(`*`<epidist_fit>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.epidist_fit.md)
@@ -517,6 +524,6 @@ The methods that keep the class alive inside a pipeline.
 - [`flusight`](https://rodrigozepeda.github.io/tbl.now/reference/flusight.md)
   : flusight: NHSN Weekly Hospital Respiratory Data from FluSight
 - [`hai_bucaramanga`](https://rodrigozepeda.github.io/tbl.now/reference/hai_bucaramanga.md)
-  : Healthcare-Associated Infections – Bucaramanga, Colombia 2016-2023
+  : Healthcare-Associated Infections – Bucaramanga, Colombia 2020-2023
 - [`mpoxdat`](https://rodrigozepeda.github.io/tbl.now/reference/mpoxdat.md)
   : mpoxdat: Mpox reporting data from the 2022 New York City outbreak

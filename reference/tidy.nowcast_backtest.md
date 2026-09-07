@@ -1,10 +1,11 @@
-# Tidy the scores of a `nowcast_backtest()`
+# Tidy the predictions and scores of a `nowcast_backtest()`
 
 **\[experimental\]**
 
-One row per (method, `now` date, target) with the scores that target
-earned, with the dot-prefixed internal column names traded for ordinary
-ones so the result goes straight into dplyr or ggplot2.
+One row per (method, `now` date, target) carrying both halves of the
+comparison – what the model said and what happened – with the
+dot-prefixed internal column names traded for ordinary ones so the
+result goes straight into dplyr or ggplot2.
 
 ## Usage
 
@@ -26,10 +27,24 @@ tidy(x, ...)
 ## Value
 
 A [tibble](https://tibble.tidyverse.org/reference/tibble.html) with the
-columns `method`, `now`, `event_date`, `stratum`, `observed`, `wis`,
-`ae_median`, `coverage_50` and `coverage_90`. `stratum` is `"all"` for
-an unstratified backtest and the `" | "`-pasted strata otherwise, so
+columns `method`, `now`, `event_date`, `stratum`, `observed`,
+`estimate`, `conf.low`, `conf.high`, `level`, `wis`, `ae_median`,
+`coverage_50` and `coverage_90`. `stratum` is `"all"` for an
+unstratified backtest and the `" | "`-pasted strata otherwise, so
 `(method, now, stratum, event_date)` is a unique key.
+
+`estimate`, `conf.low`, `conf.high` and `level` are the retrospective
+prediction itself, read off the same quantiles the scores were computed
+from and named as
+[tidy()](https://rodrigozepeda.github.io/tbl.now/reference/tidy.tbl_nowcast.md)
+names them: `estimate` is the `0.5` quantile and `level` the width of
+the **widest symmetric pair actually present**.
+[`nowcast_backtest()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_backtest.md)
+refuses engines that report different quantile levels, so `level` is one
+number for the whole table. When no symmetric pair exists all three of
+`conf.low`, `conf.high` and `level` are `NA`, and `estimate` is `NA`
+when the median was not among the levels reported – a guessed width
+defeats the point of the column.
 
 ## See also
 
@@ -61,16 +76,18 @@ bt <- nowcast_backtest(dengue,
   now_dates = as.Date(c("2010-10-04", "2010-11-15")), verbose = FALSE
 )
 
-# One tidy row per method, `now` date, stratum and event date.
+# One tidy row per method, `now` date, stratum and event date, carrying the
+# retrospective prediction next to what was eventually observed.
 head(tidy(bt))
-#> # A tibble: 6 × 9
-#>   method      now        event_date stratum observed   wis ae_median coverage_50
-#>   <chr>       <date>     <date>     <chr>      <dbl> <dbl>     <dbl> <lgl>      
-#> 1 carry forw… 2010-10-04 2010-06-07 all          157  3.84         0 TRUE       
-#> 2 carry forw… 2010-10-04 2010-06-14 all          210  5.13         0 TRUE       
-#> 3 carry forw… 2010-10-04 2010-06-21 all          193  4.68         0 TRUE       
-#> 4 carry forw… 2010-10-04 2010-06-28 all          193  4.68         0 TRUE       
-#> 5 carry forw… 2010-10-04 2010-07-05 all          258  6.28         0 TRUE       
-#> 6 carry forw… 2010-10-04 2010-07-12 all          315  7.6          0 TRUE       
-#> # ℹ 1 more variable: coverage_90 <lgl>
+#> # A tibble: 6 × 13
+#>   method      now        event_date stratum observed estimate conf.low conf.high
+#>   <chr>       <date>     <date>     <chr>      <dbl>    <dbl>    <dbl>     <dbl>
+#> 1 carry forw… 2010-10-04 2010-06-07 all          157      157      127       187
+#> 2 carry forw… 2010-10-04 2010-06-14 all          210      210      170       250
+#> 3 carry forw… 2010-10-04 2010-06-21 all          193      193      156       230
+#> 4 carry forw… 2010-10-04 2010-06-28 all          193      193      156       230
+#> 5 carry forw… 2010-10-04 2010-07-05 all          258      258      209       307
+#> 6 carry forw… 2010-10-04 2010-07-12 all          315      315      255       375
+#> # ℹ 5 more variables: level <dbl>, wis <dbl>, ae_median <dbl>,
+#> #   coverage_50 <lgl>, coverage_90 <lgl>
 ```

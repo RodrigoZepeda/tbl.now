@@ -19,8 +19,6 @@ diagnose_truncation() – how many recent event dates are still immature,
 and how much of their eventual total is probably still missing.
 diagnose_strata() – the smallest and the sparsest stratum, and the
 validations still pending.
-diagnose_signposts() – the questions diagnose() deliberately does not
-answer, and the call that answers each one.
 
 "><meta property="og:description" content="
 Each function returns one block of diagnose(), in the same schema, so they
@@ -42,8 +40,6 @@ diagnose_truncation() – how many recent event dates are still immature,
 and how much of their eventual total is probably still missing.
 diagnose_strata() – the smallest and the sparsest stratum, and the
 validations still pending.
-diagnose_signposts() – the questions diagnose() deliberately does not
-answer, and the call that answers each one.
 
 "><meta property="og:image" content="https://rodrigozepeda.github.io/tbl.now/logo.png"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -53,7 +49,7 @@ answer, and the call that answers each one.
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.31.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.33.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -68,7 +64,7 @@ answer, and the call that answers each one.
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/custom-nowcast-models.html">Adding your own nowcasting model</a></li>
     <li><a class="dropdown-item" href="../articles/diagnosing-a-tbl-now.html">Diagnosing a tbl_now</a></li>
     <li><a class="dropdown-item" href="../articles/ensemble-nowcasting.html">One call, many models: run_nowcast(), custom backends and ensembles</a></li>
-    <li><a class="dropdown-item" href="../articles/example.html">A complete nowcasting workflow: hospital-acquired infections in Bucaramanga</a></li>
+    <li><a class="dropdown-item" href="../articles/example.html">The nowcasting workflow: hospital-acquired infections in Bucaramanga, Colombia</a></li>
     <li><a class="dropdown-item" href="../articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with different modelling packages</a></li>
     <li><a class="dropdown-item" href="../articles/tbl.now.html">tbl.now</a></li>
   </ul></li>
@@ -115,8 +111,6 @@ downward revision leaves behind when cumulative data is de-accumulated.</p></li>
 and how much of their eventual total is probably still missing.</p></li>
 <li><p><code>diagnose_strata()</code> – the smallest and the sparsest stratum, and the
 validations still pending.</p></li>
-<li><p><code>diagnose_signposts()</code> – the questions <code><a href="diagnose.html">diagnose()</a></code> deliberately does not
-answer, and the call that answers each one.</p></li>
 </ul></div>
 
     <div class="section level2">
@@ -142,9 +136,7 @@ answer, and the call that answers each one.</p></li>
 <span></span>
 <span><span class="fu">diagnose_truncation</span><span class="op">(</span><span class="va">x</span>, by_strata <span class="op">=</span> <span class="cn">NULL</span>, strata <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">diagnose_strata</span><span class="op">(</span><span class="va">x</span>, by_strata <span class="op">=</span> <span class="cn">NULL</span>, strata <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span>
-<span></span>
-<span><span class="fu">diagnose_signposts</span><span class="op">(</span><span class="va">x</span>, by_strata <span class="op">=</span> <span class="cn">NULL</span>, strata <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu">diagnose_strata</span><span class="op">(</span><span class="va">x</span>, by_strata <span class="op">=</span> <span class="cn">NULL</span>, strata <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -185,8 +177,8 @@ because it runs on every <code>dplyr</code> verb.</p></dd>
 <code><a href="validate_tbl_now.html">validate_tbl_now()</a></code> for the same findings raised as errors and warnings;
 <a href="nowcast_summary_components.html">nowcast_summary_components</a> for what <em>is</em> in the data rather than what is
 wrong with it; <code><a href="diagnose_drift.html">diagnose_drift()</a></code>, <code><a href="diagnose_changepoint.html">diagnose_changepoint()</a></code> and
-<code><a href="diagnose_batches.html">diagnose_batches()</a></code> for the statistical tests <code>diagnose_signposts()</code> points
-you at. The
+<code><a href="diagnose_batches.html">diagnose_batches()</a></code> for the statistical tests <code><a href="diagnose.html">diagnose()</a></code> deliberately does
+not run. The
 <a href="https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html"><em>Diagnosing a tbl_now</em> article</a>
 explains how to read each finding.</p></div>
     </div>
@@ -252,14 +244,15 @@ explains how to read each finding.</p></div>
 <span class="r-in"><span><span class="co"># Is anything missing, repeated, negative, or cut off at the recent edge?</span></span></span>
 <span class="r-in"><span><span class="fu">diagnose_missing</span><span class="op">(</span><span class="va">ndata</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── Diagnosis of a <span style="color: #0000BB;">&lt;tbl_now&gt;</span> ────────────────────────────────────────────────────</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">3 passed</span><span style="color: #555555;">.</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">4 passed</span><span style="color: #555555;">.</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="font-weight: bold;">Passed (3)</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="font-weight: bold;">Passed (4)</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> <span style="font-weight: bold;">missing/gender:</span> No missing values in the stratum column "gender".</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> <span style="font-weight: bold;">missing/onset_week:</span> No missing values in the event_date column "onset_week".</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> <span style="font-weight: bold;">missing/report_week:</span> No missing values in the report_date column "report_week".</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> <span style="font-weight: bold;">simultaneously missing/event and report dates:</span> No simultaneously missing values in the event and report date columns "onset_week" and "report_week".</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #555555;">ℹ 3 findings. Use `dplyr::filter()` or `tibble::as_tibble()` for the table.</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #555555;">ℹ 4 findings. Use `dplyr::filter()` or `tibble::as_tibble()` for the table.</span></span>
 <span class="r-in"><span><span class="fu">diagnose_duplicates</span><span class="op">(</span><span class="va">ndata</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── Diagnosis of a <span style="color: #0000BB;">&lt;tbl_now&gt;</span> ────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #555555;">1 skipped.</span></span>
@@ -288,33 +281,19 @@ explains how to read each finding.</p></div>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #555555;">ℹ 3 findings. Use `dplyr::filter()` or `tibble::as_tibble()` for the table.</span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Are the strata usable, and which statistical tests does the data call for?</span></span></span>
+<span class="r-in"><span><span class="co"># Are the strata usable?</span></span></span>
 <span class="r-in"><span><span class="fu">diagnose_strata</span><span class="op">(</span><span class="va">ndata</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── Diagnosis of a <span style="color: #0000BB;">&lt;tbl_now&gt;</span> ────────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">2 notes</span><span style="color: #555555;">, 1 skipped.</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="font-weight: bold;">Notes (2)</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">ℹ</span> <span style="font-weight: bold;">strata/size [Male]:</span> The smallest stratum is "Male" with 26395 cases, 49.8% of the total.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">ℹ</span> <span style="font-weight: bold;">strata/sparsity [Female]:</span> The sparsest stratum is "Female": 1.2% of the event dates on the grid carry no cases at all.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #555555;">→</span> <span style="color: #555555;">A stratum that is mostly zeros is the one a per-stratum fit will struggle with; pooling it is often better than fitting it.</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">ℹ</span> <span style="font-weight: bold;">strata/sparsity [Female]:</span> The sparsest stratum is "Female": 13 of the 1095 weeks between the minimum event (1990-01-01) and the now (2010-12-20) carry no cases at all (1.2%, against 0.4% pooled over every stratum).</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #555555;">→</span> <span style="color: #555555;">A stratum that is mostly zeros is the one a per-stratum fit will struggle with; pooling it is often better than fitting it. When every stratum is mostly zeros the grid is finer than the data -- `aggregate_time_units()` coarsens it.</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #555555;">─</span> 1 skipped: <span style="color: #00BB00;">strata/pending</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #555555;">ℹ 3 findings. Use `dplyr::filter()` or `tibble::as_tibble()` for the table.</span></span>
-<span class="r-in"><span><span class="fu">diagnose_signposts</span><span class="op">(</span><span class="va">ndata</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ── Diagnosis of a <span style="color: #0000BB;">&lt;tbl_now&gt;</span> ────────────────────────────────────────────────────</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">3 not run</span><span style="color: #555555;">, 1 skipped.</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="font-weight: bold;">Not run (3)</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">→</span> <span style="font-weight: bold;">signposts/report:</span> Run: diagnose_drift(x, axis = "report")</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #555555;">→</span> <span style="color: #555555;">`diagnose()` runs no statistical test: a trend test needs a method, a maturity window and an alpha, and those are the caller's to choose.</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">→</span> <span style="font-weight: bold;">signposts/report_batches:</span> Run: diagnose_batches(x, axis = "report")</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #555555;">→</span> <span style="color: #555555;">`diagnose()` runs no statistical test: batch detection needs a look-back, a null model and a multiplicity correction.</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">→</span> <span style="font-weight: bold;">signposts/validation_batches:</span> Run: diagnose_batches(x, axis = "validation")</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #555555;">─</span> 1 skipped: <span style="color: #00BB00;">signposts/validation</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #555555;">ℹ 4 findings. Use `dplyr::filter()` or `tibble::as_tibble()` for the table.</span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co">## Each returns the same schema, so they stack the way diagnose() stacks them.</span></span></span>
 <span class="r-in"><span><span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/bind_rows.html" class="external-link">bind_rows</a></span><span class="op">(</span></span></span>

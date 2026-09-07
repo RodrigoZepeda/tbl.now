@@ -19,7 +19,7 @@ counts up, and returns a tbl_now that knows it is now weekly, so
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.31.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.33.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -34,7 +34,7 @@ counts up, and returns a tbl_now that knows it is now weekly, so
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/custom-nowcast-models.html">Adding your own nowcasting model</a></li>
     <li><a class="dropdown-item" href="../articles/diagnosing-a-tbl-now.html">Diagnosing a tbl_now</a></li>
     <li><a class="dropdown-item" href="../articles/ensemble-nowcasting.html">One call, many models: run_nowcast(), custom backends and ensembles</a></li>
-    <li><a class="dropdown-item" href="../articles/example.html">A complete nowcasting workflow: hospital-acquired infections in Bucaramanga</a></li>
+    <li><a class="dropdown-item" href="../articles/example.html">The nowcasting workflow: hospital-acquired infections in Bucaramanga, Colombia</a></li>
     <li><a class="dropdown-item" href="../articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with different modelling packages</a></li>
     <li><a class="dropdown-item" href="../articles/tbl.now.html">tbl.now</a></li>
   </ul></li>
@@ -151,11 +151,31 @@ to the unit you actually want.</p></li>
 <li><p>An <code>NA</code> count means <em>not yet observed</em>, so a period containing one has an
 unknown total, not a total that quietly leaves it out. Use
 <code><a href="complete_zeroes.html">complete_zeroes()</a></code> first if the <code>NA</code>s are really zeroes.</p></li>
-</ul><p>Any temporal-effect <strong>columns</strong> that were materialised by
+</ul></div>
+    <div class="section level2">
+    <h2 id="what-happens-to-the-temporal-effects">What happens to the temporal effects<a class="anchor" aria-label="anchor" href="#what-happens-to-the-temporal-effects"></a></h2>
+
+
+<p>Any temporal-effect <strong>columns</strong> that were materialised by
 <code><a href="add_temporal_effects.html">compute_temporal_effects()</a></code> are dropped, because a day-of-week term computed
-on daily dates is meaningless once those dates are weeks. The lazy
-<code><a href="temporal_effects.html">temporal_effects()</a></code> spec is kept, so <code><a href="add_temporal_effects.html">compute_temporal_effects()</a></code> will
-rebuild them on the new grid.</p>
+on daily dates is meaningless once those dates are weeks.</p>
+<p>The lazy <code><a href="temporal_effects.html">temporal_effects()</a></code> specification moves onto the new grid with
+everything else, and the effects the new grid cannot express are <strong>dropped
+from it</strong> rather than silently rebuilt on dates that cannot carry them:</p><ul><li><p><code>day_of_week</code>, <code>weekend</code>, <code>day_of_month</code>, <code>holiday_lags</code> and <code>weekend_lags</code>
+are properties of a <em>day</em>, so they survive only <code>to = "days"</code>.</p></li>
+<li><p><code>week_of_year</code> survives <code>"weeks"</code>; <code>month_of_year</code> survives <code>"months"</code>.</p></li>
+<li><p><strong><code>seasons</code> are rescaled.</strong> A Fourier period is a length, not a position in
+the calendar, so it converts: a 365-day season becomes a 52.14-week one, and
+<code>seasons = 52, season_length = 7</code> becomes <code>seasons = 52</code> in weeks. A period
+that ends up two units or shorter is dropped – it is at or below the new
+grid's Nyquist limit, so it can no longer be told from a constant or from a
+longer wave.</p></li>
+<li><p><strong><code>holidays</code> are kept.</strong> On a coarser grid the holiday column stops being a
+0/1 indicator and becomes the <strong>share of the period's days that the calendar
+marks</strong> – 1/7 for a week containing Christmas Day – which is the same
+number as the indicator when the period is one day long.</p></li>
+</ul><p>A specification with nothing left is removed. <code>verbose = TRUE</code> says what was
+dropped and what was rescaled.</p>
     </div>
     <div class="section level2">
     <h2 id="aggregating-one-axis-only">Aggregating one axis only<a class="anchor" aria-label="anchor" href="#aggregating-one-axis-only"></a></h2>
@@ -179,7 +199,9 @@ and either choice gives the same delays.</p></li>
     <div class="dont-index"><p><code><a href="align_weeks.html">align_weeks()</a></code>, which snaps weekly dates to a common weekday without
 changing the units or the counts; <code><a href="to_count.html">to_count()</a></code> to change data type without
 touching the dates; <code><a href="complete_zeroes.html">complete_zeroes()</a></code> for the cells the coarser grid still
-leaves empty; <code><a href="tbl_now.html">tbl_now()</a></code>'s <code>units</code> argument to declare the units up front.</p></div>
+leaves empty; <code><a href="tbl_now.html">tbl_now()</a></code>'s <code>units</code> argument to declare the units up front;
+<code><a href="temporal_effects.html">temporal_effects()</a></code> and <code><a href="add_temporal_effects.html">compute_temporal_effects()</a></code> for the specification
+this coarsens.</p></div>
     </div>
 
     <div class="section level2">
@@ -214,6 +236,27 @@ leaves empty; <code><a href="tbl_now.html">tbl_now()</a></code>'s <code>units</c
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] 6</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="fu">aggregate_time_units</span><span class="op">(</span><span class="va">counts</span>, to <span class="op">=</span> <span class="st">"months"</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span><span class="op">$</span><span class="va">n</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] 6</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># A weekly grid cannot carry a day-of-week effect, so it is dropped from the</span></span></span>
+<span class="r-in"><span><span class="co"># specification; the 365-day season is rescaled to 52.14 weeks instead.</span></span></span>
+<span class="r-in"><span><span class="va">spec</span> <span class="op">&lt;-</span> <span class="va">daily</span> <span class="op">|&gt;</span></span></span>
+<span class="r-in"><span>  <span class="fu"><a href="add_temporal_effects.html">add_temporal_effects</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>    <span class="fu"><a href="temporal_effects.html">temporal_effects</a></span><span class="op">(</span>day_of_week <span class="op">=</span> <span class="cn">TRUE</span>, seasons <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">7</span>, <span class="fl">365</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span>  <span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="nowcast_data_getters.html">get_temporal_effects</a></span><span class="op">(</span><span class="fu">aggregate_time_units</span><span class="op">(</span><span class="va">spec</span>, to <span class="op">=</span> <span class="st">"weeks"</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [[1]]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [[1]]$t_effects</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ── Temporal Effects ────────────────────────────────────────────────────────────</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> The following effects are in place:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> • <span style="color: #0000BB;">"season"</span> periods: 52.142857</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [[1]]$date_type</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "event_date"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [[1]]$weekend_days</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Sat" "Sun"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

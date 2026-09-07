@@ -21,7 +21,8 @@ diagnose_batches(
   period = NULL,
   null_model = c("auto", "poisson", "robust"),
   axis = c("report", "validation"),
-  alpha = 0.05
+  alpha = 0.05,
+  drop_censored = TRUE
 )
 ```
 
@@ -83,6 +84,14 @@ diagnose_batches(
 
   Significance level for the Benjamini-Hochberg `batch` flag. Default
   `0.05`.
+
+- drop_censored:
+
+  Logical. Ignore the rows whose date on `axis` is flagged censored
+  (`is_censored_report`, or `is_censored_validation` on the validation
+  axis). Default `TRUE`: a censored date is a *bound*, not the date the
+  record arrived, so those rows would pile up on the censoring date and
+  be rediscovered as the very batch the censoring already recorded.
 
 ## Value
 
@@ -177,7 +186,7 @@ irregular batch reads as an excursion relative to the schedule.
 
 ## See also
 
-[`diagnose_batch_shape()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_batch_shape.md)
+[`diagnose_batches2()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_batches2.md)
 for the complementary test on *which* event dates a flagged report date
 drew from;
 [`transport_discriminant()`](https://rodrigozepeda.github.io/tbl.now/reference/transport_discriminant.md)
@@ -214,16 +223,9 @@ screened <- diagnose_batches(dengue_tbl, lookback = 2)
 #> ℹ Treat a flagged report date as a potential batch, not a confirmed one.
 #> This warning is displayed once every 8 hours.
 head(screened)
-#> # A tibble: 6 × 9
-#>   report_date stratum reported baseline deficit  delta p_transport
-#>   <date>      <chr>      <dbl>    <dbl>   <dbl>  <dbl>       <dbl>
-#> 1 1990-01-01  all            3     NA     NA     NA    NA         
-#> 2 1990-01-08  all           26     NA     NA     NA    NA         
-#> 3 1990-01-15  all           62     43.6   65    -46.6   0.00000103
-#> 4 1990-01-22  all           41     41.2    2.38  -2.62  0.430     
-#> 5 1990-01-29  all           40     29.8  -38     48.2   1.000     
-#> 6 1990-02-05  all           36     29    -17     24     0.934     
-#> # ℹ 2 more variables: p_transport_bh <dbl>, batch <lgl>
+#> ── Batch screen ────────────────────────────────────────────────────────────────
+#> 6 (report date, stratum) pairs; look-back 2; null "robust"
+#> ✔ No batches flagged at alpha = 0.05 (BH-adjusted).
 
 # The dates it flagged, strongest evidence first. Treat these as candidates to
 # look into, not as confirmed backlog releases. `reported` against `baseline`

@@ -16,7 +16,12 @@ are still to be confirmed.
 ``` r
 diagnose_validation_delay(x, by = NULL)
 
-plot_validation_delay(x, by = NULL)
+plot_validation_delay(
+  x,
+  by = NULL,
+  linewidth = 1,
+  palette = .tbl_now_palette()
+)
 ```
 
 ## Arguments
@@ -28,6 +33,16 @@ plot_validation_delay(x, by = NULL)
 - by:
 
   Optional stratum column to compare within; `NULL` (default) pools.
+
+- linewidth:
+
+  Multiplier on the box outlines of `plot_validation_delay()`. Default
+  `1` (drawn at `0.5`).
+
+- palette:
+
+  A named colour palette (see
+  [`tbl_now_palette()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_palette.md)).
 
 ## Value
 

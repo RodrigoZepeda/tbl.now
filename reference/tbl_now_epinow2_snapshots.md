@@ -65,8 +65,8 @@ snaps <- tbl_now_to_EpiNow2(dengue,
 # Printing summarises the stack rather than dumping every snapshot.
 snaps
 #> ── 5 reporting snapshots from a <tbl_now> ──────────────────────────────────────
-#> • One per report date: "1991-09-02", "1991-09-09", "1991-09-16", "1991-09-23", and "1991-10-14"
-#> • Rows each: 602, 602, 602, 602, and 602
+#> • One per report date: "1991-09-16", "1991-09-23", "1991-09-30", "1991-10-07", and "1991-10-14"
+#> • Rows each: 630, 637, 644, 651, and 658
 #> • Now: "1991-10-14"
 #> ℹ Pass this to `EpiNow2::estimate_truncation()`. `EpiNow2::estimate_secondary()` wants a single data frame of linked series instead -- not this.
 

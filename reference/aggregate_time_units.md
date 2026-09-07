@@ -105,14 +105,41 @@ Two consequences worth knowing:
   [`complete_zeroes()`](https://rodrigozepeda.github.io/tbl.now/reference/complete_zeroes.md)
   first if the `NA`s are really zeroes.
 
+## What happens to the temporal effects
+
 Any temporal-effect **columns** that were materialised by
 [`compute_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/add_temporal_effects.md)
 are dropped, because a day-of-week term computed on daily dates is
-meaningless once those dates are weeks. The lazy
+meaningless once those dates are weeks.
+
+The lazy
 [`temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/temporal_effects.md)
-spec is kept, so
-[`compute_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/add_temporal_effects.md)
-will rebuild them on the new grid.
+specification moves onto the new grid with everything else, and the
+effects the new grid cannot express are **dropped from it** rather than
+silently rebuilt on dates that cannot carry them:
+
+- `day_of_week`, `weekend`, `day_of_month`, `holiday_lags` and
+  `weekend_lags` are properties of a *day*, so they survive only
+  `to = "days"`.
+
+- `week_of_year` survives `"weeks"`; `month_of_year` survives
+  `"months"`.
+
+- **`seasons` are rescaled.** A Fourier period is a length, not a
+  position in the calendar, so it converts: a 365-day season becomes a
+  52.14-week one, and `seasons = 52, season_length = 7` becomes
+  `seasons = 52` in weeks. A period that ends up two units or shorter is
+  dropped – it is at or below the new grid's Nyquist limit, so it can no
+  longer be told from a constant or from a longer wave.
+
+- **`holidays` are kept.** On a coarser grid the holiday column stops
+  being a 0/1 indicator and becomes the **share of the period's days
+  that the calendar marks** – 1/7 for a week containing Christmas Day –
+  which is the same number as the indicator when the period is one day
+  long.
+
+A specification with nothing left is removed. `verbose = TRUE` says what
+was dropped and what was rescaled.
 
 ## Aggregating one axis only
 
@@ -145,7 +172,11 @@ to change data type without touching the dates;
 [`complete_zeroes()`](https://rodrigozepeda.github.io/tbl.now/reference/complete_zeroes.md)
 for the cells the coarser grid still leaves empty;
 [`tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.md)'s
-`units` argument to declare the units up front.
+`units` argument to declare the units up front;
+[`temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/temporal_effects.md)
+and
+[`compute_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/add_temporal_effects.md)
+for the specification this coarsens.
 
 ## Examples
 
@@ -180,4 +211,25 @@ sum(counts$n)
 #> [1] 6
 sum(aggregate_time_units(counts, to = "months", verbose = FALSE)$n)
 #> [1] 6
+
+# A weekly grid cannot carry a day-of-week effect, so it is dropped from the
+# specification; the 365-day season is rescaled to 52.14 weeks instead.
+spec <- daily |>
+  add_temporal_effects(
+    temporal_effects(day_of_week = TRUE, seasons = c(7, 365))
+  )
+get_temporal_effects(aggregate_time_units(spec, to = "weeks", verbose = FALSE))
+#> [[1]]
+#> [[1]]$t_effects
+#> ── Temporal Effects ────────────────────────────────────────────────────────────
+#> The following effects are in place:
+#> • "season" periods: 52.142857
+#> 
+#> [[1]]$date_type
+#> [1] "event_date"
+#> 
+#> [[1]]$weekend_days
+#> [1] "Sat" "Sun"
+#> 
+#> 
 ```
