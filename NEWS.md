@@ -1,5 +1,15 @@
 # tbl.now 0.34.0
 
+## Reporting hexamap labels are more robust
+
+`plot_reporting_hexamap()` now keeps its custom event, report and delay labels
+outside the plotted lattice with range-aware spacing, so axis titles are less
+likely to overlap tick labels or data marks when article or user figure sizes
+change.
+
+Revision-axis hexamaps now use `revision_units` for their arrival grid instead
+of always using `report_units`.
+
 ## Ensemble validation is stricter
 
 `nowcast_ensemble()` now rejects non-finite fixed weights, duplicated or

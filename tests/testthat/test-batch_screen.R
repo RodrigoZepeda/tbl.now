@@ -499,11 +499,87 @@ test_that("the batch family ignores censored arrival dates", {
   expect_false(isTRUE(all.equal(screened$reported, with_censored$reported)))
 
   expect_message(
+    transport <- suppressWarnings(transport_discriminant(censored, lookback = 3L)),
+    "Ignoring"
+  )
+  transport_with_censored <- suppressWarnings(
+    transport_discriminant(censored, lookback = 3L, drop_censored = FALSE)
+  )
+  expect_false(isTRUE(all.equal(transport$reported, transport_with_censored$reported)))
+
+  expect_message(
     suppressWarnings(
       diagnose_batches2(censored, at = get_now(censored) - 5, n_permutations = 49L)
     ),
     "Ignoring"
   )
+})
+
+test_that("the shared increment helper keeps censored arrivals by default", {
+  onset <- as.Date("2024-01-01") + rep(0:19, each = 2)
+  report <- onset + 1
+  report_censored <- rep(c(TRUE, FALSE), length.out = length(onset))
+  report_tbl <- tbl_now(
+    data.frame(onset = onset, report = report, report_censored = report_censored),
+    event_date = "onset", report_date = "report",
+    is_censored_report = "report_censored",
+    data_type = "linelist", verbose = FALSE
+  )
+
+  kept_by_default <- .batch_report_increments(report_tbl)
+  dropped <- suppressMessages(
+    .batch_report_increments(report_tbl, drop_censored = TRUE)
+  )
+
+  expect_equal(sum(kept_by_default$.count), length(onset))
+  expect_equal(sum(dropped$.count), length(onset) / 2)
+
+  revision_tbl <- tbl_now(
+    data.frame(
+      onset = onset,
+      report = report,
+      result = report + 1,
+      outcome = "confirmed",
+      revision_censored = report_censored
+    ),
+    event_date = "onset", report_date = "report",
+    revision_date = "result", revision_type = "outcome",
+    is_censored_revision = "revision_censored",
+    data_type = "linelist", verbose = FALSE
+  )
+
+  revision_default <- .batch_report_increments(revision_tbl, axis = "revision")
+  revision_dropped <- suppressMessages(
+    .batch_report_increments(revision_tbl, axis = "revision",
+                             drop_censored = TRUE)
+  )
+
+  expect_equal(sum(revision_default$.count), length(onset))
+  expect_equal(sum(revision_dropped$.count), length(onset) / 2)
+})
+
+test_that("one-observation batch diagnostics fail or degenerate clearly", {
+  one <- tbl_now(
+    data.frame(onset = as.Date("2024-01-01"), report = as.Date("2024-01-01")),
+    event_date = "onset", report_date = "report",
+    data_type = "linelist", units = "days", verbose = FALSE
+  )
+
+  expect_error(
+    suppressWarnings(suppressMessages(diagnose_batches(one, lookback = 1L))),
+    "Cannot estimate a dispersion"
+  )
+  expect_error(
+    suppressWarnings(suppressMessages(transport_discriminant(one, lookback = 1L))),
+    "Cannot estimate a dispersion"
+  )
+
+  shaped <- suppressWarnings(suppressMessages(
+    diagnose_batches2(one, at = as.Date("2024-01-01"),
+                      neighbours = 1L, n_permutations = 9L)
+  ))
+  expect_equal(shaped$n_at, 0L)
+  expect_true(is.na(shaped$p_value))
 })
 
 test_that("revision-axis increments use report-to-revision delays", {

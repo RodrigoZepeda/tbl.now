@@ -52,6 +52,23 @@ test_that("a revision process is recorded on the object", {
   ))
 })
 
+test_that("revision delay is measured in revision units even when axes differ", {
+  x <- suppressWarnings(tbl_now(
+    data.frame(
+      onset = as.Date("2024-01-01") + 0:2,
+      visit = as.Date("2024-01-02") + 7 * (0:2),
+      result = as.Date("2024-01-09") + 7 * (0:2),
+      outcome = "confirmed"
+    ),
+    event_date = "onset", report_date = "visit",
+    revision_date = "result", revision_type = "outcome",
+    event_units = "days", report_units = "weeks", revision_units = "weeks",
+    data_type = "linelist", verbose = FALSE
+  ))
+
+  expect_equal(x$.revision_delay, rep(1, 3))
+})
+
 test_that("an object with no revision is unchanged", {
   plain <- tbl_now(
     data.frame(
@@ -516,6 +533,23 @@ test_that("diagnose_batches() finds a laboratory backlog only on the revision ax
   expect_equal(flagged$report_date, as.Date("2021-02-03"))
   # An order of magnitude above baseline, so this cannot pass by chance.
   expect_gt(flagged$reported, 5 * flagged$baseline)
+})
+
+test_that("diagnose_batches2() uses report-to-revision delays on the revision axis", {
+  x <- revision_axis_fixture()
+  release_date <- as.Date("2021-02-03")
+
+  shaped <- suppressWarnings(suppressMessages(
+    diagnose_batches2(
+      x, at = release_date, axis = "revision", guard = 3L,
+      n_permutations = 199L, seed = 1L
+    )
+  ))
+
+  expect_gt(shaped$n_at, 0L)
+  expect_gt(shaped$n_reference, 0L)
+  expect_gt(shaped$mean_delay_at, shaped$mean_delay_reference)
+  expect_lt(shaped$p_value, 0.05)
 })
 
 test_that("the revision axis needs a revision process", {

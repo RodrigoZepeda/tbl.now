@@ -35,8 +35,9 @@ the observed range, auto-capped to respect \code{max_cells}.}
 point is drawn for every observable cell. Default \code{FALSE} (observed cells
 only). Coerces linelist input to counts via \code{\link[=to_count]{to_count()}}.}
 
-\item{iso, iso_minor}{Major and minor grid spacings (in report units). \code{NULL}
-picks sensible defaults from the data.}
+\item{iso, iso_minor}{Major and minor grid spacings (in arrival-axis units:
+report units on the report axis, revision units on the revision axis).
+\code{NULL} picks sensible defaults from the data.}
 
 \item{format}{Date format for the event/report tick labels (see \code{\link[=strftime]{strftime()}}).
 Default \code{"\%d/\%b/\%y"}.}
