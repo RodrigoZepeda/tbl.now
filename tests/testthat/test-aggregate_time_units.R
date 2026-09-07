@@ -749,7 +749,6 @@ test_that("complete_zeroes() fills the coarser grid", {
 })
 
 test_that("a real, messy daily line list aggregates to weeks without losing cases", {
-  skip_if_not(exists("hai_bucaramanga"), "dataset not available")
   data(hai_bucaramanga, envir = environment())
   x <- suppressWarnings(tbl_now(hai_bucaramanga,
     event_date = specimen_date, report_date = report_date, strata = sex,

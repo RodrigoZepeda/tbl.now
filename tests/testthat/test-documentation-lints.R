@@ -31,6 +31,7 @@ test_that("public docs do not reference removed as_scoringutils() helper", {
     list.files(file.path(root, "vignettes"), pattern = "[.]Rmd$",
                recursive = TRUE, full.names = TRUE)
   )
+  docs <- docs[file.exists(docs)]
 
   hits <- unlist(lapply(docs, function(path) {
     lines <- readLines(path, warn = FALSE)

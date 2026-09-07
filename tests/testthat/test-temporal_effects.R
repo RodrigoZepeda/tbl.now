@@ -295,22 +295,25 @@ test_that("add_temporal_effects.data.frame seasons fail when column exists and o
 })
 
 test_that("add_temporal_effects.data.frame holidays fails without almanac", {
-  if (requireNamespace("almanac", quietly = TRUE)) {
-    skip("Package 'almanac' is installed")
-  }
-
-  df <- data.frame(
-    date = as.Date(c("2020-01-01", "2020-12-25"))
-  )
-
-  # Create a mock temporal_effects with holidays
-  # This will fail because almanac is not installed
-  expect_error(
+  #From https://stackoverflow.com/a/79102488/5067372
+  with_mocked_bindings(
     {
-      # This should fail earlier at temporal_effects() creation
-      t_eff <- temporal_effects(holidays = "some_calendar")
+      df <- data.frame(
+        date = as.Date(c("2020-01-01", "2020-12-25"))
+      )
+
+      # Create a mock temporal_effects with holidays
+      # This will fail because almanac is not installed
+      expect_error(
+        {
+          # This should fail earlier at temporal_effects() creation
+          t_eff <- temporal_effects(holidays = "some_calendar")
+        },
+        "almanac"
+      )
     },
-    "almanac"
+    requireNamespace = function(package, ..., quietly=FALSE) FALSE,
+    .package="base"
   )
 })
 

@@ -117,9 +117,14 @@ test_that("diagnose_drift supports the block-bootstrap method", {
 })
 
 test_that("diagnose_drift errors without modifiedmk installed", {
-  # Only meaningful when the package is absent; skip when it is present.
-  skip_if(requireNamespace("modifiedmk", quietly = TRUE))
-  expect_error(diagnose_drift(make_drift_now()), "modifiedmk")
+  #From https://stackoverflow.com/a/79102488/5067372
+  with_mocked_bindings(
+    {
+      expect_error(diagnose_drift(make_drift_now()), "modifiedmk")
+    },
+    requireNamespace = function(package, ..., quietly=FALSE) FALSE,
+    .package="base"
+  )
 })
 
 # --- change-point detection -------------------------------------------------
