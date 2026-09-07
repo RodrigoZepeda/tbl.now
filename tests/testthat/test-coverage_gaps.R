@@ -625,7 +625,9 @@ test_that("reframe.grouped_tbl_now dispatches correctly and returns data", {
 
 test_that("validate_tbl_now catches NA report_date values with a warning", {
   x <- base_daily()
-  x$report[1] <- NA # inject NA
+  # The `$<-` on a tbl_now revalidates and warns; that is not what this test
+  # is checking, only the explicit `validate_tbl_now()` call below is.
+  suppressWarnings(x$report[1] <- NA) # inject NA
   # validate_tbl_now should warn about NA report dates
   expect_warning(validate_tbl_now(x))
 })

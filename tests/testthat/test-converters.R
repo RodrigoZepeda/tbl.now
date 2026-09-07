@@ -1345,11 +1345,11 @@ test_that("tbl_now_to_baselinenowcast warns when it collapses censoring", {
 test_that("tbl_now_to_baselinenowcast matrix keeps only the core columns", {
   skip_on_cran()
   skip_if_not_installed("baselinenowcast")
-  mx <- suppressMessages(
+  mx <- suppressWarnings(suppressMessages(
     tbl_now_to_baselinenowcast(make_rich_now(), format = "matrix",
                                delays_unit = "weeks", verbose = FALSE,
                                quiet = TRUE)
-  )
+  ))
   expect_s3_class(mx, "reporting_triangle")
 })
 
@@ -1409,10 +1409,10 @@ test_that("as.data.table.tbl_now dispatches to tbl_now_to_data_table", {
 
 test_that("as_reporting_triangle.tbl_now dispatches (matrix format)", {
   skip_if_not_installed("baselinenowcast")
-  rt <- suppressMessages(
+  rt <- suppressWarnings(suppressMessages(
     baselinenowcast::as_reporting_triangle(make_rich_now(), delays_unit = "weeks",
                                            quiet = TRUE)
-  )
+  ))
   expect_s3_class(rt, "reporting_triangle")
 })
 
@@ -1551,10 +1551,10 @@ test_that("tbl_now_to_baselinenowcast long carries temporal effects", {
 test_that("tbl_now_to_baselinenowcast matrix cannot carry temporal effects", {
   skip_on_cran()
   skip_if_not_installed("baselinenowcast")
-  mx <- suppressMessages(
+  mx <- suppressWarnings(suppressMessages(
     tbl_now_to_baselinenowcast(make_temporal_now(), format = "matrix",
                                verbose = FALSE)
-  )
+  ))
   expect_s3_class(mx, "reporting_triangle")
 })
 
@@ -1808,9 +1808,12 @@ test_that("tbl_now_to_baselinenowcast carries strata in long format and pools fo
   expect_true("gender" %in% names(long))
 
   # a single triangle has no strata dimension: pool with a warning, not a crash
-  expect_warning(
-    mat <- tbl_now_to_baselinenowcast(tn, format = "matrix", verbose = FALSE),
-    "pooling over strata"
+  withCallingHandlers(
+    expect_warning(
+      mat <- tbl_now_to_baselinenowcast(tn, format = "matrix", verbose = FALSE),
+      "pooling over strata"
+    ),
+    warning = function(w) invokeRestart("muffleWarning")
   )
   expect_true(is.matrix(mat))
 })

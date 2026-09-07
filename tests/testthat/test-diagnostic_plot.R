@@ -28,7 +28,7 @@ test_that("all panels returns a patchwork, a single panel returns a plain plot",
   skip_if_not_installed("patchwork")
   tn <- make_diag_tbl()
   expect_s3_class(suppressWarnings(diagnostic_plot(tn)), "patchwork")
-  one <- diagnostic_plot(tn, panels = "triangle")
+  one <- suppressWarnings(diagnostic_plot(tn, panels = "triangle"))
   expect_s3_class(one, "ggplot")
   expect_false(inherits(one, "patchwork"))
 })
@@ -124,8 +124,8 @@ test_that("an event date with zero rows in the raw data is drawn as a zero, not 
 })
 
 test_that("panels facet by stratum only when strata are present", {
-  expect_equal(n_panels(diagnostic_plot(make_diag_tbl(TRUE),  panels = "triangle")), 2L)
-  expect_equal(n_panels(diagnostic_plot(make_diag_tbl(FALSE), panels = "triangle")), 1L)
+  expect_equal(n_panels(suppressWarnings(diagnostic_plot(make_diag_tbl(TRUE),  panels = "triangle"))), 2L)
+  expect_equal(n_panels(suppressWarnings(diagnostic_plot(make_diag_tbl(FALSE), panels = "triangle"))), 1L)
   expect_equal(n_panels(suppressWarnings(diagnostic_plot(make_diag_tbl(TRUE), panels = "transport"))), 2L)
 })
 

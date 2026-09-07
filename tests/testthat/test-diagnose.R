@@ -304,12 +304,14 @@ test_that("weekly dates on two weekday grids are found, with the fix named", {
     report = as.Date(c("2024-01-10", "2024-01-17", "2024-01-24")),
     n      = c(1L, 2L, 3L)
   )
-  ndata <- tbl_now(frame,
+  # The fractional-delay warning here is what `diagnose()` is supposed to
+  # find below, not something to re-emit from the constructor.
+  ndata <- suppressWarnings(tbl_now(frame,
     event_date = "onset", report_date = "report", case_count = "n",
     data_type = "count-incidence", event_units = "weeks",
     report_units = "weeks", now = as.Date("2024-01-24"), verbose = FALSE,
     align_weeks = FALSE
-  )
+  ))
   result <- diagnose(ndata)
 
   grid <- finding(result, "units", "report_grid")

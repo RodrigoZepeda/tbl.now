@@ -139,7 +139,7 @@ test_that("NobBS is handed one row per CASE, not one row per count row", {
     .package = "NobBS"
   )
 
-  run_nowcast(x, engine_nobbs(), verbose = FALSE)
+  suppressWarnings(run_nowcast(x, engine_nobbs(), verbose = FALSE))
 
   # THE failure this converter exists to prevent: 30 rows carrying 1,800 cases
   # nowcast as 30 cases, with no error and an answer 60 times too small.
@@ -165,18 +165,20 @@ test_that("NobBS is told the quantile levels that were asked for", {
 
   # NobBS reports whichever quantiles it is given at FIT time, so the levels have
   # to reach `specs` -- they cannot be recovered afterwards.
-  run_nowcast(x, engine_nobbs(quantile_levels = c(0.1, 0.5, 0.9)), verbose = FALSE)
+  suppressWarnings(
+    run_nowcast(x, engine_nobbs(quantile_levels = c(0.1, 0.5, 0.9)), verbose = FALSE)
+  )
   expect_equal(seen$quantiles, c(0.1, 0.5, 0.9))
 
   # An explicit `specs$quantiles` still wins
-  run_nowcast(
+  suppressWarnings(run_nowcast(
     x,
     engine_nobbs(
       specs = list(quantiles = c(0.25, 0.75)),
       quantile_levels = c(0.1, 0.5, 0.9)
     ),
     verbose = FALSE
-  )
+  ))
   expect_equal(seen$quantiles, c(0.25, 0.75))
 })
 
@@ -198,7 +200,7 @@ test_that("a single stratum routes NobBS through NobBS.strat()", {
     .package = "NobBS"
   )
 
-  nowcast <- run_nowcast(x, engine_nobbs(), verbose = FALSE)
+  nowcast <- suppressWarnings(run_nowcast(x, engine_nobbs(), verbose = FALSE))
 
   # `tbl_now_to_nobbs()` builds the single column `NobBS.strat()` takes, and the
   # engine hands over that column whether there is one declared stratum or six.
@@ -246,7 +248,7 @@ test_that("surveillance gets a line list and a grid that reaches `now`", {
     .package = "surveillance"
   )
 
-  nowcast_fit(engine_surveillance(), x, verbose = FALSE)
+  suppressWarnings(nowcast_fit(engine_surveillance(), x, verbose = FALSE))
 
   expect_equal(nrow(seen$data), sum(x$n))
   expect_true(all(c("dHospital", "dReport") %in% colnames(seen$data)))
@@ -272,7 +274,7 @@ test_that("surveillance is fitted once per stratum", {
     .package = "surveillance"
   )
 
-  fit <- nowcast_fit(engine_surveillance(), x, verbose = FALSE)
+  fit <- suppressWarnings(nowcast_fit(engine_surveillance(), x, verbose = FALSE))
 
   # `surveillance::nowcast()` models ONE series and has no strata argument, so
   # two strata must mean two fits, each carrying only its own cases.

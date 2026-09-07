@@ -576,11 +576,13 @@ test_that("align_weeks keeps a grouped revision process intact", {
     outcome = rep(c("confirmed", "retracted"), 5),
     sex = rep(c("F", "M"), 5)
   )
-  x <- tbl_now(cases,
+  # Constructor warns about the fractional delay this test then fixes with
+  # `align_weeks()`; the warning is expected structure, not a regression.
+  x <- suppressWarnings(tbl_now(cases,
     event_date = onset, report_date = visit,
     revision_date = result, revision_type = outcome, strata = sex,
     data_type = "linelist", units = "weeks", verbose = FALSE
-  )
+  ))
 
   out <- align_weeks(x |> dplyr::group_by(!!as.symbol("sex")))
 

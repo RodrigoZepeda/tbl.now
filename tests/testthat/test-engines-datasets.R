@@ -55,7 +55,7 @@ for (dataset in names(ENGINE_DATASETS)) {
     test_that(paste("run_nowcast() fits", this_dataset), {
       skip_if_not_installed("baselinenowcast")
 
-      x <- dataset_tbl_now(this_dataset)
+      x <- suppressWarnings(dataset_tbl_now(this_dataset))
       nowcast <- suppressWarnings(suppressMessages(run_nowcast(
         x,
         engine_baselinenowcast(draws = 10, max_delay = this_max_delay),
@@ -78,7 +78,7 @@ for (dataset in names(ENGINE_DATASETS)) {
 test_that("a snapshot series is refused with the cap that would fix it", {
   skip_if_not_installed("baselinenowcast")
 
-  x <- dataset_tbl_now("flusight_aligned")
+  x <- suppressWarnings(dataset_tbl_now("flusight_aligned"))
 
   # The message has to name the delay axis and a number to cap it at.
   # `baselinenowcast`'s own is arithmetic ("112 reference times available and
@@ -105,7 +105,7 @@ test_that("the delay cap reaches the CONVERTER, not the modelling call", {
   # `nowcast_fit.baselinenowcast()` it went into `...`, straight past the
   # converter and into the modelling call, where it was silently ignored: the
   # user got the same unfittable triangle and no indication why.
-  x <- dataset_tbl_now("flusight_aligned")
+  x <- suppressWarnings(dataset_tbl_now("flusight_aligned"))
   capped <- suppressWarnings(suppressMessages(
     tbl_now_to_baselinenowcast(x, max_delay = 47, verbose = FALSE)
   ))

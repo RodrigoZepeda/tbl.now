@@ -139,6 +139,12 @@ hai_bucaramanga <- hai_bucaramanga |>
 
 The `tbl.now()` automatically fires several warnings. Let's take a look!
 
+::: {.alert .alert-info}
+The `tbl.now()` package also considers the possibility of a third `revision_date` where
+reports that have already been submitted by `report_date` are either `confirmed` or `rejected` (or maybe just one of those). We show more diagnostics for such an example in the  [article on diagnosing a `tbl.now()`](https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html). 
+:::
+
+
 ## 3. What is wrong?
 
 These same warnings can also be accessed with the `diagnose()` function
@@ -720,16 +726,24 @@ One can fit ensembles with more than two models and different model specificatio
 ## Summary
 
 In this example we showed:
+
 1. How to create a `tbl_now()` object.
+
 2. How to `diagnose()` and summarise with `summary()` as well as visualize with `autoplot()` a `tbl_now()`.
+
 3. How to add `temporal_effects()` to the object which can be displayed in the plots. 
+
 4. How to aggregate the time units with `aggregate_time_units()` to pass from days to weeks.  
+
 5. How to identify drifts and batches with `plot_delay_drift()`, `diagnose_drift()` and `diagnose_changepoint()`. 6. How to identify potential batches with `plot_reporting_hexamap()` in conjunction with `diagnose_batches()` (and `diagnose_batches2()`). 
+
 7. How to perform a nowcast by setting an `engine()` and running with `run_nowcast()`.
+
 8. How to clean with `tidy()` and `autoplot()` a nowcast.
+
 9. How to backtest a nowcast with `nowcast_backtest()` and create an ensemble with `nowcast_ensemble()`.
 
-::: {.alert .alert-tip}
+::: {.alert .alert-info}
 If you have any questions regarding this article or comments please [open an issue](https://github.com/RodrigoZepeda/tbl.now/issues/new)
 :::
 

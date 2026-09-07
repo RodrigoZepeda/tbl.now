@@ -463,10 +463,14 @@ test_that("validate_tbl_now warns when report_date before event_date", {
     )
   )
 
-  # Should create with warning
-  expect_warning(
-    validate_tbl_now(ndata),
-    "report_date.*before.*event_date"
+  # Should create with warning; the outer handler muffles the collateral
+  # fractional-delay warning that this test is not checking.
+  withCallingHandlers(
+    expect_warning(
+      validate_tbl_now(ndata),
+      "report_date.*before.*event_date"
+    ),
+    warning = function(w) invokeRestart("muffleWarning")
   )
 })
 

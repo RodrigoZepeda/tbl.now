@@ -787,8 +787,10 @@ test_that("by_strata = TRUE without strata is an error, not a silent pooling", {
 })
 
 test_that("bad lags are rejected", {
-  expect_error(case_autocorrelation(fixture_plain(), lags = 0), "positive whole")
-  expect_error(case_autocorrelation(fixture_plain(), lags = -1), "positive whole")
+  suppressWarnings({
+    expect_error(case_autocorrelation(fixture_plain(), lags = 0), "positive whole")
+    expect_error(case_autocorrelation(fixture_plain(), lags = -1), "positive whole")
+  })
 })
 
 # Printing ---------------------------------------------------------------------

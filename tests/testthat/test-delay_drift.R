@@ -58,7 +58,10 @@ test_that("plot_delay_drift validates its input", {
 test_that("diagnose_drift returns one tidy row per stat", {
   skip_if_not_installed("modifiedmk")
 
-  res <- diagnose_drift(make_drift_now(slope = 0.003), stat = c("median", "spread"))
+  # First hit trips the throttled "experimental" warning.
+  res <- suppressWarnings(
+    diagnose_drift(make_drift_now(slope = 0.003), stat = c("median", "spread"))
+  )
   expect_s3_class(res, "tbl_df")
   expect_setequal(res$stat, c("median", "spread"))
   expect_true(all(c(
@@ -151,7 +154,10 @@ test_that(".tbl_now_pettitt locates a clear step and guards edge cases", {
 })
 
 test_that("diagnose_changepoint returns one tidy row per stat", {
-  res <- diagnose_changepoint(make_step_now(), stat = c("median", "mean"))
+  # First hit trips the throttled "experimental" warning.
+  res <- suppressWarnings(
+    diagnose_changepoint(make_step_now(), stat = c("median", "mean"))
+  )
   expect_s3_class(res, "tbl_df")
   expect_setequal(res$stat, c("median", "mean"))
   expect_true(all(c(

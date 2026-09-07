@@ -39,7 +39,11 @@ test_that("simulate_batch() conserves items and only ever moves reports later", 
   clean_tbl <- make_flat_linelist()
   closed    <- as.Date(c("2021-02-01", "2021-02-02", "2021-02-03"))
 
-  batched_tbl <- simulate_batch(clean_tbl, closed_dates = closed, verbose = FALSE)
+  # First hit trips the throttled "experimental" warning; subsequent tests
+  # in this file benefit from the throttle and do not need to suppress.
+  batched_tbl <- suppressWarnings(
+    simulate_batch(clean_tbl, closed_dates = closed, verbose = FALSE)
+  )
 
   clean_frame   <- as.data.frame(clean_tbl)
   batched_frame <- as.data.frame(batched_tbl)
@@ -106,8 +110,10 @@ test_that("diagnose_batches() recovers a planted batch and finds none in clean d
   release_date <- as.Date("2021-02-04")
   batched_tbl <- simulate_batch(clean_tbl, closed_dates = closed, verbose = FALSE)
 
-  clean_screen   <- diagnose_batches(clean_tbl,   lookback = 3L)
-  batched_screen <- diagnose_batches(batched_tbl, lookback = 3L)
+  suppressWarnings({
+    clean_screen   <- diagnose_batches(clean_tbl,   lookback = 3L)
+    batched_screen <- diagnose_batches(batched_tbl, lookback = 3L)
+  })
 
   expect_s3_class(batched_screen, "diagnose_batches")
   expect_equal(sum(clean_screen$batch, na.rm = TRUE), 0L)
@@ -352,10 +358,12 @@ test_that("diagnose_batches2() sees the inflated delays of a released backlog", 
   release_date <- as.Date("2021-02-04")
   batched_tbl  <- simulate_batch(clean_tbl, closed_dates = closed, verbose = FALSE)
 
-  batched_result <- diagnose_batches2(batched_tbl, at = release_date, guard = 3L,
-                                     n_permutations = 199L, seed = 1L)
-  clean_result   <- diagnose_batches2(clean_tbl, at = release_date, guard = 3L,
-                                     n_permutations = 199L, seed = 1L)
+  suppressWarnings({
+    batched_result <- diagnose_batches2(batched_tbl, at = release_date, guard = 3L,
+                                       n_permutations = 199L, seed = 1L)
+    clean_result   <- diagnose_batches2(clean_tbl, at = release_date, guard = 3L,
+                                       n_permutations = 199L, seed = 1L)
+  })
 
   expect_gt(batched_result$mean_delay_at, batched_result$mean_delay_reference)
   expect_lt(batched_result$p_value, 0.05)
@@ -429,7 +437,12 @@ test_that("count-cumulative data de-accumulates and screens with the robust null
     case_count = !!as.symbol("total"), data_type = "count-cumulative", verbose = FALSE
   )
 
-  screened <- diagnose_batches(cumulative_tbl, lookback = 2L)
+  # The internal transport step probes an optional `.revision_delay` column
+  # that a count-cumulative tbl_now does not carry; that data-frame `$` probe
+  # is what emits the "Unknown or uninitialised column" warnings.
+  suppressWarnings({
+    screened <- diagnose_batches(cumulative_tbl, lookback = 2L)
+  })
   expect_s3_class(screened, "diagnose_batches")
   expect_equal(attr(screened, "null_model"), "robust")
   expect_true(all(c("delta", "deficit", "p_transport") %in% names(screened)))

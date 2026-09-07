@@ -602,9 +602,14 @@ test_that("cumulative growth panel works by stratum and full autoplot builds", {
     strata = "grp", data_type = "count-cumulative",
     event_units = "weeks", report_units = "weeks", verbose = FALSE
   )
-  ps <- ggplot2::autoplot(nowobj, panels = "delay_distribution", by_strata = TRUE)
-  expect_equal(ps$labels$title, "Cumulative growth by delay")
-  expect_s3_class(ggplot2::autoplot(nowobj, by_strata = TRUE), "patchwork")
+  # De-accumulating a cumulative series can produce negative increments at
+  # rows where a revision comes in lower; the autoplot flags those as
+  # "report before event" but that is the data, not what this test checks.
+  suppressWarnings({
+    ps <- ggplot2::autoplot(nowobj, panels = "delay_distribution", by_strata = TRUE)
+    expect_equal(ps$labels$title, "Cumulative growth by delay")
+    expect_s3_class(ggplot2::autoplot(nowobj, by_strata = TRUE), "patchwork")
+  })
 })
 
 # ---------------------------------------------------------------------------
