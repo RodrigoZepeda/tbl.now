@@ -110,7 +110,7 @@ test_that("the grids drive a real surveillance::nowcast() call", {
   linelist <- suppressWarnings(suppressMessages(
     tbl_now_to_surveillance(x, verbose = FALSE)
   ))
-  fit <- suppressWarnings(suppressMessages(surveillance::nowcast(
+  fit <- suppressWarnings(quiet_messages(surveillance::nowcast(
     now  = get_now(x),
     when = get_surveillance_when(x, length = 3),
     data = linelist,

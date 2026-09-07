@@ -514,14 +514,14 @@ test_that("tbl_now_to_epidist auto builds aggregate data from counts", {
 test_that("tbl_now_from_epidist reads aggregate data as count-incidence", {
   skip_on_cran()
   skip_if_not_installed("epidist")
-  agg <- epidist::as_epidist_aggregate_data(
+  agg <- suppressMessages(epidist::as_epidist_aggregate_data(
     data.frame(
       pdate_lwr = as.Date(c("2020-03-01", "2020-03-02")),
       sdate_lwr = as.Date(c("2020-03-05", "2020-03-04")),
       n = c(4, 6)
     ),
     n = "n", pdate_lwr = "pdate_lwr", sdate_lwr = "sdate_lwr"
-  )
+  ))
   res <- suppressMessages(tbl_now_from_epidist(agg, verbose = FALSE))
   expect_equal(get_data_type(res), "count-incidence")
   expect_equal(get_case_count(res), "n")
@@ -632,13 +632,13 @@ test_that("epidist long round-trip preserves linelist", {
   skip_if_not_installed("epidist")
 
   # --- Linelist epidist data (one row per case) ---
-  ll <- epidist::as_epidist_linelist_data(
+  ll <- suppressMessages(epidist::as_epidist_linelist_data(
     data.frame(
       pdate_lwr = as.Date(c("2020-03-01", "2020-03-02", "2020-03-02")),
       sdate_lwr = as.Date(c("2020-03-05", "2020-03-04", "2020-03-06"))
     ),
     pdate_lwr = "pdate_lwr", sdate_lwr = "sdate_lwr"
-  )
+  ))
   # -> a linelist tbl_now ...
   nowll <- tbl_now_from_epidist(ll, verbose = FALSE)
 
@@ -648,14 +648,14 @@ test_that("epidist long round-trip preserves linelist", {
 
 
   # --- Aggregate epidist data (counts in an `n` column) ---
-  agg <- epidist::as_epidist_aggregate_data(
+  agg <- suppressMessages(epidist::as_epidist_aggregate_data(
     data.frame(
       pdate_lwr = as.Date(c("2020-03-01", "2020-03-02")),
       sdate_lwr = as.Date(c("2020-03-05", "2020-03-04")),
       n = c(7, 3)
     ),
     n = "n", pdate_lwr = "pdate_lwr", sdate_lwr = "sdate_lwr"
-  )
+  ))
   # -> a count-incidence tbl_now (case_count = "n") ...
   nowagg <- tbl_now_from_epidist(agg, verbose = FALSE)
 

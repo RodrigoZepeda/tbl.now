@@ -2783,9 +2783,15 @@ tbl_now_to_baselinenowcast <- function(x, ...,
 
   # De-accumulated cumulative data can carry negative increments; absorb them
   # into earlier delays rather than handing baselinenowcast a triangle it will
-  # reject.
+  # reject. `preprocess_negative_values()` announces the fix with a message on
+  # every call; honour `quiet` so it stays consistent with the rest of the
+  # converter.
   if (any(triangle < 0, na.rm = TRUE)) {
-    triangle <- baselinenowcast::preprocess_negative_values(triangle)
+    triangle <- if (isTRUE(quiet)) {
+      suppressMessages(baselinenowcast::preprocess_negative_values(triangle))
+    } else {
+      baselinenowcast::preprocess_negative_values(triangle)
+    }
   }
   triangle
 }

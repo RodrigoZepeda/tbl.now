@@ -637,6 +637,86 @@ converter against every shipped dataset.
 
 ## 8. Testing
 
+### The test log stays quiet
+
+**A test that lets its call print into the log is broken, even when it
+passes.** A noisy log is a broken log: the failures the reader needs are
+buried under dozens of `i No primary event upper bound provided...`,
+`Building reporting triangle...`, `* This delay is now an upper bound
+(is_censored_report).` lines, and the reader stops reading before they
+reach the failure.
+
+The rules, in order of preference:
+
+1.  **Use the function's own `verbose = FALSE`.** Every user-facing function
+    that emits chatter takes it; `censor_reporting_delays_above(x, k)` prints
+    "Marked N reports ... This delay is now an upper bound." on every call and
+    `censor_reporting_delays_above(x, k, verbose = FALSE)` does not. This is
+    the argument's whole point.
+
+2.  **Add `quiet = TRUE` on converters where it exists.** `verbose` and
+    `quiet` are *different channels*: `verbose = FALSE` silences tbl.now's
+    own summary, `quiet = TRUE` silences the target package's chatter (e.g.
+    epidist's "No primary event upper bound provided..." bullets). A test
+    that only sets `verbose = FALSE` on `tbl_now_to_epidist()` still leaks
+    epidist's own lines.
+
+3.  **Wrap with `quiet_messages()` from `helper-nowcast.R`.** It is the
+    right hammer for calls that have no verbose knob, or emit through
+    `cat()` (surveillance, JAGS via NobBS). `suppressMessages()` alone
+    does NOT catch `cat()`; `quiet_messages()` wraps both stdout and
+    messages, which is why it exists.
+
+4.  **`expect_error()` does NOT suppress the noise the failing call
+    emitted before it errored.** A validator that prints a status message
+    *and then* aborts still prints. Wrap the call itself in
+    `suppressMessages()` (or `quiet_messages()`) inside the `expect_error()`:
+
+    ```r
+    expect_error(
+      suppressMessages(diagnose_batches(x, baseline_window = 8L)),
+      "must be odd"
+    )
+    ```
+
+5.  **Raw calls to a foreign constructor need their own `suppressMessages()`.**
+    `epidist::as_epidist_aggregate_data(df, ...)` fires the same bullets
+    whether tbl.now called it or a test did. When a test hand-builds
+    epidist data as a fixture, wrap the constructor.
+
+For the package side of the bargain:
+
+-   **`.quietly_if()` in `R/nowcast_methods.R` suppresses `cat()` and
+    messages, not warnings.** Surveillance reports progress with `cat()`
+    ("Building reporting triangle...", "No. cases: ..."), NobBS's JAGS
+    backend uses `cat()` for "NOTE: Stopping adaptation..." and several
+    other packages write to stdout. Wrapping only in `suppressMessages()`
+    leaves those in the log. The two nested `capture.output()` calls in
+    `.quietly_if()` are load-bearing; do not drop them.
+
+-   **`tbl_now_to_epidist()` respects `quiet` by wrapping the epidist
+    constructor in `.epidist_quietly_if()`.** The helper is a two-liner
+    kept next to the converter because it is the only place that needs
+    it; leave it there rather than reaching into `nowcast_methods.R`.
+
+-   **`baselinenowcast::preprocess_negative_values()` prints on every
+    call.** `.tbl_now_one_triangle()` honours `quiet` around it too. If
+    you add a wrapped call to another external function that emits on
+    every call, add the same guard.
+
+The verification is one grep and one run:
+
+``` bash
+Rscript -e "Sys.setenv(NOT_CRAN='true'); devtools::load_all('.', quiet = TRUE); \
+    testthat::test_file('tests/testthat/test-<file>.R', reporter = 'silent')" \
+  2>&1 | wc -l
+```
+
+Zero lines is the expected outcome for every file. A new test that
+prints anything is a regression, whether or not it also passes.
+
+### Running the suite
+
 -   Run with `NOT_CRAN=true`, or 424 tests silently skip:
 
     ``` r

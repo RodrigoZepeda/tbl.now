@@ -272,10 +272,19 @@ test_that("diagnose_batches() validates its inputs", {
   expect_error(diagnose_batches(as.data.frame(clean_tbl)), "tbl_now")
   expect_error(diagnose_batches(clean_tbl, lookback = 0L), "positive integer")
   expect_error(diagnose_batches(clean_tbl, alpha = 1.5), "strictly between")
-  # An even baseline window has no unique median.
-  expect_error(diagnose_batches(clean_tbl, baseline_window = 8L), "must be odd")
+  # An even baseline window has no unique median. The message about the daily
+  # cadence fires before the error, so wrap in suppressMessages().
+  expect_error(
+    suppressMessages(diagnose_batches(clean_tbl, baseline_window = 8L)),
+    "must be odd"
+  )
   # Too narrow: a batch episode would outvote the median measuring it.
-  expect_error(diagnose_batches(clean_tbl, lookback = 3L, baseline_window = 5L), "too narrow")
+  expect_error(
+    suppressMessages(
+      diagnose_batches(clean_tbl, lookback = 3L, baseline_window = 5L)
+    ),
+    "too narrow"
+  )
 })
 
 test_that("the null model is chosen from the data type", {
@@ -404,9 +413,9 @@ test_that("diagnose_batches2() reports zero arrivals rather than erroring", {
   )
   expect_false(empty_date %in% holed[[report_col]])
 
-  result <- expect_no_error(
+  result <- expect_no_error(quiet_messages(
     diagnose_batches2(holed, at = empty_date, n_permutations = 49L)
-  )
+  ))
   expect_equal(result$n_at, 0L)
   expect_true(is.na(result$p_value))
 })
