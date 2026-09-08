@@ -13,7 +13,7 @@ Authors@R:
            comment = c(ORCID = "0000-0001-8349-3151")),
       person("Jeffrey", "Shaman", role = c("ctb")),
       person(given = "Columbia University in the City of New York", role = c("cph", "fnd")))
-Description: Provides a 'tbl_now' class for temporal data for performing nowcasts. The 'tbl_now' allows for easy manipulation of event dates, report dates, strata and covariates for implementing different nowcasting models while at the same time permitting ease of use with 'dplyr' functions.
+Description: Provides a 'tbl_now' class for temporal data for performing nowcasts. The 'tbl_now' allows for easy manipulation of event dates, report dates, strata and covariates for implementing different nowcasting models while at the same time permitting ease of use with 'dplyr' functions. It also provides a grammar to systematize nowcasting across several frameworks and produce ensemble nowcasts.
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
@@ -64,7 +64,9 @@ Imports:
     tidyr,
     tidyselect,
     utils
-URL: https://rodrigozepeda.github.io/tbl.now/
+URL: https://rodrigozepeda.github.io/tbl.now/,
+    https://github.com/RodrigoZepeda/tbl.now
+BugReports: https://github.com/RodrigoZepeda/tbl.now/issues
 VignetteBuilder: knitr
 Config/Needs/website: rmarkdown
 Roxygen: list(markdown = TRUE)
