@@ -208,7 +208,7 @@ nowcast_fit.diseasenowcasting <- function(engine, x, ...,
   # declaring it makes a literal `::` an undeclared import. `.need_pkg()` above
   # has already established that it is installed.
   nowcast <- getExportedValue("diseasenowcasting", "nowcast")
-  .quietly_if(nowcast(x, ...), verbose)
+  .quietly_if(nowcast(x, ..., quantile_levels = quantile_levels), verbose)
 }
 
 #' @rdname nowcast_tidy

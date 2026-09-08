@@ -1,3 +1,8 @@
+# tbl.now 0.35.2
+
+Fixed a bug in the `is_weekend()` function that made it work solely
+on an English locale. 
+
 # tbl.now 0.35.1
 
 ## One help page for the two delay-distribution `tidy()` methods

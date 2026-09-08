@@ -1077,9 +1077,14 @@ test_that("percent shares of a calendar block add up to 100", {
   # One block is a week, so the seven weekdays share out 100% of its cases.
   totals <- tapply(shares$percent, shares$block, sum)
   expect_true(all(abs(totals - 100) < 1e-8))
+  # The groups are the seven weekdays, LABELLED IN THE SESSION'S LANGUAGE: a
+  # plot axis should read in the user's own language, unlike the model
+  # covariate `.<date>_day_of_week`, whose levels are deliberately English.
+  # So this compares against the locale's own names, not against fixed ones.
+  monday_to_sunday <- as.Date("2020-04-13") + 0:6
   expect_setequal(
-    as.character(unique(shares$calendar_group)),
-    c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
+    enc2utf8(as.character(unique(shares$calendar_group))),
+    enc2utf8(format(monday_to_sunday, "%A"))
   )
 })
 

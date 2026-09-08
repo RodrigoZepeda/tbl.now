@@ -488,6 +488,9 @@ run_nowcast <- function(x, engine = engine_diseasenowcasting(), verbose = TRUE) 
       list(quantile_levels = quantile_levels, verbose = verbose)
     )
   )
+  if (is_tbl_nowcast(fit)) {
+    return(fit)
+  }
   tidied <- nowcast_tidy(engine, fit, x, quantile_levels = quantile_levels)
 
   .as_tbl_nowcast(

@@ -12,6 +12,8 @@ experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](h
 [![CRAN
 status](https://www.r-pkg.org/badges/version/tbl.now)](https://CRAN.R-project.org/package=tbl.now)
 [![R-CMD-check](https://github.com/RodrigoZepeda/tbl.now/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/RodrigoZepeda/tbl.now/actions/workflows/R-CMD-check.yaml)
+[![R-universe
+version](https://RodrigoZepeda.r-universe.dev/tbl.now/badges/version)](https://RodrigoZepeda.r-universe.dev/tbl.now)
 <!-- badges: end -->
 
 [`tbl.now`](https://rodrigozepeda.github.io/tbl.now/) extends
