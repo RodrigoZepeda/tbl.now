@@ -12,6 +12,11 @@ xmas_cal <- function() {
   almanac::rcalendar(almanac::hol_christmas(), almanac::hol_new_years_day())
 }
 
+# Day names below come from `.weekday_name_en()`, never from `weekdays()`:
+# `weekdays()` answers in the session's language, so under `LC_TIME = "es_ES"`
+# every `== "Monday"` was FALSE and every `%in% c("Saturday", "Sunday")` matched
+# nothing -- the first kind of check failed, the second passed vacuously.
+
 # ---------------------------------------------------------------------------
 # Constructor + revision
 # ---------------------------------------------------------------------------
@@ -80,7 +85,7 @@ test_that("after-holiday lags create the right indicator columns", {
   # The holiday itself is not an after-effect
   expect_false(as.Date("2020-12-25") %in% c(lag1, lag2, lag3))
   # Weekend days never carry a working-day indicator
-  expect_equal(sum(d$.event_holiday_lag_1[weekdays(d$onset) %in% c("Saturday", "Sunday")]), 0)
+  expect_equal(sum(d$.event_holiday_lag_1[tbl.now:::.weekday_name_en(d$onset) %in% c("Saturday", "Sunday")]), 0)
 })
 
 test_that("after-weekend lags flag the first working day(s) after a weekend", {
@@ -91,7 +96,7 @@ test_that("after-weekend lags flag the first working day(s) after a weekend", {
 
   # weekend_lag_1 with no holidays = every Monday
   flagged <- d$onset[d$.event_weekend_lag_1 == 1]
-  expect_true(all(weekdays(flagged) == "Monday"))
+  expect_true(all(tbl.now:::.weekday_name_en(flagged) == "Monday"))
   expect_true(as.Date("2020-12-21") %in% flagged)
   expect_true(as.Date("2020-12-28") %in% flagged)
 })
@@ -125,9 +130,9 @@ test_that("negative weekend lags flag the working day(s) before a weekend", {
   expect_false(any(grepl("^\\.event_weekend_lag_", names(d))))
 
   # lead_1 = Friday, lead_2 = Thursday, lead_3 = Wednesday
-  expect_true(all(weekdays(d$onset[d$.event_weekend_lead_1 == 1]) == "Friday"))
-  expect_true(all(weekdays(d$onset[d$.event_weekend_lead_2 == 1]) == "Thursday"))
-  expect_true(all(weekdays(d$onset[d$.event_weekend_lead_3 == 1]) == "Wednesday"))
+  expect_true(all(tbl.now:::.weekday_name_en(d$onset[d$.event_weekend_lead_1 == 1]) == "Friday"))
+  expect_true(all(tbl.now:::.weekday_name_en(d$onset[d$.event_weekend_lead_2 == 1]) == "Thursday"))
+  expect_true(all(tbl.now:::.weekday_name_en(d$onset[d$.event_weekend_lead_3 == 1]) == "Wednesday"))
   # Fri Dec 25 / Thu Dec 24 / Wed Dec 23 run up to the Dec 26-27 weekend. No
   # holiday calendar here, so Christmas is just another working Friday.
   expect_true(as.Date("2020-12-25") %in% d$onset[d$.event_weekend_lead_1 == 1])
@@ -135,7 +140,7 @@ test_that("negative weekend lags flag the working day(s) before a weekend", {
   expect_true(as.Date("2020-12-23") %in% d$onset[d$.event_weekend_lead_3 == 1])
 
   # Weekend days never carry a working-day indicator
-  expect_equal(sum(d$.event_weekend_lead_1[weekdays(d$onset) %in% c("Saturday", "Sunday")]), 0)
+  expect_equal(sum(d$.event_weekend_lead_1[tbl.now:::.weekday_name_en(d$onset) %in% c("Saturday", "Sunday")]), 0)
 })
 
 test_that("negative holiday lags flag the working days leading up to a holiday", {
@@ -168,8 +173,8 @@ test_that("before- and after-event effects can coexist on one object", {
     add_temporal_effects(temporal_effects(weekend_lags = 1))
   d <- as.data.frame(compute_temporal_effects(x))
 
-  expect_true(all(weekdays(d$onset[d$.event_weekend_lead_1 == 1]) == "Friday"))
-  expect_true(all(weekdays(d$onset[d$.event_weekend_lag_1 == 1]) == "Monday"))
+  expect_true(all(tbl.now:::.weekday_name_en(d$onset[d$.event_weekend_lead_1 == 1]) == "Friday"))
+  expect_true(all(tbl.now:::.weekday_name_en(d$onset[d$.event_weekend_lag_1 == 1]) == "Monday"))
 })
 
 test_that("get_temporal_effect_cols() reports the lag columns", {

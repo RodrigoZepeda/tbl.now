@@ -60,7 +60,10 @@ use \code{date_col}.}
 the weekend. Defaults to Saturday and Sunday.
 \itemize{
 \item Character: day names or abbreviations, case-insensitive --
-\code{c("Mon", "Tuesday", "wed", ...)}.
+\code{c("Mon", "Tuesday", "wed", ...)}. English names always work, whatever
+the session's locale is, and so do the names of the current locale, with
+or without their accents -- under \code{LC_TIME = "es_ES"} both
+\code{c("Sat", "Sun")} and \code{c("sáb", "dom")} mean the weekend.
 \item Numeric: integers 1-7 in \code{\link[lubridate:wday]{lubridate::wday()}} numbering with
 \code{week_start = 1}, so \strong{1 = Monday} and 7 = Sunday.
 }}

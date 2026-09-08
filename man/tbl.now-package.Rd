@@ -8,7 +8,7 @@
 \description{
 \if{html}{\figure{logo.png}{options: style='float: right' alt='logo' width='120'}}
 
-Provides a 'tbl_now' class for temporal data for performing nowcasts. The 'tbl_now' allows for easy manipulation of event dates, report dates, strata and covariates for implementing different nowcasting models while at the same time permitting ease of use with 'dplyr' functions.
+Provides a 'tbl_now' class for temporal data for performing nowcasts. The 'tbl_now' allows for easy manipulation of event dates, report dates, strata and covariates for implementing different nowcasting models while at the same time permitting ease of use with 'dplyr' functions. It also provides a grammar to systematize nowcasting across several frameworks and produce ensemble nowcasts.
 }
 \details{
 Surveillance data arrives late. A case that happened on Monday may not reach
@@ -61,6 +61,8 @@ Six surveillance datasets ship with the package for experimenting:
 Useful links:
 \itemize{
   \item \url{https://rodrigozepeda.github.io/tbl.now/}
+  \item \url{https://github.com/RodrigoZepeda/tbl.now}
+  \item Report bugs at \url{https://github.com/RodrigoZepeda/tbl.now/issues}
 }
 
 }
