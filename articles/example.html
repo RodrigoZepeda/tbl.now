@@ -27,7 +27,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.35.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.35.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -629,7 +629,10 @@ diseasenowcasting package:</p>
 <div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">hai_fit</span> <span class="op">&lt;-</span> <span class="va">hai_bucaramanga</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="../reference/run_nowcast.html">run_nowcast</a></span><span class="op">(</span>engine <span class="op">=</span> <span class="fu"><a href="../reference/nowcast_engines.html">engine_diseasenowcasting</a></span><span class="op">(</span>temporal_effects <span class="op">=</span> <span class="st">"none"</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Nowcasting with <span style="color: #0000BB;">"diseasenowcasting"</span> as of <span style="color: #0000BB;">2022-07-18</span>.</span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Nowcasting with <span style="color: #0000BB;">"diseasenowcasting"</span> as of <span style="color: #0000BB;">2022-07-18</span>.</span></span>
+<span><span class="co">#&gt; Warning: The fit is finite but did not pass the gradient stability gate.</span></span>
+<span><span class="co">#&gt; <span style="color: #BB0000;">✖</span> Maximum absolute gradient: 99.65.</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Inspect `fit$gradient_status`, `fit$max_gradient`, and `fit$opt` before using predictions.</span></span></code></pre></div>
 <p>Due to the sparcity, the nowcast predicts almost no cases at any time
 with just maybe a second case at the now for males:</p>
 <div class="sourceCode" id="cb36"><pre class="downlit sourceCode r">
@@ -805,7 +808,7 @@ batches:</p>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1 × 7</span></span></span>
 <span><span class="co">#&gt;   stratum  n_at n_reference mean_delay_at mean_delay_reference statistic p_value</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>                <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> all        11          14          11.4                 2.93      2.68   0.003</span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> all        11          14          11.4                 2.93      2.68   0.002</span></span></code></pre></div>
 <p>Where we further identify the date of <code>2021-11-28</code> as a
 potential batch with its <code>p_value &lt; 0.003</code>.</p>
 <p>Given that the</p>
@@ -852,7 +855,7 @@ fan the nowcast’s prediction intervals.</p>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>            </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> 2022-07-03 Female         0        0         1  0.95 diseasenowcasting</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> 2022-07-03 Male           0        0         1  0.95 diseasenowcasting</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> 2022-07-10 Female         0        0         1  0.95 diseasenowcasting</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> 2022-07-10 Female         0        0         2  0.95 diseasenowcasting</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> 2022-07-10 Male           0        0         2  0.95 diseasenowcasting</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> 2022-07-17 Female         0        0         2  0.95 diseasenowcasting</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># ℹ 1 more row</span></span></span></code></pre>

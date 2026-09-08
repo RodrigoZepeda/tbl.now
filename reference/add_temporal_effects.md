@@ -100,7 +100,10 @@ compute_temporal_effects(x, overwrite = FALSE)
   weekend. Defaults to Saturday and Sunday.
 
   - Character: day names or abbreviations, case-insensitive –
-    `c("Mon", "Tuesday", "wed", ...)`.
+    `c("Mon", "Tuesday", "wed", ...)`. English names always work,
+    whatever the session's locale is, and so do the names of the current
+    locale, with or without their accents – under `LC_TIME = "es_ES"`
+    both `c("Sat", "Sun")` and `c("sáb", "dom")` mean the weekend.
 
   - Numeric: integers 1-7 in
     [`lubridate::wday()`](https://lubridate.tidyverse.org/reference/day.html)

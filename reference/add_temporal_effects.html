@@ -39,7 +39,7 @@ them."><meta property="og:image" content="https://rodrigozepeda.github.io/tbl.no
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.35.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.35.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -171,7 +171,10 @@ use <code>date_col</code>.</p></dd>
 <dt id="arg-weekend-days">weekend_days<a class="anchor" aria-label="anchor" href="#arg-weekend-days"></a></dt>
 <dd><p>A character or numeric vector defining which days count as
 the weekend. Defaults to Saturday and Sunday.</p><ul><li><p>Character: day names or abbreviations, case-insensitive –
-<code>c("Mon", "Tuesday", "wed", ...)</code>.</p></li>
+<code>c("Mon", "Tuesday", "wed", ...)</code>. English names always work, whatever
+the session's locale is, and so do the names of the current locale, with
+or without their accents – under <code>LC_TIME = "es_ES"</code> both
+<code>c("Sat", "Sun")</code> and <code>c("sáb", "dom")</code> mean the weekend.</p></li>
 <li><p>Numeric: integers 1-7 in <code><a href="https://lubridate.tidyverse.org/reference/day.html" class="external-link">lubridate::wday()</a></code> numbering with
 <code>week_start = 1</code>, so <strong>1 = Monday</strong> and 7 = Sunday.</p></li>
 </ul></dd>

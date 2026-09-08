@@ -124,7 +124,8 @@ version from [GitHub](https://github.com/):
 
 ``` r
 
-install.packages("tbl.now", repos = "https://rodrigozepeda.r-universe.dev")
+install.packages("tbl.now", repos = c("https://rodrigozepeda.r-universe.dev",
+getOption("repos")))
 ```
 
 and checkout our articles starting with the

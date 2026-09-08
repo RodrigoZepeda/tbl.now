@@ -3,7 +3,9 @@
 Provides a 'tbl_now' class for temporal data for performing nowcasts.
 The 'tbl_now' allows for easy manipulation of event dates, report dates,
 strata and covariates for implementing different nowcasting models while
-at the same time permitting ease of use with 'dplyr' functions.
+at the same time permitting ease of use with 'dplyr' functions. It also
+provides a grammar to systematize nowcasting across several frameworks
+and produce ensemble nowcasts.
 
 ## Details
 
@@ -94,6 +96,10 @@ and
 Useful links:
 
 - <https://rodrigozepeda.github.io/tbl.now/>
+
+- <https://github.com/RodrigoZepeda/tbl.now>
+
+- Report bugs at <https://github.com/RodrigoZepeda/tbl.now/issues>
 
 ## Author
 

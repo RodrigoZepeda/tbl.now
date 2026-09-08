@@ -57,12 +57,12 @@ install.packages(c("baselinenowcast", "EpiNow2", "NobBS", "surveillance"))
 
 # Not on CRAN:
 install.packages("cmdstanr",   repos = c('https://stan-dev.r-universe.dev', getOption("repos")))
-install.packages("epidist",    repos = "https://epinowcast.r-universe.dev")
-install.packages("epinowcast", repos = "https://epinowcast.r-universe.dev")
-
-# Packages from Github:
-install.packages("pak") 
-pak::pkg_install("RodrigoZepeda/diseasenowcasting")
+install.packages("epidist",    repos = c('https://epinowcast.r-universe.dev', 
+getOption("repos")))
+install.packages("epinowcast", repos = c("https://epinowcast.r-universe.dev",
+getOption("repos")))
+install.packages("diseasenowcasting", repos = c("https://rodrigozepeda.r-universe.dev",
+getOption("repos")))
 ```
 
 ## The data
