@@ -43,10 +43,13 @@ jobs:
           use-public-rspm: true
           # Neither epidist/epinowcast (nor their dep primarycensored) nor
           # almanac are on CRAN; almanac was archived, so it comes from the
-          # author's r-universe.
+          # author's r-universe. diseasenowcasting is not on CRAN either --
+          # DESCRIPTION's Additional_repositories is CRAN metadata only, pak
+          # never reads it, so the repo has to be listed here as well.
           extra-repositories: |
             https://epinowcast.r-universe.dev
             https://davisvaughan.r-universe.dev
+            https://rodrigozepeda.r-universe.dev
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
