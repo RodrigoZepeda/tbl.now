@@ -181,7 +181,9 @@ tbl_now_attributes <- function(x) {
     return(from[0])
   }
   if (identical(units, "numeric") || !lubridate::is.Date(from)) {
-    seq(from, to, by = 1)
+    out <- seq(from, to, by = 1)
+    if (is.integer(from)) out <- as.integer(out)
+    out
   } else {
     seq(from, to, by = as.character(units))
   }

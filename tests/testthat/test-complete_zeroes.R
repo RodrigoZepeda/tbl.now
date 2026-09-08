@@ -286,6 +286,28 @@ test_that("complete_zeroes carries yearly cumulative counts across generated del
   )
 })
 
+test_that("complete_zeroes preserves integer numeric axes", {
+  x <- tbl_now(
+    tibble(
+      event = as.integer(c(0, 0, 1)),
+      report = as.integer(c(0, 1, 1)),
+      n = c(2, 3, 4)
+    ),
+    event_date = event, report_date = report, case_count = n,
+    data_type = "count-cumulative", units = "numeric",
+    now = 2L, verbose = FALSE
+  )
+
+  out <- suppressWarnings(complete_zeroes(x, max_delay = 2))
+
+  expect_s3_class(out, "tbl_now")
+  expect_equal(get_data_type(out), "count-cumulative")
+  expect_equal(get_event_units(out), "numeric")
+  expect_equal(get_report_units(out), "numeric")
+  expect_type(out$event, "integer")
+  expect_type(out$report, "integer")
+})
+
 # ---- error cases ----
 
 test_that("complete_zeroes errors on linelist data", {

@@ -190,8 +190,7 @@ reference:
   - tidy.nowcast
   - tidy.tbl_nowcast
   - tidy.nowcast_backtest
-  - tidy.epidist_fit
-  - tidy.estimate_dist
+  - tidy.delay_distribution
 
 - title: dplyr integration
   desc: The methods that keep the class alive inside a pipeline.

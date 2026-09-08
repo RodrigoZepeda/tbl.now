@@ -47,10 +47,11 @@ jobs:
         with:
           use-public-rspm: true
           # Same set as pkgdown.yaml: neither epidist/epinowcast (nor their dep
-          # primarycensored) nor almanac are on CRAN.
+          # primarycensored), almanac, nor diseasenowcasting are on CRAN.
           extra-repositories: |
             https://epinowcast.r-universe.dev
             https://davisvaughan.r-universe.dev
+            https://rodrigozepeda.r-universe.dev
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:

@@ -28,9 +28,8 @@ the data does not say which way.}
 \item{\code{"net"}}{confirmed \strong{minus} retracted -- the running total as a
 surveillance system publishes it, which can go \strong{down} when a case is
 withdrawn. This is the quantity a \code{count-cumulative} stream actually
-reports, and the one \pkg{diseasenowcasting}'s signed-increment
-(Skellam / SkNB) likelihood is built for; see
-\code{\link[diseasenowcasting:confirmation_process]{diseasenowcasting::confirmation_process()}}.}
+reports, and the one \pkg{diseasenowcasting}'s cumulative signed-change
+likelihood is built for.}
 \item{\code{"by_type"}}{one row per outcome instead of one number: the
 outcome column joins the keys, so you get pending, confirmed and
 retracted side by side.}

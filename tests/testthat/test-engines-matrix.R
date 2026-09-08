@@ -146,7 +146,9 @@ for (engine_name in c(
               bad = is.unsorted(.data$.value[order(.data$.quantile_level)]),
               .groups = "drop"
             )
-          if (any(crossing$bad)) problems <- c(problems, "quantiles cross")
+          if (any(crossing$bad, na.rm = TRUE)) {
+            problems <- c(problems, "quantiles cross")
+          }
         }
 
         if (length(problems)) {
@@ -166,7 +168,7 @@ test_that("a numeric event grid is modelled or refused, never faked", {
   # and `as.Date()` on those anchors them at 1970. An engine that "works" on a
   # numeric grid by inventing 1970 dates is worse than one that refuses.
   for (engine_name in available_engines()) {
-    spec <- ENGINE_SPEC[[engine_name]]
+    spec <- engine_current_spec(engine_name)
     x <- engine_fixture(units = "numeric", data_type = "count-incidence", n_periods = 30L)
     set.seed(20260825L)
     out <- try_run_nowcast(engine_name, x)
@@ -225,12 +227,11 @@ test_that("weekly data is modelled on a weekly grid, not a daily one", {
 test_that("each data type is either modelled or refused with a reason", {
   # THE REAL-FIT TIER. No `engine_dry_args()` here on purpose: the 24-shape grid
   # above runs the engines in their cheapest mode, so this is the only place
-  # that exercises the actual sampler. `count-cumulative` is the shape that
-  # needs `confirmation_process()` -- without it `diseasenowcasting` reports
-  # "Joint fit failed to converge for all init attempts" -- and it is worth the
-  # ~24 s it costs. Do not make this one cheaper.
+    # that exercises the actual sampler. `count-cumulative` is the shape where
+    # `diseasenowcasting` should select its cumulative model automatically, and
+    # it is worth the ~24 s it costs. Do not make this one cheaper.
   for (engine_name in available_engines(fast_only = TRUE)) {
-    spec <- ENGINE_SPEC[[engine_name]]
+    spec <- engine_current_spec(engine_name)
     for (data_type in c("linelist", "count-incidence", "count-cumulative")) {
       x <- engine_fixture(units = "days", data_type = data_type, n_periods = 30L)
       set.seed(20260825L)

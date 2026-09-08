@@ -197,9 +197,9 @@ replay(display$card_dnc)
 
 **Watch for:** it is also the one engine whose *model* you can swap without
 changing packages — see the ensemble below, which uses two of them. On
-`count-cumulative` data that revises downwards, pass a
-`model(confirmation = confirmation_process())`, or the de-accumulated negatives
-have nowhere to go.
+`count-cumulative` data, diseasenowcasting selects its cumulative model
+automatically unless you pass an explicit
+`model(cumulative = cumulative_process())`.
 
 #### epinowcast
 

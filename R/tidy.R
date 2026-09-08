@@ -732,67 +732,90 @@ tidy.estimate_truncation <- function(x, probs = NULL, ...) {
   draws
 }
 
-#' Tidy the delay distribution from an \pkg{EpiNow2} `estimate_dist()` fit
+#' Tidy a fitted delay distribution
 #'
 #' @description `r lifecycle::badge("experimental")`
 #'
-#' [EpiNow2::estimate_dist()] (new in \pkg{EpiNow2} 1.9.0) estimates a
-#' **reporting-delay distribution**, not a nowcast, so -- like
-#' [tidy.epidist_fit()] -- this returns a *delay-shaped* table: one row per
-#' distribution parameter, with `term` rather than `event_date`.
+#' \pkg{epidist} and [EpiNow2::estimate_dist()] (new in \pkg{EpiNow2} 1.9.0) do
+#' not produce a nowcast: they estimate a **reporting-delay distribution**. There
+#' are therefore no per-event-date case estimates to tidy, and the columns
+#' [tidy.nowcast()] promises (`event_date`, `stratum`, ...) would all be
+#' meaningless. Both methods instead return the same *delay-shaped* table: one
+#' row per distribution parameter, with `term` rather than `event_date`, so the
+#' two packages' fits can be compared side by side.
 #'
 #' @section Value:
 #'
-#' One row per parameter of the fitted distribution -- whichever `dist` was
-#' fitted, named as \pkg{EpiNow2} names them -- plus the derived **`mean`** and
-#' **`sd`** of the delay, which are the numbers most people want and which make
-#' the result directly comparable with [tidy.epidist_fit()].
+#' A [tibble][tibble::tibble] with one row per parameter of the fitted delay
+#' distribution -- whichever family was fitted, named as the fitting package
+#' names it -- plus the derived **`mean`** and **`sd`** of the delay, which are
+#' the numbers most people actually want. The columns are:
+#'
+#' \describe{
+#'   \item{`term`}{`character`. The parameter: the distribution's own parameters
+#'     (`mu`, `sigma`, ...) plus `mean` and `sd`.}
+#'   \item{`estimate`}{`numeric`. Posterior median.}
+#'   \item{`conf.low`, `conf.high`}{`numeric`. Interval bounds, following
+#'     \pkg{broom}'s naming.}
+#'   \item{`level`}{`numeric`. The width of that interval.}
+#'   \item{`engine`}{`character`. `"epidist"` or `"EpiNow2"`.}
+#' }
 #'
 #' Everything is summarised from the posterior draws, so `level` is the interval
 #' you asked for rather than whichever `CrIs` the fit happened to use, and
-#' `probs` can add any quantile.
+#' `probs` appends one `q*` column per requested probability -- a real quantile
+#' rather than an approximation.
 #'
 #' @section How `mean` and `sd` are obtained:
 #'
-#' Not from the family's algebra. \pkg{EpiNow2} can fit five families today and
-#' may add more, and a `switch()` in this package would quietly stop reporting
-#' anything the day it does. Instead each draw's parameters are put back into the
-#' fit's own `dist_spec` and discretised with [EpiNow2::discretise()], which
-#' knows the families; the moments are then a summation over the PMF. Nothing
-#' here names a distribution, so a new family works as soon as `discretise()`
-#' supports it.
+#' \pkg{epidist} reports continuous-distribution moments via
+#' `epidist::add_mean_sd()`.
 #'
-#' The trade-off is that these are the moments of the **discretised** delay --
-#' the distribution \pkg{EpiNow2} convolves with downstream. Against the closed
-#' forms the mean is exact and the sd runs about 1% high, that being the variance
-#' a discrete grid adds. \pkg{epidist} reports continuous-distribution moments
-#' via `epidist::add_mean_sd()`, so expect a difference of that order when
-#' comparing the two.
+#' \pkg{EpiNow2} gets them without naming a distribution. It can fit five
+#' families today and may add more, and a `switch()` in this package would
+#' quietly stop reporting anything the day it does. Instead each draw's
+#' parameters are put back into the fit's own `dist_spec` and discretised with
+#' [EpiNow2::discretise()], which knows the families; the moments are then a
+#' summation over the PMF. A new family works as soon as `discretise()` supports
+#' it.
+#'
+#' The trade-off is that the \pkg{EpiNow2} numbers are the moments of the
+#' **discretised** delay -- the distribution \pkg{EpiNow2} convolves with
+#' downstream. Against the closed forms the mean is exact and the sd runs about
+#' 1% high, that being the variance a discrete grid adds. Expect a difference of
+#' that order when comparing the two packages' fits.
 #'
 #' @section A name collision worth knowing about:
 #'
 #' `summary()` on an `estimate_dist` fit has `mean` and `sd` **columns**, and
 #' those are the posterior mean and sd **of the parameter** on that row -- not of
-#' the delay. The `mean` and `sd` this method reports are **rows**, and are the
-#' delay distribution's own moments, matching [tidy.epidist_fit()]. Same words,
-#' different quantities.
+#' the delay. The `mean` and `sd` these methods report are **rows**, and are the
+#' delay distribution's own moments. Same words, different quantities.
 #'
-#' @param x A fit from [EpiNow2::estimate_dist()].
+#' @section Dispatch:
+#'
+#' `epidist()` returns an object of class `c("brmsfit", "epidist_fit")`, in that
+#' order, so if \pkg{broom.mixed} is loaded its `tidy.brmsfit()` method matches
+#' **first** and you get raw \pkg{brms} parameters instead of this table. Call
+#' `tidy.epidist_fit(fit)` explicitly when you want the delay distribution and
+#' cannot be sure which method will win.
+#'
+#' @param x A fit from [epidist::epidist()] or [EpiNow2::estimate_dist()].
 #' @param probs Optional numeric vector of probabilities in `[0, 1]`, adding one
 #'   `q*` column each.
-#' @param level Width of the reported interval. Defaults to `0.95`, matching
-#'   [tidy.epidist_fit()].
+#' @param level Width of the reported interval. Defaults to `0.95`.
+#' @param newdata `tidy.epidist_fit()` only. Optional data frame passed to
+#'   [epidist::predict_delay_parameters()], for a fit with covariates in the
+#'   delay model (`formula = mu ~ 1 + gender`, say). `NULL` uses the fit's own
+#'   data.
 #' @param ... Unused, for generic consistency.
 #'
-#' @returns A tibble with `term`, `estimate`, `conf.low`, `conf.high`, `level`
-#'   and `engine`.
+#' @returns A tibble, as described in *Value*.
 #'
 #' @seealso
-#' [tidy.epidist_fit()] for the \pkg{epidist} equivalent, and the note above on
-#' why their `sd` values differ slightly;
-#' [tbl_now_to_EpiNow2()] for the conversion;
+#' [tbl_now_to_epidist()] and [tbl_now_to_EpiNow2()] for the conversions;
 #' [tidy()][tidy.nowcast] for tidying a *case-count* nowcast rather than a delay
-#' distribution; [revision_delay] for the delay this is estimating.
+#' distribution; [revision_delay] for the delay these are estimating.
 #'
 #' @examplesIf requireNamespace("EpiNow2", quietly = TRUE)
 #' data(denguedat)
@@ -827,7 +850,8 @@ tidy.estimate_truncation <- function(x, probs = NULL, ...) {
 #'   print(tidy(fit, probs = c(0.05, 0.95)))
 #' }
 #'
-#' @rdname tidy.estimate_dist
+#' @name tidy.delay_distribution
+#' @rdname tidy.delay_distribution
 #' @exportS3Method generics::tidy
 tidy.estimate_dist <- function(x, probs = NULL, level = 0.95, ...) {
   .need_pkg("EpiNow2")
@@ -1004,89 +1028,7 @@ tidy.list <- function(x, probs = NULL, engine = NULL, level = NULL, ...) {
   NULL
 }
 
-#' Tidy the delay distribution from an \pkg{epidist} fit
-#'
-#' @description `r lifecycle::badge("experimental")`
-#'
-#' \pkg{epidist} is the one supported package that does **not** produce a
-#' nowcast. It estimates the **reporting-delay distribution**, so there are no
-#' per-event-date case estimates to tidy and the columns
-#' [tidy.nowcast()] promises (`event_date`, `stratum`, ...) would all be
-#' meaningless. This method therefore returns a different, delay-shaped table --
-#' one row per distribution parameter rather than one row per date.
-#'
-#' @section Value:
-#'
-#' A [tibble][tibble::tibble] with one row per parameter of the fitted delay
-#' distribution and these columns:
-#'
-#' \describe{
-#'   \item{`term`}{`character`. The parameter: the distribution's own parameters
-#'     (`mu`, `sigma`, ... -- whichever the `family` has) plus the derived
-#'     `mean` and `sd`, which are the numbers most people actually want.}
-#'   \item{`estimate`}{`numeric`. Posterior median.}
-#'   \item{`conf.low`, `conf.high`}{`numeric`. Interval bounds, following
-#'     \pkg{broom}'s naming.}
-#'   \item{`level`}{`numeric`. The width of that interval.}
-#'   \item{`engine`}{`character`. Always `"epidist"`.}
-#' }
-#'
-#' `probs` appends one `q*` column per requested probability, exactly as it does
-#' for the nowcast methods -- the fit exposes draws, so any quantile is real
-#' rather than an approximation.
-#'
-#' @section Dispatch:
-#'
-#' `epidist()` returns an object of class `c("brmsfit", "epidist_fit")`, in that
-#' order, so if \pkg{broom.mixed} is loaded its `tidy.brmsfit()` method matches
-#' **first** and you get raw \pkg{brms} parameters instead of this table. Call
-#' `tidy.epidist_fit(fit)` explicitly when you want the delay distribution and
-#' cannot be sure which method will win.
-#'
-#' @param x A fit from [epidist::epidist()].
-#' @param probs Optional numeric vector of probabilities in `[0, 1]`, adding one
-#'   `q*` column each.
-#' @param level Width of the reported interval. Defaults to `0.95`.
-#' @param newdata Optional data frame passed to
-#'   [epidist::predict_delay_parameters()], for a fit with covariates in the
-#'   delay model (`formula = mu ~ 1 + gender`, say). `NULL` uses the fit's own
-#'   data.
-#' @param ... Unused, for generic consistency.
-#'
-#' @returns A tibble, as described in *Value*.
-#'
-#' @seealso [tidy.nowcast()] for the case-count nowcast engines,
-#'   [tbl_now_to_epidist()] for the conversion.
-#'
-#' @examplesIf requireNamespace("epidist", quietly = TRUE)
-#' data(denguedat)
-#' # A short window: fitting a delay distribution does not need twenty years of
-#' # data, and Stan is slow.
-#' recent <- subset(denguedat, onset_week >= as.Date("2010-06-01"))
-#' nowobj <- tbl_now(recent,
-#'   event_date = "onset_week", report_date = "report_week", verbose = FALSE
-#' )
-#'
-#' ## The conversion itself is quick, and is what tidy() will later summarise.
-#' converted <- suppressWarnings(tbl_now_to_epidist(nowobj, verbose = FALSE))
-#' head(converted)
-#'
-#' # Fitting compiles a Stan model, so this takes about a minute even on a short
-#' ## chain. `try()` guards the case where \pkg{epidist} is installed but its Stan
-#' # toolchain is not; use \pkg{brms}'s defaults for real work.
-#' fit <- try(
-#'   converted |>
-#'     epidist::as_epidist_marginal_model() |>
-#'     epidist::epidist(chains = 1, iter = 200, refresh = 0),
-#'   silent = TRUE
-#' )
-#'
-#' if (!inherits(fit, "try-error")) {
-#'   print(tidy(fit))
-#'   print(tidy(fit, probs = c(0.05, 0.95)))
-#' }
-#'
-#' @rdname tidy.epidist_fit
+#' @rdname tidy.delay_distribution
 #' @exportS3Method generics::tidy
 tidy.epidist_fit <- function(x, probs = NULL, level = 0.95, newdata = NULL,
                              ...) {

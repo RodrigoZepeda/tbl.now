@@ -768,7 +768,8 @@ tbl_now <- function(data,
   int_delay <- as.integer(round(delay_vals))
 
   if (units == "numeric") {
-    new_vals <- if (direction == "add") known_vals + delay_vals else known_vals - delay_vals
+    new_vals <- if (direction == "add") known_vals + int_delay else known_vals - int_delay
+    new_vals <- as.integer(new_vals)
   } else if (units == "days") {
     new_vals <- if (direction == "add") known_vals + lubridate::days(int_delay) else known_vals - lubridate::days(int_delay)
   } else if (units == "weeks") {
