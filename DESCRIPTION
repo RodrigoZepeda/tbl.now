@@ -22,7 +22,7 @@ Depends:
 Suggests:
     almanac,
     baselinenowcast,
-    diseasenowcasting (>= 2.1.0),
+    diseasenowcasting (>= 2.3.0),
     data.table,
     epidist,
     EpiNow2 (>= 1.9.0),

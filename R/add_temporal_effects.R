@@ -316,12 +316,14 @@ add_temporal_effects.data.frame <- function(x, t_effects = NULL, overwrite = FAL
       # would fit a linear-plus-quadratic trend ACROSS weekdays, which is the
       # continuous problem in disguise. `epinowcast`'s own `metareference` uses
       # a plain factor; match it.
+      # The names come from `.weekday_name_en()` rather than from
+      # `lubridate::wday(label = TRUE)`, which labels days in the locale's own
+      # language -- under `LC_TIME = "es_ES"` that produced "sabado", which
+      # matches none of the levels below and left the whole column `NA`.
       x <- x |>
         dplyr::mutate(!!as.symbol(paste0(name_prefix, "_day_of_week")) :=
           factor(
-            as.character(lubridate::wday(
-              !!as.symbol(date_col), label = TRUE, abbr = FALSE
-            )),
+            .weekday_name_en(!!as.symbol(date_col)),
             levels = c(
               "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday",
               "Friday", "Saturday"

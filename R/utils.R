@@ -18,6 +18,119 @@ attr_default <- function(x, name, default = NULL) {
   if (is.null(val)) default else val
 }
 
+#' Normalise a day name for locale-insensitive matching
+#'
+#' Lower-cases, strips accents (where the platform can transliterate them) and
+#' drops every non-alphanumeric character, so that `"Sáb."`, `"sab"` and
+#' `"SAB"` all collapse to the same key. Scripts that cannot be transliterated
+#' to ASCII (Cyrillic, Han, ...) are left as they are; both sides of the
+#' comparison go through this function, so they still match each other.
+#'
+#' @param x A character vector (or anything coercible to one).
+#'
+#' @return A character vector of normalised keys, the same length as `x`.
+#'
+#' @keywords internal
+#' @noRd
+.normalize_day_name <- function(x) {
+  x <- trimws(as.character(x))
+
+  # Day names taken from the locale come back with their encoding unset, and
+  # `iconv()` would then mangle them byte by byte -- which is exactly what
+  # happens under `LC_CTYPE = "C"`, as in a plain `Rscript` session. Declare
+  # the encoding of anything that is valid UTF-8 before transliterating.
+  enc <- Encoding(x)
+  is_utf8 <- enc == "unknown" & !is.na(x) & validUTF8(x)
+  enc[is_utf8] <- "UTF-8"
+  Encoding(x) <- enc
+
+  ascii <- suppressWarnings(iconv(x, "UTF-8", "ASCII//TRANSLIT"))
+  x <- ifelse(is.na(ascii), x, ascii)
+
+  # Only spaces and punctuation are dropped, so that the accent `//TRANSLIT`
+  # leaves behind ("s'ab") goes away while scripts it cannot transliterate at
+  # all (Cyrillic, Han, ...) survive intact.
+  gsub("[[:space:][:punct:]]", "", tolower(x))
+}
+
+#' Day names known to [is_weekday()], in ISO order
+#'
+#' Monday is 1 and Sunday is 7, matching `lubridate::wday(week_start = 1)`.
+#' The English names are hard-coded so that they keep working under any
+#' `LC_TIME`; the names of the *current* locale are added on top, so a user
+#' running under, say, `es_ES` can write `c("sáb", "dom")` just as naturally.
+#'
+#' @return A list with `full` and `abbr` (character vectors of names) and
+#' `index` (the ISO weekday number each of those names refers to).
+#'
+#' @keywords internal
+#' @noRd
+.day_name_table <- function() {
+  # 2020-04-06 was a Monday, so this is Monday ... Sunday.
+  ref <- as.Date("2020-04-06") + 0:6
+  english_full <- c(
+    "Monday", "Tuesday", "Wednesday", "Thursday",
+    "Friday", "Saturday", "Sunday"
+  )
+
+  list(
+    full  = c(english_full, format(ref, "%A")),
+    abbr  = c(substr(english_full, 1, 3), format(ref, "%a")),
+    index = rep(1:7, times = 2)
+  )
+}
+
+#' Turn day names into ISO weekday numbers
+#'
+#' Accepts full names or abbreviations, in English or in the current locale,
+#' with or without accents and in any case.
+#'
+#' @param days A character (or factor) vector of day names.
+#'
+#' @return An integer vector of weekday numbers (1 = Monday ... 7 = Sunday),
+#' `NA` where a name could not be resolved.
+#'
+#' @keywords internal
+#' @noRd
+.weekday_index <- function(days) {
+  tab  <- .day_name_table()
+  key  <- .normalize_day_name(days)
+  full <- .normalize_day_name(tab$full)
+  abbr <- .normalize_day_name(tab$abbr)
+
+  # Exact match against every known full name and abbreviation.
+  out <- c(tab$index, tab$index)[match(key, c(full, abbr))]
+
+  # Anything left over is matched as a prefix of a full name, which is how
+  # abbreviations that are not the locale's own ("Sabad", "Miercol") resolve.
+  # Only unambiguous prefixes count.
+  for (i in which(is.na(out) & nzchar(key))) {
+    hit <- unique(tab$index[startsWith(full, key[i])])
+    if (length(hit) == 1L) out[i] <- hit
+  }
+
+  as.integer(out)
+}
+
+#' English weekday names, whatever the locale is
+#'
+#' `lubridate::wday(label = TRUE)` labels days in the locale's language, so a
+#' column built from it cannot be matched against fixed English levels. This
+#' goes through the ISO weekday number instead, and is therefore stable.
+#'
+#' @param date A Date (or POSIXt) vector.
+#'
+#' @return A character vector of English day names, `NA` where `date` is `NA`.
+#'
+#' @keywords internal
+#' @noRd
+.weekday_name_en <- function(date) {
+  c(
+    "Monday", "Tuesday", "Wednesday", "Thursday",
+    "Friday", "Saturday", "Sunday"
+  )[lubridate::wday(date, week_start = 1)]
+}
+
 #' Is a date a weekday or a weekend?
 #'
 #' @description `r lifecycle::badge('stable')`
@@ -32,7 +145,10 @@ attr_default <- function(x, name, default = NULL) {
 #'   the weekend. Defaults to Saturday and Sunday.
 #'
 #'   * Character: day names or abbreviations, case-insensitive --
-#'     `c("Mon", "Tuesday", "wed", ...)`.
+#'     `c("Mon", "Tuesday", "wed", ...)`. English names always work, whatever
+#'     the session's locale is, and so do the names of the current locale, with
+#'     or without their accents -- under `LC_TIME = "es_ES"` both
+#'     `c("Sat", "Sun")` and `c("sáb", "dom")` mean the weekend.
 #'
 #'   * Numeric: integers 1-7 in [lubridate::wday()] numbering with
 #'     `week_start = 1`, so **1 = Monday** and 7 = Sunday.
@@ -60,6 +176,10 @@ attr_default <- function(x, name, default = NULL) {
 #' ## Weekend on Sun - Mon (numeric: 7 = Sun, 1 = Mon)
 #' is_weekday(as.Date("2020-04-20"), weekend_days = c(7, 1))
 #'
+#' ## Day names of the session's own locale are understood too
+#' locale_weekend <- format(as.Date(c("2020-04-18", "2020-04-19")), "%a")
+#' is_weekday(as.Date("2020-04-18"), weekend_days = locale_weekend)
+#'
 #' @export
 #' @md
 is_weekday <- function(date, weekend_days = c("Sat", "Sun")) {
@@ -67,15 +187,16 @@ is_weekday <- function(date, weekend_days = c("Sat", "Sun")) {
   weekend_idx <- if (is.numeric(weekend_days)) {
     as.integer(weekend_days)
   } else {
-    all_days <- lubridate::wday(1:7, label = TRUE, abbr = TRUE, week_start = 1) |> sort()
-    weekend_days_clean <- tolower(substr(weekend_days, 1, 3))
-    day_lookup <- tolower(substr(as.character(all_days), 1, 3))
-    match(weekend_days_clean, day_lookup)
+    .weekday_index(weekend_days)
   }
 
   # Invalid weekend specification
   if (any(is.na(weekend_idx)) || any(weekend_idx < 1 | weekend_idx > 7)) {
-    cli::cli_abort("Invalid `weekend_days` provided. Must be integer (1 to 7) or day names: {lubridate::wday(1:7, label = TRUE, abbr = TRUE)}")
+    valid <- unique(.day_name_table()$abbr)
+    cli::cli_abort(c(
+      "Invalid {.arg weekend_days} provided.",
+      "i" = "Must be integers (1 to 7, 1 = Monday) or day names: {.val {valid}}."
+    ))
   }
 
   # Compute wday with given start-of-week

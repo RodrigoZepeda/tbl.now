@@ -98,6 +98,103 @@ test_that("is_weekday handles abbreviated and full day names", {
   expect_false(is_weekday(as.Date("2020-04-22"), weekend_days = c("wed", "Thursday")))
 })
 
+# A locale is only usable if the platform actually has it installed, which is
+# not guaranteed on a check machine, so every test below skips itself when the
+# locale it needs is unavailable.
+local_time_locale <- function(locale, env = parent.frame()) {
+  old <- Sys.getlocale("LC_TIME")
+  set <- suppressWarnings(Sys.setlocale("LC_TIME", locale))
+  if (!nzchar(set)) {
+    testthat::skip(paste0("LC_TIME locale '", locale, "' is not available"))
+  }
+  withr::defer(Sys.setlocale("LC_TIME", old), envir = env)
+  invisible(set)
+}
+
+test_that("is_weekday accepts English day names in any locale", {
+  # The bug: day names were matched against `lubridate::wday(label = TRUE)`,
+  # which speaks the locale's language, so under `es_ES` the DEFAULT
+  # `weekend_days = c("Sat", "Sun")` had nothing to match and errored.
+  for (locale in c("es_ES.UTF-8", "fr_FR.UTF-8", "de_DE.UTF-8", "ja_JP.UTF-8")) {
+    old <- Sys.getlocale("LC_TIME")
+    if (!nzchar(suppressWarnings(Sys.setlocale("LC_TIME", locale)))) next
+    on.exit(Sys.setlocale("LC_TIME", old), add = TRUE)
+
+    expect_false(is_weekday(as.Date("2020-04-18")), info = locale) # Saturday
+    expect_true(is_weekday(as.Date("2020-04-17")), info = locale) # Friday
+    expect_false(
+      is_weekday(as.Date("2020-04-17"), weekend_days = c("Fri", "Sat")),
+      info = locale
+    )
+    expect_false(
+      is_weekday(as.Date("2020-04-19"), weekend_days = "Sunday"),
+      info = locale
+    )
+  }
+})
+
+test_that("is_weekday accepts the day names of the current locale", {
+  # Whatever the locale is, its own names for Saturday and Sunday work.
+  saturday <- as.Date("2020-04-18")
+  sunday <- as.Date("2020-04-19")
+  monday <- as.Date("2020-04-20")
+
+  for (fmt in c("%a", "%A")) {
+    weekend <- format(c(saturday, sunday), fmt)
+    expect_false(is_weekday(saturday, weekend_days = weekend), info = fmt)
+    expect_false(is_weekday(sunday, weekend_days = weekend), info = fmt)
+    expect_true(is_weekday(monday, weekend_days = weekend), info = fmt)
+  }
+})
+
+test_that("Spanish day names work, with or without their accents", {
+  local_time_locale("es_ES.UTF-8")
+
+  saturday <- as.Date("2020-04-18")
+  wednesday <- as.Date("2020-04-22")
+
+  # Abbreviated, full, accentless and upper case all resolve to the same day.
+  expect_false(is_weekday(saturday, weekend_days = c("s\u00e1b", "dom")))
+  expect_false(is_weekday(saturday, weekend_days = c("sab", "dom")))
+  expect_false(is_weekday(saturday, weekend_days = c("SAB", "DOM")))
+  expect_false(is_weekday(saturday, weekend_days = c("s\u00e1bado", "domingo")))
+  expect_false(is_weekday(wednesday, weekend_days = "mi\u00e9rcoles"))
+  expect_false(is_weekday(wednesday, weekend_days = "miercoles"))
+
+  # English and locale names can be mixed.
+  expect_false(is_weekday(saturday, weekend_days = c("Sat", "domingo")))
+  expect_true(is_weekday(as.Date("2020-04-20"), weekend_days = c("Sat", "domingo")))
+
+  # A name that is a day in neither language is still an error.
+  expect_error(
+    is_weekday(saturday, weekend_days = "Funday"),
+    "Invalid `weekend_days` provided"
+  )
+})
+
+test_that("day_of_week effects are labelled in English in any locale", {
+  # `lubridate::wday(label = TRUE)` labels in the locale's language, which used
+  # to leave the whole column `NA` outside an English locale, since the factor
+  # levels are (deliberately) the English names `epinowcast` uses.
+  local_time_locale("es_ES.UTF-8")
+
+  df <- data.frame(date = as.Date("2020-04-13") + 0:6) # Monday .. Sunday
+  out <- add_temporal_effects(
+    df,
+    date_col = "date",
+    t_effects = temporal_effects(day_of_week = TRUE, weekend = TRUE)
+  )
+
+  expect_equal(
+    as.character(out$.date_day_of_week),
+    c(
+      "Monday", "Tuesday", "Wednesday", "Thursday",
+      "Friday", "Saturday", "Sunday"
+    )
+  )
+  expect_equal(out$.date_weekend, c(0L, 0L, 0L, 0L, 0L, 1L, 1L))
+})
+
 test_that("is_weekday errors on invalid weekend_days", {
   # Invalid character
   expect_error(
