@@ -563,9 +563,8 @@ get_nth_reported_cases <- function(x, delay, type = "total") {
 #'     \item{`"net"`}{confirmed **minus** retracted -- the running total as a
 #'       surveillance system publishes it, which can go **down** when a case is
 #'       withdrawn. This is the quantity a `count-cumulative` stream actually
-#'       reports, and the one \pkg{diseasenowcasting}'s signed-increment
-#'       (Skellam / SkNB) likelihood is built for; see
-#'       [diseasenowcasting::confirmation_process()].}
+#'       reports, and the one \pkg{diseasenowcasting}'s cumulative signed-change
+#'       likelihood is built for.}
 #'     \item{`"by_type"`}{one row per outcome instead of one number: the
 #'       outcome column joins the keys, so you get pending, confirmed and
 #'       retracted side by side.}

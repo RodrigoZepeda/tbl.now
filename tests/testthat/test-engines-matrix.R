@@ -225,10 +225,9 @@ test_that("weekly data is modelled on a weekly grid, not a daily one", {
 test_that("each data type is either modelled or refused with a reason", {
   # THE REAL-FIT TIER. No `engine_dry_args()` here on purpose: the 24-shape grid
   # above runs the engines in their cheapest mode, so this is the only place
-  # that exercises the actual sampler. `count-cumulative` is the shape that
-  # needs `confirmation_process()` -- without it `diseasenowcasting` reports
-  # "Joint fit failed to converge for all init attempts" -- and it is worth the
-  # ~24 s it costs. Do not make this one cheaper.
+    # that exercises the actual sampler. `count-cumulative` is the shape where
+    # `diseasenowcasting` should select its cumulative model automatically, and
+    # it is worth the ~24 s it costs. Do not make this one cheaper.
   for (engine_name in available_engines(fast_only = TRUE)) {
     spec <- ENGINE_SPEC[[engine_name]]
     for (data_type in c("linelist", "count-incidence", "count-cumulative")) {

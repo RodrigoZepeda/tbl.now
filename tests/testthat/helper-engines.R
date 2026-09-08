@@ -261,26 +261,7 @@ engine_args <- function(engine, x) {
   periods <- length(unique(x[[get_event_date(x)]]))
   switch(engine,
     baselinenowcast = list(draws = 50),
-    # A `count-cumulative` stream needs a CONFIRMATION PROCESS: the signed
-    # increments it models can go down, and `model()`'s default is
-    # `no_revision()`, under which the fit reports "Joint fit failed to
-    # converge for all init attempts".
-    #
-    # `run_nowcast()` deliberately does not inject one -- picking a model
-    # component on the caller's behalf would change what the fit answers -- so
-    # the caller supplies it, and this is what that looks like.
-    diseasenowcasting = c(
-      list(n_draws = 100),
-      if (identical(get_data_type(x), "count-cumulative")) {
-        dnc_model <- getExportedValue("diseasenowcasting", "model")
-        dnc_confirmation_process <- getExportedValue(
-          "diseasenowcasting", "confirmation_process"
-        )
-        list(model = dnc_model(
-          confirmation = dnc_confirmation_process()
-        ))
-      }
-    ),
+    diseasenowcasting = list(n_draws = 100),
     surveillance = list(D = 3),
     NobBS = list(max_D = 3, moving_window = min(20L, periods)),
     epinowcast = list(
@@ -365,22 +346,15 @@ engine_dry_args <- function(engine) {
 
 #' Whether a dry run of this engine returns NA instead of numbers
 #'
-#' `diseasenowcasting`'s prior simulation does not support cumulative input (as
-#' of 2.1.0): every draw comes back `NA` while the SHAPE -- rows, strata, dates,
-#' quantile levels -- is still right, and it does so silently rather than
-#' erroring. The dry run therefore still proves the plumbing for those shapes;
-#' it just cannot say anything about the numbers, which the real fits cover.
-#'
-#' The grid asserts this is still true, so that an upstream fix shows up as a
-#' failure telling you to delete the exception rather than passing unnoticed.
+#' Kept as a named hook because the matrix test reports a precise failure if a
+#' future backend needs a shape-only dry-run exception.
 #'
 #' @param engine A method name.
 #' @param data_type A `tbl_now` data type.
 #'
 #' @return `TRUE` when the dry run cannot produce values.
 engine_dry_run_is_valueless <- function(engine, data_type) {
-  identical(engine, "diseasenowcasting") &&
-    identical(data_type, "count-cumulative")
+  FALSE
 }
 
 #' Build the `engine()` object for one method on one fixture

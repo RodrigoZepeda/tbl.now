@@ -373,8 +373,9 @@ is_nowcast_engine <- function(x) {
 #'   [diseasenowcasting::nowcast()]. `model` is where the epidemic and
 #'   revision processes are chosen, e.g.
 #'   `diseasenowcasting::model(epidemic = diseasenowcasting::ar1_epidemic())`.
-#'   On `count-cumulative` data that revises downwards you also want a
-#'   `revision` process, or the negative increments have nowhere to go.
+#'   On `count-cumulative` data, diseasenowcasting selects its cumulative model
+#'   automatically unless you supply one with
+#'   `diseasenowcasting::model(cumulative = diseasenowcasting::cumulative_process())`.
 #'
 #' @param draws,delays_unit,max_delay (`engine_baselinenowcast()`) Number of
 #'   nowcast samples, the unit of the reporting triangle's delay axis (inferred

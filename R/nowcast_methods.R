@@ -196,15 +196,10 @@ nowcast_fit.diseasenowcasting <- function(engine, x, ...,
   # directly -- including downward revisions, which de-accumulating would
   # destroy.
   #
-  # What a cumulative stream additionally needs is a CONFIRMATION PROCESS -- the
-  # retraction side of a series that revises down. That is a MODELLING choice,
-  # and it belongs to `diseasenowcasting`, not here: pass
-  # `model = diseasenowcasting::model(confirmation = ...)` through `...`. See
-  # `?diseasenowcasting::confirmation_process`.
-  #
-  # `run_nowcast()` deliberately does not inject one. Choosing a model component
-  # on the caller's behalf would mean the fit answers a question they did not
-  # ask, and they would have no way of seeing that it happened.
+  # Automatic model selection belongs to `diseasenowcasting::nowcast()`, not this
+  # adapter. For `count-cumulative` data, diseasenowcasting consumes the signed
+  # changes in the cumulative trajectory and selects its default cumulative
+  # process unless the caller supplied `model(cumulative = cumulative_process(...))`.
   #
   # Everything is looked up at run time rather than written
   # `diseasenowcasting::`. The package is GitHub-only and sits in no repository

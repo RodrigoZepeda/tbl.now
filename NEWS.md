@@ -1,3 +1,15 @@
+# tbl.now 0.35.0
+
+## diseasenowcasting engine follows the revision/cumulative API
+
+The diseasenowcasting engine documentation and tests now expect automatic model
+selection to live in `diseasenowcasting::nowcast()`. tbl.now passes the
+`tbl_now` and engine arguments through without injecting model components.
+
+For `count-cumulative` data, diseasenowcasting consumes signed changes in the
+cumulative trajectory and selects its cumulative model unless the caller
+supplies an explicit `model(cumulative = cumulative_process(...))`.
+
 # tbl.now 0.34.0
 
 ## Documentation clarifies scoring, covariates and article endings
@@ -932,9 +944,8 @@ The **outcome values are unchanged**: a case is still `"confirmed"`,
 `"retracted"` or `"pending"`. Revision is what the process does; confirmed is
 one of the things it can conclude.
 
-`diseasenowcasting::confirmation_process()` is that package's name and is
-untouched -- `model(confirmation = confirmation_process())` still reads exactly
-as it did.
+`diseasenowcasting` now uses `revision_process()` for row-level report
+resolution and `cumulative_process()` for count-cumulative signed changes.
 
 ## Documentation: fewer, fuller reference pages
 
@@ -1720,14 +1731,10 @@ biases any nowcast that treats the two alike.
 
 Every one of these was found by writing the tests, not before:
 
-* **`count-cumulative` data failed on `diseasenowcasting` for want of a
-  confirmation process.** `diseasenowcasting::nowcast()` auto-detects cumulative
-  data and switches to the signed-increment Skellam / SkNB likelihood, but that
-  likelihood needs a `confirmation_process()` -- the retraction side of a stream
-  that can revise **down** -- and `model()`'s default is `no_confirmation()`.
-  Without one the fit reports "Joint fit failed to converge for all init
-  attempts". Pass one through, as
-  `run_nowcast(x, "diseasenowcasting", model = model(confirmation = confirmation_process()))`.
+* **`count-cumulative` data failed on `diseasenowcasting` before automatic
+  cumulative selection lived in that package.** `diseasenowcasting::nowcast()`
+  now auto-detects cumulative data and selects its cumulative signed-change
+  model unless the caller supplies an explicit cumulative process.
 
   De-accumulating to incidence first would also "work", and is wrong: it
   discards the downward revisions the cumulative likelihood exists to model.
