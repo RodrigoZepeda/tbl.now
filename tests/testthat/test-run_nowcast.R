@@ -67,6 +67,17 @@ test_that("engine() validates its arguments at CONSTRUCTION time", {
   expect_named(engine_nobbs(max_D = 3)$args, "max_D")
 })
 
+test_that("engine_diseasenowcasting leaves automatic selection to diseasenowcasting", {
+  spec <- engine_diseasenowcasting(type = "auto", n_draws = 25)
+
+  expect_equal(spec$name, "diseasenowcasting")
+  expect_equal(spec$args$type, "auto")
+  expect_equal(spec$args$n_draws, 25)
+  expect_false("revision" %in% names(spec$args))
+  expect_false("cumulative" %in% names(spec$args))
+  expect_false("confirmation" %in% names(spec$args))
+})
+
 test_that("run_nowcast() refuses a bare method name, and says what to write", {
   x <- toy_tbl_now()
   expect_error(run_nowcast(x, "testtoy"), "engine")

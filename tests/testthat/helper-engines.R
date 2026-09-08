@@ -162,15 +162,13 @@ ENGINE_SPEC <- list(
     fast = TRUE
   ),
   diseasenowcasting = list(
-    units = c("days", "weeks"),
+    units = c("days", "weeks", "numeric"),
     data_type = c("linelist", "count-incidence", "count-cumulative"),
     strata = Inf,
     draws = TRUE,
-    # It does not refuse a numeric grid so much as fall over on one: the message
-    # is a cli formatting failure inside the package ("Could not evaluate cli
-    # `{}` expression: `descr`") rather than an explanation. Recorded as-is,
-    # because pretending it is a clean refusal would hide an upstream bug.
-    numeric_error = "descr|numeric|units",
+    # Numeric event/report grids stay numeric in diseasenowcasting; mixed
+    # event/report units are refused by that backend before fitting.
+    numeric_error = NULL,
     fast = TRUE
   ),
   surveillance = list(
@@ -206,6 +204,18 @@ ENGINE_SPEC <- list(
     fast = FALSE
   )
 )
+
+engine_current_spec <- function(engine) {
+  spec <- ENGINE_SPEC[[engine]]
+  if (identical(engine, "diseasenowcasting") &&
+      requireNamespace("diseasenowcasting", quietly = TRUE) &&
+      utils::packageVersion("diseasenowcasting") < "2.3.0") {
+    spec$units <- c("days", "weeks")
+    spec$data_type <- c("linelist", "count-incidence")
+    spec$numeric_error <- "descr|numeric|units"
+  }
+  spec
+}
 
 #' Is the engine's modelling backend usable, not just its R package?
 #'
@@ -250,7 +260,9 @@ engine_backend_available <- function(engine) {
 available_engines <- function(fast_only = FALSE) {
   names <- names(ENGINE_SPEC)
   if (fast_only) {
-    names <- names[vapply(ENGINE_SPEC[names], `[[`, logical(1), "fast")]
+    names <- names[vapply(names, function(name) {
+      isTRUE(engine_current_spec(name)$fast)
+    }, logical(1))]
   }
   names <- names[vapply(names, requireNamespace, logical(1), quietly = TRUE)]
   names[vapply(names, engine_backend_available, logical(1))]
@@ -354,6 +366,12 @@ engine_dry_args <- function(engine) {
 #'
 #' @return `TRUE` when the dry run cannot produce values.
 engine_dry_run_is_valueless <- function(engine, data_type) {
+  if (identical(engine, "diseasenowcasting") &&
+      identical(data_type, "count-cumulative") &&
+      requireNamespace("diseasenowcasting", quietly = TRUE) &&
+      utils::packageVersion("diseasenowcasting") < "2.3.0") {
+    return(TRUE)
+  }
   FALSE
 }
 

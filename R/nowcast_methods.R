@@ -217,7 +217,7 @@ nowcast_tidy.diseasenowcasting <- function(engine, fit, x, ..., quantile_levels)
   prediction <- stats::predict(fit)
 
   event_col <- get_event_date(x)
-  event_dates <- S7::prop(prediction, "event_dates")
+  event_dates <- .diseasenowcasting_event_dates(prediction, x)
   strata_cols <- get_strata(x) %||% character(0)
   strata_levels <- S7::prop(prediction, "strata_levels")
   strata_draws <- S7::prop(prediction, "strata_draws")
@@ -261,6 +261,28 @@ nowcast_tidy.diseasenowcasting <- function(engine, fit, x, ..., quantile_levels)
     predictions = NULL,
     draws = .matrix_to_draws(S7::prop(prediction, "draws"), event_dates, event_col)
   )
+}
+
+.diseasenowcasting_event_dates <- function(prediction, x) {
+  event_dates <- S7::prop(prediction, "event_dates")
+  if (!is.null(event_dates)) {
+    return(event_dates)
+  }
+
+  event_index <- S7::prop(prediction, "event_index")
+  if (is.null(event_index)) {
+    return(event_dates)
+  }
+
+  event_col <- get_event_date(x)
+  first_event <- min(x[[event_col]], na.rm = TRUE)
+  event_dates <- if (identical(get_event_units(x), "numeric")) {
+    first_event + as.integer(event_index)
+  } else {
+    .tbl_now_date_seq(first_event, get_now(x), get_event_units(x))[event_index + 1L]
+  }
+  if (is.integer(x[[event_col]])) event_dates <- as.integer(event_dates)
+  event_dates
 }
 
 # baselinenowcast -----
