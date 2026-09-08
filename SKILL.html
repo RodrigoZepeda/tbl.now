@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.34.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.35.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -45,7 +45,7 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="logo.png" class="logo" alt=""><h1>tbl.now — AI Agent Skill Guide</h1>
-
+      <small class="dont-index">Source: <a href="https://github.com/RodrigoZepeda/tbl.now/blob/main/SKILL.md" class="external-link"><code>SKILL.md</code></a></small>
     </div>
 
 <div id="tblnow--ai-agent-skill-guide" class="section level1">
@@ -801,7 +801,7 @@
 <th>needs</th>
 </tr></thead><tbody><tr><td><code><a href="reference/nowcast_engines.html">engine_diseasenowcasting()</a></code></td>
 <td>
-<code>diseasenowcasting::nowcast()</code>, straight off the <code>tbl_now</code>
+<code><a href="https://rodrigozepeda.github.io/diseasenowcasting/reference/nowcast.html" class="external-link">diseasenowcasting::nowcast()</a></code>, straight off the <code>tbl_now</code>
 </td>
 <td>
 <code>model</code>, <code>type</code>, <code>n_draws</code>
@@ -934,7 +934,7 @@
 <li>
 <strong><code>diseasenowcasting</code> needs &gt;= 2.1.0 for a bare <code>tidy(fit)</code>.</strong> From 2.1.0 it re-exports the shared generic and supplies its own method, so <code>tidy(fit)</code> returns the nowcast and <code>model_parameters()</code> returns the parameter table. Before 2.1.0 it declared its <strong>own</strong> <code><a href="reference/tidy.nowcast.html">tidy()</a></code> generic, so <code>tidy(fit)</code> silently returned parameters; on those versions use <code>tbl.now::tidy(predict(fit))</code>. <code>tbl.now</code> registers its own method only when the package does not supply one, so it never overrides the newer version.</li>
 <li>
-<strong><code>epidist</code> has its own <code><a href="reference/tidy.nowcast.html">tidy()</a></code>, with different columns.</strong> It estimates a delay distribution, not a nowcast, so <code><a href="reference/tidy.epidist_fit.html">tidy.epidist_fit()</a></code> returns <code>term</code> / <code>estimate</code> / <code>conf.low</code> / <code>conf.high</code> / <code>level</code> / <code>engine</code>, one row per distribution parameter (<code>mu</code>, <code>sigma</code>, plus the derived <code>mean</code> and <code>sd</code>). There is no <code>event_date</code>. Beware dispatch: the fit is <code>c("brmsfit", "epidist_fit")</code>, so a loaded <code>broom.mixed</code> matches first.</li>
+<strong><code>epidist</code> has its own <code><a href="reference/tidy.nowcast.html">tidy()</a></code>, with different columns.</strong> It estimates a delay distribution, not a nowcast, so <code><a href="reference/tidy.delay_distribution.html">tidy.epidist_fit()</a></code> returns <code>term</code> / <code>estimate</code> / <code>conf.low</code> / <code>conf.high</code> / <code>level</code> / <code>engine</code>, one row per distribution parameter (<code>mu</code>, <code>sigma</code>, plus the derived <code>mean</code> and <code>sd</code>). There is no <code>event_date</code>. Beware dispatch: the fit is <code>c("brmsfit", "epidist_fit")</code>, so a loaded <code>broom.mixed</code> matches first.</li>
 <li>
 <strong>Engines without draws can still give you quantiles — ask at fit time.</strong> <code>tidy(probs =)</code> errors for <code>NobBS</code> and <code>surveillance</code>, but <code>NobBS(specs = list(quantiles = c(0.1, 0.5, 0.9)))</code> computes them during the fit and returns <code>q_0.1</code> / <code>q_0.5</code> / <code>q_0.9</code> columns on <code>$estimates</code>; join them onto <code><a href="reference/tidy.nowcast.html">tidy()</a></code> output by date.</li>
 <li>

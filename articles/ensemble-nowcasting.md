@@ -155,8 +155,9 @@ tells you what is available in your session:
 ``` r
 
 list_nowcast_methods()
-#> [1] "baselinenowcast" "EpiNow2"         "epinowcast"      "example"        
-#> [5] "NobBS"           "surveillance"
+#> [1] "baselinenowcast"   "diseasenowcasting" "EpiNow2"          
+#> [4] "epinowcast"        "example"           "NobBS"            
+#> [7] "surveillance"
 ```
 
 ### One card per engine
@@ -219,9 +220,9 @@ dnc
 
 **Watch for:** it is also the one engine whose *model* you can swap
 without changing packages — see the ensemble below, which uses two of
-them. On `count-cumulative` data that revises downwards, pass a
-`model(confirmation = confirmation_process())`, or the de-accumulated
-negatives have nowhere to go.
+them. On `count-cumulative` data, diseasenowcasting selects its
+cumulative model automatically unless you pass an explicit
+`model(cumulative = cumulative_process())`.
 
 #### epinowcast
 

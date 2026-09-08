@@ -194,7 +194,7 @@ since epidist is about delay distributions and a `tbl_now` may carry two
 of them;
 [`censor_reporting_delays_above()`](https://rodrigozepeda.github.io/tbl.now/reference/censoring.md)
 for the long delays that would otherwise dominate a fitted distribution;
-[tidy()](https://rodrigozepeda.github.io/tbl.now/reference/tidy.epidist_fit.md)
+[tidy()](https://rodrigozepeda.github.io/tbl.now/reference/tidy.delay_distribution.md)
 for the fitted result.
 [`as_tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/as_tbl_now.md)
 for the generic that dispatches to the `*_from_*()` side;

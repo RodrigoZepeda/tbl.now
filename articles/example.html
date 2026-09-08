@@ -27,7 +27,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.34.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.35.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -80,7 +80,7 @@
       <img src="../logo.png" class="logo" alt=""><h1>The nowcasting workflow: hospital-acquired infections in Bucaramanga, Colombia</h1>
             
       
-
+      <small class="dont-index">Source: <a href="https://github.com/RodrigoZepeda/tbl.now/blob/main/vignettes/articles/example.Rmd" class="external-link"><code>vignettes/articles/example.Rmd</code></a></small>
       <div class="d-none name"><code>example.Rmd</code></div>
     </div>
 
@@ -628,11 +628,13 @@ have zero cases:</p>
 diseasenowcasting package:</p>
 <div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">hai_fit</span> <span class="op">&lt;-</span> <span class="va">hai_bucaramanga</span> <span class="op">|&gt;</span> </span>
-<span>  <span class="fu"><a href="../reference/run_nowcast.html">run_nowcast</a></span><span class="op">(</span>engine <span class="op">=</span> <span class="fu"><a href="../reference/nowcast_engines.html">engine_diseasenowcasting</a></span><span class="op">(</span>temporal_effects <span class="op">=</span> <span class="st">"none"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<span>  <span class="fu"><a href="../reference/run_nowcast.html">run_nowcast</a></span><span class="op">(</span>engine <span class="op">=</span> <span class="fu"><a href="../reference/nowcast_engines.html">engine_diseasenowcasting</a></span><span class="op">(</span>temporal_effects <span class="op">=</span> <span class="st">"none"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Nowcasting with <span style="color: #0000BB;">"diseasenowcasting"</span> as of <span style="color: #0000BB;">2022-07-18</span>.</span></span></code></pre></div>
 <p>Due to the sparcity, the nowcast predicts almost no cases at any time
 with just maybe a second case at the now for males:</p>
 <div class="sourceCode" id="cb36"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">hai_fit</span><span class="op">)</span> </span></code></pre></div>
+<p><img src="example_files/figure-html/unnamed-chunk-19-1.png" class="r-plt" alt="A sparse nowcast" width="100%" style="display: block; margin: auto;"></p>
 </div>
 <div class="section level2">
 <h2 id="changing-to-weekly-data">8. Changing to weekly data<a class="anchor" aria-label="anchor" href="#changing-to-weekly-data"></a>
@@ -803,7 +805,7 @@ batches:</p>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1 × 7</span></span></span>
 <span><span class="co">#&gt;   stratum  n_at n_reference mean_delay_at mean_delay_reference statistic p_value</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>                <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> all        11          14          11.4                 2.93      2.68   0.006</span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> all        11          14          11.4                 2.93      2.68   0.003</span></span></code></pre></div>
 <p>Where we further identify the date of <code>2021-11-28</code> as a
 potential batch with its <code>p_value &lt; 0.003</code>.</p>
 <p>Given that the</p>
@@ -830,15 +832,30 @@ a modelling package’s nowcasting function plus every argument that it
 needs:</p>
 <div class="sourceCode" id="cb49"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">hai_fit_weekly</span> <span class="op">&lt;-</span> <span class="va">hai_bucaramanga</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="../reference/run_nowcast.html">run_nowcast</a></span><span class="op">(</span>engine <span class="op">=</span> <span class="fu"><a href="../reference/nowcast_engines.html">engine_diseasenowcasting</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<span>  <span class="fu"><a href="../reference/run_nowcast.html">run_nowcast</a></span><span class="op">(</span>engine <span class="op">=</span> <span class="fu"><a href="../reference/nowcast_engines.html">engine_diseasenowcasting</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Nowcasting with <span style="color: #0000BB;">"diseasenowcasting"</span> as of <span style="color: #0000BB;">2022-07-17</span>.</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Added default temporal effects: 52-period seasonality (weekly data).</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">•</span> To use your own effects, attach them to the <span style="color: #0000BB;">&lt;tbl_now&gt;</span> with `tbl.now::add_temporal_effects()` + `tbl.now::compute_temporal_effects()` before calling</span></span>
+<span><span class="co">#&gt;   `nowcast()`.</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">•</span> To disable, call `nowcast(..., temporal_effects = "none")`.</span></span></code></pre></div>
 <p>The <code><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot()</a></code> shows the nowcast with gray columns
 representing what had been reported by <code>now</code>, and the green
 fan the nowcast’s prediction intervals.</p>
 <div class="sourceCode" id="cb50"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">hai_fit_weekly</span><span class="op">)</span></span></code></pre></div>
+<p><img src="example_files/figure-html/nowcast-weekly-plot-1.png" class="r-plt" alt="Weekly nowcast for each sex: grey columns of reported cases with a green fan of predicted cases over the final weeks." width="100%" style="display: block; margin: auto;"></p>
 <p>Calling <code><a href="../reference/tidy.nowcast.html">tidy()</a></code> gives the nowcast as a table:</p>
 <div class="sourceCode" id="cb51"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/tidy.nowcast.html">tidy</a></span><span class="op">(</span><span class="va">hai_fit_weekly</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 6 × 7</span></span></span>
+<span><span class="co">#&gt;   event_date stratum estimate conf.low conf.high level engine           </span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>            </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> 2022-07-03 Female         0        0         1  0.95 diseasenowcasting</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> 2022-07-03 Male           0        0         1  0.95 diseasenowcasting</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> 2022-07-10 Female         0        0         1  0.95 diseasenowcasting</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> 2022-07-10 Male           0        0         2  0.95 diseasenowcasting</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> 2022-07-17 Female         0        0         2  0.95 diseasenowcasting</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 1 more row</span></span></span></code></pre>
 </div>
 <div class="section level2">
 <h2 id="evaluate-your-nowcast">12. Evaluate your nowcast<a class="anchor" aria-label="anchor" href="#evaluate-your-nowcast"></a>
@@ -854,14 +871,14 @@ resolved truth defined by <code>truth_axis</code> and
 <p>To best evaluate the nowcast we need something to compare against.
 Hence we will fit a second model: <code>baselinenowcast</code>.</p>
 <p>One can fit it with the same call just a different engine</p>
-<div class="sourceCode" id="cb52"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb53"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">hai_fit_baseline</span> <span class="op">&lt;-</span> <span class="va">hai_bucaramanga</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/run_nowcast.html">run_nowcast</a></span><span class="op">(</span>engine <span class="op">=</span> <span class="fu"><a href="../reference/nowcast_engines.html">engine_baselinenowcast</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p>Any backtest uses the <strong>same engines</strong> refitting every
 engine once per past date. Here we show the backtest with just 3 past
 dates. On a real scenario we recommend using as many as possible to draw
 any conclusions:</p>
-<div class="sourceCode" id="cb53"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb54"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">hai_backtest</span> <span class="op">&lt;-</span> <span class="va">hai_bucaramanga</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="../reference/nowcast_backtest.html">nowcast_backtest</a></span><span class="op">(</span></span>
 <span>    <span class="fu"><a href="../reference/nowcast_engines.html">engine_diseasenowcasting</a></span><span class="op">(</span><span class="op">)</span>,</span>
@@ -874,18 +891,35 @@ includes the individual results for the weighted interval score
 (<code>wis</code>), the median absolute error (<code>ae_median</code>),
 and the coverage of the 50 and 90% intervals
 (<code>coverage_*</code>):</p>
-<div class="sourceCode" id="cb54"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">hai_backtest</span></span></code></pre></div>
+<div class="sourceCode" id="cb55"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">hai_backtest</span></span>
+<span><span class="co">#&gt; ── A <span style="color: #0000BB;">&lt;nowcast_backtest&gt;</span> ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────</span></span>
+<span><span class="co">#&gt; • methods: <span style="color: #0000BB;">"diseasenowcasting"</span> and <span style="color: #0000BB;">"baselinenowcast"</span></span></span>
+<span><span class="co">#&gt; • now dates: <span style="color: #0000BB;">"2022-04-24"</span>, <span style="color: #0000BB;">"2022-05-22"</span>, and <span style="color: #0000BB;">"2022-06-19"</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 2 × 4</span></span></span>
+<span><span class="co">#&gt;   .method           mean_wis mean_ae_median coverage_90</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> diseasenowcasting   0.038<span style="text-decoration: underline;">0</span>         0.047<span style="text-decoration: underline;">9</span>       0.982</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> baselinenowcast     0.045<span style="text-decoration: underline;">4</span>         0.057<span style="text-decoration: underline;">1</span>       0.973</span></span></code></pre></div>
 <p>In this scenario, <code>diseasenowcasting</code> scores better on
 both accuracy measures and <strong>both</strong> methods cover far more
 than the nominal 90. We caution however that we cannot conclude anything
 from just 3 data points and in a real scenario one should use more.</p>
 <p>Date-level indicators for the <code>wis</code>,
 <code>ae_median</code> and coverage can be obtained with tidy:</p>
-<div class="sourceCode" id="cb55"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/tidy.nowcast.html">tidy</a></span><span class="op">(</span><span class="va">hai_backtest</span><span class="op">)</span></span></code></pre></div>
 <div class="sourceCode" id="cb56"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/tidy.nowcast.html">tidy</a></span><span class="op">(</span><span class="va">hai_backtest</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/arrange.html" class="external-link">arrange</a></span><span class="op">(</span><span class="va">event_date</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">tail</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/tidy.nowcast.html">tidy</a></span><span class="op">(</span><span class="va">hai_backtest</span><span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb57"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/tidy.nowcast.html">tidy</a></span><span class="op">(</span><span class="va">hai_backtest</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/arrange.html" class="external-link">arrange</a></span><span class="op">(</span><span class="va">event_date</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">tail</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 6 × 13</span></span></span>
+<span><span class="co">#&gt;   method            now        event_date stratum observed estimate conf.low conf.high level    wis ae_median coverage_50 coverage_90</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>             <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;lgl&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;lgl&gt;</span>      </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> diseasenowcasting 2022-06-19 2022-06-12 Female         2        1        1         3  0.95 0.222          1 TRUE        TRUE       </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> diseasenowcasting 2022-06-19 2022-06-12 Male           0        0        0         3  0.95 0.117          0 TRUE        TRUE       </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> baselinenowcast   2022-06-19 2022-06-19 Female         0        0        0         2  0.95 0.055<span style="text-decoration: underline;">6</span>         0 TRUE        TRUE       </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> baselinenowcast   2022-06-19 2022-06-19 Male           1        1        1         5  0.95 0.156          0 TRUE        TRUE       </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> diseasenowcasting 2022-06-19 2022-06-19 Female         0        0        0         4  0.95 0.156          0 TRUE        TRUE       </span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 1 more row</span></span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="ensemble-nowcast">13. Ensemble nowcast<a class="anchor" aria-label="anchor" href="#ensemble-nowcast"></a>
@@ -896,7 +930,7 @@ might lead to a more robust nowcast. You can think of an ensemble as an
 average of the models.</p>
 <p>To create an ensemble model one needs to pass the model
 specifications (with a name) as well as the backtest:</p>
-<div class="sourceCode" id="cb57"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb58"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">hai_ensemble</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/nowcast_ensemble.html">nowcast_ensemble</a></span><span class="op">(</span></span>
 <span>  <span class="va">hai_fit_weekly</span>,</span>
 <span>  <span class="va">hai_fit_baseline</span>,</span>
@@ -905,8 +939,9 @@ specifications (with a name) as well as the backtest:</p>
 <span><span class="op">)</span></span></code></pre></div>
 <p>The same <code><a href="../reference/tidy.nowcast.html">tidy()</a></code> and <code><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot()</a></code> functions
 can be used here:</p>
-<div class="sourceCode" id="cb58"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb59"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">hai_ensemble</span><span class="op">)</span></span></code></pre></div>
+<p><img src="example_files/figure-html/unnamed-chunk-33-1.png" class="r-plt" alt="" width="100%" style="display: block; margin: auto;"></p>
 <p>One can fit ensembles with more than two models and different model
 specifications. Check out the article on <a href="https://rodrigozepeda.github.io/tbl.now/articles/ensemble-nowcasting.html">ensemble
 nowcasting</a> for more information.</p>

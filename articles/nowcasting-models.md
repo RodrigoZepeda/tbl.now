@@ -1105,7 +1105,7 @@ Unlike the other targets, this one is **not** a nowcast and it is
 [`estimate_truncation()`](https://epiforecasts.io/EpiNow2/reference/estimate_truncation.html)
 above does that. It answers a different question: how long reporting
 takes. Like
-[`tidy.epidist_fit()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.epidist_fit.md),
+[`tidy.epidist_fit()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.delay_distribution.md),
 it returns a **delay-shaped** table — one row per parameter, plus the
 distribution’s `mean` and `sd`:
 

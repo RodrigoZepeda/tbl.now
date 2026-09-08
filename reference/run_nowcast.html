@@ -21,7 +21,7 @@ names distinct means both packages can be attached at once."><meta property="og:
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.34.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.35.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -59,7 +59,7 @@ names distinct means both packages can be attached at once."><meta property="og:
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Nowcast a <code>tbl_now</code> with any supported modelling package</h1>
-
+      <small class="dont-index">Source: <a href="https://github.com/RodrigoZepeda/tbl.now/blob/main/R/run_nowcast.R" class="external-link"><code>R/run_nowcast.R</code></a></small>
       <div class="d-none name"><code>run_nowcast.Rd</code></div>
     </div>
 
@@ -225,7 +225,7 @@ models \(R_t\) with a <strong>Gaussian process</strong> by default
 <span><span class="op">)</span><span class="op">)</span></span></code></pre><p></p></div>
 <p><strong><code><a href="nowcast_engines.html">engine_diseasenowcasting()</a></code></strong> uses the package's own defaults, reading
 strata, covariates and temporal effects off the object. <code>model</code>, <code>type</code> and
-<code>n_draws</code> go to <code>diseasenowcasting::nowcast()</code>.</p>
+<code>n_draws</code> go to <code><a href="https://rodrigozepeda.github.io/diseasenowcasting/reference/nowcast.html" class="external-link">diseasenowcasting::nowcast()</a></code>.</p>
 <p><strong><code><a href="nowcast_engines.html">engine_baselinenowcast()</a></code></strong> is not Bayesian and has no priors: the delay is
 estimated from the reporting triangle and applied. <code>draws</code> sets the number of
 nowcast samples, and <code>max_delay</code> caps the triangle's width.</p>

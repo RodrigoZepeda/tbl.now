@@ -244,12 +244,15 @@ fits the same data with every supported package.
 library(data.table)
 #> 
 #> Attaching package: ‘data.table’
+#> The following objects are masked from ‘package:dplyr’:
+#> 
+#>     between, first, last
 #> The following object is masked from ‘package:base’:
 #> 
 #>     %notin%
 library(epinowcast)
 #> ! `enw_cache_location` is not set.
-#> ℹ Using `tempdir()` at /tmp/RtmpBa1eMS for the epinowcast model cache location.
+#> ℹ Using `tempdir()` at /tmp/RtmpX9NKiL for the epinowcast model cache location.
 #> ℹ Set a specific cache location using `enw_set_cache` to control Stan
 #>   recompilation in this R session or across R sessions.
 #> ℹ For example: `enw_set_cache(tools::R_user_dir(package = "epinowcast",

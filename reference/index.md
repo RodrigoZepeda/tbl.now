@@ -479,15 +479,9 @@ Every engine’s result, in one shape.
   Tidy the predictions and scores of a
   [`nowcast_backtest()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_backtest.md)
 
-- [`tidy(`*`<epidist_fit>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.epidist_fit.md)
-  **\[experimental\]** :
-
-  Tidy the delay distribution from an epidist fit
-
-- [`tidy(`*`<estimate_dist>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.estimate_dist.md)
-  **\[experimental\]** :
-
-  Tidy the delay distribution from an EpiNow2 `estimate_dist()` fit
+- [`tidy(`*`<estimate_dist>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.delay_distribution.md)
+  [`tidy(`*`<epidist_fit>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.delay_distribution.md)
+  **\[experimental\]** : Tidy a fitted delay distribution
 
 ## dplyr integration
 

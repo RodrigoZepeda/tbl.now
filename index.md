@@ -124,8 +124,7 @@ version from [GitHub](https://github.com/):
 
 ``` r
 
-# install.packages("pak") # <- uncomment if you do not have `pak`
-pak::pkg_install("RodrigoZepeda/tbl.now")
+install.packages("tbl.now", repos = "https://rodrigozepeda.r-universe.dev")
 ```
 
 and checkout our articles starting with the

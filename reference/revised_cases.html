@@ -37,7 +37,7 @@ get_latest_revised_cases() is the backlog the laboratory still owes you.'><meta 
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.34.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.35.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -75,7 +75,7 @@ get_latest_revised_cases() is the backlog the laboratory still owes you.'><meta 
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Cases at a chosen point in the revision process</h1>
-
+      <small class="dont-index">Source: <a href="https://github.com/RodrigoZepeda/tbl.now/blob/main/R/get_reported_cases.R" class="external-link"><code>R/get_reported_cases.R</code></a></small>
       <div class="d-none name"><code>revised_cases.Rd</code></div>
     </div>
 
@@ -130,9 +130,8 @@ the data does not say which way.</p></dd>
 <dd><p>confirmed <strong>minus</strong> retracted – the running total as a
 surveillance system publishes it, which can go <strong>down</strong> when a case is
 withdrawn. This is the quantity a <code>count-cumulative</code> stream actually
-reports, and the one <span class="pkg">diseasenowcasting</span>'s signed-increment
-(Skellam / SkNB) likelihood is built for; see
-<code>diseasenowcasting::confirmation_process()</code>.</p></dd>
+reports, and the one <span class="pkg">diseasenowcasting</span>'s cumulative signed-change
+likelihood is built for.</p></dd>
 
 <dt><code>"by_type"</code></dt>
 <dd><p>one row per outcome instead of one number: the

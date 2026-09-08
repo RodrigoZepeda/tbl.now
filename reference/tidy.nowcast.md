@@ -163,9 +163,9 @@ which give you this shape without needing to call the modelling package
 yourself;
 [tidy()](https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast_backtest.md)
 for a backtest;
-[`tidy.epidist_fit()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.epidist_fit.md)
+[`tidy.epidist_fit()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.delay_distribution.md)
 and
-[`tidy.estimate_dist()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.estimate_dist.md)
+[`tidy.estimate_dist()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.delay_distribution.md)
 for fitted *delay distributions* rather than case counts;
 [`score_nowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/score_nowcast.md)
 to score the result. The [*One dataset, many nowcasts*

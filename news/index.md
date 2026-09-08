@@ -1,5 +1,55 @@
 # Changelog
 
+## tbl.now 0.35.1
+
+### One help page for the two delay-distribution `tidy()` methods
+
+[`tidy.epidist_fit()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.delay_distribution.md)
+and
+[`tidy.estimate_dist()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.delay_distribution.md)
+now share a single help page,
+[`?tidy.delay_distribution`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.delay_distribution.md).
+Both methods return the same delay-shaped table, and documenting them
+apart duplicated the *Value*, *How `mean` and `sd` are obtained* and
+name-collision sections. Nothing about either method’s behaviour
+changed, and both names still work as topic aliases.
+
+### Smaller installed package
+
+The installed size drops from 5.4 Mb to 4.5 Mb, below the 5 Mb
+`R CMD check` threshold:
+
+- `man/figures/` no longer ships three README plots that no longer
+  appear in `README.md`, and the four that do are stored with an 8-bit
+  palette.
+- `inst/figures/` (only the hex-sticker source, which nothing loads at
+  run time) is excluded from the build.
+- The introductory vignette renders at 72 dpi. Its wide multi-panel
+  figures were being drawn wider than the 700 px the vignette CSS ever
+  displays, so this costs no visible resolution.
+
+### Dataset documentation lives in `R/data.R`
+
+The roxygen blocks for `covid_colombia` and `hai_bucaramanga` moved out
+of `R/data-covid_colombia.R` and `R/data-hai_bucaramanga.R` into
+`R/data.R`, which is now the single file documenting every shipped
+dataset. The rendered help pages are unchanged.
+
+## tbl.now 0.35.0
+
+### diseasenowcasting engine follows the revision/cumulative API
+
+The diseasenowcasting engine documentation and tests now expect
+automatic model selection to live in
+[`diseasenowcasting::nowcast()`](https://rodrigozepeda.github.io/diseasenowcasting/reference/nowcast.html).
+tbl.now passes the `tbl_now` and engine arguments through without
+injecting model components.
+
+For `count-cumulative` data, diseasenowcasting consumes signed changes
+in the cumulative trajectory and selects its cumulative model unless the
+caller supplies an explicit
+`model(cumulative = cumulative_process(...))`.
+
 ## tbl.now 0.34.0
 
 ### Documentation clarifies scoring, covariates and article endings
@@ -158,7 +208,7 @@ The ensemble-nowcasting article now tolerates older cached display data
 that lacks `member_predictions`, falling back to the cached baseline
 member predictions so the comparison plot still renders.
 
-### Nowcasts and backtests convert directly to scoringutils (#20, \#69)
+### Nowcasts and backtests convert directly to scoringutils ([\#20](https://github.com/RodrigoZepeda/tbl.now/issues/20), [\#69](https://github.com/RodrigoZepeda/tbl.now/issues/69))
 
 `as_scoringutils()` now accepts a `nowcast_backtest` and reuses the
 truth already stored in it. The result keeps `now` as a forecast unit,
@@ -186,7 +236,7 @@ Nested ensembles are now covered explicitly: a quantile ensemble can be
 a member of another quantile ensemble, and a linear-pool ensemble can be
 a member of another linear pool when it carries draws.
 
-### `tidy()` on a backtest now returns the predictions, not only the truth (#70)
+### `tidy()` on a backtest now returns the predictions, not only the truth ([\#70](https://github.com/RodrigoZepeda/tbl.now/issues/70))
 
 [`tidy()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast.md)
 on a `nowcast_backtest` reported what was `observed` and how each method
@@ -211,7 +261,7 @@ renamed and no rows were added – `(method, now, stratum, event_date)` is
 still the unique key – so code that selects columns by name is
 unaffected; code that assumed the frame had exactly nine columns is not.
 
-### `diseasenowcasting` is installed from GitHub, and the error now says so (#72)
+### `diseasenowcasting` is installed from GitHub, and the error now says so ([\#72](https://github.com/RodrigoZepeda/tbl.now/issues/72))
 
 Asking for
 [`engine_diseasenowcasting()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_engines.md)
@@ -234,7 +284,7 @@ formatting the abort.
 
 ## tbl.now 0.33.0
 
-### `aggregate_time_units()` now coarsens the temporal-effect specification (#65)
+### `aggregate_time_units()` now coarsens the temporal-effect specification ([\#65](https://github.com/RodrigoZepeda/tbl.now/issues/65))
 
 Aggregating dropped the materialised temporal-effect *columns* but kept
 the lazy
@@ -597,7 +647,7 @@ guessing. Each block now prints a one-line gloss: `total` is always
 `cases`, runs for `zero_run`, (event, report) cells for `delay` and
 `composition`.
 
-### `complete_zeroes()` works when a date is missing (#66)
+### `complete_zeroes()` works when a date is missing ([\#66](https://github.com/RodrigoZepeda/tbl.now/issues/66))
 
 A single `NA` report date made every bound of the grid `NA`: `max_delay`
 came out `NA` and `seq(0, NA)` aborted with
@@ -624,7 +674,7 @@ Two things fixed alongside it:
 - `max_delay = NULL` on data whose delays are all negative built a
   *decreasing* `seq(0, max_delay)`. The floor is now 0.
 
-### Breaking (behaviour): a stratified `baselinenowcast` fit completes its grid (#67)
+### Breaking (behaviour): a stratified `baselinenowcast` fit completes its grid ([\#67](https://github.com/RodrigoZepeda/tbl.now/issues/67))
 
 `run_nowcast(x, engine_baselinenowcast())` returned a different nowcast
 for a line list than for the same object passed through
@@ -647,10 +697,11 @@ Because the triangle really does drop declared covariates, a stratified
 fit on an object carrying them now warns that it did; the long format
 used to carry them into a frame the fit then ignored.
 
-### `tbl_now_to_EpiNow2()` completes a line list’s grid (#67, audit)
+### `tbl_now_to_EpiNow2()` completes a line list’s grid ([\#67](https://github.com/RodrigoZepeda/tbl.now/issues/67), audit)
 
-Found by auditing every converter for the defect behind \#67. A line
-list has no row for an event period in which nothing was reported, and
+Found by auditing every converter for the defect behind
+[\#67](https://github.com/RodrigoZepeda/tbl.now/issues/67). A line list
+has no row for an event period in which nothing was reported, and
 `.epinow2_series_data()` built its `date`/`confirm` series from the rows
 it was handed: on daily data the series stopped at the last period
 carrying a report rather than at the object’s
@@ -742,7 +793,7 @@ which is where a pointer belongs.
 
 ## tbl.now 0.31.0
 
-### Breaking: the `*_confirmed()` counters are gone, replaced by a revised-cases family (#64)
+### Breaking: the `*_confirmed()` counters are gone, replaced by a revised-cases family ([\#64](https://github.com/RodrigoZepeda/tbl.now/issues/64))
 
 `get_latest_confirmed()`, `get_net_confirmed()`,
 `get_initial_confirmed()` and `get_nth_confirmed()` are **removed**.
@@ -788,7 +839,7 @@ get_latest_revised_cases(x, type = "by_type")    # every outcome, side by side
   [`tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.md)
   about an empty data frame.
 
-### The reported-cases getters respect a grouping; `to_count()` says it does not (#61)
+### The reported-cases getters respect a grouping; `to_count()` says it does not ([\#61](https://github.com/RodrigoZepeda/tbl.now/issues/61))
 
 [`get_latest_reported_cases()`](https://rodrigozepeda.github.io/tbl.now/reference/get_latest_first.md),
 [`get_initial_reported_cases()`](https://rodrigozepeda.github.io/tbl.now/reference/get_latest_first.md)
@@ -818,7 +869,7 @@ or
 [`add_covariates()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
 to keep it out of the sum.
 
-### `is_tbl_now()` is a class check again, not a revision run (#62)
+### `is_tbl_now()` is a class check again, not a revision run ([\#62](https://github.com/RodrigoZepeda/tbl.now/issues/62))
 
 [`is_tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/validate_tbl_now.md)
 used to call
@@ -840,7 +891,7 @@ silent.
   warns about. That is the point: the class is a container, and a
   container is not a claim that what is in it is clean.
 
-### Fractional delays are refused where they are created, and reported where they are found (#63)
+### Fractional delays are refused where they are created, and reported where they are found ([\#63](https://github.com/RodrigoZepeda/tbl.now/issues/63))
 
 A calendar has no half-days, so a fractional delay had to become
 something. It became [`round()`](https://rdrr.io/r/base/Round.html) –
@@ -864,7 +915,7 @@ while the numeric axis refused the same value outright.
 
 ## tbl.now 0.30.0
 
-### New: coarsen the time grid in one call (#56)
+### New: coarsen the time grid in one call ([\#56](https://github.com/RodrigoZepeda/tbl.now/issues/56))
 
 [`aggregate_time_units()`](https://rodrigozepeda.github.io/tbl.now/reference/aggregate_time_units.md)
 moves a `tbl_now` onto a bigger time unit – daily to weekly, weekly to
@@ -898,7 +949,7 @@ hai |> aggregate_time_units(to = "weeks")
   months is not the same as going straight to months; aggregate once, to
   the unit you want.
 
-### New: censor by condition, and replace the date (#57)
+### New: censor by condition, and replace the date ([\#57](https://github.com/RodrigoZepeda/tbl.now/issues/57))
 
 [`censor_reports()`](https://rodrigozepeda.github.io/tbl.now/reference/censoring.md)
 and
@@ -959,7 +1010,7 @@ nothing is contradicted.
   after it, never backwards, and drops any `.report_*` temporal-effect
   column that the move has made stale.
 
-### New: one `units` argument instead of three (#58)
+### New: one `units` argument instead of three ([\#58](https://github.com/RodrigoZepeda/tbl.now/issues/58))
 
 [`tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.md)
 gains `units`, the shared default for `event_units`, `report_units` and
@@ -1039,7 +1090,7 @@ still means *infer*.
 
 ## tbl.now 0.29.0
 
-### Breaking: `is_censored` is now `is_censored_report` (#54)
+### Breaking: `is_censored` is now `is_censored_report` ([\#54](https://github.com/RodrigoZepeda/tbl.now/issues/54))
 
 There are two censoring axes now, so the unqualified name had to go. The
 old spelling is removed outright, not deprecated:
@@ -1052,7 +1103,7 @@ old spelling is removed outright, not deprecated:
 | `is_censored` attribute | `is_censored_report` attribute |
 | `.is_censored` (the column [`censor_reporting_delays_above()`](https://rodrigozepeda.github.io/tbl.now/reference/censoring.md) creates) | `.is_censored_report` |
 
-### New: `is_censored_revision`, the revision-axis censoring flag (#53)
+### New: `is_censored_revision`, the revision-axis censoring flag ([\#53](https://github.com/RodrigoZepeda/tbl.now/issues/53))
 
 The twin of `is_censored_report`, for models that use censored revision
 delays. It marks rows whose time from report to resolution is a
@@ -1085,7 +1136,7 @@ exactly as
 does on the report axis. `get_latest_confirmed()` therefore still counts
 those cases.
 
-### New: `revision_levels`, for data not recorded in English (#54)
+### New: `revision_levels`, for data not recorded in English ([\#54](https://github.com/RodrigoZepeda/tbl.now/issues/54))
 
 `revision_type` may hold only `"confirmed"`, `"retracted"`, `"pending"`
 or `NA` – that was already enforced, and the error now names the way
@@ -1110,7 +1161,7 @@ on the object and read back with
 A dictionary that would recode a canonical value into a different one is
 refused, because it would flip the column on every rebuild.
 
-### Fixed: `change_now()` re-censors instead of erroring (#51)
+### Fixed: `change_now()` re-censors instead of erroring ([\#51](https://github.com/RodrigoZepeda/tbl.now/issues/51))
 
 Moving `now` **backwards** is what
 [`change_now()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
@@ -1126,7 +1177,7 @@ and
 [`update_now()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
 gain `verbose` to silence the report of how many rows were masked.
 
-### `covid_us` carries a revision process (#52)
+### `covid_us` carries a revision process ([\#52](https://github.com/RodrigoZepeda/tbl.now/issues/52))
 
 No shipped dataset had one, so every example fabricated an outcome by
 row position. `covid_us` is rebuilt from the same CDC source with the
@@ -1170,9 +1221,9 @@ The **outcome values are unchanged**: a case is still `"confirmed"`,
 `"retracted"` or `"pending"`. Revision is what the process does;
 confirmed is one of the things it can conclude.
 
-`diseasenowcasting::confirmation_process()` is that package’s name and
-is untouched – `model(confirmation = confirmation_process())` still
-reads exactly as it did.
+`diseasenowcasting` now uses `revision_process()` for row-level report
+resolution and `cumulative_process()` for count-cumulative signed
+changes.
 
 ### Documentation: fewer, fuller reference pages
 
@@ -2191,8 +2242,9 @@ than it confirms them biases any nowcast that treats the two alike.
   (event, report) combination and are still two different rows; the
   confirmation columns are now part of the key.
 - `run_nowcast(x, "diseasenowcasting")` passes straight through to
-  `diseasenowcasting::nowcast()`. The confirmation process belongs to
-  that package’s `model()`, not to `tbl.now`, so pass it there.
+  [`diseasenowcasting::nowcast()`](https://rodrigozepeda.github.io/diseasenowcasting/reference/nowcast.html).
+  The confirmation process belongs to that package’s `model()`, not to
+  `tbl.now`, so pass it there.
 
 ## tbl.now 0.20.0
 
@@ -2200,14 +2252,12 @@ than it confirms them biases any nowcast that treats the two alike.
 
 Every one of these was found by writing the tests, not before:
 
-- **`count-cumulative` data failed on `diseasenowcasting` for want of a
-  confirmation process.** `diseasenowcasting::nowcast()` auto-detects
-  cumulative data and switches to the signed-increment Skellam / SkNB
-  likelihood, but that likelihood needs a `confirmation_process()` – the
-  retraction side of a stream that can revise **down** – and `model()`’s
-  default is `no_confirmation()`. Without one the fit reports “Joint fit
-  failed to converge for all init attempts”. Pass one through, as
-  `run_nowcast(x, "diseasenowcasting", model = model(confirmation = confirmation_process()))`.
+- **`count-cumulative` data failed on `diseasenowcasting` before
+  automatic cumulative selection lived in that package.**
+  [`diseasenowcasting::nowcast()`](https://rodrigozepeda.github.io/diseasenowcasting/reference/nowcast.html)
+  now auto-detects cumulative data and selects its cumulative
+  signed-change model unless the caller supplies an explicit cumulative
+  process.
 
   De-accumulating to incidence first would also “work”, and is wrong: it
   discards the downward revisions the cumulative likelihood exists to
@@ -2731,10 +2781,10 @@ branch in
 [`tidy.list()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast.md)
 giving one block per region.
 
-[`tidy.estimate_dist()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.estimate_dist.md)
+[`tidy.estimate_dist()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.delay_distribution.md)
 reports the fitted distribution’s **`mean` and `sd`** alongside its
 parameters, so its output is directly comparable with
-[`tidy.epidist_fit()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.epidist_fit.md).
+[`tidy.epidist_fit()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.delay_distribution.md).
 They are derived from the **distribution**, not from the family’s
 algebra: each draw’s parameters go back into the fit’s own `dist_spec`
 and through \[EpiNow2::discretise()\], which knows the families, and the
@@ -2747,7 +2797,7 @@ difference of that order against , which reports continuous-distribution
 moments.
 
 It also honours `probs` and takes a `level` argument, matching
-[`tidy.epidist_fit()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.epidist_fit.md).
+[`tidy.epidist_fit()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.delay_distribution.md).
 (An earlier draft rejected `probs` with a message claiming the engine
 keeps no draws. It does: `summary.estimate_dist()` reads them.)
 
@@ -2768,10 +2818,10 @@ Two more points of care:
   because EpiNow2’s `CrIs` is a user argument – a fit made with
   `CrIs = c(0.5, 0.95)` has no `lower_90` at all, and hard-coding `0.90`
   would report a width the fit never produced.
-- [`tidy.estimate_dist()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.estimate_dist.md)
+- [`tidy.estimate_dist()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.delay_distribution.md)
   returns the **delay** schema (`term`, `estimate`, …), not the nowcast
   one – the second instance of the documented exception alongside
-  [`tidy.epidist_fit()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.epidist_fit.md).
+  [`tidy.epidist_fit()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.delay_distribution.md).
   Note that [`summary()`](https://rdrr.io/r/base/summary.html)’s
   `mean`/`sd` *columns* are the posterior mean and sd of each
   **parameter**, while the `mean`/`sd` *rows* this method reports are
@@ -2922,7 +2972,7 @@ The remaining findings were addressed too:
   fill it in. The assertion in `test-tidy.R` that recorded the old
   behaviour was updated.
 
-- **[`tidy.epidist_fit()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.epidist_fit.md)
+- **[`tidy.epidist_fit()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.delay_distribution.md)
   warns on a delay model with covariates.**
   [`epidist::predict_delay_parameters()`](https://epidist.epinowcast.org/reference/predict_delay_parameters.html)
   returns one row per draw *and* observation, and the reported quantiles
@@ -3045,7 +3095,7 @@ The remaining findings were addressed too:
 - **Documented two
   [`tidy()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast.md)
   masking hazards.**
-  [`library(diseasenowcasting)`](https://rdrr.io/r/base/library.html)
+  [`library(diseasenowcasting)`](https://rodrigozepeda.github.io/diseasenowcasting/)
   attaches its own
   [`tidy()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast.md)
   generic, and [`library(broom)`](https://broom.tidymodels.org/)
@@ -3060,7 +3110,7 @@ The remaining findings were addressed too:
   [`tidy()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast.md)
   method for fits.** is the one supported package that does not nowcast
   – it estimates the reporting-delay distribution – so
-  [`tidy.epidist_fit()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.epidist_fit.md)
+  [`tidy.epidist_fit()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.delay_distribution.md)
   returns a *delay-shaped* table (`term`, `estimate`, `conf.low`,
   `conf.high`, `level`, `engine`) with one row per distribution
   parameter, rather than forcing a delay fit into the per-event-date
@@ -3069,7 +3119,7 @@ The remaining findings were addressed too:
   [`epidist()`](https://epidist.epinowcast.org/reference/epidist.html)
   returns `c("brmsfit", "epidist_fit")` in that order, so a loaded wins
   dispatch; call
-  [`tidy.epidist_fit()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.epidist_fit.md)
+  [`tidy.epidist_fit()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.delay_distribution.md)
   explicitly if that matters.
 
 - **[`tidy()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast.md)
@@ -3389,9 +3439,10 @@ The remaining findings were addressed too:
   `data-raw/nowcast_comparison.R` and read from a saved file, so editing
   the prose no longer re-runs Stan, JAGS and INLA.
 
-- `flusight` no longer ships duplicate rows (#25). The upstream FluSight
-  `time-series.csv` contains 39,139 exact duplicates, which forced every
-  example to open with a
+- `flusight` no longer ships duplicate rows
+  ([\#25](https://github.com/RodrigoZepeda/tbl.now/issues/25)). The
+  upstream FluSight `time-series.csv` contains 39,139 exact duplicates,
+  which forced every example to open with a
   [`distinct()`](https://dplyr.tidyverse.org/reference/distinct.html)
   call; the dataset now goes from 491,706 to 452,567 rows. The removal
   is lossless — every repeated (`as_of`, `target_end_date`,
@@ -3532,7 +3583,8 @@ The remaining findings were addressed too:
   auto-capped, with a message, rather than drawing an unbounded map).
   Replaces the reporting-V panel in the batch article.
 
-- Bug fix for issue \#33:
+- Bug fix for issue
+  [\#33](https://github.com/RodrigoZepeda/tbl.now/issues/33):
   `autoplot(x, strata = "race", by_strata = TRUE)` no longer errors with
   a strata passed as column name.
 
@@ -3862,7 +3914,7 @@ The remaining findings were addressed too:
   (and the other delay diagnostics) on `count-cumulative` data such as
   FluSight, which previously errored with *“Transformation from
   `data_type` count-cumulative to count-incidence not implemented”*
-  (#26).
+  ([\#26](https://github.com/RodrigoZepeda/tbl.now/issues/26)).
 
 - Updated `SKILL.md` (the AI-agent usage guide) to cover everything
   added since 0.10.0: reporting-delay
@@ -4075,7 +4127,8 @@ mathematics in a **“The mathematics”** section of its help page.
   designed to capture the rise in cases just after a holiday or weekend.
   `holiday_lags` requires a `holidays` calendar. The columns are picked
   up automatically by every `tbl_now_to_*()` converter (as covariate
-  columns) and by `diseasenowcasting::nowcast()`.
+  columns) and by
+  [`diseasenowcasting::nowcast()`](https://rodrigozepeda.github.io/diseasenowcasting/reference/nowcast.html).
 
 - Documented and tested attaching temporal effects to the **report
   date** (in addition to the default event date) via
@@ -4240,11 +4293,14 @@ mathematics in a **“The mathematics”** section of its help page.
 
 ## tbl.now 0.6.0
 
-- Changed temporal effects to be lazy (as required by \#17) so that now
-  its easier to use `dplyr` functions without compromising them.
+- Changed temporal effects to be lazy (as required by
+  [\#17](https://github.com/RodrigoZepeda/tbl.now/issues/17)) so that
+  now its easier to use `dplyr` functions without compromising them.
 - Bumped the deprecated dplyr’s `*_at` functions to use
   [`all_of()`](https://tidyselect.r-lib.org/reference/all_of.html)
 - Fixed to no warnings during test.
-- Users can now pass the `.delay` column directly (#6) and it will
+- Users can now pass the `.delay` column directly
+  ([\#6](https://github.com/RodrigoZepeda/tbl.now/issues/6)) and it will
   recalculate the missing column (i.e. event or report)
-- Added `complete_zeroes` to vignette (#13).
+- Added `complete_zeroes` to vignette
+  ([\#13](https://github.com/RodrigoZepeda/tbl.now/issues/13)).

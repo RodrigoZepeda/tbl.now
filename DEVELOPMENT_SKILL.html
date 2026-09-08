@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.34.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.35.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -45,7 +45,7 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="logo.png" class="logo" alt=""><h1>tbl.now — development guide</h1>
-
+      <small class="dont-index">Source: <a href="https://github.com/RodrigoZepeda/tbl.now/blob/main/DEVELOPMENT_SKILL.md" class="external-link"><code>DEVELOPMENT_SKILL.md</code></a></small>
     </div>
 
 <div id="tblnow--development-guide" class="section level1">
@@ -339,7 +339,7 @@
 <h3 id="tidy-is-part-of-the-job">
 <code>tidy()</code> is part of the job<a class="anchor" aria-label="anchor" href="#tidy-is-part-of-the-job"></a></h3>
 <p>If the package <strong>returns a nowcast</strong>, you must also write a <code><a href="reference/tidy.nowcast.html">tidy()</a></code> method producing the standard frame: <code>event_date</code>, <code>stratum</code>, <code>estimate</code>, <code>conf.low</code>, <code>conf.high</code>, <code>level</code>, <code>engine</code> (plus <code>q*</code> columns when the engine keeps draws). Users must not have to learn six output formats.</p>
-<p>The single exception is a package that returns <strong>only a delay distribution</strong>, not per-date case estimates. <code>epidist</code> is the example: <code><a href="reference/tidy.epidist_fit.html">tidy.epidist_fit()</a></code> returns a <em>delay-shaped</em> table (<code>term</code>, <code>estimate</code>, <code>conf.low</code>, <code>conf.high</code>, <code>level</code>, <code>engine</code>) instead, and that is correct — do not force a delay fit into the nowcast schema.</p>
+<p>The single exception is a package that returns <strong>only a delay distribution</strong>, not per-date case estimates. <code>epidist</code> is the example: <code><a href="reference/tidy.delay_distribution.html">tidy.epidist_fit()</a></code> returns a <em>delay-shaped</em> table (<code>term</code>, <code>estimate</code>, <code>conf.low</code>, <code>conf.high</code>, <code>level</code>, <code>engine</code>) instead, and that is correct — do not force a delay fit into the nowcast schema.</p>
 <p>Notes:</p>
 <ul><li>Register with <code>@exportS3Method generics::tidy</code>. The generic comes from <code>generics</code>, so <code>tbl.now</code> composes with <code>broom</code> rather than masking it.</li>
 <li>If the foreign class name contains <code>::</code> (S7 classes do), an S3 method name cannot express it. Register it manually in <code>.onLoad()</code> — see <code>tidy_nowcast_prediction</code> in <code>R/zzz.R</code>.</li>
@@ -521,6 +521,14 @@
 </div>
 <div class="section level2">
 <h2 id="documenting">Documenting<a class="anchor" aria-label="anchor" href="#documenting"></a></h2>
+<div class="section level3">
+<h3 id="datasets-are-documented-in-rdatar-and-nowhere-else">Datasets are documented in <code>R/data.R</code>, and nowhere else<a class="anchor" aria-label="anchor" href="#datasets-are-documented-in-rdatar-and-nowhere-else"></a></h3>
+<p>Every exported dataset’s roxygen block lives in <strong><code>R/data.R</code></strong>. There is one file, not one file per dataset: no <code>R/data-hai_bucaramanga.R</code>, no <code>R/data-covid.R</code>. When you add a dataset, append its block to the end of <code>R/data.R</code> (before the commented-out <code>vectordat</code> stub), ending with the bare <code>"name"</code> string that roxygen attaches the block to, and add the dataset to the <code>@seealso</code> list of the other datasets’ blocks so the cross-references stay complete. The raw-data script that <em>builds</em> it still lives in <code>data-raw/&lt;name&gt;.R</code>, and the <code>@source</code> should say so.</p>
+</div>
+<div class="section level3">
+<h3 id="figures-and-the-installed-size">Figures, and the installed size<a class="anchor" aria-label="anchor" href="#figures-and-the-installed-size"></a></h3>
+<p><code>man/figures/</code> is installed verbatim into <code>help/figures/</code>, so anything left there counts against the 5 Mb <code>R CMD check</code> size limit. Two rules follow. Re-knitting <code>README.Rmd</code> writes fresh <code>man/figures/README-*.png</code> at full size and leaves the old ones behind: delete the files <code>README.md</code> no longer references, and re-quantise the ones it does (<code>magick f.png -strip -colors 128 PNG8:f.png</code>). And a vignette’s figures are base64-embedded in its HTML, which lands in <code>doc/</code>: <code>html_vignette</code> shows at most 700 px, so render at <code>dpi = 72</code> rather than paying for pixels the CSS throws away.</p>
+</div>
 <div class="section level3">
 <h3 id="examples">Examples<a class="anchor" aria-label="anchor" href="#examples"></a></h3>
 <p>No example should use <code>dontrun</code> or <code>donttest</code>. Nor should they use an <code>if(FALSE)</code> conditional to avoid running. When creating a new example time it so that it passes on CRAN.</p>

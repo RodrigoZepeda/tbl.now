@@ -27,7 +27,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.34.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.35.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -80,7 +80,7 @@
       <img src="../logo.png" class="logo" alt=""><h1>tbl.now</h1>
             
       
-
+      <small class="dont-index">Source: <a href="https://github.com/RodrigoZepeda/tbl.now/blob/main/vignettes/tbl.now.Rmd" class="external-link"><code>vignettes/tbl.now.Rmd</code></a></small>
       <div class="d-none name"><code>tbl.now.Rmd</code></div>
     </div>
 
@@ -1273,7 +1273,7 @@ to come back from the laboratory – but a pending share that grows in the
 <em>middle</em> of the series is a laboratory falling behind.</p>
 <div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_revision_status.html">plot_revision_status</a></span><span class="op">(</span><span class="va">covid_now</span><span class="op">)</span></span></code></pre></div>
-<p><img src="tbl.now_files/figure-html/unnamed-chunk-30-1.png" class="r-plt" alt="" width="672"></p>
+<p><img src="tbl.now_files/figure-html/unnamed-chunk-30-1.png" class="r-plt" alt="" width="504"></p>
 </div>
 <div class="section level4">
 <h4 id="the-revision-axis">The revision axis<a class="anchor" aria-label="anchor" href="#the-revision-axis"></a>
@@ -1597,13 +1597,13 @@ method gives a quick diagnostic overview of a <code>tbl_now</code>:</p>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">dengue_now</span><span class="op">)</span></span></code></pre></div>
-<p><img src="tbl.now_files/figure-html/autoplot-1.png" class="r-plt" alt="" width="864"></p>
+<p><img src="tbl.now_files/figure-html/autoplot-1.png" class="r-plt" alt="" width="648"></p>
 <p>We explore each of the panels below</p>
 <div class="section level3">
 <h3 id="the-delay-distribution">The delay distribution<a class="anchor" aria-label="anchor" href="#the-delay-distribution"></a>
 </h3>
 <div class="figure">
-<img src="tbl.now_files/figure-html/unnamed-chunk-45-1.png" class="r-plt" alt="Empirical delay distribution" width="700"><p class="caption">
+<img src="tbl.now_files/figure-html/unnamed-chunk-45-1.png" class="r-plt" alt="Empirical delay distribution" width="525"><p class="caption">
 Empirical delay distribution
 </p>
 </div>
@@ -1614,7 +1614,7 @@ case-count weighted histogram of the reporting delay.</p>
 <h3 id="the-observed-epidemic-process">The observed epidemic process<a class="anchor" aria-label="anchor" href="#the-observed-epidemic-process"></a>
 </h3>
 <div class="figure">
-<img src="tbl.now_files/figure-html/unnamed-chunk-46-1.png" class="r-plt" alt="Observed epidemic process" width="700"><p class="caption">
+<img src="tbl.now_files/figure-html/unnamed-chunk-46-1.png" class="r-plt" alt="Observed epidemic process" width="525"><p class="caption">
 Observed epidemic process
 </p>
 </div>
@@ -1625,7 +1625,7 @@ reported counts per <code>event_date</code>.</p>
 <h3 id="the-calendar-effects">The calendar effects<a class="anchor" aria-label="anchor" href="#the-calendar-effects"></a>
 </h3>
 <div class="figure">
-<img src="tbl.now_files/figure-html/unnamed-chunk-47-1.png" class="r-plt" alt="Day of the week and week of the year effects" width="700"><p class="caption">
+<img src="tbl.now_files/figure-html/unnamed-chunk-47-1.png" class="r-plt" alt="Day of the week and week of the year effects" width="525"><p class="caption">
 Day of the week and week of the year effects
 </p>
 </div>
@@ -1644,7 +1644,7 @@ percent effects by <em>day type</em> (holiday or not) and by
 <h3 id="the-cycles">The cycles<a class="anchor" aria-label="anchor" href="#the-cycles"></a>
 </h3>
 <div class="figure">
-<img src="tbl.now_files/figure-html/unnamed-chunk-48-1.png" class="r-plt" alt="Periodogram showing the Fourier season's dominant peak" width="700"><p class="caption">
+<img src="tbl.now_files/figure-html/unnamed-chunk-48-1.png" class="r-plt" alt="Periodogram showing the Fourier season's dominant peak" width="525"><p class="caption">
 Periodogram showing the Fourier season’s dominant peak
 </p>
 </div>
@@ -1671,7 +1671,7 @@ calendar pattern is comparable across strata. By default the object’s
 group on a subset.</p>
 <div class="sourceCode" id="cb44"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">dengue_now</span>, strata <span class="op">=</span> <span class="st">"gender"</span>, by_strata <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
-<p><img src="tbl.now_files/figure-html/unnamed-chunk-49-1.png" class="r-plt" alt="" width="864"></p>
+<p><img src="tbl.now_files/figure-html/unnamed-chunk-49-1.png" class="r-plt" alt="" width="648"></p>
 <div class="section level4">
 <h4 id="one-panel-at-a-time-the-plot_-functions">One panel at a time: the <code>plot_*()</code> functions<a class="anchor" aria-label="anchor" href="#one-panel-at-a-time-the-plot_-functions"></a>
 </h4>
@@ -1800,7 +1800,7 @@ daily data:</p>
 <div class="sourceCode" id="cb47"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">holiday_now</span>, panels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"calendar_holiday"</span>, <span class="st">"calendar_holiday_lag"</span>,</span>
 <span>                                 <span class="st">"delay_holiday"</span>, <span class="st">"delay_holiday_lag"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<p><img src="tbl.now_files/figure-html/holiday-panels-1.png" class="r-plt" alt="" width="864"></p>
+<p><img src="tbl.now_files/figure-html/holiday-panels-1.png" class="r-plt" alt="" width="648"></p>
 <p>These four panels are always drawn <em>normalized</em> against the
 mean, whatever <code>measure</code> you pass <code><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot()</a></code>: a
 day type is not an equal-sized slice of a week, so a percentage share
@@ -1966,7 +1966,7 @@ event date — a solid rolling median, a dashed rolling mean, and 25–75% /
 <em>spread</em> drift.</p>
 <div class="sourceCode" id="cb52"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_delay_drift.html">plot_delay_drift</a></span><span class="op">(</span><span class="va">dengue_now</span><span class="op">)</span></span></code></pre></div>
-<p><img src="tbl.now_files/figure-html/delay-drift-1.png" class="r-plt" alt="" width="864"></p>
+<p><img src="tbl.now_files/figure-html/delay-drift-1.png" class="r-plt" alt="" width="648"></p>
 <p>Because the most recent event dates have not had time to be fully
 reported, their delays look artificially short; that immature region
 (after the completeness cutoff) is <strong>shaded grey</strong> and

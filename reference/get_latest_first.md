@@ -49,8 +49,7 @@ get_nth_reported_cases(x, delay, type = "total")
       surveillance system publishes it, which can go **down** when a
       case is withdrawn. This is the quantity a `count-cumulative`
       stream actually reports, and the one diseasenowcasting's
-      signed-increment (Skellam / SkNB) likelihood is built for; see
-      `diseasenowcasting::confirmation_process()`.
+      cumulative signed-change likelihood is built for.
 
   `"by_type"`
 

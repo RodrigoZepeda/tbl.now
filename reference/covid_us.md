@@ -141,55 +141,28 @@ and
 ## Examples
 
 ``` r
+library(dplyr)
+#> 
+#> Attaching package: ‘dplyr’
+#> The following objects are masked from ‘package:stats’:
+#> 
+#>     filter, lag
+#> The following objects are masked from ‘package:base’:
+#> 
+#>     intersect, setdiff, setequal, union
+
 data(covid_us)
 
-# The two-date object: onset -> positive specimen.
-tn <- tbl_now(
-  covid_us,
-  event_date  = onset_dt,
-  report_date = pos_spec_dt,
-  case_count  = n,
-  strata      = sex,
-  data_type   = "count-incidence",
-  verbose     = FALSE
-)
-#> Warning: *Non-unique*: 170518 rows share an (onset_dt, pos_spec_dt) combination.
-#> ℹ 2 columns "cdc_report_dt" and "current_status" are not declared, so they
-#>   split each cell into several rows. Declare them with `strata = ` to model
-#>   them separately, or `to_count()` to pool them away. The `tbl_now_to_()`
-#>   converters pool undeclared columns for you, so this is a warning rather than
-#>   an error.
-tn
-#> # A tibble:  192,953 × 9
-#> # Data type: "count-incidence"
-#> # Frequency: Event: `days` | Report: `days`
-#>    onset_dt     pos_spec_dt  cdc_report_dt current_status sex       n .event_num
-#>    <date>       <date>       <date>        <chr>          <chr> <int>      <dbl>
-#>    [event_date] [report_dat… [...]         [...]          [str… [cas…      [...]
-#>  1 2020-01-01   2020-01-01   2020-01-01    Probable Case  Fema…     1          0
-#>  2 2020-01-01   2020-03-25   2020-09-05    Laboratory-co… Fema…     1          0
-#>  3 2020-01-01   2020-03-27   2020-05-13    Laboratory-co… Fema…     1          0
-#>  4 2020-01-01   2020-04-16   2020-04-25    Laboratory-co… Male      1          0
-#>  5 2020-01-01   2020-04-16   2020-07-28    Laboratory-co… Fema…     1          0
-#>  6 2020-01-01   2020-04-24   2020-09-05    Laboratory-co… Fema…     1          0
-#>  7 2020-01-01   2020-06-02   2020-06-04    Probable Case  Fema…     1          0
-#>  8 2020-01-01   2020-07-08   2020-08-17    Laboratory-co… Male      1          0
-#>  9 2020-01-01   2020-07-15   2020-07-18    Probable Case  Male      1          0
-#> 10 2020-01-01   2020-07-21   2020-07-25    Laboratory-co… Fema…     1          0
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2020-12-31 | Event date: "onset_dt" | Report date: "pos_spec_dt"
-#> # Strata: "sex"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ℹ 192,943 more rows
-#> # ℹ 2 more variables: .report_num <dbl>, .delay <dbl>
+# The three dates with CDC's labels translated to this package's vocabulary.
+covid_us <- covid_us |>
+  filter(onset_dt <= as.Date("2020-02-01"))
 
-# The third date, with CDC's labels translated to this package's vocabulary.
 tn3 <- tbl_now(
   covid_us,
   event_date       = onset_dt,
   report_date      = pos_spec_dt,
-  revision_date  = cdc_report_dt,
-  revision_type  = current_status,
+  revision_date    = cdc_report_dt,
+  revision_type    = current_status,
   revision_levels = c(
     "Laboratory-confirmed case" = "confirmed",
     "Probable Case"             = "pending"
@@ -199,48 +172,4 @@ tn3 <- tbl_now(
   data_type  = "count-incidence",
   verbose    = FALSE
 )
-has_revision(tn3)
-#> [1] TRUE
-get_revision_levels(tn3)
-#> Laboratory-confirmed case             Probable Case 
-#>               "confirmed"                 "pending" 
-
-# "How many cases were there" now has more than one answer.
-head(get_latest_reported_cases(tn3))
-#> # A tibble:  6 × 7
-#> # Data type: "count-cumulative"
-#> # Frequency: Event: `days` | Report: `days`
-#>   onset_dt     pos_spec_dt   .event_num .report_num sex            n .delay
-#>   <date>       <date>             <dbl>       <dbl> <chr>      <dbl>  <dbl>
-#>   [event_date] [report_date]      [...]       [...] [strata] [cases]  [...]
-#> 1 2020-01-01   2020-09-04             0         247 Female         8    247
-#> 2 2020-01-01   2020-08-05             0         217 Male           4    217
-#> 3 2020-01-03   2020-04-24             2         114 Female         1    112
-#> 4 2020-01-03   2020-03-31             2          90 Male           1     88
-#> 5 2020-01-04   2020-08-07             3         219 Female         2    216
-#> 6 2020-01-04   2020-07-06             3         187 Male           2    184
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2020-12-31 | Event date: "onset_dt" | Report date: "pos_spec_dt"
-#> # Strata: "sex"
-#> # ────────────────────────────────────────────────────────────────────────────────
-head(get_latest_revised_cases(tn3, type = "confirmed"))
-#> # A tibble:  6 × 11
-#> # Data type: "count-cumulative"
-#> # Frequency: Event: `days` | Report: `days`
-#>   onset_dt     pos_spec_dt   .event_num .report_num cdc_report_dt   sex     
-#>   <date>       <date>             <dbl>       <dbl> <date>          <chr>   
-#>   [event_date] [report_date]      [...]       [...] [revision_date] [strata]
-#> 1 2020-01-01   2020-09-04             0         247 2020-09-07      Female  
-#> 2 2020-01-01   2020-07-08             0         189 2020-08-17      Male    
-#> 3 2020-01-03   2020-04-24             2         114 2020-05-03      Female  
-#> 4 2020-01-03   2020-03-31             2          90 2020-04-05      Male    
-#> 5 2020-01-04   2020-07-06             3         187 2020-09-12      Male    
-#> 6 2020-01-04   2020-09-14             3         257 2020-09-24      Unknown 
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2020-12-31 | Event date: "onset_dt" | Report date: "pos_spec_dt"
-#> # Revision date: "cdc_report_dt" ("days") | resolved: 6/6
-#> # Strata: "sex"
-#> # ────────────────────────────────────────────────────────────────────────────────
-#> # ℹ 5 more variables: current_status <chr>, n <dbl>, .delay <dbl>,
-#> #   .revision_num <dbl>, .revision_delay <dbl>
 ```

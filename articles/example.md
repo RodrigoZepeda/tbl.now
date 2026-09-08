@@ -648,6 +648,7 @@ diseasenowcasting package:
 
 hai_fit <- hai_bucaramanga |> 
   run_nowcast(engine = engine_diseasenowcasting(temporal_effects = "none"))
+#> ℹ Nowcasting with "diseasenowcasting" as of 2022-07-18.
 ```
 
 Due to the sparcity, the nowcast predicts almost no cases at any time
@@ -657,6 +658,8 @@ with just maybe a second case at the now for males:
 
 autoplot(hai_fit) 
 ```
+
+![A sparse nowcast](example_files/figure-html/unnamed-chunk-19-1.png)
 
 ## 8. Changing to weekly data
 
@@ -874,7 +877,7 @@ hai_bucaramanga |>
 #> # A tibble: 1 × 7
 #>   stratum  n_at n_reference mean_delay_at mean_delay_reference statistic p_value
 #>   <chr>   <int>       <int>         <dbl>                <dbl>     <dbl>   <dbl>
-#> 1 all        11          14          11.4                 2.93      2.68   0.006
+#> 1 all        11          14          11.4                 2.93      2.68   0.003
 ```
 
 Where we further identify the date of `2021-11-28` as a potential batch
@@ -908,6 +911,11 @@ needs:
 
 hai_fit_weekly <- hai_bucaramanga |>
   run_nowcast(engine = engine_diseasenowcasting())
+#> ℹ Nowcasting with "diseasenowcasting" as of 2022-07-17.
+#> ℹ Added default temporal effects: 52-period seasonality (weekly data).
+#> • To use your own effects, attach them to the <tbl_now> with `tbl.now::add_temporal_effects()` + `tbl.now::compute_temporal_effects()` before calling
+#>   `nowcast()`.
+#> • To disable, call `nowcast(..., temporal_effects = "none")`.
 ```
 
 The
@@ -920,6 +928,10 @@ by `now`, and the green fan the nowcast’s prediction intervals.
 autoplot(hai_fit_weekly)
 ```
 
+![Weekly nowcast for each sex: grey columns of reported cases with a
+green fan of predicted cases over the final
+weeks.](example_files/figure-html/nowcast-weekly-plot-1.png)
+
 Calling
 [`tidy()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast.md)
 gives the nowcast as a table:
@@ -928,6 +940,16 @@ gives the nowcast as a table:
 
 tidy(hai_fit_weekly)
 ```
+
+    #> # A tibble: 6 × 7
+    #>   event_date stratum estimate conf.low conf.high level engine           
+    #>   <date>     <chr>      <dbl>    <dbl>     <dbl> <dbl> <chr>            
+    #> 1 2022-07-03 Female         0        0         1  0.95 diseasenowcasting
+    #> 2 2022-07-03 Male           0        0         1  0.95 diseasenowcasting
+    #> 3 2022-07-10 Female         0        0         1  0.95 diseasenowcasting
+    #> 4 2022-07-10 Male           0        0         2  0.95 diseasenowcasting
+    #> 5 2022-07-17 Female         0        0         2  0.95 diseasenowcasting
+    #> # ℹ 1 more row
 
 ## 12. Evaluate your nowcast
 
@@ -975,6 +997,14 @@ intervals (`coverage_*`):
 ``` r
 
 hai_backtest
+#> ── A <nowcast_backtest> ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+#> • methods: "diseasenowcasting" and "baselinenowcast"
+#> • now dates: "2022-04-24", "2022-05-22", and "2022-06-19"
+#> # A tibble: 2 × 4
+#>   .method           mean_wis mean_ae_median coverage_90
+#>   <chr>                <dbl>          <dbl>       <dbl>
+#> 1 diseasenowcasting   0.0380         0.0479       0.982
+#> 2 baselinenowcast     0.0454         0.0571       0.973
 ```
 
 In this scenario, `diseasenowcasting` scores better on both accuracy
@@ -993,6 +1023,15 @@ tidy(hai_backtest)
 ``` r
 
 tidy(hai_backtest) |> arrange(event_date) |> tail()
+#> # A tibble: 6 × 13
+#>   method            now        event_date stratum observed estimate conf.low conf.high level    wis ae_median coverage_50 coverage_90
+#>   <chr>             <date>     <date>     <chr>      <dbl>    <dbl>    <dbl>     <dbl> <dbl>  <dbl>     <dbl> <lgl>       <lgl>      
+#> 1 diseasenowcasting 2022-06-19 2022-06-12 Female         2        1        1         3  0.95 0.222          1 TRUE        TRUE       
+#> 2 diseasenowcasting 2022-06-19 2022-06-12 Male           0        0        0         3  0.95 0.117          0 TRUE        TRUE       
+#> 3 baselinenowcast   2022-06-19 2022-06-19 Female         0        0        0         2  0.95 0.0556         0 TRUE        TRUE       
+#> 4 baselinenowcast   2022-06-19 2022-06-19 Male           1        1        1         5  0.95 0.156          0 TRUE        TRUE       
+#> 5 diseasenowcasting 2022-06-19 2022-06-19 Female         0        0        0         4  0.95 0.156          0 TRUE        TRUE       
+#> # ℹ 1 more row
 ```
 
 ## 13. Ensemble nowcast
@@ -1025,6 +1064,8 @@ functions can be used here:
 
 autoplot(hai_ensemble)
 ```
+
+![](example_files/figure-html/unnamed-chunk-33-1.png)
 
 One can fit ensembles with more than two models and different model
 specifications. Check out the article on [ensemble

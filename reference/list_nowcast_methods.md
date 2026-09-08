@@ -51,8 +51,9 @@ walks through writing one.
 ## What can this installation actually fit right now? ("example" is the toy
 # engine, not a method you would nowcast with.)
 list_nowcast_methods()
-#> [1] "EpiNow2"         "NobBS"           "baselinenowcast" "epinowcast"     
-#> [5] "example"         "surveillance"   
+#> [1] "EpiNow2"           "NobBS"             "baselinenowcast"  
+#> [4] "diseasenowcasting" "epinowcast"        "example"          
+#> [7] "surveillance"     
 
 # Including methods whose modelling package is not installed
 list_nowcast_methods(installed_only = FALSE)

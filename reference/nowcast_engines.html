@@ -21,7 +21,7 @@ is about driving it through run_nowcast()."><meta property="og:image" content="h
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.34.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.35.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -59,7 +59,7 @@ is about driving it through run_nowcast()."><meta property="og:image" content="h
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Engines for the built-in nowcasting packages</h1>
-
+      <small class="dont-index">Source: <a href="https://github.com/RodrigoZepeda/tbl.now/blob/main/R/nowcast_engine.R" class="external-link"><code>R/nowcast_engine.R</code></a></small>
       <div class="d-none name"><code>nowcast_engines.Rd</code></div>
     </div>
 
@@ -156,11 +156,12 @@ functions it is whatever their named arguments do not already cover.</p></dd>
 
 <dt id="arg-model-type-n-draws">model, type, n_draws<a class="anchor" aria-label="anchor" href="#arg-model-type-n-draws"></a></dt>
 <dd><p>(<code>engine_diseasenowcasting()</code>) Arguments of
-<code>diseasenowcasting::nowcast()</code>. <code>model</code> is where the epidemic and
+<code><a href="https://rodrigozepeda.github.io/diseasenowcasting/reference/nowcast.html" class="external-link">diseasenowcasting::nowcast()</a></code>. <code>model</code> is where the epidemic and
 revision processes are chosen, e.g.
 <code>diseasenowcasting::model(epidemic = diseasenowcasting::ar1_epidemic())</code>.
-On <code>count-cumulative</code> data that revises downwards you also want a
-<code>revision</code> process, or the negative increments have nowhere to go.</p></dd>
+On <code>count-cumulative</code> data, diseasenowcasting selects its cumulative model
+automatically unless you supply one with
+<code>diseasenowcasting::model(cumulative = diseasenowcasting::cumulative_process())</code>.</p></dd>
 
 
 <dt id="arg-min-date">min_date<a class="anchor" aria-label="anchor" href="#arg-min-date"></a></dt>

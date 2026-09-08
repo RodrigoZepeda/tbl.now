@@ -27,7 +27,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.34.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.35.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -80,7 +80,7 @@
       <img src="../logo.png" class="logo" alt=""><h1>One dataset, many nowcasts: using tbl.now with different modelling packages</h1>
             
       
-
+      <small class="dont-index">Source: <a href="https://github.com/RodrigoZepeda/tbl.now/blob/main/vignettes/articles/nowcasting-models.Rmd" class="external-link"><code>vignettes/articles/nowcasting-models.Rmd</code></a></small>
       <div class="d-none name"><code>nowcasting-models.Rmd</code></div>
     </div>
 
@@ -364,7 +364,7 @@ object:</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># TODO: When the diseasenowcasting 2.3.0 ships without the tidy()</span></span>
 <span><span class="co"># remove the :: and use library</span></span>
-<span><span class="va">dnc_fit</span> <span class="op">&lt;-</span> <span class="fu">diseasenowcasting</span><span class="fu">::</span><span class="fu">nowcast</span><span class="op">(</span><span class="va">covid_now</span><span class="op">)</span></span>
+<span><span class="va">dnc_fit</span> <span class="op">&lt;-</span> <span class="fu">diseasenowcasting</span><span class="fu">::</span><span class="fu"><a href="https://rodrigozepeda.github.io/diseasenowcasting/reference/nowcast.html" class="external-link">nowcast</a></span><span class="op">(</span><span class="va">covid_now</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">dnc_fit</span></span></code></pre></div>
 <pre><code><span><span class="co">#&gt; -- diseasenowcasting --------------------------------------- as of 2021-03-31 --</span></span>
@@ -393,7 +393,7 @@ itself, so the enriched object needs no extra arguments: it picks up the
 <code>sex</code> stratum and the day-of-week / seasonal effect columns
 automatically.</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">dnc_seasonal</span> <span class="op">&lt;-</span> <span class="fu">diseasenowcasting</span><span class="fu">::</span><span class="fu">nowcast</span><span class="op">(</span><span class="va">covid_seasonal</span><span class="op">)</span>   <span class="co"># strata and effects used automatically</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">dnc_seasonal</span> <span class="op">&lt;-</span> <span class="fu">diseasenowcasting</span><span class="fu">::</span><span class="fu"><a href="https://rodrigozepeda.github.io/diseasenowcasting/reference/nowcast.html" class="external-link">nowcast</a></span><span class="op">(</span><span class="va">covid_seasonal</span><span class="op">)</span>   <span class="co"># strata and effects used automatically</span></span></code></pre></div>
 <pre><code><span><span class="co">#&gt; -- diseasenowcasting --------------------------------------- as of 2021-03-31 --</span></span>
 <span><span class="co">#&gt; Model: NegBin / HSGP / LogNormal</span></span>
 <span><span class="co">#&gt; two_stage (395 event-times, 2 strata; 25 fits, rung 'multi')</span></span>
@@ -1184,7 +1184,7 @@ directly comparable on the same object:</p>
 and it is <strong>not</strong> what corrects the recent days —
 <code><a href="https://epiforecasts.io/EpiNow2/reference/estimate_truncation.html" class="external-link">estimate_truncation()</a></code> above does that. It answers a
 different question: how long reporting takes. Like
-<code><a href="../reference/tidy.epidist_fit.html">tidy.epidist_fit()</a></code>, it returns a
+<code><a href="../reference/tidy.delay_distribution.html">tidy.epidist_fit()</a></code>, it returns a
 <strong>delay-shaped</strong> table — one row per parameter, plus the
 distribution’s <code>mean</code> and <code>sd</code>:</p>
 <div class="sourceCode" id="cb45"><pre class="downlit sourceCode r">

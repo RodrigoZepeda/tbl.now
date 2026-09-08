@@ -203,7 +203,7 @@ to nowcast, so supply the epidemiology yourself. EpiNow2 also models
 **[`engine_diseasenowcasting()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_engines.md)**
 uses the package's own defaults, reading strata, covariates and temporal
 effects off the object. `model`, `type` and `n_draws` go to
-`diseasenowcasting::nowcast()`.
+[`diseasenowcasting::nowcast()`](https://rodrigozepeda.github.io/diseasenowcasting/reference/nowcast.html).
 
 **[`engine_baselinenowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_engines.md)**
 is not Bayesian and has no priors: the delay is estimated from the

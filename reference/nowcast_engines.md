@@ -97,11 +97,12 @@ engine_epinow2(
 - model, type, n_draws:
 
   (`engine_diseasenowcasting()`) Arguments of
-  `diseasenowcasting::nowcast()`. `model` is where the epidemic and
-  revision processes are chosen, e.g.
+  [`diseasenowcasting::nowcast()`](https://rodrigozepeda.github.io/diseasenowcasting/reference/nowcast.html).
+  `model` is where the epidemic and revision processes are chosen, e.g.
   `diseasenowcasting::model(epidemic = diseasenowcasting::ar1_epidemic())`.
-  On `count-cumulative` data that revises downwards you also want a
-  `revision` process, or the negative increments have nowhere to go.
+  On `count-cumulative` data, diseasenowcasting selects its cumulative
+  model automatically unless you supply one with
+  `diseasenowcasting::model(cumulative = diseasenowcasting::cumulative_process())`.
 
 - min_date:
 

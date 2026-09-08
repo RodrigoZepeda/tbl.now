@@ -1377,7 +1377,7 @@ own backend):
 
 | engine | fits | key named args | needs |
 |----|----|----|----|
-| [`engine_diseasenowcasting()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_engines.md) | `diseasenowcasting::nowcast()`, straight off the `tbl_now` | `model`, `type`, `n_draws` | — |
+| [`engine_diseasenowcasting()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_engines.md) | [`diseasenowcasting::nowcast()`](https://rodrigozepeda.github.io/diseasenowcasting/reference/nowcast.html), straight off the `tbl_now` | `model`, `type`, `n_draws` | — |
 | [`engine_baselinenowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_engines.md) | one reporting triangle, or one **per stratum** | `draws`, `delays_unit`, `max_delay` | — |
 | [`engine_epinowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_engines.md) | [`epinowcast::epinowcast()`](https://package.epinowcast.org/reference/epinowcast.html) | `preprocess_args`, `expectation`, `reference`, `report`, `fit` | Stan |
 | [`engine_nobbs()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_engines.md) | `NobBS()`, or `NobBS.strat()` when strata are declared | `max_D`, `moving_window`, `specs` | JAGS |
@@ -1602,7 +1602,7 @@ exactly like one fitted by hand.
   [`tidy()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast.md),
   with different columns.** It estimates a delay distribution, not a
   nowcast, so
-  [`tidy.epidist_fit()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.epidist_fit.md)
+  [`tidy.epidist_fit()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.delay_distribution.md)
   returns `term` / `estimate` / `conf.low` / `conf.high` / `level` /
   `engine`, one row per distribution parameter (`mu`, `sigma`, plus the
   derived `mean` and `sd`). There is no `event_date`. Beware dispatch:

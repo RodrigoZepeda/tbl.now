@@ -13,7 +13,7 @@ third date a surveillance record can carry."><meta property="og:image" content="
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.34.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.35.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -51,7 +51,7 @@ third date a surveillance record can carry."><meta property="og:image" content="
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>covid_us: CDC COVID-19 Case Surveillance Public Use Data (2020)</h1>
-
+      <small class="dont-index">Source: <a href="https://github.com/RodrigoZepeda/tbl.now/blob/main/R/data.R" class="external-link"><code>R/data.R</code></a></small>
       <div class="d-none name"><code>covid_us.Rd</code></div>
     </div>
 
@@ -169,55 +169,28 @@ result; the package's other datasets – <a href="denguedat.html">denguedat</a>,
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">covid_us</span><span class="op">)</span></span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Attaching package: ‘dplyr’</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> The following objects are masked from ‘package:stats’:</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>     filter, lag</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> The following objects are masked from ‘package:base’:</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>     intersect, setdiff, setequal, union</span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># The two-date object: onset -&gt; positive specimen.</span></span></span>
-<span class="r-in"><span><span class="va">tn</span> <span class="op">&lt;-</span> <span class="fu"><a href="tbl_now.html">tbl_now</a></span><span class="op">(</span></span></span>
-<span class="r-in"><span>  <span class="va">covid_us</span>,</span></span>
-<span class="r-in"><span>  event_date  <span class="op">=</span> <span class="va">onset_dt</span>,</span></span>
-<span class="r-in"><span>  report_date <span class="op">=</span> <span class="va">pos_spec_dt</span>,</span></span>
-<span class="r-in"><span>  case_count  <span class="op">=</span> <span class="va">n</span>,</span></span>
-<span class="r-in"><span>  strata      <span class="op">=</span> <span class="va">sex</span>,</span></span>
-<span class="r-in"><span>  data_type   <span class="op">=</span> <span class="st">"count-incidence"</span>,</span></span>
-<span class="r-in"><span>  verbose     <span class="op">=</span> <span class="cn">FALSE</span></span></span>
-<span class="r-in"><span><span class="op">)</span></span></span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>*Non-unique*: 170518 rows share an (onset_dt, pos_spec_dt) combination.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> 2 columns "cdc_report_dt" and "current_status" are not declared, so they</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span>   split each cell into several rows. Declare them with `strata = ` to model</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span>   them separately, or `to_count()` to pool them away. The `tbl_now_to_()`</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span>   converters pool undeclared columns for you, so this is a warning rather than</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span>   an error.</span>
-<span class="r-in"><span><span class="va">tn</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble:  192,953 × 9</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># Data type: </span><span style="color: #0000BB;">"count-incidence"</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># Frequency: Event: `days` | Report: `days`</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    onset_dt     pos_spec_dt  cdc_report_dt current_status sex       n .event_num</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    <span style="color: #949494;">[event_date]</span> <span style="color: #949494;">[report_dat</span>… <span style="color: #949494;">[...]</span>         <span style="color: #949494;">[...]</span>          <span style="color: #949494;">[str</span>… <span style="color: #949494;">[cas</span>…      <span style="color: #949494;">[...]</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 1</span> 2020-01-01   2020-01-01   2020-01-01    Probable Case  Fema…     1          0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 2</span> 2020-01-01   2020-03-25   2020-09-05    Laboratory-co… Fema…     1          0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 3</span> 2020-01-01   2020-03-27   2020-05-13    Laboratory-co… Fema…     1          0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 4</span> 2020-01-01   2020-04-16   2020-04-25    Laboratory-co… Male      1          0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 5</span> 2020-01-01   2020-04-16   2020-07-28    Laboratory-co… Fema…     1          0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 6</span> 2020-01-01   2020-04-24   2020-09-05    Laboratory-co… Fema…     1          0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 7</span> 2020-01-01   2020-06-02   2020-06-04    Probable Case  Fema…     1          0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 8</span> 2020-01-01   2020-07-08   2020-08-17    Laboratory-co… Male      1          0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 9</span> 2020-01-01   2020-07-15   2020-07-18    Probable Case  Male      1          0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">10</span> 2020-01-01   2020-07-21   2020-07-25    Laboratory-co… Fema…     1          0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> # ────────────────────────────────────────────────────────────────────────────────</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> # Now: <span style="color: #0000BB;">2020-12-31</span> | Event date: <span style="color: #0000BB;">"onset_dt"</span> | Report date: <span style="color: #0000BB;">"pos_spec_dt"</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> # Strata: <span style="color: #0000BB;">"sex"</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> # ────────────────────────────────────────────────────────────────────────────────</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 192,943 more rows</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 2 more variables: .report_num &lt;dbl&gt;, .delay &lt;dbl&gt;</span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">covid_us</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># The third date, with CDC's labels translated to this package's vocabulary.</span></span></span>
+<span class="r-in"><span><span class="co"># The three dates with CDC's labels translated to this package's vocabulary.</span></span></span>
+<span class="r-in"><span><span class="va">covid_us</span> <span class="op">&lt;-</span> <span class="va">covid_us</span> <span class="op">|&gt;</span></span></span>
+<span class="r-in"><span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">onset_dt</span> <span class="op">&lt;=</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2020-02-01"</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="va">tn3</span> <span class="op">&lt;-</span> <span class="fu"><a href="tbl_now.html">tbl_now</a></span><span class="op">(</span></span></span>
 <span class="r-in"><span>  <span class="va">covid_us</span>,</span></span>
 <span class="r-in"><span>  event_date       <span class="op">=</span> <span class="va">onset_dt</span>,</span></span>
 <span class="r-in"><span>  report_date      <span class="op">=</span> <span class="va">pos_spec_dt</span>,</span></span>
-<span class="r-in"><span>  revision_date  <span class="op">=</span> <span class="va">cdc_report_dt</span>,</span></span>
-<span class="r-in"><span>  revision_type  <span class="op">=</span> <span class="va">current_status</span>,</span></span>
+<span class="r-in"><span>  revision_date    <span class="op">=</span> <span class="va">cdc_report_dt</span>,</span></span>
+<span class="r-in"><span>  revision_type    <span class="op">=</span> <span class="va">current_status</span>,</span></span>
 <span class="r-in"><span>  revision_levels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span></span>
 <span class="r-in"><span>    <span class="st">"Laboratory-confirmed case"</span> <span class="op">=</span> <span class="st">"confirmed"</span>,</span></span>
 <span class="r-in"><span>    <span class="st">"Probable Case"</span>             <span class="op">=</span> <span class="st">"pending"</span></span></span>
@@ -227,50 +200,6 @@ result; the package's other datasets – <a href="denguedat.html">denguedat</a>,
 <span class="r-in"><span>  data_type  <span class="op">=</span> <span class="st">"count-incidence"</span>,</span></span>
 <span class="r-in"><span>  verbose    <span class="op">=</span> <span class="cn">FALSE</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="nowcast_data_getters.html">has_revision</a></span><span class="op">(</span><span class="va">tn3</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] TRUE</span>
-<span class="r-in"><span><span class="fu"><a href="nowcast_data_getters.html">get_revision_levels</a></span><span class="op">(</span><span class="va">tn3</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Laboratory-confirmed case             Probable Case </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>               "confirmed"                 "pending" </span>
-<span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># "How many cases were there" now has more than one answer.</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="get_latest_first.html">get_latest_reported_cases</a></span><span class="op">(</span><span class="va">tn3</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble:  6 × 7</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># Data type: </span><span style="color: #0000BB;">"count-cumulative"</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># Frequency: Event: `days` | Report: `days`</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   onset_dt     pos_spec_dt   .event_num .report_num sex            n .delay</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>             <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494;">[event_date]</span> <span style="color: #949494;">[report_date]</span>      <span style="color: #949494;">[...]</span>       <span style="color: #949494;">[...]</span> <span style="color: #949494;">[strata]</span> <span style="color: #949494;">[cases]</span>  <span style="color: #949494;">[...]</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> 2020-01-01   2020-09-04             0         247 Female         8    247</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> 2020-01-01   2020-08-05             0         217 Male           4    217</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span> 2020-01-03   2020-04-24             2         114 Female         1    112</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">4</span> 2020-01-03   2020-03-31             2          90 Male           1     88</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">5</span> 2020-01-04   2020-08-07             3         219 Female         2    216</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">6</span> 2020-01-04   2020-07-06             3         187 Male           2    184</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> # ────────────────────────────────────────────────────────────────────────────────</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> # Now: <span style="color: #0000BB;">2020-12-31</span> | Event date: <span style="color: #0000BB;">"onset_dt"</span> | Report date: <span style="color: #0000BB;">"pos_spec_dt"</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> # Strata: <span style="color: #0000BB;">"sex"</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> # ────────────────────────────────────────────────────────────────────────────────</span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="revised_cases.html">get_latest_revised_cases</a></span><span class="op">(</span><span class="va">tn3</span>, type <span class="op">=</span> <span class="st">"confirmed"</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble:  6 × 11</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># Data type: </span><span style="color: #0000BB;">"count-cumulative"</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># Frequency: Event: `days` | Report: `days`</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   onset_dt     pos_spec_dt   .event_num .report_num cdc_report_dt   sex     </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>             <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494;">[event_date]</span> <span style="color: #949494;">[report_date]</span>      <span style="color: #949494;">[...]</span>       <span style="color: #949494;">[...]</span> <span style="color: #949494;">[revision_date]</span> <span style="color: #949494;">[strata]</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> 2020-01-01   2020-09-04             0         247 2020-09-07      Female  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> 2020-01-01   2020-07-08             0         189 2020-08-17      Male    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span> 2020-01-03   2020-04-24             2         114 2020-05-03      Female  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">4</span> 2020-01-03   2020-03-31             2          90 2020-04-05      Male    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">5</span> 2020-01-04   2020-07-06             3         187 2020-09-12      Male    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">6</span> 2020-01-04   2020-09-14             3         257 2020-09-24      Unknown </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> # ────────────────────────────────────────────────────────────────────────────────</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> # Now: <span style="color: #0000BB;">2020-12-31</span> | Event date: <span style="color: #0000BB;">"onset_dt"</span> | Report date: <span style="color: #0000BB;">"pos_spec_dt"</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> # Revision date: <span style="color: #0000BB;">"cdc_report_dt"</span> (<span style="color: #0000BB;">"days"</span>) | resolved: <span style="color: #0000BB;">6</span>/<span style="color: #0000BB;">6</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> # Strata: <span style="color: #0000BB;">"sex"</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> # ────────────────────────────────────────────────────────────────────────────────</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 5 more variables: current_status &lt;chr&gt;, n &lt;dbl&gt;, .delay &lt;dbl&gt;,</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   .revision_num &lt;dbl&gt;, .revision_delay &lt;dbl&gt;</span></span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

@@ -27,7 +27,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.34.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.35.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -80,7 +80,7 @@
       <img src="../logo.png" class="logo" alt=""><h1>One call, many models: run_nowcast(), custom backends and ensembles</h1>
             
       
-
+      <small class="dont-index">Source: <a href="https://github.com/RodrigoZepeda/tbl.now/blob/main/vignettes/articles/ensemble-nowcasting.Rmd" class="external-link"><code>vignettes/articles/ensemble-nowcasting.Rmd</code></a></small>
       <div class="d-none name"><code>ensemble-nowcasting.Rmd</code></div>
     </div>
 
@@ -217,8 +217,9 @@ into an error at the call, where you can see it.</p>
 your session:</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/list_nowcast_methods.html">list_nowcast_methods</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "baselinenowcast" "EpiNow2"         "epinowcast"      "example"        </span></span>
-<span><span class="co">#&gt; [5] "NobBS"           "surveillance"</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] "baselinenowcast"   "diseasenowcasting" "EpiNow2"          </span></span>
+<span><span class="co">#&gt; [4] "epinowcast"        "example"           "NobBS"            </span></span>
+<span><span class="co">#&gt; [7] "surveillance"</span></span></code></pre></div>
 <div class="section level3">
 <h3 id="one-card-per-engine">One card per engine<a class="anchor" aria-label="anchor" href="#one-card-per-engine"></a>
 </h3>
@@ -273,10 +274,10 @@ columns off the object, so there is nothing to pass.</p>
 <span><span class="co">#&gt; ℹ 9750 more rows. Use `as_tibble()` for all of them.</span></span></code></pre>
 <p><strong>Watch for:</strong> it is also the one engine whose
 <em>model</em> you can swap without changing packages — see the ensemble
-below, which uses two of them. On <code>count-cumulative</code> data
-that revises downwards, pass a
-<code>model(confirmation = confirmation_process())</code>, or the
-de-accumulated negatives have nowhere to go.</p>
+below, which uses two of them. On <code>count-cumulative</code> data,
+diseasenowcasting selects its cumulative model automatically unless you
+pass an explicit
+<code>model(cumulative = cumulative_process())</code>.</p>
 </div>
 <div class="section level4">
 <h4 id="epinowcast">epinowcast<a class="anchor" aria-label="anchor" href="#epinowcast"></a>
@@ -757,8 +758,8 @@ refitted:</p>
 <span>  dnc_ar1           <span class="op">=</span> <span class="fu"><a href="../reference/run_nowcast.html">run_nowcast</a></span><span class="op">(</span></span>
 <span>    <span class="va">snapshot</span>,</span>
 <span>    <span class="fu"><a href="../reference/nowcast_engines.html">engine_diseasenowcasting</a></span><span class="op">(</span></span>
-<span>      model <span class="op">=</span> <span class="fu">diseasenowcasting</span><span class="fu">::</span><span class="fu">model</span><span class="op">(</span></span>
-<span>        epidemic <span class="op">=</span> <span class="fu">diseasenowcasting</span><span class="fu">::</span><span class="fu">ar1_epidemic</span><span class="op">(</span><span class="op">)</span></span>
+<span>      model <span class="op">=</span> <span class="fu">diseasenowcasting</span><span class="fu">::</span><span class="fu"><a href="https://rodrigozepeda.github.io/diseasenowcasting/reference/model.html" class="external-link">model</a></span><span class="op">(</span></span>
+<span>        epidemic <span class="op">=</span> <span class="fu">diseasenowcasting</span><span class="fu">::</span><span class="fu"><a href="https://rodrigozepeda.github.io/diseasenowcasting/reference/epidemic_process.html" class="external-link">ar1_epidemic</a></span><span class="op">(</span><span class="op">)</span></span>
 <span>      <span class="op">)</span>,</span>
 <span>      label <span class="op">=</span> <span class="st">"dnc_ar1"</span></span>
 <span>    <span class="op">)</span></span>
@@ -965,8 +966,8 @@ above can be weighted separately rather than sharing one weight:</p>
 <span>  <span class="fu"><a href="../reference/nowcast_engines.html">engine_baselinenowcast</a></span><span class="op">(</span>draws <span class="op">=</span> <span class="fl">1000</span><span class="op">)</span>,</span>
 <span>  <span class="fu"><a href="../reference/nowcast_engines.html">engine_diseasenowcasting</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  <span class="fu"><a href="../reference/nowcast_engines.html">engine_diseasenowcasting</a></span><span class="op">(</span></span>
-<span>    model <span class="op">=</span> <span class="fu">diseasenowcasting</span><span class="fu">::</span><span class="fu">model</span><span class="op">(</span></span>
-<span>      epidemic <span class="op">=</span> <span class="fu">diseasenowcasting</span><span class="fu">::</span><span class="fu">ar1_epidemic</span><span class="op">(</span><span class="op">)</span></span>
+<span>    model <span class="op">=</span> <span class="fu">diseasenowcasting</span><span class="fu">::</span><span class="fu"><a href="https://rodrigozepeda.github.io/diseasenowcasting/reference/model.html" class="external-link">model</a></span><span class="op">(</span></span>
+<span>      epidemic <span class="op">=</span> <span class="fu">diseasenowcasting</span><span class="fu">::</span><span class="fu"><a href="https://rodrigozepeda.github.io/diseasenowcasting/reference/epidemic_process.html" class="external-link">ar1_epidemic</a></span><span class="op">(</span><span class="op">)</span></span>
 <span>    <span class="op">)</span>,</span>
 <span>    label <span class="op">=</span> <span class="st">"dnc_ar1"</span></span>
 <span>  <span class="op">)</span>,</span>
