@@ -86,8 +86,9 @@ functions it is whatever their named arguments do not already cover.}
 \code{\link[diseasenowcasting:nowcast]{diseasenowcasting::nowcast()}}. \code{model} is where the epidemic and
 revision processes are chosen, e.g.
 \code{diseasenowcasting::model(epidemic = diseasenowcasting::ar1_epidemic())}.
-On \code{count-cumulative} data that revises downwards you also want a
-\code{revision} process, or the negative increments have nowhere to go.}
+On \code{count-cumulative} data, diseasenowcasting selects its cumulative model
+automatically unless you supply one with
+\code{diseasenowcasting::model(cumulative = diseasenowcasting::cumulative_process())}.}
 
 \item{min_date}{How much history to fit on. One of
 \itemize{

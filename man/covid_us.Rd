@@ -93,27 +93,20 @@ that \code{\link[=diagnose_batches]{diagnose_batches()}} and \code{\link[=transp
 }
 
 \examples{
+library(dplyr)
+
 data(covid_us)
 
-# The two-date object: onset -> positive specimen.
-tn <- tbl_now(
-  covid_us,
-  event_date  = onset_dt,
-  report_date = pos_spec_dt,
-  case_count  = n,
-  strata      = sex,
-  data_type   = "count-incidence",
-  verbose     = FALSE
-)
-tn
+# The three dates with CDC's labels translated to this package's vocabulary.
+covid_us <- covid_us |>
+  filter(onset_dt <= as.Date("2020-02-01"))
 
-# The third date, with CDC's labels translated to this package's vocabulary.
 tn3 <- tbl_now(
   covid_us,
   event_date       = onset_dt,
   report_date      = pos_spec_dt,
-  revision_date  = cdc_report_dt,
-  revision_type  = current_status,
+  revision_date    = cdc_report_dt,
+  revision_type    = current_status,
   revision_levels = c(
     "Laboratory-confirmed case" = "confirmed",
     "Probable Case"             = "pending"
@@ -123,12 +116,6 @@ tn3 <- tbl_now(
   data_type  = "count-incidence",
   verbose    = FALSE
 )
-has_revision(tn3)
-get_revision_levels(tn3)
-
-# "How many cases were there" now has more than one answer.
-head(get_latest_reported_cases(tn3))
-head(get_latest_revised_cases(tn3, type = "confirmed"))
 }
 \seealso{
 \code{\link[=tbl_now]{tbl_now()}} to declare the date columns; \link[=add]{add_revision_date()} to

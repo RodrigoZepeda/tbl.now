@@ -30,3 +30,4 @@
 ^BATCH_DETECTION_EXPLAINED\.md$
 ^paper$
 ^figure$
+^inst/figures$

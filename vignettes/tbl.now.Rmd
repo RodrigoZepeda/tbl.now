@@ -12,7 +12,12 @@ vignette: >
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
-  comment = "#>"
+  comment = "#>",
+  # `html_vignette` renders at 96 dpi, which for the wide multi-panel figures
+  # below produces PNGs wider than the 700px the vignette CSS will ever show
+  # and inflates the installed size of `doc/` for pixels nobody sees. 72 dpi
+  # keeps every figure at essentially its displayed width.
+  dpi = 72
 )
 ```
 

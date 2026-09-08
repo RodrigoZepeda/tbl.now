@@ -1,3 +1,33 @@
+# tbl.now 0.35.1
+
+## One help page for the two delay-distribution `tidy()` methods
+
+`tidy.epidist_fit()` and `tidy.estimate_dist()` now share a single help page,
+`?tidy.delay_distribution`. Both methods return the same delay-shaped table, and
+documenting them apart duplicated the *Value*, *How `mean` and `sd` are
+obtained* and name-collision sections. Nothing about either method's behaviour
+changed, and both names still work as topic aliases.
+
+## Smaller installed package
+
+The installed size drops from 5.4 Mb to 4.5 Mb, below the 5 Mb `R CMD check`
+threshold:
+
+* `man/figures/` no longer ships three README plots that no longer appear in
+  `README.md`, and the four that do are stored with an 8-bit palette.
+* `inst/figures/` (only the hex-sticker source, which nothing loads at run time)
+  is excluded from the build.
+* The introductory vignette renders at 72 dpi. Its wide multi-panel figures were
+  being drawn wider than the 700 px the vignette CSS ever displays, so this
+  costs no visible resolution.
+
+## Dataset documentation lives in `R/data.R`
+
+The roxygen blocks for `covid_colombia` and `hai_bucaramanga` moved out of
+`R/data-covid_colombia.R` and `R/data-hai_bucaramanga.R` into `R/data.R`, which
+is now the single file documenting every shipped dataset. The rendered help
+pages are unchanged.
+
 # tbl.now 0.35.0
 
 ## diseasenowcasting engine follows the revision/cumulative API

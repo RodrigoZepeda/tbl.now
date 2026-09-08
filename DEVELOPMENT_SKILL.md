@@ -972,6 +972,29 @@ never had the problem.
 
 ## Documenting
 
+### Datasets are documented in `R/data.R`, and nowhere else
+
+Every exported dataset's roxygen block lives in **`R/data.R`**. There is
+one file, not one file per dataset: no `R/data-hai_bucaramanga.R`, no
+`R/data-covid.R`. When you add a dataset, append its block to the end of
+`R/data.R` (before the commented-out `vectordat` stub), ending with the
+bare `"name"` string that roxygen attaches the block to, and add the
+dataset to the `@seealso` list of the other datasets' blocks so the
+cross-references stay complete. The raw-data script that *builds* it
+still lives in `data-raw/<name>.R`, and the `@source` should say so.
+
+### Figures, and the installed size
+
+`man/figures/` is installed verbatim into `help/figures/`, so anything left
+there counts against the 5 Mb `R CMD check` size limit. Two rules follow.
+Re-knitting `README.Rmd` writes fresh `man/figures/README-*.png` at full size
+and leaves the old ones behind: delete the files `README.md` no longer
+references, and re-quantise the ones it does
+(`magick f.png -strip -colors 128 PNG8:f.png`). And a vignette's figures are
+base64-embedded in its HTML, which lands in `doc/`: `html_vignette` shows at
+most 700 px, so render at `dpi = 72` rather than paying for pixels the CSS
+throws away.
+
 ### Examples
 
 No example should use `dontrun` or `donttest`. Nor should they use an
