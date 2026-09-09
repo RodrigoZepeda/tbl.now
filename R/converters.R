@@ -2889,11 +2889,20 @@ tbl_now_to_baselinenowcast <- function(x, ...,
 #'   \item{`"estimate_secondary"`}{a `data.frame` of `date` / `primary` /
 #'     `secondary`, where `primary` counts reported arrivals by `report_date`
 #'     and `secondary` counts resolved revisions by `revision_date`, filtered by
-#'     `secondary_type`.}
+#'     `secondary_type`. This is a **repurposing** of
+#'     [EpiNow2::estimate_secondary()]: the model was written for two
+#'     epidemiological streams linked by a delay (cases and deaths, say), and
+#'     here the two streams are one series and its own revisions, so the fitted
+#'     delay is report-to-revision. The converter warns about the repurposing
+#'     when it runs.}
 #'   \item{`"estimate_dist"`}{the interval-censored `pdate_lwr` / `pdate_upr` /
 #'     `sdate_lwr` / `sdate_upr` / `obs_date` frame that
 #'     [EpiNow2::estimate_dist()] fits a **delay distribution** to (new in
-#'     \pkg{EpiNow2} 1.9.0). Count data rides along as the `n` weight column.}
+#'     \pkg{EpiNow2} 1.9.0). Count data rides along as the `n` weight column.
+#'     `estimate_dist()` vendors likelihood functions from
+#'     [primarycensored](https://primarycensored.epinowcast.org/), and its
+#'     help asks that you cite \pkg{primarycensored} alongside \pkg{EpiNow2}
+#'     when using it (`citation("primarycensored")`).}
 #' }
 #'
 #' `tbl_now_from_EpiNow2()` inverts the snapshot form: snapshot *k* is the series
@@ -3024,7 +3033,7 @@ tbl_now_to_EpiNow2 <- function( # nolint: object_name_linter.
     .warn_dropped_lazy_temporal_effects(x, "tbl_now_to_EpiNow2")
     return(.epinow2_secondary_data(
       x, secondary_type = secondary_type, accumulate = accumulate,
-      complete = complete, verbose = verbose
+      complete = complete, verbose = verbose, quiet = quiet
     ))
   }
 
@@ -3150,7 +3159,7 @@ tbl_now_to_EpiNow2 <- function( # nolint: object_name_linter.
 #'
 #' @param x A `tbl_now` with a revision process.
 #' @param secondary_type Which revision outcome to count.
-#' @param accumulate,complete As in [tbl_now_to_EpiNow2()].
+#' @param accumulate,complete,quiet As in [tbl_now_to_EpiNow2()].
 #' @param verbose Logical.
 #'
 #' @return A `data.frame` with `date`, `primary` and `secondary`.
@@ -3158,12 +3167,32 @@ tbl_now_to_EpiNow2 <- function( # nolint: object_name_linter.
 #' @keywords internal
 #' @noRd
 .epinow2_secondary_data <- function(x, secondary_type, accumulate, complete,
-                                    verbose = TRUE) {
+                                    verbose = TRUE, quiet = FALSE) {
   if (!has_revision(x)) {
     cli::cli_abort(c(
       "{.fn EpiNow2::estimate_secondary} needs a revision process, and \\
        {.arg x} has none.",
       "i" = "Attach one with {.fn add_revision_date}."
+    ))
+  }
+
+  # `estimate_secondary()` was designed for two epidemiological streams --
+  # cases and deaths, say -- linked by a delay distribution (see
+  # `?EpiNow2::estimate_secondary`). This target repurposes it: `primary` is
+  # reports and `secondary` is revisions of those same reports, so the delay
+  # the model fits is the report-to-revision delay, not an infection-to-death
+  # one. It works, but it is not what the EpiNow2 help describes -- flagged so
+  # a caller does not read the fit as an epidemiological convolution. Rides on
+  # the same `quiet` switch as the lossy-conversion warning: `quiet = TRUE`
+  # says "I know what this converter does; stop telling me".
+  if (!isTRUE(quiet)) {
+    cli::cli_warn(c(
+      "{.fn EpiNow2::estimate_secondary} was designed for two epidemiological \\
+       streams linked by a delay (e.g. cases and deaths).",
+      "i" = "This target repurposes it: {.field primary} is reports by \\
+             {.arg report_date}, {.field secondary} is revisions by \\
+             {.arg revision_date}, so the fitted delay is report-to-revision.",
+      "i" = "Silence this with {.code quiet = TRUE}."
     ))
   }
 

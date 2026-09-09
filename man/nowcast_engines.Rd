@@ -186,7 +186,19 @@ stratum is fitted on the same time axis.}
 EpiNow2 defaults to \code{delays = delay_opts()}, which is \code{Fixed(0)} -- no
 reporting delay at all -- and a one-day generation time. Those defaults
 describe a process with nothing to nowcast, so supply the epidemiology
-yourself.}
+yourself. \code{truncation = trunc_opts()} is likewise \code{Fixed(0)} -- \strong{without
+a fitted truncation, \code{estimate_infections()} is a smooth through the
+incomplete recent days, not a nowcast}. The vignette's \emph{EpiNow2} section
+walks through the two-step recipe (\code{estimate_truncation()} first, then
+pass its \code{get_parameters(...)[["truncation"]]} as \code{truncation} here).
+
+\strong{Reproducibility.} \code{EpiNow2::stan_opts()} picks a fresh random seed on
+every call (\code{seed = as.integer(runif(1, 1e8))}), so an unseeded fit
+cannot be reproduced -- and a pathological sample cannot be told apart
+from a bad model afterwards. Pin it with
+\verb{stan = stan_opts(samples = ..., warmup = ..., chains = ..., seed = <n>)};
+\code{stan_opts()} forwards \code{seed} through to \code{rstan::sampling()} /
+\code{cmdstanr::sample()}.}
 }
 \value{
 A \code{nowcast_engine}, as \code{\link[=engine]{engine()}} returns.

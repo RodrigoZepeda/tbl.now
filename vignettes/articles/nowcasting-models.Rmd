@@ -1101,12 +1101,17 @@ alone. Read the width as the price of the extra structure.
 :::
 
 ::: {.alert .alert-info}
-**Two shapes EpiNow2 has that `tbl.now` does not convert for.**
-`estimate_secondary()` models *two* data streams against each other (cases and
-deaths, say) and one `tbl_now` is one stream, so there is no honest mapping.
+**One EpiNow2 shape `tbl.now` does not convert for, and one it repurposes.**
 `estimate_delay()` takes a bare vector of delays; EpiNow2's own help now points
 at `estimate_dist()` instead, and it discards the censoring a `tbl_now` carries.
 If you want it anyway it is `x$.delay`.
+
+`tbl_now_to_EpiNow2(target = "estimate_secondary")` **is** implemented, but the
+mapping is a **repurposing** of the model: `primary` is reports by
+`report_date` and `secondary` is revisions of those reports by `revision_date`,
+so the fitted delay is the *report-to-revision* delay rather than the
+epidemiological convolution `?estimate_secondary` describes (cases and deaths,
+say). The converter warns about this at call time.
 :::
 
 ## epidist

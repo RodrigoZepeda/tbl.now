@@ -719,9 +719,11 @@ tidy.estimate_infections <- function(x, probs = NULL, ...) {
 #' @rdname tidy.nowcast
 #' @exportS3Method generics::tidy
 tidy.epinow <- function(x, probs = NULL, ...) {
-  # `epinow()` wraps `estimate_infections()` and keeps the fit in `$estimates`.
-  fit <- x$estimates %||% x
-  .tidy_epinow2_predictions(fit, probs = probs)
+  # On \pkg{EpiNow2} 1.9.0 an `epinow` object inherits from
+  # `estimate_infections` and `$estimates` is defunct; on older versions the
+  # fit sits under `$estimates`. `.epinow2_unwrap()` reaches the right thing
+  # either way without triggering the defunct accessor.
+  .tidy_epinow2_predictions(.epinow2_unwrap(x), probs = probs)
 }
 
 #' @rdname tidy.nowcast
@@ -1010,11 +1012,17 @@ tidy.list <- function(x, probs = NULL, engine = NULL, level = NULL, ...) {
 
   # `regional_epinow()` returns a plain nested list, one block per region under
   # `$regional`. Same treatment as the per-stratum list below: one block per
-  # region, labelled with the region name.
+  # region, labelled with the region name. `.epinow2_unwrap()` reaches the
+  # underlying `estimate_infections`, avoiding the `epinow()$estimates`
+  # accessor that became defunct in EpiNow2 1.9.0 (the object now inherits
+  # from `estimate_infections` and can be used directly).
   if (identical(engine, "EpiNow2")) {
     regional <- x$regional
     return(dplyr::bind_rows(lapply(names(regional), function(region) {
-      .tidy_epinow2_predictions(regional[[region]], probs = probs, stratum = region)
+      .tidy_epinow2_predictions(
+        .epinow2_unwrap(regional[[region]]),
+        probs = probs, stratum = region
+      )
     })))
   }
 

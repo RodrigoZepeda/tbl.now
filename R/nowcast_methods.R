@@ -25,24 +25,37 @@
   }
   # MESSAGES and STDOUT only. Warnings are not chatter: the converters use them
   # to say that strata were pooled, a censoring flag was collapsed or declared
-  # covariates were dropped -- each of which changes what the model saw.
-  # Suppressing those is how a fit comes back looking fine while answering a
-  # different question, which is the same failure warned about in
-  # DEVELOPMENT_SKILL section 9.
+  # covariates were dropped -- each of which changes what the model saw. Stan
+  # divergent-transition and low-ESS warnings are the same kind of signal, and
+  # suppressing any of it is how a fit comes back looking fine while answering
+  # a different question -- DEVELOPMENT_SKILL section 9's `1e8` incident.
   #
   # `suppressMessages()` alone is not enough: `surveillance::nowcast()` reports
   # progress with `cat()` ("Building reporting triangle...", "No. cases: ..."),
   # NobBS's JAGS backend emits "NOTE: Stopping adaptation..." on stderr, and
   # several external constructors write to stdout rather than to R's condition
-  # system. Wrap them all so `verbose = FALSE` really is quiet.
+  # system. Wrap them all so `verbose = FALSE` really is quiet -- BUT keep
+  # warnings, because `capture.output(type = "message")` catches the printed
+  # warning list too, and merely wrapping in `capture.output` would silence
+  # them along with the progress chatter. `withCallingHandlers()` collects
+  # warnings before they queue, so they can be re-signalled outside the
+  # capture and reach the caller.
+  captured <- list()
   out <- NULL
   utils::capture.output(
     utils::capture.output(
-      out <- suppressMessages(force(expr)),
+      withCallingHandlers(
+        out <- suppressMessages(force(expr)),
+        warning = function(w) {
+          captured[[length(captured) + 1L]] <<- w
+          invokeRestart("muffleWarning")
+        }
+      ),
       type = "message"
     ),
     type = "output"
   )
+  for (w in captured) warning(conditionMessage(w), call. = FALSE)
   out
 }
 
@@ -156,6 +169,20 @@
 
   if (support$report_week_effect && is.null(args$obs)) {
     args$obs <- EpiNow2::obs_opts(week_effect = TRUE)
+  } else if (support$report_week_effect && !is.null(args$obs)) {
+    # An explicit `obs =` wins by design (tests pin that), but the declared
+    # day-of-week effect then goes nowhere -- previously silently. The user has
+    # asked for it, so it has to be said out loud, exactly as
+    # `.warn_dropped_covariates()` does for the converters.
+    cli::cli_warn(c(
+      "{.pkg EpiNow2}: declared {.val day_of_week} effect on \\
+       {.field report_date} is not applied because {.arg obs} was set \\
+       explicitly.",
+      "i" = "The engine will not overwrite an explicit {.arg obs}; the \\
+             declared effect is dropped.",
+      "i" = "To apply it, pass {.code obs = EpiNow2::obs_opts(week_effect = \\
+             TRUE, ...)} yourself, or drop {.arg obs} to let the engine set it."
+    ))
   }
 
   if (length(support$unsupported) > 0) {
@@ -1076,6 +1103,43 @@ nowcast_fit.EpiNow2 <- function(engine, x, ..., convert_args = list(), # nolint:
   )
 }
 
+#' Reach the `estimate_infections` fit inside an EpiNow2 object
+#'
+#' \pkg{EpiNow2} 1.9.0 made `epinow()$estimates` **defunct** -- accessing it
+#' errors, so `regional[[region]]$estimates %||% regional[[region]]` blows up
+#' on the LHS before `%||%` can pick the RHS. The news for 1.9.0 says
+#' \dQuote{use the object directly (it now inherits from
+#' \code{estimate_infections})}, so the correct idiom is a class check first
+#' and only fall back to \code{$estimates} for older versions where an
+#' \code{epinow} object was a plain list holding the fit under that name.
+#'
+#' Also unwraps a `regional_epinow()` region block, which carries the fit
+#' under `$estimates` on older EpiNow2 and directly (inheriting from
+#' `estimate_infections`) on 1.9.0.
+#'
+#' @param x An `epinow`, `estimate_infections`, or region block.
+#'
+#' @return The `estimate_infections` fit, or `x` unchanged when it does not
+#'   look like a wrapper.
+#'
+#' @keywords internal
+#' @noRd
+.epinow2_unwrap <- function(x) {
+  if (is.null(x)) return(NULL)
+  # 1.9.0 path: an `epinow` object already IS an `estimate_infections`.
+  if (inherits(x, "estimate_infections")) return(x)
+  # Older-version path: unwrap only if a plain list carries `$estimates`, and
+  # only via `.subset2()`. Both the S3 `$` and `[[` methods on `epinow` were
+  # kept for the deprecation error path (`$.epinow` throws the defunct error;
+  # `[[.epinow` refuses `exact = TRUE`, breaking `getElement()`), so `.subset2()`
+  # -- which bypasses S3 dispatch -- is the only safe accessor.
+  if (is.list(x) && "estimates" %in% names(x)) {
+    inner <- .subset2(x, "estimates")
+    if (!is.null(inner)) return(inner)
+  }
+  x
+}
+
 #' The posterior samples of `reported_cases` from an EpiNow2 fit
 #'
 #' [EpiNow2::get_predictions()] reads the fit's own draws rather than the
@@ -1136,10 +1200,13 @@ nowcast_tidy.EpiNow2 <- function(engine, fit, x, ..., quantile_levels) { # nolin
     .epinow2_draws(fit, event_col)
   } else {
     # `regional_epinow()` returns one block per region under `$regional`; each
-    # block's `$estimates` is the `estimate_infections` object.
+    # block is an `estimate_infections` on EpiNow2 1.9.0 (inheritance change,
+    # `epinow()$estimates` defunct) and a list wrapping `$estimates` on older
+    # versions. `.epinow2_unwrap()` picks the right one without tripping the
+    # defunct accessor.
     regional <- fit$regional
     pieces <- lapply(names(regional), function(region) {
-      one <- .epinow2_draws(regional[[region]]$estimates %||% regional[[region]], event_col)
+      one <- .epinow2_draws(.epinow2_unwrap(regional[[region]]), event_col)
       if (is.null(one)) {
         return(NULL)
       }

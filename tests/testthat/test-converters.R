@@ -1172,6 +1172,45 @@ test_that("tbl_now_to_EpiNow2 estimate_secondary needs a revision process", {
   )
 })
 
+test_that("estimate_secondary warns that it is a repurposing of the model", {
+  skip_if_not_installed("EpiNow2")
+
+  # `EpiNow2::estimate_secondary()` was designed for cases and deaths linked by
+  # a delay -- two epidemiological streams. This converter repurposes it as
+  # reports vs revisions of the same reports, so the fitted delay is
+  # report-to-revision rather than an epidemiological convolution. The
+  # converter's `?tbl_now_EpiNow2` documents the mapping; the warning stops a
+  # user reading the fit as the model its help describes. Two warnings fire on
+  # this path (this one and the lossy-conversion one), so collect them all and
+  # grep -- `expect_warning()` on the first would miss the second.
+  loud_warnings <- character()
+  withCallingHandlers(
+    suppressMessages(tbl_now_to_EpiNow2(
+      make_revision_now(), target = "estimate_secondary",
+      verbose = FALSE, quiet = FALSE
+    )),
+    warning = function(cnd) {
+      loud_warnings <<- c(loud_warnings, conditionMessage(cnd))
+      invokeRestart("muffleWarning")
+    }
+  )
+  expect_true(any(grepl("repurposes", loud_warnings)))
+
+  # `quiet = TRUE` silences this warning alongside the lossy-conversion one.
+  quiet_warnings <- character()
+  withCallingHandlers(
+    suppressMessages(tbl_now_to_EpiNow2(
+      make_revision_now(), target = "estimate_secondary",
+      verbose = FALSE, quiet = TRUE
+    )),
+    warning = function(cnd) {
+      quiet_warnings <<- c(quiet_warnings, conditionMessage(cnd))
+      invokeRestart("muffleWarning")
+    }
+  )
+  expect_false(any(grepl("repurposes", quiet_warnings)))
+})
+
 test_that("tbl_now_to_data_table verbose prints the conversion summary", {
   skip_on_cran()
   skip_if_not_installed("data.table")

@@ -442,7 +442,19 @@ is_nowcast_engine <- function(x) {
 #'   EpiNow2 defaults to `delays = delay_opts()`, which is `Fixed(0)` -- no
 #'   reporting delay at all -- and a one-day generation time. Those defaults
 #'   describe a process with nothing to nowcast, so supply the epidemiology
-#'   yourself.
+#'   yourself. `truncation = trunc_opts()` is likewise `Fixed(0)` -- **without
+#'   a fitted truncation, `estimate_infections()` is a smooth through the
+#'   incomplete recent days, not a nowcast**. The vignette's *EpiNow2* section
+#'   walks through the two-step recipe (`estimate_truncation()` first, then
+#'   pass its `get_parameters(...)[["truncation"]]` as `truncation` here).
+#'
+#'   **Reproducibility.** `EpiNow2::stan_opts()` picks a fresh random seed on
+#'   every call (`seed = as.integer(runif(1, 1e8))`), so an unseeded fit
+#'   cannot be reproduced -- and a pathological sample cannot be told apart
+#'   from a bad model afterwards. Pin it with
+#'   `stan = stan_opts(samples = ..., warmup = ..., chains = ..., seed = <n>)`;
+#'   `stan_opts()` forwards `seed` through to `rstan::sampling()` /
+#'   `cmdstanr::sample()`.
 #'
 #' @return A `nowcast_engine`, as [engine()] returns.
 #'

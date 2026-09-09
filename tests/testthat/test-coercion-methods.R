@@ -43,8 +43,11 @@ COERCION_REGISTRY <- list(
   ),
   list(
     converter = "tbl_now_to_EpiNow2", package = "EpiNow2", generic = NA_character_,
-    reason = "EpiNow2's generics are all print/summary-shaped; it has no
-              coercion verb, and its entry points take a bare data.frame."
+    reason = "EpiNow2 has no INPUT coercion verb; its entry points take a bare
+              data.frame. It did add `as_forecast_sample.*` methods in 1.9.0,
+              but those coerce a FIT into a `scoringutils::forecast_sample`
+              (output direction), not an incoming data object, so a
+              `tbl_now`-side generic does not fit them either."
   ),
   list(
     converter = "tbl_now_to_nobbs", package = "NobBS", generic = NA_character_,
