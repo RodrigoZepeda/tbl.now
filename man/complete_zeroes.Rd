@@ -20,13 +20,21 @@ reports at all does not appear in the data; several downstream converters
 build their time grid from the rows they are given and would silently stop
 short. A supplied \code{until} is never allowed to truncate below the data, and
 has no effect beyond the \code{now}: an event date later than the \code{now} cannot
-carry any report on or before it, so no row would survive for it.}
+carry any report on or before it, so no row would survive for it.
+\subsection{Temporal effects}{
+
+If \code{x} arrived with materialised \code{\link[=temporal_effects]{temporal_effects()}} columns, they are
+\strong{recomputed on the completed grid} before the result is returned, so the
+rows this function adds carry their own calendar effects rather than \code{NA}.
+A lazy specification that has not been computed yet stays lazy.
+}}
 }
 \value{
 A \code{tbl_now} object with the same columns as \code{x}, plus the rows that
 were implicitly zero, carrying \code{0} in the \code{case_count} column. Explicit
 missing counts in the input remain \code{NA}; only cells created by
-\code{complete_zeroes()} are filled. The data type is preserved.
+\code{complete_zeroes()} are filled. The data type is preserved, as are any
+computed temporal-effect columns (recomputed over the new rows).
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}

@@ -294,6 +294,50 @@ test_that("add_temporal_effects.data.frame seasons fail when column exists and o
   )
 })
 
+test_that("add_temporal_effects.data.frame seasons overwrite when overwrite = TRUE", {
+  # `&&` binds tighter than `||`, so the guard used to read
+  # `cos_exists || (sin_exists && !overwrite)` and aborted on the `_cos` column
+  # no matter what `overwrite` was -- which made a seasonal effect impossible to
+  # refresh once computed.
+  df <- data.frame(
+    date = as.Date(c("2020-01-01", "2020-07-01")),
+    numeric_col = c(1, 183),
+    .date_season_365_cos = c(99, 99), # Stale
+    .date_season_365_sin = c(99, 99)
+  )
+
+  out <- add_temporal_effects.data.frame(
+    df,
+    t_effects = temporal_effects(seasons = 365),
+    date_col = "date",
+    numeric_col = "numeric_col",
+    name_prefix = ".date",
+    overwrite = TRUE
+  )
+
+  expect_equal(out$.date_season_365_cos, cos(2 * pi * c(1, 183) / 365))
+  expect_equal(out$.date_season_365_sin, sin(2 * pi * c(1, 183) / 365))
+})
+
+test_that("compute_temporal_effects(overwrite = TRUE) refreshes seasonal columns", {
+  x <- dplyr::tibble(
+    event = as.Date("2020-01-01") + 0:5,
+    report = as.Date("2020-01-01") + 0:5
+  ) |>
+    tbl_now(
+      event_date = event, report_date = report,
+      data_type = "linelist", verbose = FALSE
+    ) |>
+    add_temporal_effects(temporal_effects(seasons = 7)) |>
+    compute_temporal_effects()
+
+  expect_no_error(compute_temporal_effects(x, overwrite = TRUE))
+  # Recomputing is idempotent and does not re-register the columns twice.
+  again <- compute_temporal_effects(x, overwrite = TRUE)
+  expect_equal(get_temporal_effect_cols(again), get_temporal_effect_cols(x))
+  expect_equal(again$.event_season_7_cos, x$.event_season_7_cos)
+})
+
 test_that("add_temporal_effects.data.frame holidays fails without almanac", {
   #From https://stackoverflow.com/a/79102488/5067372
   with_mocked_bindings(

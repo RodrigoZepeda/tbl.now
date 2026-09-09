@@ -1,5 +1,34 @@
 # tbl.now (development version)
 
+## `complete_zeroes()` keeps temporal effects computed
+
+`complete_zeroes()` adds rows, and materialised [`temporal_effects()`] columns
+are a per-row property, so the new cells joined in as `NA` while
+`computed_temporal_effect_cols` went on claiming the columns were computed. The
+function announced this with a `cli_alert_warning()` and left the caller to
+repair it.
+
+* **Fix (stale columns)**: the effect columns are now **recomputed on the
+  completed grid** before the result is returned, so every added row carries its
+  own calendar effects. The alert is gone -- there is nothing left to warn
+  about. A lazy specification that was never computed stays lazy. The one case
+  that cannot be repaired -- computed columns with the specification stripped by
+  hand -- still warns, and now says so accurately.
+* **Fix (the advice did not work)**: the alert told callers to run
+  `compute_temporal_effects()` afterwards, which **errored**, because the
+  columns were already present; `overwrite = TRUE` was needed and unmentioned.
+* **Fix (`overwrite = TRUE` was inert for seasonal effects)**: the guard in
+  `add_temporal_effects.data.frame()` read
+  `cos_exists || (sin_exists && !overwrite)` -- `&&` binds tighter than `||` --
+  so an existing `_cos` column aborted the call whatever `overwrite` was set to.
+  A computed seasonal effect could therefore never be refreshed, by
+  `complete_zeroes()` or by anyone else.
+
+Reported downstream in
+[diseasenowcasting#126](https://github.com/RodrigoZepeda/diseasenowcasting/issues/126),
+where every count-cumulative fit calls `complete_zeroes()` and so emitted the
+alert.
+
 ## `rowwise()` demotes cleanly
 
 `rowwise()` stays deliberately unimplemented for `tbl_now` -- but it now says

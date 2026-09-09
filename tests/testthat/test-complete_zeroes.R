@@ -328,12 +328,63 @@ test_that("complete_zeroes errors on non-tbl_now input", {
   expect_error(complete_zeroes(data.frame(x = 1)))
 })
 
-test_that("complete_zeroes emits message when temporal-effect columns exist", {
-  # cli_alert_warning fires as a message, not an R warning
+test_that("complete_zeroes recomputes temporal-effect columns on the rows it adds", {
   x <- make_count_incidence() |>
     add_temporal_effects(temporal_effects(day_of_week = TRUE)) |>
     compute_temporal_effects()
-  expect_message_quietly(complete_zeroes(x), "compute_temporal_effects")
+  effect_col <- get_temporal_effect_cols(x)
+  expect_length(effect_col, 1)
+
+  out <- complete_zeroes(x)
+  expect_gt(nrow(out), nrow(x))
+
+  # The added rows carry their own day-of-week rather than the `NA` the join
+  # leaves behind, and the attribute still describes what is really there.
+  expect_equal(get_temporal_effect_cols(out), effect_col)
+  expect_false(anyNA(out[[effect_col]]))
+  expect_equal(
+    as.character(out[[effect_col]]),
+    weekdays(out[[get_event_date(out)]])
+  )
+})
+
+test_that("complete_zeroes no longer asks the caller to recompute", {
+  x <- make_count_incidence() |>
+    add_temporal_effects(temporal_effects(day_of_week = TRUE)) |>
+    compute_temporal_effects()
+  # `cli_alert_warning()` fires as a message, not an R warning.
+  expect_no_message(complete_zeroes(x))
+})
+
+test_that("complete_zeroes recomputes seasonal (Fourier) effects too", {
+  # Seasonal effects are the case that used to be unrecoverable: the pair of
+  # sin/cos columns tripped the `overwrite` guard, so even the recompute the
+  # old message asked for aborted.
+  x <- make_count_incidence() |>
+    add_temporal_effects(temporal_effects(seasons = 7)) |>
+    compute_temporal_effects()
+  effect_cols <- get_temporal_effect_cols(x)
+  expect_length(effect_cols, 2)
+
+  out <- complete_zeroes(x)
+  expect_false(anyNA(out[[effect_cols[1]]]))
+  expect_false(anyNA(out[[effect_cols[2]]]))
+  # Fourier terms are a function of `.event_num`, which complete_zeroes renumbers.
+  expect_equal(
+    out[[effect_cols[1]]],
+    cos(2 * pi * as.numeric(out[[".event_num"]]) / 7)
+  )
+})
+
+test_that("complete_zeroes leaves an uncomputed temporal-effect spec lazy", {
+  x <- make_count_incidence() |>
+    add_temporal_effects(temporal_effects(day_of_week = TRUE))
+  expect_equal(get_temporal_effect_cols(x), character(0))
+
+  out <- complete_zeroes(x)
+  expect_equal(get_temporal_effect_cols(out), character(0))
+  expect_false(".event_day_of_week" %in% colnames(out))
+  expect_length(get_temporal_effects(out), 1)
 })
 
 # === complete_zeroes with an is_censored_report column ===========================
