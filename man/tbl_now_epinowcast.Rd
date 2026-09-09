@@ -145,6 +145,29 @@ delay 74, so its \code{max_confirm} is 11 in \code{pobs} and 7 after the round-t
 }
 }
 
+\section{Per-cell observation flags}{
+
+
+A \code{tbl_now} \code{is_censored_report} flag records an upper bound on the report
+date of an individual case, and it is per-case: it can differ between two
+rows in the same \verb{(event_date, report_date)} cell. \pkg{epinowcast}'s
+preprocessed object has no equivalent -- it stores one cumulative count per
+cell -- so the converter collapses the flag before conversion (summing the
+counts over it for count data, dropping the column for a line list), with a
+warning.
+
+\pkg{epinowcast}'s nearest concept is not equivalent, but is worth knowing.
+\code{\link[epinowcast:enw_obs]{epinowcast::enw_obs()}} takes an \code{observation_indicator} naming a \emph{per-cell}
+logical column that marks cells as observed or not, which epinowcast then
+uses to decide whether a cell contributes to the likelihood. It is a \strong{cell}
+flag rather than a \strong{case} flag, so it cannot be built from
+\code{is_censored_report} alone: two rows in the same cell can disagree, and a
+cell-level column has to pick one answer. If you have a genuinely cell-level
+"known unobservable" signal you can add a column to the preprocessed object
+by hand and reference it with \code{obs = enw_obs(observation_indicator = "...")}
+in the fit.
+}
+
 \section{Negative delays}{
 
 

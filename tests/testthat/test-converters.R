@@ -82,6 +82,44 @@ test_that("tbl_now_to_epinowcast errors on non-tbl_now", {
   expect_error(tbl_now_to_epinowcast(data.frame(a = 1)), "tbl_now")
 })
 
+test_that("tbl_now_to_epinowcast works on a grouped tbl_now", {
+  skip_on_cran()
+  skip_if_not_installed("epinowcast")
+  skip_if_not_installed("data.table")
+
+  obs <- head(epinowcast::germany_covid19_hosp, 400)
+  x <- tbl_now_from_epinowcast(obs, strata = "age_group", verbose = FALSE)
+
+  # Group by a column that IS a stratum, and by one that is NOT (`location`).
+  # Neither should change the answer -- grouping is the caller's business, and
+  # the converter reshapes over the object's own strata regardless.
+  out_stratum <- suppressWarnings(suppressMessages(
+    tbl_now_to_epinowcast(
+      dplyr::group_by(x, .data$age_group), verbose = FALSE, quiet = TRUE
+    )
+  ))
+  out_plain <- suppressWarnings(suppressMessages(
+    tbl_now_to_epinowcast(x, verbose = FALSE, quiet = TRUE)
+  ))
+
+  expect_s3_class(out_stratum, "enw_preprocess_data")
+  expect_equal(unlist(out_stratum$by), unlist(out_plain$by))
+  # Compare the observation tables column-by-column; the `.group` indices and
+  # `age_group` factor levels are cosmetic and can differ.
+  align <- function(x) {
+    d <- data.table::as.data.table(x)
+    d$age_group <- as.character(d$age_group)
+    data.table::setorderv(d, c("reference_date", "age_group", "delay"))
+    d[]
+  }
+  a <- align(out_stratum$obs[[1]])
+  b <- align(out_plain$obs[[1]])
+  expect_equal(a$reference_date, b$reference_date)
+  expect_equal(a$report_date, b$report_date)
+  expect_equal(a$age_group, b$age_group)
+  expect_equal(a$confirm, b$confirm)
+})
+
 test_that("epinowcast round-trip preserves every observation (no info lost)", {
   skip_on_cran()
   skip_if_not_installed("epinowcast")

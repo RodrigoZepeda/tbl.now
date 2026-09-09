@@ -400,8 +400,27 @@ is_nowcast_engine <- function(x) {
 #'   (`engine_epinowcast()`) `preprocess_args` is a list for
 #'   [tbl_now_to_epinowcast()], e.g. `list(max_delay = 30)`; the other four are
 #'   `epinowcast::epinowcast()`'s module arguments. **`epinowcast` is unseeded
-#'   unless you say so**: `enw_fit_opts()` passes `...` to the sampler, so
-#'   `fit = epinowcast::enw_fit_opts(seed = 1)` is what makes a fit reproducible.
+#'   unless you say so**: `enw_fit_opts()` has no `seed` argument of its own --
+#'   `formals(epinowcast::enw_fit_opts)` on 0.7.0 lists `sampler`, `nowcast`,
+#'   `pp`, `likelihood`, `likelihood_aggregation`, `threads_per_chain`, `debug`,
+#'   `output_loglik`, `sparse_design`, `...` -- but its `...` are forwarded to
+#'   the `sampler` (`enw_sample()`, i.e. `cmdstanr::sample()`), which does. Pass
+#'   `fit = epinowcast::enw_fit_opts(seed = 1)` and the seed rides through to
+#'   the sampler; that is what makes a fit reproducible.
+#'
+#'   Two epinowcast 0.7.0 knobs worth knowing about, both reachable through the
+#'   same pass-through:
+#'
+#'   * a **delay-only** fit -- reporting-delay distribution conditional on
+#'     per-reference-date totals, with the latent process disabled -- via
+#'     `obs = epinowcast::enw_obs(delay_only = TRUE, data = pobs)`. `obs` is not
+#'     a named engine argument here, but `engine_epinowcast()` forwards `...` to
+#'     `epinowcast::epinowcast()`, so passing it there works.
+#'   * a **structural** reporting effect (e.g. a fixed day-of-week reporting
+#'     hazard) via `report = enw_report(structural = ...)`. Build the metadata
+#'     with `enw_dayofweek_structural_reporting()`; this is separate from a
+#'     temporal-effect covariate that lands on `metareport` and is referenced
+#'     through `non_parametric =`.
 #'
 #' @param max_D,moving_window,specs (`engine_nobbs()`) Arguments of
 #'   `NobBS::NobBS()` / `NobBS::NobBS.strat()`. `moving_window` counts **event

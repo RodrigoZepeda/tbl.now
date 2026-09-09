@@ -490,7 +490,73 @@ nowcast_fit.epinowcast <- function(engine, x, ..., preprocess_args = list(),
     verbose
   )
 
+  .epinowcast_check_effects_wired(x, list(...))
+
   .quietly_if(epinowcast::epinowcast(preprocessed, ...), verbose)
+}
+
+#' Warn if declared temporal effects were carried into the epinowcast metadata
+#' but not referenced in any module formula
+#'
+#' The converter attaches temporal-effect columns to `metareference` /
+#' `metareport`, but nothing auto-populates a module formula from them. When the
+#' engine is driven with a `reference` / `report` / `expectation` / `missing`
+#' that never mentions any of the effect columns, the fit runs without them --
+#' silently, from the caller's point of view. This looks at the formulas the
+#' caller passed in and warns for effects that are not referenced anywhere.
+#'
+#' Heuristic: each module argument is deparsed to text and searched for the
+#' effect column names as substrings. Cheap and catches the common case; it can
+#' be fooled by a formula that names an effect column but does not use it as a
+#' regressor, which is a false negative and harmless (the fit is what the user
+#' asked for).
+#'
+#' @param x The `tbl_now` handed to the engine.
+#' @param dots The `...` from `nowcast_fit.epinowcast()` (the module args).
+#'
+#' @return `NULL`, invisibly.
+#'
+#' @keywords internal
+#' @noRd
+.epinowcast_check_effects_wired <- function(x, dots) {
+  # Compute the effect column names the converter would emit. `x` may or may
+  # not have materialised them already; `.materialize_temporal_effects()` is
+  # idempotent and cheap, so use it either way.
+  cols <- .materialize_temporal_effects(x)$cols
+  if (length(cols) == 0L) {
+    return(invisible(NULL))
+  }
+
+  # epinowcast module args carrying formulas that can reference the columns.
+  module_names <- c("expectation", "reference", "report", "missing")
+  modules <- dots[intersect(names(dots), module_names)]
+
+  used <- if (length(modules) == 0L) {
+    character(0)
+  } else {
+    txt <- paste(
+      vapply(modules, function(a) paste(deparse(a), collapse = " "), character(1)),
+      collapse = " "
+    )
+    cols[vapply(cols, function(col) grepl(col, txt, fixed = TRUE), logical(1))]
+  }
+  unused <- setdiff(cols, used)
+  if (length(unused) == 0L) {
+    return(invisible(NULL))
+  }
+
+  cli::cli_warn(c(
+    "{.fn nowcast_fit.epinowcast}: {length(unused)} declared temporal-effect \\
+     column{?s} ({.val {unused}}) {?is/are} attached to the preprocessed \\
+     object but {?is/are} not referenced in any module formula.",
+    "i" = paste0(
+      "Reference {cli::qty(length(unused))}{?it/them} in a module formula, ",
+      "e.g. {.code reference = enw_reference(parametric = ~ 1 + ",
+      unused[[1]], ", distribution = \"lognormal\", data = pobs)}."
+    ),
+    "i" = "The fit will not see {cli::qty(length(unused))}{?it/them} otherwise."
+  ))
+  invisible(NULL)
 }
 
 #' @rdname nowcast_tidy
@@ -523,8 +589,12 @@ nowcast_tidy.epinowcast <- function(engine, fit, x, ..., quantile_levels) {
   }
 
   # No sample storage (e.g. `output_loglik = FALSE` fits): fall back to the
-  # quantile summary, which epinowcast can always produce.
-  summarised <- dplyr::as_tibble(summary(fit, probs = quantile_levels))
+  # quantile summary, which epinowcast can always produce. Pass `type` through
+  # explicitly rather than relying on `summary.epinowcast`'s default; the
+  # default is `"nowcast"` today, but naming it here keeps the intent visible.
+  summarised <- dplyr::as_tibble(
+    summary(fit, type = "nowcast", probs = quantile_levels)
+  )
   strata_kept <- intersect(strata_cols, colnames(summarised))
   quantile_map <- stats::setNames(
     quantile_levels,

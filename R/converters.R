@@ -1494,6 +1494,28 @@
 #'
 #' @inheritSection tbl_now_baselinenowcast Negative delays
 #' @inheritSection tbl_now_baselinenowcast Censored delays
+#'
+#' @section Per-cell observation flags:
+#'
+#' A `tbl_now` `is_censored_report` flag records an upper bound on the report
+#' date of an individual case, and it is per-case: it can differ between two
+#' rows in the same `(event_date, report_date)` cell. \pkg{epinowcast}'s
+#' preprocessed object has no equivalent -- it stores one cumulative count per
+#' cell -- so the converter collapses the flag before conversion (summing the
+#' counts over it for count data, dropping the column for a line list), with a
+#' warning.
+#'
+#' \pkg{epinowcast}'s nearest concept is not equivalent, but is worth knowing.
+#' [epinowcast::enw_obs()] takes an `observation_indicator` naming a *per-cell*
+#' logical column that marks cells as observed or not, which epinowcast then
+#' uses to decide whether a cell contributes to the likelihood. It is a **cell**
+#' flag rather than a **case** flag, so it cannot be built from
+#' `is_censored_report` alone: two rows in the same cell can disagree, and a
+#' cell-level column has to pick one answer. If you have a genuinely cell-level
+#' "known unobservable" signal you can add a column to the preprocessed object
+#' by hand and reference it with `obs = enw_obs(observation_indicator = "...")`
+#' in the fit.
+#'
 #' @seealso
 #' [engine_epinowcast()][nowcast_engines] to fit through this package rather than
 #' converting by hand; [align_weeks()], because \pkg{epinowcast} lays its grid out
@@ -2381,12 +2403,19 @@ tbl_now_to_epinowcast <- function(x, ..., max_delay = NULL,
   .assert_tbl_now(x, "tbl_now_to_epinowcast")
   x <- .tbl_now_collapse_censoring(x, "tbl_now_to_epinowcast")
   .need_pkg("epinowcast")
+  # Materialised temporal-effect columns ARE carried through (see
+  # `.epinowcast_temporal_effects()` below), so exclude them from the "dropped"
+  # set to stop the warning firing on columns that are in fact threaded.
   .warn_dropped_covariates(
     x, "tbl_now_to_epinowcast",
-    advice = "{.pkg epinowcast} builds its own reference/report metadata
-              ({.val day_of_week}, {.val day}, {.val week}, {.val month}) and
-              does not carry extra columns. Use those in a module formula, e.g.
-              {.code enw_reference(~ 1 + day_of_week, data = pobs)}."
+    kept = get_temporal_effect_cols(x) %||% character(0),
+    advice = "{.pkg epinowcast} does not carry arbitrary user covariates onto
+              its preprocessed object. Either declare the effect through
+              {.fn add_temporal_effects} (its columns start with {.val .event_}
+              / {.val .report_} and are carried onto {.field metareference} /
+              {.field metareport}), or use {.pkg epinowcast}'s own metadata
+              ({.val day_of_week}, {.val day}, {.val week}, {.val month}) added
+              by {.fn enw_add_metaobs_features}."
   )
   .warn_lossy_conversion("epinowcast", quiet)
   # Warn before the cumulative coercion below: `to_count()` re-derives the grid
@@ -2444,6 +2473,29 @@ tbl_now_to_epinowcast <- function(x, ..., max_delay = NULL,
   with_effects  <- .epinowcast_temporal_effects(completed, x)
   completed     <- with_effects$data
   temporal_cols <- with_effects$cols
+
+  # The columns are threaded onto `metareference` / `metareport`, but nothing in
+  # `epinowcast()` wires them into a module formula on its own. Say so, so the
+  # user knows what to reference and how. `quiet = TRUE` silences it (same
+  # channel as the lossy-conversion warning), because on a scripted pipeline
+  # where the formulas are set elsewhere the reminder is noise.
+  if (length(temporal_cols) > 0 && !isTRUE(quiet)) {
+    example_col <- temporal_cols[[1]]
+    cli::cli_warn(c(
+      "{.fn tbl_now_to_epinowcast}: {length(temporal_cols)} temporal-effect \\
+       column{?s} ({.val {temporal_cols}}) {?is/are} attached to the \\
+       {.pkg epinowcast} metadata, but no module formula references \\
+       {?it/them} yet.",
+      "i" = paste0(
+        "Reference {cli::qty(length(temporal_cols))}{?it/them} in a module ",
+        "formula, e.g. ",
+        "{.code enw_reference(parametric = ~ 1 + ", example_col,
+        ", distribution = \"lognormal\", data = pobs)} or the equivalent on ",
+        "{.fn enw_report} / {.fn enw_expectation}."
+      ),
+      "i" = "Silence this with {.code quiet = TRUE}."
+    ))
+  }
 
   if (verbose) {
     cli::cli_h3("Converting {.cls tbl_now} into an {.pkg epinowcast} object")

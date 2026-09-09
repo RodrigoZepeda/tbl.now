@@ -144,8 +144,28 @@ only meaningful when the object has strata.}
 \item{preprocess_args, expectation, reference, report, fit}{(\code{engine_epinowcast()}) \code{preprocess_args} is a list for
 \code{\link[=tbl_now_to_epinowcast]{tbl_now_to_epinowcast()}}, e.g. \code{list(max_delay = 30)}; the other four are
 \code{epinowcast::epinowcast()}'s module arguments. \strong{\code{epinowcast} is unseeded
-unless you say so}: \code{enw_fit_opts()} passes \code{...} to the sampler, so
-\code{fit = epinowcast::enw_fit_opts(seed = 1)} is what makes a fit reproducible.}
+unless you say so}: \code{enw_fit_opts()} has no \code{seed} argument of its own --
+\code{formals(epinowcast::enw_fit_opts)} on 0.7.0 lists \code{sampler}, \code{nowcast},
+\code{pp}, \code{likelihood}, \code{likelihood_aggregation}, \code{threads_per_chain}, \code{debug},
+\code{output_loglik}, \code{sparse_design}, \code{...} -- but its \code{...} are forwarded to
+the \code{sampler} (\code{enw_sample()}, i.e. \code{cmdstanr::sample()}), which does. Pass
+\code{fit = epinowcast::enw_fit_opts(seed = 1)} and the seed rides through to
+the sampler; that is what makes a fit reproducible.
+
+Two epinowcast 0.7.0 knobs worth knowing about, both reachable through the
+same pass-through:
+\itemize{
+\item a \strong{delay-only} fit -- reporting-delay distribution conditional on
+per-reference-date totals, with the latent process disabled -- via
+\code{obs = epinowcast::enw_obs(delay_only = TRUE, data = pobs)}. \code{obs} is not
+a named engine argument here, but \code{engine_epinowcast()} forwards \code{...} to
+\code{epinowcast::epinowcast()}, so passing it there works.
+\item a \strong{structural} reporting effect (e.g. a fixed day-of-week reporting
+hazard) via \code{report = enw_report(structural = ...)}. Build the metadata
+with \code{enw_dayofweek_structural_reporting()}; this is separate from a
+temporal-effect covariate that lands on \code{metareport} and is referenced
+through \verb{non_parametric =}.
+}}
 
 \item{max_D, moving_window, specs}{(\code{engine_nobbs()}) Arguments of
 \code{NobBS::NobBS()} / \code{NobBS::NobBS.strat()}. \code{moving_window} counts \strong{event

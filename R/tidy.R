@@ -370,6 +370,56 @@ tidy.baselinenowcast_df <- function(x, probs = NULL, ...) {
   )
 }
 
+#' Widest symmetric quantile pair present in an epinowcast `type = "nowcast"`
+#' summary
+#'
+#' \pkg{epinowcast}'s `summary()` names quantile columns `q<percent>` from
+#' whichever `probs` the caller supplied (default
+#' `c(0.05, 0.2, 0.35, 0.5, 0.65, 0.8, 0.95)` -> `q5`, ..., `q95`). A user who
+#' picks non-default `probs` may leave the previously-hardcoded `q5`/`q95` pair
+#' absent, which was crashing `tidy.epinowcast()`. Pick whichever symmetric pair
+#' `(qp, q(100-p))` is present with the smallest `p` -- the widest band the
+#' caller asked for.
+#'
+#' @param nowcast A `type = "nowcast"` summary data frame.
+#'
+#' @return A list with `low` / `high` (either vectors from `nowcast`, or `NA`
+#'   of the right length) and `level` (`1 - 2p`, or `NA`).
+#'
+#' @keywords internal
+#' @noRd
+.epinowcast_widest_band <- function(nowcast) {
+  qcols <- grep("^q[0-9.]+$", names(nowcast), value = TRUE)
+  probs <- suppressWarnings(as.numeric(sub("^q", "", qcols))) / 100
+  valid <- !is.na(probs) & probs > 0 & probs < 1
+  qcols <- qcols[valid]
+  probs <- probs[valid]
+
+  n <- nrow(nowcast)
+  na_result <- list(low = rep(NA_real_, n), high = rep(NA_real_, n), level = NA_real_)
+
+  lows <- probs[probs < 0.5]
+  if (length(lows) == 0L) return(na_result)
+
+  # Widest first: start from the smallest lower prob and take the first that
+  # has a matching upper column. Compare via `abs(sum - 1) < tol` to keep
+  # something like (0.025, 0.975) working when the columns are `q2.5`/`q97.5`.
+  for (p in sort(lows)) {
+    hi <- 1 - p
+    match <- abs(probs - hi) < 1e-6
+    if (any(match)) {
+      lo_col <- qcols[abs(probs - p) < 1e-6][[1]]
+      hi_col <- qcols[match][[1]]
+      return(list(
+        low   = nowcast[[lo_col]],
+        high  = nowcast[[hi_col]],
+        level = 1 - 2 * p
+      ))
+    }
+  }
+  na_result
+}
+
 #' @rdname tidy.nowcast
 #' @exportS3Method generics::tidy
 tidy.epinowcast <- function(x, probs = NULL, ...) {
@@ -403,12 +453,17 @@ tidy.epinowcast <- function(x, probs = NULL, ...) {
     )
   }
 
+  # epinowcast's default band is q5-q95 (level 0.90) -- but non-default `probs`
+  # may leave that pair absent. Pick whichever symmetric pair is present with
+  # the smallest lower prob, i.e. the widest band the caller asked for.
+  band <- .epinowcast_widest_band(nowcast)
+
   .tidy_nowcast_frame(
     event_date = as.Date(nowcast$reference_date),
     estimate   = nowcast$median,
-    conf.low   = nowcast$q5,
-    conf.high  = nowcast$q95,
-    level      = 0.90,   # epinowcast's default band is q5-q95, NOT 95%
+    conf.low   = band$low,
+    conf.high  = band$high,
+    level      = band$level,
     engine     = "epinowcast",
     stratum    = stratum,
     quantiles  = quantiles
