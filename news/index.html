@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.35.3</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.35.4</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -50,6 +50,18 @@
 
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="development version" id="tblnow-development-version">tbl.now (development version)<a class="anchor" aria-label="anchor" href="#tblnow-development-version"></a></h2>
+<div class="section level3">
+<h3 id="rowwise-demotes-cleanly-development-version">
+<code>rowwise()</code> demotes cleanly<a class="anchor" aria-label="anchor" href="#rowwise-demotes-cleanly-development-version"></a></h3>
+<p><code><a href="https://dplyr.tidyverse.org/reference/rowwise.html" class="external-link">rowwise()</a></code> stays deliberately unimplemented for <code>tbl_now</code> – but it now says so properly and gets out of the way properly.</p>
+<ul><li>
+<strong>Fix (leaky demotion)</strong>: <code><a href="https://dplyr.tidyverse.org/reference/rowwise.html" class="external-link">rowwise()</a></code> returned a <code>rowwise_df</code> that still carried <code>event_date</code>, <code>report_date</code>, <code>now</code>, <code>strata</code> and the rest as attributes, describing a class the object was no longer an instance of. It now goes through the same demotion door as every other downgrade in the package, so the returned object carries none of them.</li>
+<li>
+<strong>Fix (wrong condition type)</strong>: the notice was a <code>cli_alert_warning()</code>, which signals a <strong>message</strong>. <code><a href="https://rdrr.io/r/base/warning.html" class="external-link">suppressWarnings()</a></code> did not silence it and <code>tryCatch(warning = )</code> did not see it. It is a real <code>cli_warn()</code> now, and names the columns (<code>.event_num</code>, <code>.report_num</code>, <code>.delay</code>) that have to be dropped before <code><a href="../reference/as_tbl_now.html">as_tbl_now()</a></code> will rebuild the object – the previous advice to just call <code><a href="../reference/as_tbl_now.html">as_tbl_now()</a></code> errored.</li>
+<li>
+<strong>Fix (silent grouped path)</strong>: <code><a href="https://dplyr.tidyverse.org/reference/rowwise.html" class="external-link">rowwise()</a></code> on a <code>grouped_tbl_now</code> dispatched to <code>dplyr</code>’s <code>rowwise.grouped_df</code>, which sits before <code>tbl_now</code> in the class vector. That path demoted just as leakily and emitted nothing at all. A <code>rowwise.grouped_tbl_now</code> method now routes it through the same code.</li>
+</ul><p>Implementing <code><a href="https://dplyr.tidyverse.org/reference/rowwise.html" class="external-link">rowwise()</a></code> properly was considered and rejected: it would need a second parallel <code>rowwise_tbl_now</code> class carrying the same dozen <code>dplyr</code> methods <code>grouped_tbl_now</code> already needs, and <code><a href="https://dplyr.tidyverse.org/reference/group_data.html" class="external-link">dplyr::group_vars()</a></code> reports the <em>rowwise</em> variables while <code><a href="https://dplyr.tidyverse.org/reference/grouped_df.html" class="external-link">dplyr::is_grouped_df()</a></code> is <code>FALSE</code> – so every function here that reads <code><a href="https://dplyr.tidyverse.org/reference/group_data.html" class="external-link">group_vars()</a></code> to pick an aggregation key (<code><a href="../reference/to_count.html">to_count()</a></code>, <code><a href="../reference/complete_zeroes.html">complete_zeroes()</a></code>, <code>censor_delays()</code>, <code><a href="../reference/align_weeks.html">align_weeks()</a></code>, …) would silently read a rowwise variable as a stratifying one.</p>
+</div>
 <div class="section level3">
 <h3 id="sharper-epidist-integration-development-version">Sharper <code>epidist</code> integration<a class="anchor" aria-label="anchor" href="#sharper-epidist-integration-development-version"></a></h3>
 <p>Findings from the epidist audit against <code>epidist</code> 0.4.1:</p>

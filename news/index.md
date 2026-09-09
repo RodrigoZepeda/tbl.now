@@ -2,6 +2,53 @@
 
 ## tbl.now (development version)
 
+### `rowwise()` demotes cleanly
+
+[`rowwise()`](https://dplyr.tidyverse.org/reference/rowwise.html) stays
+deliberately unimplemented for `tbl_now` – but it now says so properly
+and gets out of the way properly.
+
+- **Fix (leaky demotion)**:
+  [`rowwise()`](https://dplyr.tidyverse.org/reference/rowwise.html)
+  returned a `rowwise_df` that still carried `event_date`,
+  `report_date`, `now`, `strata` and the rest as attributes, describing
+  a class the object was no longer an instance of. It now goes through
+  the same demotion door as every other downgrade in the package, so the
+  returned object carries none of them.
+- **Fix (wrong condition type)**: the notice was a
+  `cli_alert_warning()`, which signals a **message**.
+  [`suppressWarnings()`](https://rdrr.io/r/base/warning.html) did not
+  silence it and `tryCatch(warning = )` did not see it. It is a real
+  `cli_warn()` now, and names the columns (`.event_num`, `.report_num`,
+  `.delay`) that have to be dropped before
+  [`as_tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/as_tbl_now.md)
+  will rebuild the object – the previous advice to just call
+  [`as_tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/as_tbl_now.md)
+  errored.
+- **Fix (silent grouped path)**:
+  [`rowwise()`](https://dplyr.tidyverse.org/reference/rowwise.html) on a
+  `grouped_tbl_now` dispatched to `dplyr`’s `rowwise.grouped_df`, which
+  sits before `tbl_now` in the class vector. That path demoted just as
+  leakily and emitted nothing at all. A `rowwise.grouped_tbl_now` method
+  now routes it through the same code.
+
+Implementing
+[`rowwise()`](https://dplyr.tidyverse.org/reference/rowwise.html)
+properly was considered and rejected: it would need a second parallel
+`rowwise_tbl_now` class carrying the same dozen `dplyr` methods
+`grouped_tbl_now` already needs, and
+[`dplyr::group_vars()`](https://dplyr.tidyverse.org/reference/group_data.html)
+reports the *rowwise* variables while
+[`dplyr::is_grouped_df()`](https://dplyr.tidyverse.org/reference/grouped_df.html)
+is `FALSE` – so every function here that reads
+[`group_vars()`](https://dplyr.tidyverse.org/reference/group_data.html)
+to pick an aggregation key
+([`to_count()`](https://rodrigozepeda.github.io/tbl.now/reference/to_count.md),
+[`complete_zeroes()`](https://rodrigozepeda.github.io/tbl.now/reference/complete_zeroes.md),
+`censor_delays()`,
+[`align_weeks()`](https://rodrigozepeda.github.io/tbl.now/reference/align_weeks.md),
+…) would silently read a rowwise variable as a stratifying one.
+
 ### Sharper `epidist` integration
 
 Findings from the epidist audit against `epidist` 0.4.1:

@@ -633,7 +633,13 @@ manipulation:
   strata or covariate column instead silently drops it from that
   attribute.
 - ❌ **[`rowwise()`](https://dplyr.tidyverse.org/reference/rowwise.html)
-  is NOT supported** — behaviour is undefined; avoid it.
+  is NOT supported** — it warns and **demotes** to a plain `rowwise_df`,
+  dropping every `tbl_now` attribute rather than carrying them along
+  stale. Rebuild afterwards with
+  [`ungroup()`](https://dplyr.tidyverse.org/reference/group_by.html),
+  drop `.event_num` / `.report_num` / `.delay`, then
+  [`as_tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/as_tbl_now.md)
+  — or stay vectorised and keep the class.
 - After any non-trivial pipe, confirm with `is_tbl_now(x)` before
   handing the object to `diseasenowcasting`.
 
@@ -1806,7 +1812,8 @@ data(hai_bucaramanga)  # healthcare-associated infections; deliberately messy
   [`is_tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/validate_tbl_now.md)
   after heavy dplyr.
 - [`rowwise()`](https://dplyr.tidyverse.org/reference/rowwise.html) is
-  **unsupported**.
+  **unsupported**: it warns and returns a plain `rowwise_df` with the
+  attributes stripped, not a `tbl_now`.
 - For weekly data with fractional `.delay`, use `align_weeks`.
 - Count data types **require** a `case_count` column.
 - `diagnose_batches2(at =)` needs `at` to be on the **report grid**; a

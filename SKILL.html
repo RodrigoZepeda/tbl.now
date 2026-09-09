@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.35.3</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.35.4</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -406,7 +406,7 @@
 </tr></tbody></table><p><strong>Rules of thumb:</strong></p>
 <ul><li>✅ Use <code>filter</code>, <code>select</code>, <code>mutate</code>, <code>arrange</code>, <code>group_by</code>/<code>ungroup</code>, <code>rename</code> freely — the temporal-effects spec and all attributes are preserved and dplyr never triggers temporal-effect computation.</li>
 <li>⚠️ <strong>Do not remove protected columns</strong> (<code>.event_num</code>, <code>.report_num</code>, <code>.delay</code>, <code>event_date</code>, <code>report_date</code>, or <code>case_count</code>) via <code><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select()</a></code>/<code>mutate(... = NULL)</code> — doing so <strong>downgrades to a plain tibble</strong> with a warning. Removing a strata or covariate column instead silently drops it from that attribute.</li>
-<li>❌ <strong><code><a href="https://dplyr.tidyverse.org/reference/rowwise.html" class="external-link">rowwise()</a></code> is NOT supported</strong> — behaviour is undefined; avoid it.</li>
+<li>❌ <strong><code><a href="https://dplyr.tidyverse.org/reference/rowwise.html" class="external-link">rowwise()</a></code> is NOT supported</strong> — it warns and <strong>demotes</strong> to a plain <code>rowwise_df</code>, dropping every <code>tbl_now</code> attribute rather than carrying them along stale. Rebuild afterwards with <code><a href="https://dplyr.tidyverse.org/reference/group_by.html" class="external-link">ungroup()</a></code>, drop <code>.event_num</code> / <code>.report_num</code> / <code>.delay</code>, then <code><a href="reference/as_tbl_now.html">as_tbl_now()</a></code> — or stay vectorised and keep the class.</li>
 <li>After any non-trivial pipe, confirm with <code>is_tbl_now(x)</code> before handing the object to <code>diseasenowcasting</code>.</li>
 </ul><hr></div>
 <div class="section level2">
@@ -1067,7 +1067,7 @@
 <li>Undeclared extra columns are <strong>summed away</strong> by <code><a href="reference/to_count.html">to_count()</a></code>, not plotted per-value — a boxplot with spread on <em>daily</em> data is the days within a week, not a hidden stratum.</li>
 <li>Removing a protected column <strong>downgrades to a tibble</strong> — check <code><a href="reference/validate_tbl_now.html">is_tbl_now()</a></code> after heavy dplyr.</li>
 <li>
-<code><a href="https://dplyr.tidyverse.org/reference/rowwise.html" class="external-link">rowwise()</a></code> is <strong>unsupported</strong>.</li>
+<code><a href="https://dplyr.tidyverse.org/reference/rowwise.html" class="external-link">rowwise()</a></code> is <strong>unsupported</strong>: it warns and returns a plain <code>rowwise_df</code> with the attributes stripped, not a <code>tbl_now</code>.</li>
 <li>For weekly data with fractional <code>.delay</code>, use <code>align_weeks</code>.</li>
 <li>Count data types <strong>require</strong> a <code>case_count</code> column.</li>
 <li>
