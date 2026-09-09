@@ -722,26 +722,28 @@ nowcast_backtest <- function(x, ..., now_dates = NULL, horizon = 4,
         set.seed(.backtest_seed(seed, label, now_date))
       }
 
-      fit_error <- NULL
       started <- proc.time()[["elapsed"]]
-      nowcast <- tryCatch(
-        run_nowcast(snapshot, this_engine, verbose = FALSE),
+      attempt <- tryCatch(
+        list(
+          nowcast = run_nowcast(snapshot, this_engine, verbose = FALSE),
+          error = NULL
+        ),
         error = function(e) {
-          fit_error <<- conditionMessage(e)
           message <- c(
             "Engine {.val {label}} failed at {.val {now_date}}.",
             "x" = conditionMessage(e)
           )
           if (on_error == "abort") cli::cli_abort(message) else cli::cli_warn(message)
-          NULL
+          list(nowcast = NULL, error = conditionMessage(e))
         }
       )
+      nowcast <- attempt$nowcast
       timings[[length(timings) + 1L]] <- dplyr::tibble(
         .method = label,
         .now = now_date,
         elapsed_seconds = unname(proc.time()[["elapsed"]] - started),
         success = !is.null(nowcast),
-        error = fit_error %||% NA_character_
+        error = attempt$error %||% NA_character_
       )
       if (is.null(nowcast)) next
 

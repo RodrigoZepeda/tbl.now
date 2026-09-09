@@ -92,7 +92,13 @@ Every exported function accepting a `tbl_now` must deliberately handle a
 `summarise()` and `reframe()` may return a plain tibble when the result no longer
 satisfies the `tbl_now` contract. `rowwise()` deliberately demotes. Locale can
 affect row ordering: use dplyr ordering or `order(..., method = "radix")` where
-the C-locale behavior matters.
+the C-locale behavior matters. Day and month names also vary with `LC_TIME`:
+do not hardcode localized names or compare calendar values through
+`weekdays()`, `months()`, or labelled factors in tests and internal logic. Use
+numeric calendar fields such as `lubridate::wday()` and `lubridate::month()`.
+Fixed-language labels are appropriate only when they are an intentional,
+documented part of the public or backend contract; test their calendar mapping
+with numeric positions rather than the session locale's translated names.
 
 ## Revisions and censoring
 

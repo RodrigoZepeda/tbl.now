@@ -342,9 +342,11 @@ test_that("complete_zeroes recomputes temporal-effect columns on the rows it add
   # leaves behind, and the attribute still describes what is really there.
   expect_equal(get_temporal_effect_cols(out), effect_col)
   expect_false(anyNA(out[[effect_col]]))
+  # Compare calendar positions, not translated names: `weekdays()` changes
+  # with LC_TIME, while temporal-effect labels are intentionally stable.
   expect_equal(
-    as.character(out[[effect_col]]),
-    weekdays(out[[get_event_date(out)]])
+    as.integer(out[[effect_col]]),
+    lubridate::wday(out[[get_event_date(out)]], week_start = 7)
   )
 })
 
