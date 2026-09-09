@@ -115,6 +115,13 @@ forwarded to \code{\link[=tbl_now_to_baselinenowcast]{tbl_now_to_baselinenowcast
 which a snapshot ("as of") series cannot be fitted with -- see
 \link[=nowcast_engines]{engine_baselinenowcast()}.}
 
+\item{strata_sharing}{(\code{"baselinenowcast"} only) Whether to share estimates
+across strata: \code{"none"} (default) fits every stratum independently,
+\code{"delay"} pools the delay PMF, \code{"uncertainty"} pools the uncertainty
+parameters, or a vector combining them. Passed through to
+\code{\link[baselinenowcast:baselinenowcast]{baselinenowcast::baselinenowcast()}}'s argument of the same name; only
+meaningful when the object has strata.}
+
 \item{preprocess_args}{(\code{"epinowcast"} only) A list of arguments for
 \code{\link[=tbl_now_to_epinowcast]{tbl_now_to_epinowcast()}}, e.g. \code{list(max_delay = 20)}.}
 
