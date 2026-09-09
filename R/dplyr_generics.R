@@ -460,14 +460,60 @@ group_by.tbl_now <- function(.data, ..., .add = FALSE, drop = dplyr::group_by_dr
   x
 }
 
+#' Demote a `tbl_now` on the way into `rowwise()`
+#'
+#' `rowwise()` is deliberately not implemented for `tbl_now`. Supporting it
+#' would mean a second parallel class (`rowwise_tbl_now`) carrying the same
+#' dozen `dplyr` methods `grouped_tbl_now` already needs, and -- worse --
+#' [dplyr::group_vars()] reports the *rowwise* variables while
+#' [dplyr::is_grouped_df()] is `FALSE`. The functions here that read
+#' `group_vars()` to pick an aggregation key (`to_count()`,
+#' `complete_zeroes()`, `censor_delays()`, `align_weeks()`, ...) would then
+#' silently read a rowwise variable as a stratifying one.
+#'
+#' So `rowwise()` demotes instead. What it must not do is demote *leakily*: the
+#' returned `rowwise_df` used to keep `event_date`, `now` and the rest as
+#' attributes describing an object it was no longer an instance of. It goes
+#' through `.demote_to_tibble()`, the same door every other demotion in the
+#' package uses, before the rowwise grouping is applied.
+#'
+#' @param data A `tbl_now` or `grouped_tbl_now`.
+#' @param ... Columns to keep, passed on to [dplyr::rowwise()].
+#'
+#' @return A plain `rowwise_df` carrying none of the class's attributes.
+#'
+#' @keywords internal
+#' @noRd
+.rowwise_demote <- function(data, ...) {
+  # Name the generated columns rather than just saying "rebuild it afterwards":
+  # `tbl_now()` refuses to build over its own `.event_num` / `.report_num` /
+  # `.delay`, so an `as_tbl_now()` that does not drop them first errors out.
+  generated <- get_protected_generated_cols(data)
+
+  cli::cli_warn(c(
+    "{.fn rowwise} is not implemented for {.cls tbl_now}: returning a plain {.cls rowwise_df}.",
+    "i" = "The {.cls tbl_now} attributes are dropped rather than carried along stale.",
+    "i" = "To rebuild afterwards: {.fn ungroup}, drop {.val {generated}}, then {.fn as_tbl_now}."
+  ))
+
+  # Demote *before* grouping: `.demote_to_tibble()` goes through `as_tibble()`,
+  # which would undo a rowwise grouping applied first.
+  dplyr::rowwise(.demote_to_tibble(data), ...)
+}
+
 #' @importFrom dplyr rowwise
 #' @exportS3Method dplyr::rowwise
 rowwise.tbl_now <- function(data, ...) {
-  cli::cli_alert_warning(
-    "`rowwise` has not yet been implemented for `tbl_now`. Returning a `data.frame`"
-  )
+  .rowwise_demote(data, ...)
+}
 
-  NextMethod()
+# Without this, `rowwise()` on a grouped object dispatches to
+# `rowwise.grouped_df` -- which sits before `tbl_now` in the class vector -- and
+# demotes leakily with no message at all.
+#' @importFrom dplyr rowwise
+#' @exportS3Method dplyr::rowwise
+rowwise.grouped_tbl_now <- function(data, ...) {
+  .rowwise_demote(data, ...)
 }
 
 
