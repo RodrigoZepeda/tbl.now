@@ -675,6 +675,11 @@ The methods that keep the class alive inside a pipeline.
 - [`mpoxdat`](https://rodrigozepeda.github.io/tbl.now/reference/mpoxdat.md)
   : mpoxdat: Mpox reporting data from the 2022 New York City outbreak
 
+## Workflows
+
+- [`tbl_now_workflows`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_workflows.md)
+  : Native and cross-engine nowcasting workflows
+
 # Articles
 
 ### All vignettes
@@ -687,6 +692,6 @@ The methods that keep the class alive inside a pipeline.
   ensembles](https://rodrigozepeda.github.io/tbl.now/articles/ensemble-nowcasting.md):
 - [The nowcasting workflow: hospital-acquired infections in Bucaramanga,
   Colombia](https://rodrigozepeda.github.io/tbl.now/articles/example.md):
-- [One dataset, many nowcasts: using tbl.now with different modelling
+- [Using tbl.now with different modelling
   packages](https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.md):
 - [tbl.now](https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.md):

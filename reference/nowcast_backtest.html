@@ -23,7 +23,7 @@ and a long now_dates it is genuinely expensive."><meta property="og:image" conte
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.35.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.35.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -39,7 +39,7 @@ and a long now_dates it is genuinely expensive."><meta property="og:image" conte
     <li><a class="dropdown-item" href="../articles/diagnosing-a-tbl-now.html">Diagnosing a tbl_now</a></li>
     <li><a class="dropdown-item" href="../articles/ensemble-nowcasting.html">One call, many models: run_nowcast(), custom backends and ensembles</a></li>
     <li><a class="dropdown-item" href="../articles/example.html">The nowcasting workflow: hospital-acquired infections in Bucaramanga, Colombia</a></li>
-    <li><a class="dropdown-item" href="../articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with different modelling packages</a></li>
+    <li><a class="dropdown-item" href="../articles/nowcasting-models.html">Using tbl.now with different modelling packages</a></li>
     <li><a class="dropdown-item" href="../articles/tbl.now.html">tbl.now</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -84,6 +84,7 @@ and a long <code>now_dates</code> it is genuinely expensive.</p>
 <span>  <span class="va">...</span>,</span>
 <span>  now_dates <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  horizon <span class="op">=</span> <span class="fl">4</span>,</span>
+<span>  n_dates <span class="op">=</span> <span class="fl">4L</span>,</span>
 <span>  seed <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  keep_draws <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  on_error <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"warn"</span>, <span class="st">"abort"</span><span class="op">)</span>,</span>
@@ -119,14 +120,19 @@ is labelled by its method.</p></dd>
 
 <dt id="arg-now-dates">now_dates<a class="anchor" aria-label="anchor" href="#arg-now-dates"></a></dt>
 <dd><p>Vector of retrospective nowcast origins. Defaults to the
-four most recent report-axis dates that are at least <code>horizon</code> units before
-the object's <code>now</code>; these dates are used as as-of origins, not as a filter
-on target event dates.</p></dd>
+<code>n_dates</code> most recent report-axis dates that are at least <code>horizon</code> units
+before the object's <code>now</code>; these dates are used as as-of origins, not as a
+filter on target event dates.</p></dd>
 
 
 <dt id="arg-horizon">horizon<a class="anchor" aria-label="anchor" href="#arg-horizon"></a></dt>
 <dd><p>Number of time units of hindsight required when <code>now_dates</code> is
 chosen automatically. Default <code>4</code>.</p></dd>
+
+
+<dt id="arg-n-dates">n_dates<a class="anchor" aria-label="anchor" href="#arg-n-dates"></a></dt>
+<dd><p>Number of automatic retrospective origins. Default <code>4</code>.
+Ignored when <code>now_dates</code> is supplied explicitly.</p></dd>
 
 
 <dt id="arg-seed">seed<a class="anchor" aria-label="anchor" href="#arg-seed"></a></dt>
@@ -183,6 +189,10 @@ one observed value per event-date/stratum target.</p></dd>
 <dd><p>When <code>keep_draws = TRUE</code>, a <code>tibble</code> of the retained draws;
 otherwise <code>NULL</code>.</p></dd>
 
+<dt>timings</dt>
+<dd><p>A <code>tibble</code> with one row per attempted engine/date fit,
+its elapsed time in seconds, whether it succeeded, and any error text.</p></dd>
+
 <dt>truth</dt>
 <dd><p>The observed counts used for scoring.</p></dd>
 
@@ -194,6 +204,28 @@ otherwise <code>NULL</code>.</p></dd>
 
 
 </dl></div>
+    <div class="section level2">
+    <h2 id="use-the-result-directly-with-scoringutils">Use the result directly with scoringutils<a class="anchor" aria-label="anchor" href="#use-the-result-directly-with-scoringutils"></a></h2>
+
+
+
+<p>A <code>nowcast_backtest</code> has methods for
+<code><a href="https://epiforecasts.io/scoringutils/reference/as_forecast_quantile.html" class="external-link">scoringutils::as_forecast_quantile()</a></code>,
+<code><a href="https://epiforecasts.io/scoringutils/reference/as_forecast_point.html" class="external-link">scoringutils::as_forecast_point()</a></code>, and
+<code><a href="https://epiforecasts.io/scoringutils/reference/as_forecast_sample.html" class="external-link">scoringutils::as_forecast_sample()</a></code>, so no manual reshaping is needed:</p>
+<p></p><div class="sourceCode r"><pre><code><span><span class="va">quantile_forecast</span> <span class="op">&lt;-</span> <span class="fu">scoringutils</span><span class="fu">::</span><span class="fu"><a href="https://epiforecasts.io/scoringutils/reference/as_forecast_quantile.html" class="external-link">as_forecast_quantile</a></span><span class="op">(</span><span class="va">bt</span><span class="op">)</span></span>
+<span><span class="va">point_forecast</span> <span class="op">&lt;-</span> <span class="fu">scoringutils</span><span class="fu">::</span><span class="fu"><a href="https://epiforecasts.io/scoringutils/reference/as_forecast_point.html" class="external-link">as_forecast_point</a></span><span class="op">(</span><span class="va">bt</span><span class="op">)</span></span></code></pre><p></p></div>
+<p>For sample forecasts, create the backtest with <code>keep_draws = TRUE</code> and
+use <code>scoringutils::as_forecast_sample(bt)</code>. The returned forecast objects can
+be passed to any compatible scoringutils workflow. For example, relative WIS
+is obtained with:</p>
+<p></p><div class="sourceCode r"><pre><code><span><span class="va">relative_scores</span> <span class="op">&lt;-</span> <span class="va">quantile_forecast</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">scoringutils</span><span class="fu">::</span><span class="fu"><a href="https://epiforecasts.io/scoringutils/reference/score.html" class="external-link">score</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">scoringutils</span><span class="fu">::</span><span class="fu"><a href="https://epiforecasts.io/scoringutils/reference/add_relative_skill.html" class="external-link">add_relative_skill</a></span><span class="op">(</span>metric <span class="op">=</span> <span class="st">"wis"</span><span class="op">)</span></span></code></pre><p></p></div>
+<p><code>model</code>, <code>now</code>, the event-date column, and declared strata are retained as
+forecast units, allowing scores to be extended, regrouped, or summarised
+without returning to the internal <code>tbl.now</code> representation.</p>
+    </div>
     <div class="section level2">
     <h2 id="every-engine-must-report-the-same-quantile-levels">Every engine must report the same quantile levels<a class="anchor" aria-label="anchor" href="#every-engine-must-report-the-same-quantile-levels"></a></h2>
 
@@ -212,11 +244,15 @@ levels its members happened to share.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="engine.html">engine()</a></code> to specify each model being compared, and its <code>min_date</code> argument,
+    <div class="dont-index"><p><a href="tbl_now_workflows.html">tbl_now_workflows</a> for choosing native model construction or cross-engine
+comparison;
+<code><a href="engine.html">engine()</a></code> to specify each model being compared, and its <code>min_date</code> argument,
 which matters here because <code>now</code> moves between fits;
 <code><a href="score_nowcast.html">score_nowcast()</a></code> for the scores computed at each <code>now</code>;
 <code><a href="nowcast_weights.html">nowcast_weights()</a></code> to turn the result into ensemble weights, and
-<code><a href="nowcast_ensemble.html">nowcast_ensemble()</a></code> to use them. The
+<code><a href="nowcast_ensemble.html">nowcast_ensemble()</a></code> to use them;
+<code><a href="https://epiforecasts.io/scoringutils/reference/score.html" class="external-link">scoringutils::score()</a></code> and <code><a href="https://epiforecasts.io/scoringutils/reference/add_relative_skill.html" class="external-link">scoringutils::add_relative_skill()</a></code> for an
+extensible scoring workflow. The
 <a href="https://rodrigozepeda.github.io/tbl.now/articles/ensemble-nowcasting.html"><em>One call, many models</em> article</a>
 compares several packages this way.</p></div>
     </div>

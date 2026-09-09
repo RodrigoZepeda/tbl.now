@@ -146,7 +146,7 @@ you can see it.
 engine_baselinenowcast(draws = 1000)
 #> ── <nowcast_engine: "baselinenowcast"> ─────────────────────────────────────────
 #> • quantile levels: 0.025, 0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95, and 0.975
-#> • arguments: draws
+#> • arguments: draws and strata_sharing
 ```
 
 [`list_nowcast_methods()`](https://rodrigozepeda.github.io/tbl.now/reference/list_nowcast_methods.md)

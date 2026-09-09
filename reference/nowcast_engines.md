@@ -31,6 +31,7 @@ engine_baselinenowcast(
   draws = 1000,
   delays_unit = NULL,
   max_delay = NULL,
+  strata_sharing = "none",
   min_date = NULL,
   quantile_levels = nowcast_quantile_levels(),
   label = NULL
@@ -159,6 +160,18 @@ engine_epinow2(
   has a delay axis as long as the series itself – cannot be fitted at
   all until the axis is capped. The error says which number to use.
 
+- strata_sharing:
+
+  (`engine_baselinenowcast()`) Whether to share estimates across the
+  object's strata. `"none"` (default) fits every stratum independently.
+  `"delay"` estimates the delay PMF once on the pooled counts and
+  applies it to each stratum; `"uncertainty"` shares the uncertainty
+  parameters the same way; pass `c("delay", "uncertainty")` to share
+  both. Passed straight to
+  [`baselinenowcast::baselinenowcast()`](https://baselinenowcast.epinowcast.org/reference/baselinenowcast.html)'s
+  argument of the same name, and only meaningful when the object has
+  strata.
+
 - preprocess_args, expectation, reference, report, fit:
 
   (`engine_epinowcast()`) `preprocess_args` is a list for
@@ -166,9 +179,31 @@ engine_epinow2(
   e.g. `list(max_delay = 30)`; the other four are
   [`epinowcast::epinowcast()`](https://package.epinowcast.org/reference/epinowcast.html)'s
   module arguments. **`epinowcast` is unseeded unless you say so**:
-  `enw_fit_opts()` passes `...` to the sampler, so
-  `fit = epinowcast::enw_fit_opts(seed = 1)` is what makes a fit
-  reproducible.
+  `enw_fit_opts()` has no `seed` argument of its own –
+  `formals(epinowcast::enw_fit_opts)` on 0.7.0 lists `sampler`,
+  `nowcast`, `pp`, `likelihood`, `likelihood_aggregation`,
+  `threads_per_chain`, `debug`, `output_loglik`, `sparse_design`, `...`
+  – but its `...` are forwarded to the `sampler` (`enw_sample()`, i.e.
+  `cmdstanr::sample()`), which does. Pass
+  `fit = epinowcast::enw_fit_opts(seed = 1)` and the seed rides through
+  to the sampler; that is what makes a fit reproducible.
+
+  Two epinowcast 0.7.0 knobs worth knowing about, both reachable through
+  the same pass-through:
+
+  - a **delay-only** fit – reporting-delay distribution conditional on
+    per-reference-date totals, with the latent process disabled – via
+    `obs = epinowcast::enw_obs(delay_only = TRUE, data = pobs)`. `obs`
+    is not a named engine argument here, but `engine_epinowcast()`
+    forwards `...` to
+    [`epinowcast::epinowcast()`](https://package.epinowcast.org/reference/epinowcast.html),
+    so passing it there works.
+
+  - a **structural** reporting effect (e.g. a fixed day-of-week
+    reporting hazard) via `report = enw_report(structural = ...)`. Build
+    the metadata with `enw_dayofweek_structural_reporting()`; this is
+    separate from a temporal-effect covariate that lands on `metareport`
+    and is referenced through `non_parametric =`.
 
 - max_D, moving_window, specs:
 
@@ -203,6 +238,23 @@ engine_epinow2(
   `delays = delay_opts()`, which is `Fixed(0)` – no reporting delay at
   all – and a one-day generation time. Those defaults describe a process
   with nothing to nowcast, so supply the epidemiology yourself.
+  `truncation = trunc_opts()` is likewise `Fixed(0)` – **without a
+  fitted truncation, `estimate_infections()` is a smooth through the
+  incomplete recent days, not a nowcast**. The vignette's *EpiNow2*
+  section walks through the two-step recipe (`estimate_truncation()`
+  first, then pass its `get_parameters(...)[["truncation"]]` as
+  `truncation` here).
+
+  **Reproducibility.**
+  [`EpiNow2::stan_opts()`](https://epiforecasts.io/EpiNow2/reference/stan_opts.html)
+  picks a fresh random seed on every call
+  (`seed = as.integer(runif(1, 1e8))`), so an unseeded fit cannot be
+  reproduced – and a pathological sample cannot be told apart from a bad
+  model afterwards. Pin it with
+  `stan = stan_opts(samples = ..., warmup = ..., chains = ..., seed = <n>)`;
+  `stan_opts()` forwards `seed` through to
+  [`rstan::sampling()`](https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html)
+  / `cmdstanr::sample()`.
 
 ## Value
 
@@ -222,7 +274,7 @@ returns.
 engine_baselinenowcast(draws = 500)
 #> ── <nowcast_engine: "baselinenowcast"> ─────────────────────────────────────────
 #> • quantile levels: 0.025, 0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95, and 0.975
-#> • arguments: draws
+#> • arguments: draws and strata_sharing
 engine_nobbs(max_D = 10, moving_window = 64)
 #> ── <nowcast_engine: "NobBS"> ───────────────────────────────────────────────────
 #> • quantile levels: 0.025, 0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95, and 0.975
@@ -238,7 +290,7 @@ engine_epinowcast(preprocess_args = list(max_delay = 30), min_date = 180)
 engine_baselinenowcast()
 #> ── <nowcast_engine: "baselinenowcast"> ─────────────────────────────────────────
 #> • quantile levels: 0.025, 0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95, and 0.975
-#> • arguments: draws
+#> • arguments: draws and strata_sharing
 engine_diseasenowcasting()
 #> ── <nowcast_engine: "diseasenowcasting"> ───────────────────────────────────────
 #> • quantile levels: 0.025, 0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95, and 0.975

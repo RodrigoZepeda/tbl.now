@@ -1,5 +1,106 @@
 # Changelog
 
+## tbl.now (development version)
+
+### Sharper `epinowcast` integration
+
+Findings from the epinowcast audit against `epinowcast` 0.7.0:
+
+- **Fix**:
+  [`tbl_now_to_epinowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_epinowcast.md)
+  no longer reports materialised temporal-effect columns as “dropped
+  covariates”. Those columns are actually threaded onto `metareference`
+  / `metareport` – the earlier warning contradicted the docstring and
+  confused users who had run
+  [`compute_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/add_temporal_effects.md)
+  before conversion.
+- **New warning**:
+  [`tbl_now_to_epinowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_epinowcast.md)
+  now warns (silenced by `quiet = TRUE`) when it attaches
+  temporal-effect columns to the preprocessed object, listing the column
+  names and showing an example
+  `enw_reference(parametric = ~ 1 + .event_day_of_week, ...)` call.
+  Nothing in
+  [`epinowcast()`](https://package.epinowcast.org/reference/epinowcast.html)
+  auto-wires those columns into a module formula.
+- **New fit-time check**:
+  [`engine_epinowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_engines.md)
+  /
+  [`nowcast_fit.epinowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_fit.md)
+  now warns when the caller’s `expectation` / `reference` / `report` /
+  `missing` do not reference any of the declared temporal-effect columns
+  – so a caller who forgets to name them in a module formula sees a
+  warning at fit time, rather than a fit that silently ignores them.
+- **Docs**:
+  [`engine_epinowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_engines.md)
+  clarifies that
+  [`enw_fit_opts()`](https://package.epinowcast.org/reference/enw_fit_opts.html)
+  has no `seed` argument of its own (checked against
+  `formals(epinowcast::enw_fit_opts)` on 0.7.0); `seed` rides through
+  its `...` to the sampler
+  ([`enw_sample()`](https://package.epinowcast.org/reference/enw_sample.html)).
+  Also documents the 0.7.0 additions `enw_obs(delay_only = TRUE)` and
+  `enw_report(structural = ...)` /
+  [`enw_dayofweek_structural_reporting()`](https://package.epinowcast.org/reference/enw_dayofweek_structural_reporting.html).
+- **Docs**: `tbl_now_epinowcast` gains a *Per-cell observation flags*
+  section explaining that epinowcast’s
+  `enw_obs(observation_indicator = )` is a cell-level flag rather than
+  the case-level `is_censored_report`, and cannot be built from
+  `is_censored_report` alone.
+- **Robustness**:
+  [`tidy.epinowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast.md)
+  no longer hard-codes `q5`/`q95`. It picks the widest symmetric pair
+  `(qp, q(100-p))` present in the `summary(fit, type = "nowcast")`
+  frame, so a caller who passes non-default `probs` to
+  [`enw_nowcast_summary()`](https://package.epinowcast.org/reference/enw_nowcast_summary.html)
+  no longer causes a `$q5` / `$q95` lookup crash. The `level` is derived
+  from the pair; the median stays the estimate.
+- **Robustness**:
+  [`nowcast_tidy.epinowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_tidy.md)’s
+  fallback quantile summary now passes `type = "nowcast"` to
+  `summary(fit)` explicitly, rather than relying on the default.
+- **Test**: new grouped test for
+  [`tbl_now_to_epinowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_epinowcast.md);
+  the converter ungroups internally, and this now asserts that.
+
+### Native strata dispatch on `baselinenowcast`
+
+`baselinenowcast` \>= 0.2.1 accepts a long tidy `data.frame` with a
+`strata_cols` argument and returns a single `baselinenowcast_df` with
+the strata columns still attached.
+[`engine_baselinenowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_engines.md)
+uses that path for stratified objects instead of looping one triangle at
+a time, which enables sharing estimates across strata and drops an
+internal wrapper class.
+
+- **New**: `engine_baselinenowcast(strata_sharing = )` – passed straight
+  through to
+  [`baselinenowcast::baselinenowcast()`](https://baselinenowcast.epinowcast.org/reference/baselinenowcast.html).
+  `"none"` (default) fits every stratum independently; `"delay"` shares
+  the delay PMF across strata; `"uncertainty"` shares the uncertainty
+  parameters; both can be combined. Meaningful only when the object has
+  strata.
+- **New default**: `tbl_now_to_baselinenowcast(format = "auto")` –
+  returns a reporting-triangle matrix when the object has no strata and
+  the long tidy `data.frame` (what
+  [`baselinenowcast()`](https://baselinenowcast.epinowcast.org/reference/baselinenowcast.html)
+  consumes with `strata_cols =`) when it does. Unstratified callers see
+  no change; a stratified `tbl_now` used to come back as a pooled matrix
+  (with a warning) and now comes back as the shape `baselinenowcast` can
+  fit natively.
+- **Breaking (internal)**: the `baselinenowcast_strata` list class that
+  [`nowcast_fit.baselinenowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_fit.md)
+  used to return for stratified fits is gone.
+  [`run_nowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/run_nowcast.md)
+  returns the same `tbl_nowcast` as before.
+  [`tidy()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast.md)
+  on a bare list of `baselinenowcast_df` fits also stops routing through
+  [`tidy.list()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast.md)
+  – pass strata to `baselinenowcast(strata_cols = )` (or use
+  [`run_nowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/run_nowcast.md))
+  rather than looping over `format = "triangle_list"`.
+- **Bump**: `baselinenowcast (>= 0.2.1)` is now the minimum.
+
 ## tbl.now 0.35.2
 
 Fixed a bug in the `is_weekend()` function that made it work solely on
@@ -1226,9 +1327,11 @@ The **outcome values are unchanged**: a case is still `"confirmed"`,
 `"retracted"` or `"pending"`. Revision is what the process does;
 confirmed is one of the things it can conclude.
 
-`diseasenowcasting` now uses `revision_process()` for row-level report
-resolution and `cumulative_process()` for count-cumulative signed
-changes.
+`diseasenowcasting` now uses
+[`revision_process()`](https://rodrigozepeda.github.io/diseasenowcasting/reference/revision_process.html)
+for row-level report resolution and
+[`cumulative_process()`](https://rodrigozepeda.github.io/diseasenowcasting/reference/cumulative_process.html)
+for count-cumulative signed changes.
 
 ### Documentation: fewer, fuller reference pages
 
@@ -2248,8 +2351,9 @@ than it confirms them biases any nowcast that treats the two alike.
   confirmation columns are now part of the key.
 - `run_nowcast(x, "diseasenowcasting")` passes straight through to
   [`diseasenowcasting::nowcast()`](https://rodrigozepeda.github.io/diseasenowcasting/reference/nowcast.html).
-  The confirmation process belongs to that package’s `model()`, not to
-  `tbl.now`, so pass it there.
+  The confirmation process belongs to that package’s
+  [`model()`](https://rodrigozepeda.github.io/diseasenowcasting/reference/model.html),
+  not to `tbl.now`, so pass it there.
 
 ## tbl.now 0.20.0
 

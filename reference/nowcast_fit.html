@@ -23,7 +23,7 @@ any package.'><meta property="og:image" content="https://rodrigozepeda.github.io
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.35.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.35.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -39,7 +39,7 @@ any package.'><meta property="og:image" content="https://rodrigozepeda.github.io
     <li><a class="dropdown-item" href="../articles/diagnosing-a-tbl-now.html">Diagnosing a tbl_now</a></li>
     <li><a class="dropdown-item" href="../articles/ensemble-nowcasting.html">One call, many models: run_nowcast(), custom backends and ensembles</a></li>
     <li><a class="dropdown-item" href="../articles/example.html">The nowcasting workflow: hospital-acquired infections in Bucaramanga, Colombia</a></li>
-    <li><a class="dropdown-item" href="../articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with different modelling packages</a></li>
+    <li><a class="dropdown-item" href="../articles/nowcasting-models.html">Using tbl.now with different modelling packages</a></li>
     <li><a class="dropdown-item" href="../articles/tbl.now.html">tbl.now</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -96,6 +96,7 @@ any package.</p>
 <span>  draws <span class="op">=</span> <span class="fl">1000</span>,</span>
 <span>  delays_unit <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  max_delay <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  strata_sharing <span class="op">=</span> <span class="st">"none"</span>,</span>
 <span>  quantile_levels <span class="op">=</span> <span class="fu"><a href="nowcast_quantile_levels.html">nowcast_quantile_levels</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span>
@@ -207,6 +208,15 @@ triangle's delay axis; inferred from the object's time units when <code>NULL</co
 forwarded to <code><a href="tbl_now_baselinenowcast.html">tbl_now_to_baselinenowcast()</a></code>. <code>NULL</code> keeps every delay,
 which a snapshot ("as of") series cannot be fitted with – see
 <a href="nowcast_engines.html">engine_baselinenowcast()</a>.</p></dd>
+
+
+<dt id="arg-strata-sharing">strata_sharing<a class="anchor" aria-label="anchor" href="#arg-strata-sharing"></a></dt>
+<dd><p>(<code>"baselinenowcast"</code> only) Whether to share estimates
+across strata: <code>"none"</code> (default) fits every stratum independently,
+<code>"delay"</code> pools the delay PMF, <code>"uncertainty"</code> pools the uncertainty
+parameters, or a vector combining them. Passed through to
+<code><a href="https://baselinenowcast.epinowcast.org/reference/baselinenowcast.html" class="external-link">baselinenowcast::baselinenowcast()</a></code>'s argument of the same name; only
+meaningful when the object has strata.</p></dd>
 
 
 <dt id="arg-preprocess-args">preprocess_args<a class="anchor" aria-label="anchor" href="#arg-preprocess-args"></a></dt>

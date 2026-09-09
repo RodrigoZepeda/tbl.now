@@ -57,6 +57,8 @@ A `ggplot` object.
 
 ## See also
 
+[tbl_now_workflows](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_workflows.md)
+for the native/common workflow boundary;
 [`run_nowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/run_nowcast.md),
 [`nowcast_ensemble()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_ensemble.md)
 

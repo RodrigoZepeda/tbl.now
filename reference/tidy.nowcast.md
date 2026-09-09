@@ -55,7 +55,7 @@ tidy(x, probs = NULL, engine = NULL, level = NULL, ...)
   Optional string naming the engine. Needed only for the shapes that
   arrive as an **unclassed list** – a NobBS fit, an
   [`EpiNow2::regional_epinow()`](https://epiforecasts.io/EpiNow2/reference/regional_epinow.html)
-  result, or a per-stratum list of baselinenowcast or
+  result, or a per-stratum list of
   [`surveillance::nowcast()`](https://rdrr.io/pkg/surveillance/man/nowcast.html)
   fits – which are otherwise recognised by their structure.
 
@@ -136,6 +136,10 @@ approximation.
 
 - `baselinenowcast_df` from
   [`baselinenowcast::baselinenowcast()`](https://baselinenowcast.epinowcast.org/reference/baselinenowcast.html)
+  – both the single-series fit (from a `reporting_triangle`) and the
+  stratified fit (from a long `data.frame` with `strata_cols = `). A
+  stratified fit is tidied one row per (stratum, event_date), with the
+  strata columns pasted into the `stratum` label.
 
 - `epinowcast` fits
 
@@ -146,13 +150,6 @@ approximation.
   [`NobBS::NobBS()`](https://rdrr.io/pkg/NobBS/man/NobBS.html) or by
   [`NobBS::NobBS.strat()`](https://rdrr.io/pkg/NobBS/man/NobBS.strat.html)
   (the stratified variant is recognised by its `stratum` column)
-
-- a **list of `baselinenowcast_df` fits**, one per stratum – what
-  [`lapply()`](https://rdrr.io/r/base/lapply.html)-ing over a
-  [tbl_now_triangle_list](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_triangle_list.md)
-  produces. Each element is tidied and labelled with its list name,
-  giving the same one-block-per-stratum table the natively stratified
-  engines return.
 
 ## See also
 

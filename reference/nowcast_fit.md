@@ -37,6 +37,7 @@ nowcast_fit(
   draws = 1000,
   delays_unit = NULL,
   max_delay = NULL,
+  strata_sharing = "none",
   quantile_levels = nowcast_quantile_levels(),
   verbose = TRUE
 )
@@ -152,6 +153,15 @@ nowcast_fit(
   `NULL` keeps every delay, which a snapshot ("as of") series cannot be
   fitted with – see
   [engine_baselinenowcast()](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_engines.md).
+
+- strata_sharing:
+
+  (`"baselinenowcast"` only) Whether to share estimates across strata:
+  `"none"` (default) fits every stratum independently, `"delay"` pools
+  the delay PMF, `"uncertainty"` pools the uncertainty parameters, or a
+  vector combining them. Passed through to
+  [`baselinenowcast::baselinenowcast()`](https://baselinenowcast.epinowcast.org/reference/baselinenowcast.html)'s
+  argument of the same name; only meaningful when the object has strata.
 
 - preprocess_args:
 

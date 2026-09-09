@@ -185,6 +185,28 @@ an `enw_preprocess_data` object carries:
   7 by delay 40 but a final 11 only at delay 74, so its `max_confirm` is
   11 in `pobs` and 7 after the round-trip.)
 
+## Per-cell observation flags
+
+A `tbl_now` `is_censored_report` flag records an upper bound on the
+report date of an individual case, and it is per-case: it can differ
+between two rows in the same `(event_date, report_date)` cell.
+epinowcast's preprocessed object has no equivalent – it stores one
+cumulative count per cell – so the converter collapses the flag before
+conversion (summing the counts over it for count data, dropping the
+column for a line list), with a warning.
+
+epinowcast's nearest concept is not equivalent, but is worth knowing.
+[`epinowcast::enw_obs()`](https://package.epinowcast.org/reference/enw_obs.html)
+takes an `observation_indicator` naming a *per-cell* logical column that
+marks cells as observed or not, which epinowcast then uses to decide
+whether a cell contributes to the likelihood. It is a **cell** flag
+rather than a **case** flag, so it cannot be built from
+`is_censored_report` alone: two rows in the same cell can disagree, and
+a cell-level column has to pick one answer. If you have a genuinely
+cell-level "known unobservable" signal you can add a column to the
+preprocessed object by hand and reference it with
+`obs = enw_obs(observation_indicator = "...")` in the fit.
+
 ## Negative delays
 
 A reporting triangle is indexed by delay from **0**, so a report that
@@ -252,7 +274,7 @@ library(data.table)
 #>     %notin%
 library(epinowcast)
 #> ! `enw_cache_location` is not set.
-#> ℹ Using `tempdir()` at /tmp/RtmpWRdg70 for the epinowcast model cache location.
+#> ℹ Using `tempdir()` at /tmp/RtmpIDFCjn for the epinowcast model cache location.
 #> ℹ Set a specific cache location using `enw_set_cache` to control Stan
 #>   recompilation in this R session or across R sessions.
 #> ℹ For example: `enw_set_cache(tools::R_user_dir(package = "epinowcast",

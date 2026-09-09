@@ -9,17 +9,21 @@ counts) and converts it into a `tbl_now` of
 `data_type = "count-incidence"`.
 
 `tbl_now_to_baselinenowcast()` returns either a `reporting_triangle`
-matrix (`format = "matrix"`, the default) via
+matrix via
 [`baselinenowcast::as_reporting_triangle()`](https://baselinenowcast.epinowcast.org/reference/as_reporting_triangle.html),
-or the long `baselinenowcast`-style `data.frame` (`format = "long"`).
-The long format also carries the **strata**, the covariates, the
-censoring indicator and any materialised temporal-effect columns (see
+or the long `baselinenowcast`-style `data.frame`. The default is
+`format = "auto"`, which returns a matrix when the object has no strata
+and a long data frame when it does – the shape
+[`baselinenowcast::baselinenowcast()`](https://baselinenowcast.epinowcast.org/reference/baselinenowcast.html)
+consumes natively in each case (with `strata_cols` naming the strata
+columns in the long shape). The long format also carries the **strata**,
+the covariates, the censoring indicator and any materialised
+temporal-effect columns (see
 [`compute_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/add_temporal_effects.md));
 the matrix holds only the three core columns. A single
 reporting-triangle matrix has no strata dimension, so
-`format = "matrix"` **pools** any strata (summing the counts) with a
-warning; use `format = "triangle_list"` to get one triangle per stratum
-instead.
+`format = "matrix"` on a stratified object **pools** any strata (summing
+the counts) with a warning.
 
 ## Usage
 
@@ -37,7 +41,7 @@ tbl_now_from_baselinenowcast(
 tbl_now_to_baselinenowcast(
   x,
   ...,
-  format = c("matrix", "long", "triangle_list"),
+  format = c("auto", "matrix", "long", "triangle_list"),
   delays_unit = NULL,
   max_delay = NULL,
   complete = "auto",
@@ -89,22 +93,33 @@ tbl_now_to_baselinenowcast(
 
   For `to`, one of:
 
-  - `"matrix"` (default) – a single
+  - `"auto"` (default) – `"matrix"` when the object has no strata and
+    `"long"` when it does. That is the shape
+    [`baselinenowcast::baselinenowcast()`](https://baselinenowcast.epinowcast.org/reference/baselinenowcast.html)
+    consumes natively in each case: it takes a `reporting_triangle` when
+    there is only one series to fit, and a long `data.frame` with a
+    `strata_cols` argument when there is more than one. Pick a specific
+    format if you need a particular return type.
+
+  - `"matrix"` – a single
     [`baselinenowcast::as_reporting_triangle()`](https://baselinenowcast.epinowcast.org/reference/as_reporting_triangle.html)
     matrix. A triangle has no strata dimension, so any strata are
     **pooled** (with a warning).
 
   - `"long"` – a tidy data frame, which can also carry the strata,
     covariates, temporal-effect columns and the censoring indicator.
+    [`baselinenowcast::baselinenowcast()`](https://baselinenowcast.epinowcast.org/reference/baselinenowcast.html)
+    accepts this shape directly, using its `strata_cols` argument to
+    name the strata columns.
 
   - `"triangle_list"` – one reporting triangle **per stratum**, as a
     [tbl_now_triangle_list](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_triangle_list.md).
-    Use this instead of pooling when you want a nowcast per stratum.
-    With no strata attached the result is still a list, of length one
-    and named `"all"`, so the return type never depends on whether
-    strata happen to be present. Unlike splitting the long format
-    yourself, the delay unit and the strata are taken from the object,
-    and
+    Useful for inspecting each stratum's triangle; for actually fitting
+    stratified nowcasts, the `"long"` shape is what baselinenowcast
+    consumes natively. With no strata attached the result is still a
+    list, of length one and named `"all"`, so the return type never
+    depends on whether strata happen to be present. The delay unit and
+    the strata are taken from the object, and
     [`as_tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/as_tbl_now.md)
     can rebuild a `tbl_now` from the result.
 

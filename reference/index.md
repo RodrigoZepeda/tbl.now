@@ -520,3 +520,8 @@ The methods that keep the class alive inside a pipeline.
   : Healthcare-Associated Infections – Bucaramanga, Colombia 2020-2023
 - [`mpoxdat`](https://rodrigozepeda.github.io/tbl.now/reference/mpoxdat.md)
   : mpoxdat: Mpox reporting data from the 2022 New York City outbreak
+
+## Workflows
+
+- [`tbl_now_workflows`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_workflows.md)
+  : Native and cross-engine nowcasting workflows

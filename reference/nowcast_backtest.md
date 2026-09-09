@@ -23,6 +23,7 @@ nowcast_backtest(
   ...,
   now_dates = NULL,
   horizon = 4,
+  n_dates = 4L,
   seed = NULL,
   keep_draws = FALSE,
   on_error = c("warn", "abort"),
@@ -62,15 +63,20 @@ nowcast_backtest(
 
 - now_dates:
 
-  Vector of retrospective nowcast origins. Defaults to the four most
-  recent report-axis dates that are at least `horizon` units before the
-  object's `now`; these dates are used as as-of origins, not as a filter
-  on target event dates.
+  Vector of retrospective nowcast origins. Defaults to the `n_dates`
+  most recent report-axis dates that are at least `horizon` units before
+  the object's `now`; these dates are used as as-of origins, not as a
+  filter on target event dates.
 
 - horizon:
 
   Number of time units of hindsight required when `now_dates` is chosen
   automatically. Default `4`.
+
+- n_dates:
+
+  Number of automatic retrospective origins. Default `4`. Ignored when
+  `now_dates` is supplied explicitly.
 
 - seed:
 
@@ -134,6 +140,11 @@ An object of class `nowcast_backtest`: a list with
   When `keep_draws = TRUE`, a `tibble` of the retained draws; otherwise
   `NULL`.
 
+- timings:
+
+  A `tibble` with one row per attempted engine/date fit, its elapsed
+  time in seconds, whether it succeeded, and any error text.
+
 - truth:
 
   The observed counts used for scoring.
@@ -145,6 +156,31 @@ An object of class `nowcast_backtest`: a list with
 - now_dates:
 
   The dates that were nowcast.
+
+## Use the result directly with scoringutils
+
+A `nowcast_backtest` has methods for
+[`scoringutils::as_forecast_quantile()`](https://epiforecasts.io/scoringutils/reference/as_forecast_quantile.html),
+[`scoringutils::as_forecast_point()`](https://epiforecasts.io/scoringutils/reference/as_forecast_point.html),
+and
+[`scoringutils::as_forecast_sample()`](https://epiforecasts.io/scoringutils/reference/as_forecast_sample.html),
+so no manual reshaping is needed:
+
+    quantile_forecast <- scoringutils::as_forecast_quantile(bt)
+    point_forecast <- scoringutils::as_forecast_point(bt)
+
+For sample forecasts, create the backtest with `keep_draws = TRUE` and
+use `scoringutils::as_forecast_sample(bt)`. The returned forecast
+objects can be passed to any compatible scoringutils workflow. For
+example, relative WIS is obtained with:
+
+    relative_scores <- quantile_forecast |>
+      scoringutils::score() |>
+      scoringutils::add_relative_skill(metric = "wis")
+
+`model`, `now`, the event-date column, and declared strata are retained
+as forecast units, allowing scores to be extended, regrouped, or
+summarised without returning to the internal `tbl.now` representation.
 
 ## Every engine must report the same quantile levels
 
@@ -162,6 +198,8 @@ to whatever levels its members happened to share.
 
 ## See also
 
+[tbl_now_workflows](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_workflows.md)
+for choosing native model construction or cross-engine comparison;
 [`engine()`](https://rodrigozepeda.github.io/tbl.now/reference/engine.md)
 to specify each model being compared, and its `min_date` argument, which
 matters here because `now` moves between fits;
@@ -170,7 +208,11 @@ for the scores computed at each `now`;
 [`nowcast_weights()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_weights.md)
 to turn the result into ensemble weights, and
 [`nowcast_ensemble()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_ensemble.md)
-to use them. The [*One call, many models*
+to use them;
+[`scoringutils::score()`](https://epiforecasts.io/scoringutils/reference/score.html)
+and
+[`scoringutils::add_relative_skill()`](https://epiforecasts.io/scoringutils/reference/add_relative_skill.html)
+for an extensible scoring workflow. The [*One call, many models*
 article](https://rodrigozepeda.github.io/tbl.now/articles/ensemble-nowcasting.html)
 compares several packages this way.
 

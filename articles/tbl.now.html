@@ -27,7 +27,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.35.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.35.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -45,7 +45,7 @@
     <li><a class="dropdown-item" href="../articles/diagnosing-a-tbl-now.html">Diagnosing a tbl_now</a></li>
     <li><a class="dropdown-item" href="../articles/ensemble-nowcasting.html">One call, many models: run_nowcast(), custom backends and ensembles</a></li>
     <li><a class="dropdown-item" href="../articles/example.html">The nowcasting workflow: hospital-acquired infections in Bucaramanga, Colombia</a></li>
-    <li><a class="dropdown-item" href="../articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with different modelling packages</a></li>
+    <li><a class="dropdown-item" href="../articles/nowcasting-models.html">Using tbl.now with different modelling packages</a></li>
     <li><a class="dropdown-item" href="../articles/tbl.now.html">tbl.now</a></li>
   </ul>
 </li>
@@ -130,6 +130,26 @@ nowcasting packages</a> <span class="citation">(<a href="#ref-gelman2020bayesian
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span>, quietly <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://lubridate.tidyverse.org" class="external-link">lubridate</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://rodrigozepeda.github.io/tbl.now/">tbl.now</a></span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level2">
+<h2 id="native-modelling-and-cross-engine-workflows">Native modelling and cross-engine workflows<a class="anchor" aria-label="anchor" href="#native-modelling-and-cross-engine-workflows"></a>
+</h2>
+<p>Use a modelling package’s native entry point when you need its model
+constructors, priors, optimizer controls, or fit-specific diagnostics. A
+compatible package may still return <code>tbl_nowcast</code> directly,
+so choosing its native fitting interface does not create a separate
+downstream format.</p>
+<p>Use <code><a href="../reference/engine.html">engine()</a></code> and <code><a href="../reference/run_nowcast.html">run_nowcast()</a></code> when you
+want the same call across modelling packages, and
+<code><a href="../reference/nowcast_backtest.html">nowcast_backtest()</a></code> when you want several methods evaluated
+at the same retrospective origins. Once a <code>tbl_nowcast</code>
+exists, use the shared <code><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot()</a></code>, <code><a href="../reference/tidy.nowcast.html">tidy()</a></code>,
+<code><a href="../reference/score_nowcast.html">score_nowcast()</a></code>, and <code><a href="../reference/nowcast_ensemble.html">nowcast_ensemble()</a></code>
+operations. Backtests can also be passed directly to scoringutils’
+quantile, point, and sample forecast converters, making scoringutils the
+extension point for custom metrics and relative skill. See
+<code><a href="../reference/tbl_now_workflows.html">?tbl_now_workflows</a></code> for the complete policy and
+examples.</p>
 </div>
 <div class="section level2">
 <h2 id="how-tbl-now-works">How <code>tbl.now</code> works<a class="anchor" aria-label="anchor" href="#how-tbl-now-works"></a>

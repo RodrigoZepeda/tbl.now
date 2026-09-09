@@ -5,29 +5,35 @@ tbl_now_from_baselinenowcast() accepts either the long data.frame
 matrix (rownames = reference dates, colnames = delays, incremental counts)
 and converts it into a tbl_now of data_type = "count-incidence".
 tbl_now_to_baselinenowcast() returns either a reporting_triangle matrix
-(format = "matrix", the default) via
-baselinenowcast::as_reporting_triangle(), or the long
-baselinenowcast-style data.frame (format = "long"). The long format also
-carries the strata, the
-covariates, the censoring indicator and any materialised temporal-effect
-columns (see compute_temporal_effects()); the matrix holds only the three
-core columns. A single reporting-triangle matrix has no strata dimension, so
-format = "matrix" pools any strata (summing the counts) with a warning;
-use format = "triangle_list" to get one triangle per stratum instead.'><meta property="og:description" content='
+via baselinenowcast::as_reporting_triangle(), or the long
+baselinenowcast-style data.frame. The default is
+format = "auto", which returns a matrix when the object has no strata and
+a long data frame when it does – the shape
+baselinenowcast::baselinenowcast() consumes natively in each case
+(with strata_cols naming the strata columns in the long shape). The long
+format also carries the strata, the covariates, the censoring indicator
+and any materialised temporal-effect columns (see
+compute_temporal_effects()); the matrix holds only the three core
+columns. A single reporting-triangle matrix has no strata dimension, so
+format = "matrix" on a stratified object pools any strata (summing
+the counts) with a warning.'><meta property="og:description" content='
 tbl_now_from_baselinenowcast() accepts either the long data.frame
 (reference_date, report_date, count) or a reporting_triangle
 matrix (rownames = reference dates, colnames = delays, incremental counts)
 and converts it into a tbl_now of data_type = "count-incidence".
 tbl_now_to_baselinenowcast() returns either a reporting_triangle matrix
-(format = "matrix", the default) via
-baselinenowcast::as_reporting_triangle(), or the long
-baselinenowcast-style data.frame (format = "long"). The long format also
-carries the strata, the
-covariates, the censoring indicator and any materialised temporal-effect
-columns (see compute_temporal_effects()); the matrix holds only the three
-core columns. A single reporting-triangle matrix has no strata dimension, so
-format = "matrix" pools any strata (summing the counts) with a warning;
-use format = "triangle_list" to get one triangle per stratum instead.'><meta property="og:image" content="https://rodrigozepeda.github.io/tbl.now/logo.png"></head><body>
+via baselinenowcast::as_reporting_triangle(), or the long
+baselinenowcast-style data.frame. The default is
+format = "auto", which returns a matrix when the object has no strata and
+a long data frame when it does – the shape
+baselinenowcast::baselinenowcast() consumes natively in each case
+(with strata_cols naming the strata columns in the long shape). The long
+format also carries the strata, the covariates, the censoring indicator
+and any materialised temporal-effect columns (see
+compute_temporal_effects()); the matrix holds only the three core
+columns. A single reporting-triangle matrix has no strata dimension, so
+format = "matrix" on a stratified object pools any strata (summing
+the counts) with a warning.'><meta property="og:image" content="https://rodrigozepeda.github.io/tbl.now/logo.png"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -35,7 +41,7 @@ use format = "triangle_list" to get one triangle per stratum instead.'><meta pro
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.35.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.35.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -51,7 +57,7 @@ use format = "triangle_list" to get one triangle per stratum instead.'><meta pro
     <li><a class="dropdown-item" href="../articles/diagnosing-a-tbl-now.html">Diagnosing a tbl_now</a></li>
     <li><a class="dropdown-item" href="../articles/ensemble-nowcasting.html">One call, many models: run_nowcast(), custom backends and ensembles</a></li>
     <li><a class="dropdown-item" href="../articles/example.html">The nowcasting workflow: hospital-acquired infections in Bucaramanga, Colombia</a></li>
-    <li><a class="dropdown-item" href="../articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with different modelling packages</a></li>
+    <li><a class="dropdown-item" href="../articles/nowcasting-models.html">Using tbl.now with different modelling packages</a></li>
     <li><a class="dropdown-item" href="../articles/tbl.now.html">tbl.now</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -84,15 +90,18 @@ use format = "triangle_list" to get one triangle per stratum instead.'><meta pro
 matrix (rownames = reference dates, colnames = delays, incremental counts)
 and converts it into a <code>tbl_now</code> of <code>data_type = "count-incidence"</code>.</p>
 <p><code>tbl_now_to_baselinenowcast()</code> returns either a <code>reporting_triangle</code> matrix
-(<code>format = "matrix"</code>, the default) via
-<code><a href="https://baselinenowcast.epinowcast.org/reference/as_reporting_triangle.html" class="external-link">baselinenowcast::as_reporting_triangle()</a></code>, or the long
-<code>baselinenowcast</code>-style <code>data.frame</code> (<code>format = "long"</code>). The long format also
-carries the <strong>strata</strong>, the
-covariates, the censoring indicator and any materialised temporal-effect
-columns (see <code><a href="add_temporal_effects.html">compute_temporal_effects()</a></code>); the matrix holds only the three
-core columns. A single reporting-triangle matrix has no strata dimension, so
-<code>format = "matrix"</code> <strong>pools</strong> any strata (summing the counts) with a warning;
-use <code>format = "triangle_list"</code> to get one triangle per stratum instead.</p>
+via <code><a href="https://baselinenowcast.epinowcast.org/reference/as_reporting_triangle.html" class="external-link">baselinenowcast::as_reporting_triangle()</a></code>, or the long
+<code>baselinenowcast</code>-style <code>data.frame</code>. The default is
+<code>format = "auto"</code>, which returns a matrix when the object has no strata and
+a long data frame when it does – the shape
+<code><a href="https://baselinenowcast.epinowcast.org/reference/baselinenowcast.html" class="external-link">baselinenowcast::baselinenowcast()</a></code> consumes natively in each case
+(with <code>strata_cols</code> naming the strata columns in the long shape). The long
+format also carries the <strong>strata</strong>, the covariates, the censoring indicator
+and any materialised temporal-effect columns (see
+<code><a href="add_temporal_effects.html">compute_temporal_effects()</a></code>); the matrix holds only the three core
+columns. A single reporting-triangle matrix has no strata dimension, so
+<code>format = "matrix"</code> on a stratified object <strong>pools</strong> any strata (summing
+the counts) with a warning.</p>
     </div>
 
     <div class="section level2">
@@ -110,7 +119,7 @@ use <code>format = "triangle_list"</code> to get one triangle per stratum instea
 <span><span class="fu">tbl_now_to_baselinenowcast</span><span class="op">(</span></span>
 <span>  <span class="va">x</span>,</span>
 <span>  <span class="va">...</span>,</span>
-<span>  format <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"matrix"</span>, <span class="st">"long"</span>, <span class="st">"triangle_list"</span><span class="op">)</span>,</span>
+<span>  format <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"auto"</span>, <span class="st">"matrix"</span>, <span class="st">"long"</span>, <span class="st">"triangle_list"</span><span class="op">)</span>,</span>
 <span>  delays_unit <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  max_delay <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  complete <span class="op">=</span> <span class="st">"auto"</span>,</span>
@@ -157,18 +166,27 @@ from the object's time units when the event and report units agree and are
 
 
 <dt id="arg-format">format<a class="anchor" aria-label="anchor" href="#arg-format"></a></dt>
-<dd><p>For <code>to</code>, one of:</p><ul><li><p><code>"matrix"</code> (default) – a single <code><a href="https://baselinenowcast.epinowcast.org/reference/as_reporting_triangle.html" class="external-link">baselinenowcast::as_reporting_triangle()</a></code>
-matrix. A triangle has no strata dimension, so any strata are <strong>pooled</strong>
-(with a warning).</p></li>
+<dd><p>For <code>to</code>, one of:</p><ul><li><p><code>"auto"</code> (default) – <code>"matrix"</code> when the object has no strata and
+<code>"long"</code> when it does. That is the shape <code><a href="https://baselinenowcast.epinowcast.org/reference/baselinenowcast.html" class="external-link">baselinenowcast::baselinenowcast()</a></code>
+consumes natively in each case: it takes a <code>reporting_triangle</code> when there
+is only one series to fit, and a long <code>data.frame</code> with a <code>strata_cols</code>
+argument when there is more than one. Pick a specific format if you need
+a particular return type.</p></li>
+<li><p><code>"matrix"</code> – a single <code><a href="https://baselinenowcast.epinowcast.org/reference/as_reporting_triangle.html" class="external-link">baselinenowcast::as_reporting_triangle()</a></code> matrix.
+A triangle has no strata dimension, so any strata are <strong>pooled</strong> (with a
+warning).</p></li>
 <li><p><code>"long"</code> – a tidy data frame, which can also carry the strata,
-covariates, temporal-effect columns and the censoring indicator.</p></li>
+covariates, temporal-effect columns and the censoring indicator.
+<code><a href="https://baselinenowcast.epinowcast.org/reference/baselinenowcast.html" class="external-link">baselinenowcast::baselinenowcast()</a></code> accepts this shape directly, using
+its <code>strata_cols</code> argument to name the strata columns.</p></li>
 <li><p><code>"triangle_list"</code> – one reporting triangle <strong>per stratum</strong>, as a
-<a href="tbl_now_triangle_list.html">tbl_now_triangle_list</a>. Use this instead of pooling when you want a
-nowcast per stratum. With no strata attached the result is still a list,
-of length one and named <code>"all"</code>, so the return type never depends on
-whether strata happen to be present. Unlike splitting the long format
-yourself, the delay unit and the strata are taken from the object, and
-<code><a href="as_tbl_now.html">as_tbl_now()</a></code> can rebuild a <code>tbl_now</code> from the result.</p></li>
+<a href="tbl_now_triangle_list.html">tbl_now_triangle_list</a>. Useful for inspecting each stratum's triangle;
+for actually fitting stratified nowcasts, the <code>"long"</code> shape is what
+<span class="pkg">baselinenowcast</span> consumes natively. With no strata attached the
+result is still a list, of length one and named <code>"all"</code>, so the return
+type never depends on whether strata happen to be present. The delay
+unit and the strata are taken from the object, and <code><a href="as_tbl_now.html">as_tbl_now()</a></code> can
+rebuild a <code>tbl_now</code> from the result.</p></li>
 </ul></dd>
 
 

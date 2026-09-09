@@ -64,6 +64,33 @@ library(lubridate)
 library(tbl.now)
 ```
 
+## Native modelling and cross-engine workflows
+
+Use a modelling package’s native entry point when you need its model
+constructors, priors, optimizer controls, or fit-specific diagnostics. A
+compatible package may still return `tbl_nowcast` directly, so choosing
+its native fitting interface does not create a separate downstream
+format.
+
+Use
+[`engine()`](https://rodrigozepeda.github.io/tbl.now/reference/engine.md)
+and
+[`run_nowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/run_nowcast.md)
+when you want the same call across modelling packages, and
+[`nowcast_backtest()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_backtest.md)
+when you want several methods evaluated at the same retrospective
+origins. Once a `tbl_nowcast` exists, use the shared
+[`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html),
+[`tidy()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast.md),
+[`score_nowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/score_nowcast.md),
+and
+[`nowcast_ensemble()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_ensemble.md)
+operations. Backtests can also be passed directly to scoringutils’
+quantile, point, and sample forecast converters, making scoringutils the
+extension point for custom metrics and relative skill. See
+[`?tbl_now_workflows`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_workflows.md)
+for the complete policy and examples.
+
 ## How `tbl.now` works
 
 In an epidemiological nowcast, we typically observe at least two key

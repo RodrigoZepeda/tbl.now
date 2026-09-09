@@ -79,6 +79,12 @@ website](https://rodrigozepeda.github.io/tbl.now/) carries longer
 articles on the modelling packages, batch reporting, ensembles and
 writing your own backend.
 
+See
+[tbl_now_workflows](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_workflows.md)
+for the explicit boundary between a modelling package's native
+fitting/diagnostic API and the common cross-engine result, plotting,
+backtesting, scoring, and ensembling API.
+
 ## Datasets
 
 Six surveillance datasets ship with the package for experimenting:

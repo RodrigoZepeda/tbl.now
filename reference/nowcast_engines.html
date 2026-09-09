@@ -21,7 +21,7 @@ is about driving it through run_nowcast()."><meta property="og:image" content="h
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.35.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.35.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -37,7 +37,7 @@ is about driving it through run_nowcast()."><meta property="og:image" content="h
     <li><a class="dropdown-item" href="../articles/diagnosing-a-tbl-now.html">Diagnosing a tbl_now</a></li>
     <li><a class="dropdown-item" href="../articles/ensemble-nowcasting.html">One call, many models: run_nowcast(), custom backends and ensembles</a></li>
     <li><a class="dropdown-item" href="../articles/example.html">The nowcasting workflow: hospital-acquired infections in Bucaramanga, Colombia</a></li>
-    <li><a class="dropdown-item" href="../articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with different modelling packages</a></li>
+    <li><a class="dropdown-item" href="../articles/nowcasting-models.html">Using tbl.now with different modelling packages</a></li>
     <li><a class="dropdown-item" href="../articles/tbl.now.html">tbl.now</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -91,6 +91,7 @@ is about driving it through <code><a href="run_nowcast.html">run_nowcast()</a></
 <span>  draws <span class="op">=</span> <span class="fl">1000</span>,</span>
 <span>  delays_unit <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  max_delay <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  strata_sharing <span class="op">=</span> <span class="st">"none"</span>,</span>
 <span>  min_date <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  quantile_levels <span class="op">=</span> <span class="fu"><a href="nowcast_quantile_levels.html">nowcast_quantile_levels</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  label <span class="op">=</span> <span class="cn">NULL</span></span>
@@ -208,12 +209,40 @@ delay axis as long as the series itself – cannot be fitted at all until
 the axis is capped. The error says which number to use.</p></dd>
 
 
+<dt id="arg-strata-sharing">strata_sharing<a class="anchor" aria-label="anchor" href="#arg-strata-sharing"></a></dt>
+<dd><p>(<code>engine_baselinenowcast()</code>) Whether to share
+estimates across the object's strata. <code>"none"</code> (default) fits every
+stratum independently. <code>"delay"</code> estimates the delay PMF once on the
+pooled counts and applies it to each stratum;
+<code>"uncertainty"</code> shares the uncertainty parameters the same way; pass
+<code>c("delay", "uncertainty")</code> to share both. Passed straight to
+<code><a href="https://baselinenowcast.epinowcast.org/reference/baselinenowcast.html" class="external-link">baselinenowcast::baselinenowcast()</a></code>'s argument of the same name, and
+only meaningful when the object has strata.</p></dd>
+
+
 <dt id="arg-preprocess-args-expectation-reference-report-fit">preprocess_args, expectation, reference, report, fit<a class="anchor" aria-label="anchor" href="#arg-preprocess-args-expectation-reference-report-fit"></a></dt>
 <dd><p>(<code>engine_epinowcast()</code>) <code>preprocess_args</code> is a list for
 <code><a href="tbl_now_epinowcast.html">tbl_now_to_epinowcast()</a></code>, e.g. <code>list(max_delay = 30)</code>; the other four are
 <code><a href="https://package.epinowcast.org/reference/epinowcast.html" class="external-link">epinowcast::epinowcast()</a></code>'s module arguments. <strong><code>epinowcast</code> is unseeded
-unless you say so</strong>: <code>enw_fit_opts()</code> passes <code>...</code> to the sampler, so
-<code>fit = epinowcast::enw_fit_opts(seed = 1)</code> is what makes a fit reproducible.</p></dd>
+unless you say so</strong>: <code>enw_fit_opts()</code> has no <code>seed</code> argument of its own –
+<code>formals(epinowcast::enw_fit_opts)</code> on 0.7.0 lists <code>sampler</code>, <code>nowcast</code>,
+<code>pp</code>, <code>likelihood</code>, <code>likelihood_aggregation</code>, <code>threads_per_chain</code>, <code>debug</code>,
+<code>output_loglik</code>, <code>sparse_design</code>, <code>...</code> – but its <code>...</code> are forwarded to
+the <code>sampler</code> (<code>enw_sample()</code>, i.e. <code>cmdstanr::sample()</code>), which does. Pass
+<code>fit = epinowcast::enw_fit_opts(seed = 1)</code> and the seed rides through to
+the sampler; that is what makes a fit reproducible.</p>
+<p>Two epinowcast 0.7.0 knobs worth knowing about, both reachable through the
+same pass-through:</p><ul><li><p>a <strong>delay-only</strong> fit – reporting-delay distribution conditional on
+per-reference-date totals, with the latent process disabled – via
+<code>obs = epinowcast::enw_obs(delay_only = TRUE, data = pobs)</code>. <code>obs</code> is not
+a named engine argument here, but <code>engine_epinowcast()</code> forwards <code>...</code> to
+<code><a href="https://package.epinowcast.org/reference/epinowcast.html" class="external-link">epinowcast::epinowcast()</a></code>, so passing it there works.</p></li>
+<li><p>a <strong>structural</strong> reporting effect (e.g. a fixed day-of-week reporting
+hazard) via <code>report = enw_report(structural = ...)</code>. Build the metadata
+with <code>enw_dayofweek_structural_reporting()</code>; this is separate from a
+temporal-effect covariate that lands on <code>metareport</code> and is referenced
+through <code>non_parametric =</code>.</p></li>
+</ul></dd>
 
 
 <dt id="arg-max-d-moving-window-specs">max_D, moving_window, specs<a class="anchor" aria-label="anchor" href="#arg-max-d-moving-window-specs"></a></dt>
@@ -240,7 +269,18 @@ stratum is fitted on the same time axis.</p></dd>
 EpiNow2 defaults to <code>delays = delay_opts()</code>, which is <code>Fixed(0)</code> – no
 reporting delay at all – and a one-day generation time. Those defaults
 describe a process with nothing to nowcast, so supply the epidemiology
-yourself.</p></dd>
+yourself. <code>truncation = trunc_opts()</code> is likewise <code>Fixed(0)</code> – <strong>without
+a fitted truncation, <code>estimate_infections()</code> is a smooth through the
+incomplete recent days, not a nowcast</strong>. The vignette's <em>EpiNow2</em> section
+walks through the two-step recipe (<code>estimate_truncation()</code> first, then
+pass its <code>get_parameters(...)[["truncation"]]</code> as <code>truncation</code> here).</p>
+<p><strong>Reproducibility.</strong> <code><a href="https://epiforecasts.io/EpiNow2/reference/stan_opts.html" class="external-link">EpiNow2::stan_opts()</a></code> picks a fresh random seed on
+every call (<code>seed = as.integer(runif(1, 1e8))</code>), so an unseeded fit
+cannot be reproduced – and a pathological sample cannot be told apart
+from a bad model afterwards. Pin it with
+<code>stan = stan_opts(samples = ..., warmup = ..., chains = ..., seed = &lt;n&gt;)</code>;
+<code>stan_opts()</code> forwards <code>seed</code> through to <code><a href="https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html" class="external-link">rstan::sampling()</a></code> /
+<code>cmdstanr::sample()</code>.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -257,7 +297,7 @@ yourself.</p></dd>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu">engine_baselinenowcast</span><span class="op">(</span>draws <span class="op">=</span> <span class="fl">500</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── &lt;nowcast_engine: <span style="color: #0000BB;">"baselinenowcast"</span>&gt; ─────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> • quantile levels: <span style="color: #0000BB;">0.025</span>, <span style="color: #0000BB;">0.05</span>, <span style="color: #0000BB;">0.1</span>, <span style="color: #0000BB;">0.25</span>, <span style="color: #0000BB;">0.5</span>, <span style="color: #0000BB;">0.75</span>, <span style="color: #0000BB;">0.9</span>, <span style="color: #0000BB;">0.95</span>, and <span style="color: #0000BB;">0.975</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> • arguments: <span style="color: #00BB00;">draws</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> • arguments: <span style="color: #00BB00;">draws</span> and <span style="color: #00BB00;">strata_sharing</span></span>
 <span class="r-in"><span><span class="fu">engine_nobbs</span><span class="op">(</span>max_D <span class="op">=</span> <span class="fl">10</span>, moving_window <span class="op">=</span> <span class="fl">64</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── &lt;nowcast_engine: <span style="color: #0000BB;">"NobBS"</span>&gt; ───────────────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> • quantile levels: <span style="color: #0000BB;">0.025</span>, <span style="color: #0000BB;">0.05</span>, <span style="color: #0000BB;">0.1</span>, <span style="color: #0000BB;">0.25</span>, <span style="color: #0000BB;">0.5</span>, <span style="color: #0000BB;">0.75</span>, <span style="color: #0000BB;">0.9</span>, <span style="color: #0000BB;">0.95</span>, and <span style="color: #0000BB;">0.975</span></span>
@@ -273,7 +313,7 @@ yourself.</p></dd>
 <span class="r-in"><span><span class="fu">engine_baselinenowcast</span><span class="op">(</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── &lt;nowcast_engine: <span style="color: #0000BB;">"baselinenowcast"</span>&gt; ─────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> • quantile levels: <span style="color: #0000BB;">0.025</span>, <span style="color: #0000BB;">0.05</span>, <span style="color: #0000BB;">0.1</span>, <span style="color: #0000BB;">0.25</span>, <span style="color: #0000BB;">0.5</span>, <span style="color: #0000BB;">0.75</span>, <span style="color: #0000BB;">0.9</span>, <span style="color: #0000BB;">0.95</span>, and <span style="color: #0000BB;">0.975</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> • arguments: <span style="color: #00BB00;">draws</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> • arguments: <span style="color: #00BB00;">draws</span> and <span style="color: #00BB00;">strata_sharing</span></span>
 <span class="r-in"><span><span class="fu">engine_diseasenowcasting</span><span class="op">(</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── &lt;nowcast_engine: <span style="color: #0000BB;">"diseasenowcasting"</span>&gt; ───────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> • quantile levels: <span style="color: #0000BB;">0.025</span>, <span style="color: #0000BB;">0.05</span>, <span style="color: #0000BB;">0.1</span>, <span style="color: #0000BB;">0.25</span>, <span style="color: #0000BB;">0.5</span>, <span style="color: #0000BB;">0.75</span>, <span style="color: #0000BB;">0.9</span>, <span style="color: #0000BB;">0.95</span>, and <span style="color: #0000BB;">0.975</span></span>

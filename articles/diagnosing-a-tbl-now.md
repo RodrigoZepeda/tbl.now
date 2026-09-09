@@ -9,6 +9,9 @@ library(patchwork)
 library(tbl.now)
 ```
 
+> This was written automatically by an AI model. A human has yet to
+> review.
+
 Three questions come up with every new surveillance dataset, and they
 are different questions that want different tools:
 

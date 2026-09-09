@@ -6,9 +6,13 @@ baselinenowcast::as_reporting_triangle() matrices, one per observed
 combination of the object's strata, together with the metadata needed to
 rebuild a tbl_now from it.
 It is a thin class – it is still a list, so lapply(), [[ and friends
-work as usual:
-triangles &amp;lt;- tbl_now_to_baselinenowcast(x, format = &quot;triangle_list&quot;)
-lapply(triangles, baselinenowcast::baselinenowcast)
+work as usual. Use it for inspecting per-stratum triangles; for fitting
+a stratified nowcast, hand the long shape to
+baselinenowcast::baselinenowcast() with its strata_cols argument
+instead – that is the shape it consumes natively, and what
+run_nowcast() does under the hood:
+long_df &amp;lt;- tbl_now_to_baselinenowcast(x, format = &quot;long&quot;)
+baselinenowcast::baselinenowcast(long_df, strata_cols = tbl.now::get_strata(x))
 
 The class exists for one reason. baselinenowcast has a function,
 baselinenowcast::estimate_and_apply_delays(), whose first argument
@@ -23,9 +27,13 @@ baselinenowcast::as_reporting_triangle() matrices, one per observed
 combination of the object's strata, together with the metadata needed to
 rebuild a tbl_now from it.
 It is a thin class – it is still a list, so lapply(), [[ and friends
-work as usual:
-triangles &amp;lt;- tbl_now_to_baselinenowcast(x, format = &quot;triangle_list&quot;)
-lapply(triangles, baselinenowcast::baselinenowcast)
+work as usual. Use it for inspecting per-stratum triangles; for fitting
+a stratified nowcast, hand the long shape to
+baselinenowcast::baselinenowcast() with its strata_cols argument
+instead – that is the shape it consumes natively, and what
+run_nowcast() does under the hood:
+long_df &amp;lt;- tbl_now_to_baselinenowcast(x, format = &quot;long&quot;)
+baselinenowcast::baselinenowcast(long_df, strata_cols = tbl.now::get_strata(x))
 
 The class exists for one reason. baselinenowcast has a function,
 baselinenowcast::estimate_and_apply_delays(), whose first argument
@@ -41,7 +49,7 @@ object says plainly what it is, so the mistake is visible rather than silent."><
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.35.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.35.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -57,7 +65,7 @@ object says plainly what it is, so the mistake is visible rather than silent."><
     <li><a class="dropdown-item" href="../articles/diagnosing-a-tbl-now.html">Diagnosing a tbl_now</a></li>
     <li><a class="dropdown-item" href="../articles/ensemble-nowcasting.html">One call, many models: run_nowcast(), custom backends and ensembles</a></li>
     <li><a class="dropdown-item" href="../articles/example.html">The nowcasting workflow: hospital-acquired infections in Bucaramanga, Colombia</a></li>
-    <li><a class="dropdown-item" href="../articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with different modelling packages</a></li>
+    <li><a class="dropdown-item" href="../articles/nowcasting-models.html">Using tbl.now with different modelling packages</a></li>
     <li><a class="dropdown-item" href="../articles/tbl.now.html">tbl.now</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -91,9 +99,13 @@ object says plainly what it is, so the mistake is visible rather than silent."><
 combination of the object's strata, together with the metadata needed to
 rebuild a <code>tbl_now</code> from it.</p>
 <p>It is a <strong>thin</strong> class – it is still a list, so <code><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply()</a></code>, <code>[[</code> and friends
-work as usual:</p>
-<p></p><div class="sourceCode r"><pre><code><span><span class="va">triangles</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tbl_now_baselinenowcast.html">tbl_now_to_baselinenowcast</a></span><span class="op">(</span><span class="va">x</span>, format <span class="op">=</span> <span class="st">"triangle_list"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="va">triangles</span>, <span class="fu">baselinenowcast</span><span class="fu">::</span><span class="va"><a href="https://baselinenowcast.epinowcast.org/reference/baselinenowcast.html" class="external-link">baselinenowcast</a></span><span class="op">)</span></span></code></pre><p></p></div>
+work as usual. Use it for <strong>inspecting</strong> per-stratum triangles; for fitting
+a stratified nowcast, hand the long shape to
+<code><a href="https://baselinenowcast.epinowcast.org/reference/baselinenowcast.html" class="external-link">baselinenowcast::baselinenowcast()</a></code> with its <code>strata_cols</code> argument
+instead – that is the shape it consumes natively, and what
+<code><a href="run_nowcast.html">run_nowcast()</a></code> does under the hood:</p>
+<p></p><div class="sourceCode r"><pre><code><span><span class="va">long_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tbl_now_baselinenowcast.html">tbl_now_to_baselinenowcast</a></span><span class="op">(</span><span class="va">x</span>, format <span class="op">=</span> <span class="st">"long"</span><span class="op">)</span></span>
+<span><span class="fu">baselinenowcast</span><span class="fu">::</span><span class="fu"><a href="https://baselinenowcast.epinowcast.org/reference/baselinenowcast.html" class="external-link">baselinenowcast</a></span><span class="op">(</span><span class="va">long_df</span>, strata_cols <span class="op">=</span> <span class="fu">tbl.now</span><span class="fu">::</span><span class="fu"><a href="../reference/nowcast_data_getters.html">get_strata</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span><span class="op">)</span></span></code></pre><p></p></div>
 <p>The class exists for one reason. <span class="pkg">baselinenowcast</span> has a function,
 <code><a href="https://baselinenowcast.epinowcast.org/reference/estimate_and_apply_delays.html" class="external-link">baselinenowcast::estimate_and_apply_delays()</a></code>, whose first argument
 <code>retro_reporting_triangles</code> is <em>also</em> a list of triangles – but a list of

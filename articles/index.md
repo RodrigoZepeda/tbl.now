@@ -10,6 +10,6 @@
   ensembles](https://rodrigozepeda.github.io/tbl.now/articles/ensemble-nowcasting.md):
 - [The nowcasting workflow: hospital-acquired infections in Bucaramanga,
   Colombia](https://rodrigozepeda.github.io/tbl.now/articles/example.md):
-- [One dataset, many nowcasts: using tbl.now with different modelling
+- [Using tbl.now with different modelling
   packages](https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.md):
 - [tbl.now](https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.md):

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.35.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.35.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -23,7 +23,7 @@
     <li><a class="dropdown-item" href="../articles/diagnosing-a-tbl-now.html">Diagnosing a tbl_now</a></li>
     <li><a class="dropdown-item" href="../articles/ensemble-nowcasting.html">One call, many models: run_nowcast(), custom backends and ensembles</a></li>
     <li><a class="dropdown-item" href="../articles/example.html">The nowcasting workflow: hospital-acquired infections in Bucaramanga, Colombia</a></li>
-    <li><a class="dropdown-item" href="../articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with different modelling packages</a></li>
+    <li><a class="dropdown-item" href="../articles/nowcasting-models.html">Using tbl.now with different modelling packages</a></li>
     <li><a class="dropdown-item" href="../articles/tbl.now.html">tbl.now</a></li>
   </ul></li>
 <li class="active nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -48,6 +48,42 @@
       <small>Source: <a href="https://github.com/RodrigoZepeda/tbl.now/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="development version" id="tblnow-development-version">tbl.now (development version)<a class="anchor" aria-label="anchor" href="#tblnow-development-version"></a></h2>
+<div class="section level3">
+<h3 id="sharper-epinowcast-integration-development-version">Sharper <code>epinowcast</code> integration<a class="anchor" aria-label="anchor" href="#sharper-epinowcast-integration-development-version"></a></h3>
+<p>Findings from the epinowcast audit against <code>epinowcast</code> 0.7.0:</p>
+<ul><li>
+<strong>Fix</strong>: <code><a href="../reference/tbl_now_epinowcast.html">tbl_now_to_epinowcast()</a></code> no longer reports materialised temporal-effect columns as “dropped covariates”. Those columns are actually threaded onto <code>metareference</code> / <code>metareport</code> – the earlier warning contradicted the docstring and confused users who had run <code><a href="../reference/add_temporal_effects.html">compute_temporal_effects()</a></code> before conversion.</li>
+<li>
+<strong>New warning</strong>: <code><a href="../reference/tbl_now_epinowcast.html">tbl_now_to_epinowcast()</a></code> now warns (silenced by <code>quiet = TRUE</code>) when it attaches temporal-effect columns to the preprocessed object, listing the column names and showing an example <code>enw_reference(parametric = ~ 1 + .event_day_of_week, ...)</code> call. Nothing in <code><a href="https://package.epinowcast.org/reference/epinowcast.html" class="external-link">epinowcast()</a></code> auto-wires those columns into a module formula.</li>
+<li>
+<strong>New fit-time check</strong>: <code><a href="../reference/nowcast_engines.html">engine_epinowcast()</a></code> / <code><a href="../reference/nowcast_fit.html">nowcast_fit.epinowcast()</a></code> now warns when the caller’s <code>expectation</code> / <code>reference</code> / <code>report</code> / <code>missing</code> do not reference any of the declared temporal-effect columns – so a caller who forgets to name them in a module formula sees a warning at fit time, rather than a fit that silently ignores them.</li>
+<li>
+<strong>Docs</strong>: <code><a href="../reference/nowcast_engines.html">engine_epinowcast()</a></code> clarifies that <code><a href="https://package.epinowcast.org/reference/enw_fit_opts.html" class="external-link">enw_fit_opts()</a></code> has no <code>seed</code> argument of its own (checked against <code>formals(epinowcast::enw_fit_opts)</code> on 0.7.0); <code>seed</code> rides through its <code>...</code> to the sampler (<code><a href="https://package.epinowcast.org/reference/enw_sample.html" class="external-link">enw_sample()</a></code>). Also documents the 0.7.0 additions <code>enw_obs(delay_only = TRUE)</code> and <code>enw_report(structural = ...)</code> / <code><a href="https://package.epinowcast.org/reference/enw_dayofweek_structural_reporting.html" class="external-link">enw_dayofweek_structural_reporting()</a></code>.</li>
+<li>
+<strong>Docs</strong>: <code>tbl_now_epinowcast</code> gains a <em>Per-cell observation flags</em> section explaining that epinowcast’s <code>enw_obs(observation_indicator = )</code> is a cell-level flag rather than the case-level <code>is_censored_report</code>, and cannot be built from <code>is_censored_report</code> alone.</li>
+<li>
+<strong>Robustness</strong>: <code><a href="../reference/tidy.nowcast.html">tidy.epinowcast()</a></code> no longer hard-codes <code>q5</code>/<code>q95</code>. It picks the widest symmetric pair <code>(qp, q(100-p))</code> present in the <code>summary(fit, type = "nowcast")</code> frame, so a caller who passes non-default <code>probs</code> to <code><a href="https://package.epinowcast.org/reference/enw_nowcast_summary.html" class="external-link">enw_nowcast_summary()</a></code> no longer causes a <code>$q5</code> / <code>$q95</code> lookup crash. The <code>level</code> is derived from the pair; the median stays the estimate.</li>
+<li>
+<strong>Robustness</strong>: <code><a href="../reference/nowcast_tidy.html">nowcast_tidy.epinowcast()</a></code>’s fallback quantile summary now passes <code>type = "nowcast"</code> to <code>summary(fit)</code> explicitly, rather than relying on the default.</li>
+<li>
+<strong>Test</strong>: new grouped test for <code><a href="../reference/tbl_now_epinowcast.html">tbl_now_to_epinowcast()</a></code>; the converter ungroups internally, and this now asserts that.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="native-strata-dispatch-on-baselinenowcast-development-version">Native strata dispatch on <code>baselinenowcast</code>
+<a class="anchor" aria-label="anchor" href="#native-strata-dispatch-on-baselinenowcast-development-version"></a></h3>
+<p><code>baselinenowcast</code> &gt;= 0.2.1 accepts a long tidy <code>data.frame</code> with a <code>strata_cols</code> argument and returns a single <code>baselinenowcast_df</code> with the strata columns still attached. <code><a href="../reference/nowcast_engines.html">engine_baselinenowcast()</a></code> uses that path for stratified objects instead of looping one triangle at a time, which enables sharing estimates across strata and drops an internal wrapper class.</p>
+<ul><li>
+<strong>New</strong>: <code>engine_baselinenowcast(strata_sharing = )</code> – passed straight through to <code><a href="https://baselinenowcast.epinowcast.org/reference/baselinenowcast.html" class="external-link">baselinenowcast::baselinenowcast()</a></code>. <code>"none"</code> (default) fits every stratum independently; <code>"delay"</code> shares the delay PMF across strata; <code>"uncertainty"</code> shares the uncertainty parameters; both can be combined. Meaningful only when the object has strata.</li>
+<li>
+<strong>New default</strong>: <code>tbl_now_to_baselinenowcast(format = "auto")</code> – returns a reporting-triangle matrix when the object has no strata and the long tidy <code>data.frame</code> (what <code><a href="https://baselinenowcast.epinowcast.org/reference/baselinenowcast.html" class="external-link">baselinenowcast()</a></code> consumes with <code>strata_cols =</code>) when it does. Unstratified callers see no change; a stratified <code>tbl_now</code> used to come back as a pooled matrix (with a warning) and now comes back as the shape <code>baselinenowcast</code> can fit natively.</li>
+<li>
+<strong>Breaking (internal)</strong>: the <code>baselinenowcast_strata</code> list class that <code><a href="../reference/nowcast_fit.html">nowcast_fit.baselinenowcast()</a></code> used to return for stratified fits is gone. <code><a href="../reference/run_nowcast.html">run_nowcast()</a></code> returns the same <code>tbl_nowcast</code> as before. <code><a href="../reference/tidy.nowcast.html">tidy()</a></code> on a bare list of <code>baselinenowcast_df</code> fits also stops routing through <code><a href="../reference/tidy.nowcast.html">tidy.list()</a></code> – pass strata to <code>baselinenowcast(strata_cols = )</code> (or use <code><a href="../reference/run_nowcast.html">run_nowcast()</a></code>) rather than looping over <code>format = "triangle_list"</code>.</li>
+<li>
+<strong>Bump</strong>: <code>baselinenowcast (&gt;= 0.2.1)</code> is now the minimum.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.35.2" id="tblnow-0352">tbl.now 0.35.2<a class="anchor" aria-label="anchor" href="#tblnow-0352"></a></h2>
 <p>Fixed a bug in the <code>is_weekend()</code> function that made it work solely on an English locale.</p>
@@ -620,7 +656,7 @@ x Logical subscript must be size 1 or 4, not 0.</code></pre>
 <code>"event_to_revision"</code>, <code>"report_to_revision"</code>
 </td>
 </tr></tbody></table><p>The <strong>outcome values are unchanged</strong>: a case is still <code>"confirmed"</code>, <code>"retracted"</code> or <code>"pending"</code>. Revision is what the process does; confirmed is one of the things it can conclude.</p>
-<p><code>diseasenowcasting</code> now uses <code>revision_process()</code> for row-level report resolution and <code>cumulative_process()</code> for count-cumulative signed changes.</p>
+<p><code>diseasenowcasting</code> now uses <code><a href="https://rodrigozepeda.github.io/diseasenowcasting/reference/revision_process.html" class="external-link">revision_process()</a></code> for row-level report resolution and <code><a href="https://rodrigozepeda.github.io/diseasenowcasting/reference/cumulative_process.html" class="external-link">cumulative_process()</a></code> for count-cumulative signed changes.</p>
 </div>
 <div class="section level3">
 <h3 id="documentation-fewer-fuller-reference-pages-0-28-0">Documentation: fewer, fuller reference pages<a class="anchor" aria-label="anchor" href="#documentation-fewer-fuller-reference-pages-0-28-0"></a></h3>
@@ -1011,7 +1047,7 @@ x Logical subscript must be size 1 or 4, not 0.</code></pre>
 <li>
 <strong>Fixed:</strong> the non-uniqueness warning fired on every confirmed/retracted pair. A case and its own retraction share an (event, report) combination and are still two different rows; the confirmation columns are now part of the key.</li>
 <li>
-<code>run_nowcast(x, "diseasenowcasting")</code> passes straight through to <code><a href="https://rodrigozepeda.github.io/diseasenowcasting/reference/nowcast.html" class="external-link">diseasenowcasting::nowcast()</a></code>. The confirmation process belongs to that package’s <code>model()</code>, not to <code>tbl.now</code>, so pass it there.</li>
+<code>run_nowcast(x, "diseasenowcasting")</code> passes straight through to <code><a href="https://rodrigozepeda.github.io/diseasenowcasting/reference/nowcast.html" class="external-link">diseasenowcasting::nowcast()</a></code>. The confirmation process belongs to that package’s <code><a href="https://rodrigozepeda.github.io/diseasenowcasting/reference/model.html" class="external-link">model()</a></code>, not to <code>tbl.now</code>, so pass it there.</li>
 </ul></div>
 </div>
     <div class="section level2">

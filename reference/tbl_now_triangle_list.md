@@ -10,10 +10,16 @@ with the metadata needed to rebuild a `tbl_now` from it.
 
 It is a **thin** class – it is still a list, so
 [`lapply()`](https://rdrr.io/r/base/lapply.html), `[[` and friends work
-as usual:
+as usual. Use it for **inspecting** per-stratum triangles; for fitting a
+stratified nowcast, hand the long shape to
+[`baselinenowcast::baselinenowcast()`](https://baselinenowcast.epinowcast.org/reference/baselinenowcast.html)
+with its `strata_cols` argument instead – that is the shape it consumes
+natively, and what
+[`run_nowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/run_nowcast.md)
+does under the hood:
 
-    triangles <- tbl_now_to_baselinenowcast(x, format = "triangle_list")
-    lapply(triangles, baselinenowcast::baselinenowcast)
+    long_df <- tbl_now_to_baselinenowcast(x, format = "long")
+    baselinenowcast::baselinenowcast(long_df, strata_cols = tbl.now::get_strata(x))
 
 The class exists for one reason. baselinenowcast has a function,
 [`baselinenowcast::estimate_and_apply_delays()`](https://baselinenowcast.epinowcast.org/reference/estimate_and_apply_delays.html),

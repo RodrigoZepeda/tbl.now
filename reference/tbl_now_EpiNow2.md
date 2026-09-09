@@ -32,6 +32,12 @@ over unchanged:
   a `data.frame` of `date` / `primary` / `secondary`, where `primary`
   counts reported arrivals by `report_date` and `secondary` counts
   resolved revisions by `revision_date`, filtered by `secondary_type`.
+  This is a **repurposing** of
+  [`EpiNow2::estimate_secondary()`](https://epiforecasts.io/EpiNow2/reference/estimate_secondary.html):
+  the model was written for two epidemiological streams linked by a
+  delay (cases and deaths, say), and here the two streams are one series
+  and its own revisions, so the fitted delay is report-to-revision. The
+  converter warns about the repurposing when it runs.
 
 - `"estimate_dist"`:
 
@@ -39,7 +45,11 @@ over unchanged:
   `sdate_upr` / `obs_date` frame that
   [`EpiNow2::estimate_dist()`](https://epiforecasts.io/EpiNow2/reference/estimate_dist.html)
   fits a **delay distribution** to (new in EpiNow2 1.9.0). Count data
-  rides along as the `n` weight column.
+  rides along as the `n` weight column. `estimate_dist()` vendors
+  likelihood functions from
+  [primarycensored](https://primarycensored.epinowcast.org/), and its
+  help asks that you cite primarycensored alongside EpiNow2 when using
+  it (`citation("primarycensored")`).
 
 `tbl_now_from_EpiNow2()` inverts the snapshot form: snapshot *k* is the
 series as known at report date *k*, so differencing consecutive

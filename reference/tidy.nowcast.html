@@ -15,7 +15,7 @@ tidy() turns any of them into the same table, so downstream code
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.35.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.35.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -31,7 +31,7 @@ tidy() turns any of them into the same table, so downstream code
     <li><a class="dropdown-item" href="../articles/diagnosing-a-tbl-now.html">Diagnosing a tbl_now</a></li>
     <li><a class="dropdown-item" href="../articles/ensemble-nowcasting.html">One call, many models: run_nowcast(), custom backends and ensembles</a></li>
     <li><a class="dropdown-item" href="../articles/example.html">The nowcasting workflow: hospital-acquired infections in Bucaramanga, Colombia</a></li>
-    <li><a class="dropdown-item" href="../articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with different modelling packages</a></li>
+    <li><a class="dropdown-item" href="../articles/nowcasting-models.html">Using tbl.now with different modelling packages</a></li>
     <li><a class="dropdown-item" href="../articles/tbl.now.html">tbl.now</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -112,8 +112,8 @@ posterior draws, an <code>stsNC</code> object, a Stan fit, an INLA summary, a ba
 <dd><p>Optional string naming the engine. Needed only for the shapes
 that arrive as an <strong>unclassed list</strong> – a <span class="pkg">NobBS</span> fit, an
 <code><a href="https://epiforecasts.io/EpiNow2/reference/regional_epinow.html" class="external-link">EpiNow2::regional_epinow()</a></code> result, or a per-stratum list of
-<span class="pkg">baselinenowcast</span> or <code><a href="https://rdrr.io/pkg/surveillance/man/nowcast.html" class="external-link">surveillance::nowcast()</a></code> fits – which are
-otherwise recognised by their structure.</p></dd>
+<code><a href="https://rdrr.io/pkg/surveillance/man/nowcast.html" class="external-link">surveillance::nowcast()</a></code> fits – which are otherwise recognised by their
+structure.</p></dd>
 
 
 <dt id="arg-level">level<a class="anchor" aria-label="anchor" href="#arg-level"></a></dt>
@@ -189,15 +189,15 @@ quantile they did not compute is an error rather than a silent approximation.</p
 
 
 <ul><li><p><code>nowcast_prediction</code> (S7) from <code>diseasenowcasting::predict()</code></p></li>
-<li><p><code>baselinenowcast_df</code> from <code><a href="https://baselinenowcast.epinowcast.org/reference/baselinenowcast.html" class="external-link">baselinenowcast::baselinenowcast()</a></code></p></li>
+<li><p><code>baselinenowcast_df</code> from <code><a href="https://baselinenowcast.epinowcast.org/reference/baselinenowcast.html" class="external-link">baselinenowcast::baselinenowcast()</a></code> – both the
+single-series fit (from a <code>reporting_triangle</code>) and the stratified fit
+(from a long <code>data.frame</code> with <code>strata_cols = </code>). A stratified fit is
+tidied one row per (stratum, event_date), with the strata columns pasted
+into the <code>stratum</code> label.</p></li>
 <li><p><code>epinowcast</code> fits</p></li>
 <li><p><code>stsNC</code> from <code><a href="https://rdrr.io/pkg/surveillance/man/nowcast.html" class="external-link">surveillance::nowcast()</a></code></p></li>
 <li><p>the list returned by <code><a href="https://rdrr.io/pkg/NobBS/man/NobBS.html" class="external-link">NobBS::NobBS()</a></code> or by <code><a href="https://rdrr.io/pkg/NobBS/man/NobBS.strat.html" class="external-link">NobBS::NobBS.strat()</a></code> (the
 stratified variant is recognised by its <code>stratum</code> column)</p></li>
-<li><p>a <strong>list of <code>baselinenowcast_df</code> fits</strong>, one per stratum – what
-<code><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply()</a></code>-ing over a <a href="tbl_now_triangle_list.html">tbl_now_triangle_list</a> produces. Each element is
-tidied and labelled with its list name, giving the same
-one-block-per-stratum table the natively stratified engines return.</p></li>
 </ul></div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

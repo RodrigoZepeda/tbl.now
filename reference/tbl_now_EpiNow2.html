@@ -22,13 +22,22 @@ model that uses the report dimension a tbl_now exists to carry.
 a data.frame of date / primary /
 secondary, where primary counts reported arrivals by report_date
 and secondary counts resolved revisions by revision_date, filtered by
-secondary_type.
+secondary_type. This is a repurposing of
+EpiNow2::estimate_secondary(): the model was written for two
+epidemiological streams linked by a delay (cases and deaths, say), and
+here the two streams are one series and its own revisions, so the fitted
+delay is report-to-revision. The converter warns about the repurposing
+when it runs.
 
 &quot;estimate_dist&quot;
 the interval-censored pdate_lwr / pdate_upr /
 sdate_lwr / sdate_upr / obs_date frame that
 EpiNow2::estimate_dist() fits a delay distribution to (new in
 EpiNow2 1.9.0). Count data rides along as the n weight column.
+estimate_dist() vendors likelihood functions from
+primarycensored, and its
+help asks that you cite primarycensored alongside EpiNow2
+when using it (citation(&quot;primarycensored&quot;)).
 
 
 
@@ -60,13 +69,22 @@ model that uses the report dimension a tbl_now exists to carry.
 a data.frame of date / primary /
 secondary, where primary counts reported arrivals by report_date
 and secondary counts resolved revisions by revision_date, filtered by
-secondary_type.
+secondary_type. This is a repurposing of
+EpiNow2::estimate_secondary(): the model was written for two
+epidemiological streams linked by a delay (cases and deaths, say), and
+here the two streams are one series and its own revisions, so the fitted
+delay is report-to-revision. The converter warns about the repurposing
+when it runs.
 
 &quot;estimate_dist&quot;
 the interval-censored pdate_lwr / pdate_upr /
 sdate_lwr / sdate_upr / obs_date frame that
 EpiNow2::estimate_dist() fits a delay distribution to (new in
 EpiNow2 1.9.0). Count data rides along as the n weight column.
+estimate_dist() vendors likelihood functions from
+primarycensored, and its
+help asks that you cite primarycensored alongside EpiNow2
+when using it (citation(&quot;primarycensored&quot;)).
 
 
 
@@ -83,7 +101,7 @@ stream is already aggregated, and a delay distribution is not case data."><meta 
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.35.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.35.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -99,7 +117,7 @@ stream is already aggregated, and a delay distribution is not case data."><meta 
     <li><a class="dropdown-item" href="../articles/diagnosing-a-tbl-now.html">Diagnosing a tbl_now</a></li>
     <li><a class="dropdown-item" href="../articles/ensemble-nowcasting.html">One call, many models: run_nowcast(), custom backends and ensembles</a></li>
     <li><a class="dropdown-item" href="../articles/example.html">The nowcasting workflow: hospital-acquired infections in Bucaramanga, Colombia</a></li>
-    <li><a class="dropdown-item" href="../articles/nowcasting-models.html">One dataset, many nowcasts: using tbl.now with different modelling packages</a></li>
+    <li><a class="dropdown-item" href="../articles/nowcasting-models.html">Using tbl.now with different modelling packages</a></li>
     <li><a class="dropdown-item" href="../articles/tbl.now.html">tbl.now</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -148,13 +166,22 @@ model that uses the report dimension a <code>tbl_now</code> exists to carry.</p>
 <dd><p>a <code>data.frame</code> of <code>date</code> / <code>primary</code> /
 <code>secondary</code>, where <code>primary</code> counts reported arrivals by <code>report_date</code>
 and <code>secondary</code> counts resolved revisions by <code>revision_date</code>, filtered by
-<code>secondary_type</code>.</p></dd>
+<code>secondary_type</code>. This is a <strong>repurposing</strong> of
+<code><a href="https://epiforecasts.io/EpiNow2/reference/estimate_secondary.html" class="external-link">EpiNow2::estimate_secondary()</a></code>: the model was written for two
+epidemiological streams linked by a delay (cases and deaths, say), and
+here the two streams are one series and its own revisions, so the fitted
+delay is report-to-revision. The converter warns about the repurposing
+when it runs.</p></dd>
 
 <dt><code>"estimate_dist"</code></dt>
 <dd><p>the interval-censored <code>pdate_lwr</code> / <code>pdate_upr</code> /
 <code>sdate_lwr</code> / <code>sdate_upr</code> / <code>obs_date</code> frame that
 <code><a href="https://epiforecasts.io/EpiNow2/reference/estimate_dist.html" class="external-link">EpiNow2::estimate_dist()</a></code> fits a <strong>delay distribution</strong> to (new in
-<span class="pkg">EpiNow2</span> 1.9.0). Count data rides along as the <code>n</code> weight column.</p></dd>
+<span class="pkg">EpiNow2</span> 1.9.0). Count data rides along as the <code>n</code> weight column.
+<code>estimate_dist()</code> vendors likelihood functions from
+<a href="https://primarycensored.epinowcast.org/" class="external-link">primarycensored</a>, and its
+help asks that you cite <span class="pkg">primarycensored</span> alongside <span class="pkg">EpiNow2</span>
+when using it (<code>citation("primarycensored")</code>).</p></dd>
 
 
 </dl><p><code>tbl_now_from_EpiNow2()</code> inverts the snapshot form: snapshot <em>k</em> is the series
