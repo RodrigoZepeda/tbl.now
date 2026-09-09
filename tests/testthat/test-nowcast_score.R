@@ -282,6 +282,13 @@ test_that("nowcast_backtest() scores every method at every date", {
   expect_equal(backtest$now_dates, dates)
   expect_setequal(unique(backtest$scores$.now), dates)
   expect_true(all(c(".method", ".now", "wis") %in% colnames(backtest$scores)))
+  expect_equal(nrow(backtest$timings), length(dates))
+  expect_true(all(backtest$timings$success))
+  expect_true(all(backtest$timings$elapsed_seconds >= 0))
+  expect_true(all(c(
+    ".method", ".now", "elapsed_seconds", "success", "error"
+  ) %in% colnames(backtest$timings)))
+  expect_true(all(is.na(backtest$timings$error)))
 })
 
 test_that("nowcast_backtest() validates its inputs", {
@@ -295,6 +302,10 @@ test_that("nowcast_backtest() validates its inputs", {
   expect_error(
     nowcast_backtest(x, engine("scoretoy"), now_dates = as.Date(NA), verbose = FALSE),
     "non-missing Date"
+  )
+  expect_error(
+    nowcast_backtest(x, engine("scoretoy"), n_dates = 0, verbose = FALSE),
+    "positive whole number"
   )
   expect_error(
     nowcast_backtest(
@@ -334,6 +345,12 @@ test_that("a failing method is skipped with a warning, or aborts on request", {
     "failed"
   )
   expect_equal(backtest$methods, "scoretoy")
+  expect_equal(nrow(backtest$timings), 2L)
+  expect_equal(backtest$timings$success, c(TRUE, FALSE))
+  expect_match(backtest$timings$error[[2]], "nope")
+  expect_equal(nrow(backtest$timings), 2L)
+  expect_equal(backtest$timings$success, c(TRUE, FALSE))
+  expect_match(backtest$timings$error[[2L]], "nope")
 
   expect_error(
     nowcast_backtest(x, engine("brokentoy"),
@@ -567,9 +584,12 @@ test_that("scoringutils directly coerces nowcasts, ensembles and backtests", {
   converted_point_backtest <- scoringutils::as_forecast_point(backtest)
   expect_s3_class(converted_point_backtest, "forecast_point")
   expect_true("now" %in% scoringutils::get_forecast_unit(converted_point_backtest))
-  expect_no_error(suppressWarnings(
-    scoringutils::add_relative_skill(scoringutils::score(converted_backtest))
-  ))
+  relative <- suppressWarnings(
+    scoringutils::add_relative_skill(
+      scoringutils::score(converted_backtest), metric = "wis"
+    )
+  )
+  expect_true("wis_relative_skill" %in% colnames(relative))
 })
 
 test_that("scoringutils directly coerces draw-based nowcasts and ensembles", {

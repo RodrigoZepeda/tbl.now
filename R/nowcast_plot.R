@@ -92,7 +92,8 @@
 #'
 #' @return A `ggplot` object.
 #'
-#' @seealso [run_nowcast()], [nowcast_ensemble()]
+#' @seealso [tbl_now_workflows] for the native/common workflow boundary;
+#'   [run_nowcast()], [nowcast_ensemble()]
 #'
 #' @examples
 #' predictions <- tidyr::expand_grid(

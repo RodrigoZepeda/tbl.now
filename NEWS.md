@@ -1,3 +1,74 @@
+# tbl.now (development version)
+
+## Sharper `epinowcast` integration
+
+Findings from the epinowcast audit against `epinowcast` 0.7.0:
+
+* **Fix**: `tbl_now_to_epinowcast()` no longer reports materialised
+  temporal-effect columns as "dropped covariates". Those columns are
+  actually threaded onto `metareference` / `metareport` -- the earlier warning
+  contradicted the docstring and confused users who had run
+  `compute_temporal_effects()` before conversion.
+* **New warning**: `tbl_now_to_epinowcast()` now warns (silenced by
+  `quiet = TRUE`) when it attaches temporal-effect columns to the preprocessed
+  object, listing the column names and showing an example
+  `enw_reference(parametric = ~ 1 + .event_day_of_week, ...)` call. Nothing
+  in `epinowcast()` auto-wires those columns into a module formula.
+* **New fit-time check**: `engine_epinowcast()` /
+  `nowcast_fit.epinowcast()` now warns when the caller's
+  `expectation` / `reference` / `report` / `missing` do not reference any of
+  the declared temporal-effect columns -- so a caller who forgets to name
+  them in a module formula sees a warning at fit time, rather than a fit that
+  silently ignores them.
+* **Docs**: `engine_epinowcast()` clarifies that `enw_fit_opts()` has no
+  `seed` argument of its own (checked against
+  `formals(epinowcast::enw_fit_opts)` on 0.7.0); `seed` rides through its
+  `...` to the sampler (`enw_sample()`). Also documents the 0.7.0 additions
+  `enw_obs(delay_only = TRUE)` and `enw_report(structural = ...)` /
+  `enw_dayofweek_structural_reporting()`.
+* **Docs**: `tbl_now_epinowcast` gains a *Per-cell observation flags*
+  section explaining that epinowcast's
+  `enw_obs(observation_indicator = )` is a cell-level flag rather than the
+  case-level `is_censored_report`, and cannot be built from
+  `is_censored_report` alone.
+* **Robustness**: `tidy.epinowcast()` no longer hard-codes `q5`/`q95`. It
+  picks the widest symmetric pair `(qp, q(100-p))` present in the
+  `summary(fit, type = "nowcast")` frame, so a caller who passes non-default
+  `probs` to `enw_nowcast_summary()` no longer causes a `$q5` / `$q95` lookup
+  crash. The `level` is derived from the pair; the median stays the estimate.
+* **Robustness**: `nowcast_tidy.epinowcast()`'s fallback quantile summary
+  now passes `type = "nowcast"` to `summary(fit)` explicitly, rather than
+  relying on the default.
+* **Test**: new grouped test for `tbl_now_to_epinowcast()`; the converter
+  ungroups internally, and this now asserts that.
+
+## Native strata dispatch on `baselinenowcast`
+
+`baselinenowcast` >= 0.2.1 accepts a long tidy `data.frame` with a
+`strata_cols` argument and returns a single `baselinenowcast_df` with the
+strata columns still attached. `engine_baselinenowcast()` uses that path for
+stratified objects instead of looping one triangle at a time, which enables
+sharing estimates across strata and drops an internal wrapper class.
+
+* **New**: `engine_baselinenowcast(strata_sharing = )` -- passed straight
+  through to `baselinenowcast::baselinenowcast()`. `"none"` (default) fits
+  every stratum independently; `"delay"` shares the delay PMF across strata;
+  `"uncertainty"` shares the uncertainty parameters; both can be combined.
+  Meaningful only when the object has strata.
+* **New default**: `tbl_now_to_baselinenowcast(format = "auto")` -- returns a
+  reporting-triangle matrix when the object has no strata and the long tidy
+  `data.frame` (what `baselinenowcast()` consumes with `strata_cols = `) when
+  it does. Unstratified callers see no change; a stratified `tbl_now` used to
+  come back as a pooled matrix (with a warning) and now comes back as the
+  shape `baselinenowcast` can fit natively.
+* **Breaking (internal)**: the `baselinenowcast_strata` list class that
+  `nowcast_fit.baselinenowcast()` used to return for stratified fits is gone.
+  `run_nowcast()` returns the same `tbl_nowcast` as before. `tidy()` on a
+  bare list of `baselinenowcast_df` fits also stops routing through
+  `tidy.list()` -- pass strata to `baselinenowcast(strata_cols = )` (or use
+  `run_nowcast()`) rather than looping over `format = "triangle_list"`.
+* **Bump**: `baselinenowcast (>= 0.2.1)` is now the minimum.
+
 # tbl.now 0.35.2
 
 Fixed a bug in the `is_weekend()` function that made it work solely

@@ -26,6 +26,7 @@
   draws = 1000,
   delays_unit = NULL,
   max_delay = NULL,
+  strata_sharing = "none",
   quantile_levels = nowcast_quantile_levels(),
   verbose = TRUE
 )
@@ -113,6 +114,13 @@ triangle's delay axis; inferred from the object's time units when \code{NULL}.}
 forwarded to \code{\link[=tbl_now_to_baselinenowcast]{tbl_now_to_baselinenowcast()}}. \code{NULL} keeps every delay,
 which a snapshot ("as of") series cannot be fitted with -- see
 \link[=nowcast_engines]{engine_baselinenowcast()}.}
+
+\item{strata_sharing}{(\code{"baselinenowcast"} only) Whether to share estimates
+across strata: \code{"none"} (default) fits every stratum independently,
+\code{"delay"} pools the delay PMF, \code{"uncertainty"} pools the uncertainty
+parameters, or a vector combining them. Passed through to
+\code{\link[baselinenowcast:baselinenowcast]{baselinenowcast::baselinenowcast()}}'s argument of the same name; only
+meaningful when the object has strata.}
 
 \item{preprocess_args}{(\code{"epinowcast"} only) A list of arguments for
 \code{\link[=tbl_now_to_epinowcast]{tbl_now_to_epinowcast()}}, e.g. \code{list(max_delay = 20)}.}

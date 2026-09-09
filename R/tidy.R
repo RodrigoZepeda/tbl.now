@@ -61,8 +61,8 @@
 #' @param engine Optional string naming the engine. Needed only for the shapes
 #'   that arrive as an **unclassed list** -- a \pkg{NobBS} fit, an
 #'   [EpiNow2::regional_epinow()] result, or a per-stratum list of
-#'   \pkg{baselinenowcast} or [surveillance::nowcast()] fits -- which are
-#'   otherwise recognised by their structure.
+#'   [surveillance::nowcast()] fits -- which are otherwise recognised by their
+#'   structure.
 #' @param level Interval width to report for an engine that does not say what it
 #'   produced. Only used by the \pkg{NobBS} branch (see `level` under *Value*);
 #'   `NULL`, the default, reports `NA`.
@@ -71,15 +71,15 @@
 #' @section Supported objects:
 #'
 #' * `nowcast_prediction` (S7) from `diseasenowcasting::predict()`
-#' * `baselinenowcast_df` from `baselinenowcast::baselinenowcast()`
+#' * `baselinenowcast_df` from `baselinenowcast::baselinenowcast()` -- both the
+#'   single-series fit (from a `reporting_triangle`) and the stratified fit
+#'   (from a long `data.frame` with `strata_cols = `). A stratified fit is
+#'   tidied one row per (stratum, event_date), with the strata columns pasted
+#'   into the `stratum` label.
 #' * `epinowcast` fits
 #' * `stsNC` from `surveillance::nowcast()`
 #' * the list returned by `NobBS::NobBS()` or by `NobBS::NobBS.strat()` (the
 #'   stratified variant is recognised by its `stratum` column)
-#' * a **list of `baselinenowcast_df` fits**, one per stratum -- what
-#'   `lapply()`-ing over a [tbl_now_triangle_list] produces. Each element is
-#'   tidied and labelled with its list name, giving the same
-#'   one-block-per-stratum table the natively stratified engines return.
 #'
 #' @return A tibble, as described above.
 #'
@@ -288,17 +288,38 @@ tidy.baselinenowcast_df <- function(x, probs = NULL, ...) {
   }
   .assert_probs(probs %||% 0.5)
 
-  grouped <- split(draws_df$pred_count, as.Date(draws_df$reference_date))
-  dates <- as.Date(names(grouped))
+  # `baselinenowcast(df, strata_cols = ...)` returns a single frame with the
+  # strata columns still present alongside the standard structure columns
+  # (`reference_date`, `pred_count`, `draw`, `output_type`, `nowcast`), so a
+  # stratified fit is just an unstratified one with more grouping keys. Detect
+  # them by everything else being a fixed schema.
+  known_cols <- c("reference_date", "pred_count", "draw", "output_type", "nowcast")
+  strata_cols <- setdiff(names(draws_df), known_cols)
+
+  stratum_label <- if (length(strata_cols) > 0L) {
+    .tbl_now_strata_label(draws_df, strata_cols)
+  } else {
+    rep("all", nrow(draws_df))
+  }
+
+  # Split by (stratum, reference_date) so per-group summaries stay aligned; a
+  # named list keyed by "stratum | date" gives one summary per group in one
+  # pass.
+  key <- paste(stratum_label, as.character(draws_df$reference_date), sep = "")
+  grouped <- split(draws_df$pred_count, key)
+  key_parts <- strsplit(names(grouped), "", fixed = TRUE)
+  stratum_out <- vapply(key_parts, `[[`, character(1), 1L)
+  dates_out <- as.Date(vapply(key_parts, `[[`, character(1), 2L))
 
   if (is_point) {
     return(.tidy_nowcast_frame(
-      event_date = dates,
+      event_date = dates_out,
       estimate   = vapply(grouped, stats::median, numeric(1)),
       conf.low   = NA_real_,
       conf.high  = NA_real_,
       level      = NA_real_,
-      engine     = "baselinenowcast"
+      engine     = "baselinenowcast",
+      stratum    = stratum_out
     ))
   }
 
@@ -310,12 +331,13 @@ tidy.baselinenowcast_df <- function(x, probs = NULL, ...) {
   }
 
   .tidy_nowcast_frame(
-    event_date = dates,
+    event_date = dates_out,
     estimate   = vapply(grouped, stats::median, numeric(1)),
     conf.low   = vapply(grouped, stats::quantile, numeric(1), probs = 0.025),
     conf.high  = vapply(grouped, stats::quantile, numeric(1), probs = 0.975),
     level      = 0.95,
     engine     = "baselinenowcast",
+    stratum    = stratum_out,
     quantiles  = quantiles
   )
 }
@@ -346,6 +368,56 @@ tidy.baselinenowcast_df <- function(x, probs = NULL, ...) {
   do.call(
     paste, c(unname(as.list(summary_table[by_cols])), sep = " | ")
   )
+}
+
+#' Widest symmetric quantile pair present in an epinowcast `type = "nowcast"`
+#' summary
+#'
+#' \pkg{epinowcast}'s `summary()` names quantile columns `q<percent>` from
+#' whichever `probs` the caller supplied (default
+#' `c(0.05, 0.2, 0.35, 0.5, 0.65, 0.8, 0.95)` -> `q5`, ..., `q95`). A user who
+#' picks non-default `probs` may leave the previously-hardcoded `q5`/`q95` pair
+#' absent, which was crashing `tidy.epinowcast()`. Pick whichever symmetric pair
+#' `(qp, q(100-p))` is present with the smallest `p` -- the widest band the
+#' caller asked for.
+#'
+#' @param nowcast A `type = "nowcast"` summary data frame.
+#'
+#' @return A list with `low` / `high` (either vectors from `nowcast`, or `NA`
+#'   of the right length) and `level` (`1 - 2p`, or `NA`).
+#'
+#' @keywords internal
+#' @noRd
+.epinowcast_widest_band <- function(nowcast) {
+  qcols <- grep("^q[0-9.]+$", names(nowcast), value = TRUE)
+  probs <- suppressWarnings(as.numeric(sub("^q", "", qcols))) / 100
+  valid <- !is.na(probs) & probs > 0 & probs < 1
+  qcols <- qcols[valid]
+  probs <- probs[valid]
+
+  n <- nrow(nowcast)
+  na_result <- list(low = rep(NA_real_, n), high = rep(NA_real_, n), level = NA_real_)
+
+  lows <- probs[probs < 0.5]
+  if (length(lows) == 0L) return(na_result)
+
+  # Widest first: start from the smallest lower prob and take the first that
+  # has a matching upper column. Compare via `abs(sum - 1) < tol` to keep
+  # something like (0.025, 0.975) working when the columns are `q2.5`/`q97.5`.
+  for (p in sort(lows)) {
+    hi <- 1 - p
+    match <- abs(probs - hi) < 1e-6
+    if (any(match)) {
+      lo_col <- qcols[abs(probs - p) < 1e-6][[1]]
+      hi_col <- qcols[match][[1]]
+      return(list(
+        low   = nowcast[[lo_col]],
+        high  = nowcast[[hi_col]],
+        level = 1 - 2 * p
+      ))
+    }
+  }
+  na_result
 }
 
 #' @rdname tidy.nowcast
@@ -381,12 +453,17 @@ tidy.epinowcast <- function(x, probs = NULL, ...) {
     )
   }
 
+  # epinowcast's default band is q5-q95 (level 0.90) -- but non-default `probs`
+  # may leave that pair absent. Pick whichever symmetric pair is present with
+  # the smallest lower prob, i.e. the widest band the caller asked for.
+  band <- .epinowcast_widest_band(nowcast)
+
   .tidy_nowcast_frame(
     event_date = as.Date(nowcast$reference_date),
     estimate   = nowcast$median,
-    conf.low   = nowcast$q5,
-    conf.high  = nowcast$q95,
-    level      = 0.90,   # epinowcast's default band is q5-q95, NOT 95%
+    conf.low   = band$low,
+    conf.high  = band$high,
+    level      = band$level,
     engine     = "epinowcast",
     stratum    = stratum,
     quantiles  = quantiles
@@ -642,9 +719,11 @@ tidy.estimate_infections <- function(x, probs = NULL, ...) {
 #' @rdname tidy.nowcast
 #' @exportS3Method generics::tidy
 tidy.epinow <- function(x, probs = NULL, ...) {
-  # `epinow()` wraps `estimate_infections()` and keeps the fit in `$estimates`.
-  fit <- x$estimates %||% x
-  .tidy_epinow2_predictions(fit, probs = probs)
+  # On \pkg{EpiNow2} 1.9.0 an `epinow` object inherits from
+  # `estimate_infections` and `$estimates` is defunct; on older versions the
+  # fit sits under `$estimates`. `.epinow2_unwrap()` reaches the right thing
+  # either way without triggering the defunct accessor.
+  .tidy_epinow2_predictions(.epinow2_unwrap(x), probs = probs)
 }
 
 #' @rdname tidy.nowcast
@@ -933,19 +1012,24 @@ tidy.list <- function(x, probs = NULL, engine = NULL, level = NULL, ...) {
 
   # `regional_epinow()` returns a plain nested list, one block per region under
   # `$regional`. Same treatment as the per-stratum list below: one block per
-  # region, labelled with the region name.
+  # region, labelled with the region name. `.epinow2_unwrap()` reaches the
+  # underlying `estimate_infections`, avoiding the `epinow()$estimates`
+  # accessor that became defunct in EpiNow2 1.9.0 (the object now inherits
+  # from `estimate_infections` and can be used directly).
   if (identical(engine, "EpiNow2")) {
     regional <- x$regional
     return(dplyr::bind_rows(lapply(names(regional), function(region) {
-      .tidy_epinow2_predictions(regional[[region]], probs = probs, stratum = region)
+      .tidy_epinow2_predictions(
+        .epinow2_unwrap(regional[[region]]),
+        probs = probs, stratum = region
+      )
     })))
   }
 
-  # A per-stratum list of fits -- `baselinenowcast_df` from a triangle list, or
-  # `stsNC` from `split()`-ing a surveillance line list. Tidy each and label it
-  # with its list name, so the result is the same one-block-per-stratum table
-  # the natively stratified engines produce.
-  if (isTRUE(engine %in% c("baselinenowcast", "surveillance"))) {
+  # A per-stratum list of `stsNC` from `split()`-ing a surveillance line list --
+  # surveillance has no strata argument, so a stratified analysis is one fit per
+  # stratum. Tidy each and label it with its list name.
+  if (identical(engine, "surveillance")) {
     labels <- names(x)
     if (is.null(labels) || any(!nzchar(labels))) {
       labels <- as.character(seq_along(x))
@@ -961,7 +1045,11 @@ tidy.list <- function(x, probs = NULL, engine = NULL, level = NULL, ...) {
     "Don't know how to {.fn tidy} this list.",
     "i" = "Recognised shapes are a {.pkg NobBS} fit, a {.pkg EpiNow2} \\
            {.fn regional_epinow} result, and a per-stratum list of \\
-           {.cls baselinenowcast_df} or {.cls stsNC} fits.",
+           {.cls stsNC} fits.",
+    "i" = "For a stratified {.pkg baselinenowcast} fit, pass the strata to \\
+           {.fn baselinenowcast::baselinenowcast} directly with \\
+           {.code strata_cols = }, or use {.fn run_nowcast} with \\
+           {.fn engine_baselinenowcast}.",
     "i" = "Supply {.arg engine} explicitly, e.g. \\
            {.code tidy(x, engine = \"NobBS\")}."
   ))
@@ -1011,13 +1099,6 @@ tidy.list <- function(x, probs = NULL, engine = NULL, level = NULL, ...) {
   if ("regional" %in% names(x) && is.list(x$regional) &&
         length(x$regional) > 0L) {
     return("EpiNow2")
-  }
-  # `?tbl_now_triangle_list` recommends
-  # `lapply(triangles, baselinenowcast::baselinenowcast)`, which yields a plain
-  # list of classed fits -- one per stratum.
-  if (length(x) > 0L &&
-        all(vapply(x, inherits, logical(1), "baselinenowcast_df"))) {
-    return("baselinenowcast")
   }
   # `surveillance::nowcast()` has no strata argument at all, so a stratified
   # analysis is `split()` plus a loop -- which yields a list of `stsNC` objects

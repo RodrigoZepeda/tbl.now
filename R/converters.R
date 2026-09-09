@@ -1494,6 +1494,28 @@
 #'
 #' @inheritSection tbl_now_baselinenowcast Negative delays
 #' @inheritSection tbl_now_baselinenowcast Censored delays
+#'
+#' @section Per-cell observation flags:
+#'
+#' A `tbl_now` `is_censored_report` flag records an upper bound on the report
+#' date of an individual case, and it is per-case: it can differ between two
+#' rows in the same `(event_date, report_date)` cell. \pkg{epinowcast}'s
+#' preprocessed object has no equivalent -- it stores one cumulative count per
+#' cell -- so the converter collapses the flag before conversion (summing the
+#' counts over it for count data, dropping the column for a line list), with a
+#' warning.
+#'
+#' \pkg{epinowcast}'s nearest concept is not equivalent, but is worth knowing.
+#' [epinowcast::enw_obs()] takes an `observation_indicator` naming a *per-cell*
+#' logical column that marks cells as observed or not, which epinowcast then
+#' uses to decide whether a cell contributes to the likelihood. It is a **cell**
+#' flag rather than a **case** flag, so it cannot be built from
+#' `is_censored_report` alone: two rows in the same cell can disagree, and a
+#' cell-level column has to pick one answer. If you have a genuinely cell-level
+#' "known unobservable" signal you can add a column to the preprocessed object
+#' by hand and reference it with `obs = enw_obs(observation_indicator = "...")`
+#' in the fit.
+#'
 #' @seealso
 #' [engine_epinowcast()][nowcast_engines] to fit through this package rather than
 #' converting by hand; [align_weeks()], because \pkg{epinowcast} lays its grid out
@@ -1556,15 +1578,18 @@ tbl_now_from_epinowcast <- function(data, ...,
 #' and converts it into a `tbl_now` of `data_type = "count-incidence"`.
 #'
 #' `tbl_now_to_baselinenowcast()` returns either a `reporting_triangle` matrix
-#' (`format = "matrix"`, the default) via
-#' [baselinenowcast::as_reporting_triangle()], or the long
-#' `baselinenowcast`-style `data.frame` (`format = "long"`). The long format also
-#' carries the **strata**, the
-#' covariates, the censoring indicator and any materialised temporal-effect
-#' columns (see [compute_temporal_effects()]); the matrix holds only the three
-#' core columns. A single reporting-triangle matrix has no strata dimension, so
-#' `format = "matrix"` **pools** any strata (summing the counts) with a warning;
-#' use `format = "triangle_list"` to get one triangle per stratum instead.
+#' via [baselinenowcast::as_reporting_triangle()], or the long
+#' `baselinenowcast`-style `data.frame`. The default is
+#' `format = "auto"`, which returns a matrix when the object has no strata and
+#' a long data frame when it does -- the shape
+#' [baselinenowcast::baselinenowcast()] consumes natively in each case
+#' (with `strata_cols` naming the strata columns in the long shape). The long
+#' format also carries the **strata**, the covariates, the censoring indicator
+#' and any materialised temporal-effect columns (see
+#' [compute_temporal_effects()]); the matrix holds only the three core
+#' columns. A single reporting-triangle matrix has no strata dimension, so
+#' `format = "matrix"` on a stratified object **pools** any strata (summing
+#' the counts) with a warning.
 #'
 #' @param data A long `data.frame` or a `reporting_triangle` matrix.
 #' @param x A `tbl_now` object.
@@ -1584,18 +1609,27 @@ tbl_now_from_epinowcast <- function(data, ...,
 #'   delay -- which is fine on a short tail and expensive on a long one (see
 #'   *Cost of a long delay tail*).
 #' @param format For `to`, one of:
-#'   * `"matrix"` (default) -- a single [baselinenowcast::as_reporting_triangle()]
-#'     matrix. A triangle has no strata dimension, so any strata are **pooled**
-#'     (with a warning).
+#'   * `"auto"` (default) -- `"matrix"` when the object has no strata and
+#'     `"long"` when it does. That is the shape [baselinenowcast::baselinenowcast()]
+#'     consumes natively in each case: it takes a `reporting_triangle` when there
+#'     is only one series to fit, and a long `data.frame` with a `strata_cols`
+#'     argument when there is more than one. Pick a specific format if you need
+#'     a particular return type.
+#'   * `"matrix"` -- a single [baselinenowcast::as_reporting_triangle()] matrix.
+#'     A triangle has no strata dimension, so any strata are **pooled** (with a
+#'     warning).
 #'   * `"long"` -- a tidy data frame, which can also carry the strata,
 #'     covariates, temporal-effect columns and the censoring indicator.
+#'     [baselinenowcast::baselinenowcast()] accepts this shape directly, using
+#'     its `strata_cols` argument to name the strata columns.
 #'   * `"triangle_list"` -- one reporting triangle **per stratum**, as a
-#'     [tbl_now_triangle_list]. Use this instead of pooling when you want a
-#'     nowcast per stratum. With no strata attached the result is still a list,
-#'     of length one and named `"all"`, so the return type never depends on
-#'     whether strata happen to be present. Unlike splitting the long format
-#'     yourself, the delay unit and the strata are taken from the object, and
-#'     [as_tbl_now()] can rebuild a `tbl_now` from the result.
+#'     [tbl_now_triangle_list]. Useful for inspecting each stratum's triangle;
+#'     for actually fitting stratified nowcasts, the `"long"` shape is what
+#'     \pkg{baselinenowcast} consumes natively. With no strata attached the
+#'     result is still a list, of length one and named `"all"`, so the return
+#'     type never depends on whether strata happen to be present. The delay
+#'     unit and the strata are taken from the object, and [as_tbl_now()] can
+#'     rebuild a `tbl_now` from the result.
 #' @param complete For `to` with a triangle format: fill event periods that have
 #'   no reports at all with zeroes, out to the object's [get_now()], via
 #'   [complete_zeroes()]. `"auto"` (the default) does this for **line-list**
@@ -2369,12 +2403,19 @@ tbl_now_to_epinowcast <- function(x, ..., max_delay = NULL,
   .assert_tbl_now(x, "tbl_now_to_epinowcast")
   x <- .tbl_now_collapse_censoring(x, "tbl_now_to_epinowcast")
   .need_pkg("epinowcast")
+  # Materialised temporal-effect columns ARE carried through (see
+  # `.epinowcast_temporal_effects()` below), so exclude them from the "dropped"
+  # set to stop the warning firing on columns that are in fact threaded.
   .warn_dropped_covariates(
     x, "tbl_now_to_epinowcast",
-    advice = "{.pkg epinowcast} builds its own reference/report metadata
-              ({.val day_of_week}, {.val day}, {.val week}, {.val month}) and
-              does not carry extra columns. Use those in a module formula, e.g.
-              {.code enw_reference(~ 1 + day_of_week, data = pobs)}."
+    kept = get_temporal_effect_cols(x) %||% character(0),
+    advice = "{.pkg epinowcast} does not carry arbitrary user covariates onto
+              its preprocessed object. Either declare the effect through
+              {.fn add_temporal_effects} (its columns start with {.val .event_}
+              / {.val .report_} and are carried onto {.field metareference} /
+              {.field metareport}), or use {.pkg epinowcast}'s own metadata
+              ({.val day_of_week}, {.val day}, {.val week}, {.val month}) added
+              by {.fn enw_add_metaobs_features}."
   )
   .warn_lossy_conversion("epinowcast", quiet)
   # Warn before the cumulative coercion below: `to_count()` re-derives the grid
@@ -2432,6 +2473,29 @@ tbl_now_to_epinowcast <- function(x, ..., max_delay = NULL,
   with_effects  <- .epinowcast_temporal_effects(completed, x)
   completed     <- with_effects$data
   temporal_cols <- with_effects$cols
+
+  # The columns are threaded onto `metareference` / `metareport`, but nothing in
+  # `epinowcast()` wires them into a module formula on its own. Say so, so the
+  # user knows what to reference and how. `quiet = TRUE` silences it (same
+  # channel as the lossy-conversion warning), because on a scripted pipeline
+  # where the formulas are set elsewhere the reminder is noise.
+  if (length(temporal_cols) > 0 && !isTRUE(quiet)) {
+    example_col <- temporal_cols[[1]]
+    cli::cli_warn(c(
+      "{.fn tbl_now_to_epinowcast}: {length(temporal_cols)} temporal-effect \\
+       column{?s} ({.val {temporal_cols}}) {?is/are} attached to the \\
+       {.pkg epinowcast} metadata, but no module formula references \\
+       {?it/them} yet.",
+      "i" = paste0(
+        "Reference {cli::qty(length(temporal_cols))}{?it/them} in a module ",
+        "formula, e.g. ",
+        "{.code enw_reference(parametric = ~ 1 + ", example_col,
+        ", distribution = \"lognormal\", data = pobs)} or the equivalent on ",
+        "{.fn enw_report} / {.fn enw_expectation}."
+      ),
+      "i" = "Silence this with {.code quiet = TRUE}."
+    ))
+  }
 
   if (verbose) {
     cli::cli_h3("Converting {.cls tbl_now} into an {.pkg epinowcast} object")
@@ -2497,7 +2561,7 @@ tbl_now_to_epinowcast <- function(x, ..., max_delay = NULL,
 #' @rdname tbl_now_baselinenowcast
 #' @export
 tbl_now_to_baselinenowcast <- function(x, ...,
-                                       format = c("matrix", "long", "triangle_list"),
+                                       format = c("auto", "matrix", "long", "triangle_list"),
                                        delays_unit = NULL, max_delay = NULL,
                                        complete = "auto",
                                        negatives = c("redistribute", "error"),
@@ -2513,6 +2577,15 @@ tbl_now_to_baselinenowcast <- function(x, ...,
   x <- .cap_max_delay(x, max_delay, "tbl_now_to_baselinenowcast", verbose = verbose)
   format <- match.arg(format)
   negatives <- match.arg(negatives)
+
+  # `"auto"` picks the shape baselinenowcast consumes natively in each case: a
+  # single reporting-triangle matrix when the object has no strata, and the long
+  # `data.frame` (fed to `baselinenowcast(data, strata_cols = ...)`) when it
+  # does. Pooling used to be the default; auto-selecting the strata-aware shape
+  # is the fix.
+  if (identical(format, "auto")) {
+    format <- if (length(get_strata(x)) > 0L) "long" else "matrix"
+  }
 
   # baselinenowcast needs incremental (count-incidence) counts.
   #  - count-incidence: use as-is.
@@ -2816,11 +2889,20 @@ tbl_now_to_baselinenowcast <- function(x, ...,
 #'   \item{`"estimate_secondary"`}{a `data.frame` of `date` / `primary` /
 #'     `secondary`, where `primary` counts reported arrivals by `report_date`
 #'     and `secondary` counts resolved revisions by `revision_date`, filtered by
-#'     `secondary_type`.}
+#'     `secondary_type`. This is a **repurposing** of
+#'     [EpiNow2::estimate_secondary()]: the model was written for two
+#'     epidemiological streams linked by a delay (cases and deaths, say), and
+#'     here the two streams are one series and its own revisions, so the fitted
+#'     delay is report-to-revision. The converter warns about the repurposing
+#'     when it runs.}
 #'   \item{`"estimate_dist"`}{the interval-censored `pdate_lwr` / `pdate_upr` /
 #'     `sdate_lwr` / `sdate_upr` / `obs_date` frame that
 #'     [EpiNow2::estimate_dist()] fits a **delay distribution** to (new in
-#'     \pkg{EpiNow2} 1.9.0). Count data rides along as the `n` weight column.}
+#'     \pkg{EpiNow2} 1.9.0). Count data rides along as the `n` weight column.
+#'     `estimate_dist()` vendors likelihood functions from
+#'     [primarycensored](https://primarycensored.epinowcast.org/), and its
+#'     help asks that you cite \pkg{primarycensored} alongside \pkg{EpiNow2}
+#'     when using it (`citation("primarycensored")`).}
 #' }
 #'
 #' `tbl_now_from_EpiNow2()` inverts the snapshot form: snapshot *k* is the series
@@ -2951,7 +3033,7 @@ tbl_now_to_EpiNow2 <- function( # nolint: object_name_linter.
     .warn_dropped_lazy_temporal_effects(x, "tbl_now_to_EpiNow2")
     return(.epinow2_secondary_data(
       x, secondary_type = secondary_type, accumulate = accumulate,
-      complete = complete, verbose = verbose
+      complete = complete, verbose = verbose, quiet = quiet
     ))
   }
 
@@ -3077,7 +3159,7 @@ tbl_now_to_EpiNow2 <- function( # nolint: object_name_linter.
 #'
 #' @param x A `tbl_now` with a revision process.
 #' @param secondary_type Which revision outcome to count.
-#' @param accumulate,complete As in [tbl_now_to_EpiNow2()].
+#' @param accumulate,complete,quiet As in [tbl_now_to_EpiNow2()].
 #' @param verbose Logical.
 #'
 #' @return A `data.frame` with `date`, `primary` and `secondary`.
@@ -3085,12 +3167,32 @@ tbl_now_to_EpiNow2 <- function( # nolint: object_name_linter.
 #' @keywords internal
 #' @noRd
 .epinow2_secondary_data <- function(x, secondary_type, accumulate, complete,
-                                    verbose = TRUE) {
+                                    verbose = TRUE, quiet = FALSE) {
   if (!has_revision(x)) {
     cli::cli_abort(c(
       "{.fn EpiNow2::estimate_secondary} needs a revision process, and \\
        {.arg x} has none.",
       "i" = "Attach one with {.fn add_revision_date}."
+    ))
+  }
+
+  # `estimate_secondary()` was designed for two epidemiological streams --
+  # cases and deaths, say -- linked by a delay distribution (see
+  # `?EpiNow2::estimate_secondary`). This target repurposes it: `primary` is
+  # reports and `secondary` is revisions of those same reports, so the delay
+  # the model fits is the report-to-revision delay, not an infection-to-death
+  # one. It works, but it is not what the EpiNow2 help describes -- flagged so
+  # a caller does not read the fit as an epidemiological convolution. Rides on
+  # the same `quiet` switch as the lossy-conversion warning: `quiet = TRUE`
+  # says "I know what this converter does; stop telling me".
+  if (!isTRUE(quiet)) {
+    cli::cli_warn(c(
+      "{.fn EpiNow2::estimate_secondary} was designed for two epidemiological \\
+       streams linked by a delay (e.g. cases and deaths).",
+      "i" = "This target repurposes it: {.field primary} is reports by \\
+             {.arg report_date}, {.field secondary} is revisions by \\
+             {.arg revision_date}, so the fitted delay is report-to-revision.",
+      "i" = "Silence this with {.code quiet = TRUE}."
     ))
   }
 
@@ -4524,11 +4626,15 @@ get_surveillance_range <- function(x, ..., from = NULL, to = NULL, by = NULL) {
 #' rebuild a `tbl_now` from it.
 #'
 #' It is a **thin** class -- it is still a list, so `lapply()`, `[[` and friends
-#' work as usual:
+#' work as usual. Use it for **inspecting** per-stratum triangles; for fitting
+#' a stratified nowcast, hand the long shape to
+#' [baselinenowcast::baselinenowcast()] with its `strata_cols` argument
+#' instead -- that is the shape it consumes natively, and what
+#' [run_nowcast()] does under the hood:
 #'
 #' ```r
-#' triangles <- tbl_now_to_baselinenowcast(x, format = "triangle_list")
-#' lapply(triangles, baselinenowcast::baselinenowcast)
+#' long_df <- tbl_now_to_baselinenowcast(x, format = "long")
+#' baselinenowcast::baselinenowcast(long_df, strata_cols = tbl.now::get_strata(x))
 #' ```
 #'
 #' The class exists for one reason. \pkg{baselinenowcast} has a function,

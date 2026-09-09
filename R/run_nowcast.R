@@ -70,6 +70,12 @@
 #'   forwarded to [tbl_now_to_baselinenowcast()]. `NULL` keeps every delay,
 #'   which a snapshot ("as of") series cannot be fitted with -- see
 #'   [engine_baselinenowcast()][nowcast_engines].
+#' @param strata_sharing (`"baselinenowcast"` only) Whether to share estimates
+#'   across strata: `"none"` (default) fits every stratum independently,
+#'   `"delay"` pools the delay PMF, `"uncertainty"` pools the uncertainty
+#'   parameters, or a vector combining them. Passed through to
+#'   [baselinenowcast::baselinenowcast()]'s argument of the same name; only
+#'   meaningful when the object has strata.
 #' @param preprocess_args (`"epinowcast"` only) A list of arguments for
 #'   [tbl_now_to_epinowcast()], e.g. `list(max_delay = 20)`.
 #' @param specs (`"NobBS"` only) The `specs` list of `NobBS::NobBS()`. The
@@ -426,6 +432,8 @@ list_nowcast_methods <- function(installed_only = TRUE) {
 #' @return A [tbl_nowcast] object.
 #'
 #' @seealso
+#' [tbl_now_workflows] for choosing a modelling package's native entry point or
+#' the shared engine interface;
 #' [engine()] and [nowcast_engines] to specify which model to fit and how;
 #' [autoplot()][autoplot.tbl_nowcast] and [tidy()][tidy.tbl_nowcast] to look at
 #' the result; [nowcast_ensemble()] to combine several nowcasts;

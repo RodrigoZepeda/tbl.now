@@ -206,3 +206,7 @@ reference:
   - flusight
   - hai_bucaramanga
   - mpoxdat
+
+- title: Workflows
+  contents:
+  - tbl_now_workflows

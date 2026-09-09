@@ -25,6 +25,7 @@ engine_baselinenowcast(
   draws = 1000,
   delays_unit = NULL,
   max_delay = NULL,
+  strata_sharing = "none",
   min_date = NULL,
   quantile_levels = nowcast_quantile_levels(),
   label = NULL
@@ -131,11 +132,40 @@ which re-reports every past period in every snapshot, and therefore has a
 delay axis as long as the series itself -- cannot be fitted at all until
 the axis is capped. The error says which number to use.}
 
+\item{strata_sharing}{(\code{engine_baselinenowcast()}) Whether to share
+estimates across the object's strata. \code{"none"} (default) fits every
+stratum independently. \code{"delay"} estimates the delay PMF once on the
+pooled counts and applies it to each stratum;
+\code{"uncertainty"} shares the uncertainty parameters the same way; pass
+\code{c("delay", "uncertainty")} to share both. Passed straight to
+\code{\link[baselinenowcast:baselinenowcast]{baselinenowcast::baselinenowcast()}}'s argument of the same name, and
+only meaningful when the object has strata.}
+
 \item{preprocess_args, expectation, reference, report, fit}{(\code{engine_epinowcast()}) \code{preprocess_args} is a list for
 \code{\link[=tbl_now_to_epinowcast]{tbl_now_to_epinowcast()}}, e.g. \code{list(max_delay = 30)}; the other four are
 \code{epinowcast::epinowcast()}'s module arguments. \strong{\code{epinowcast} is unseeded
-unless you say so}: \code{enw_fit_opts()} passes \code{...} to the sampler, so
-\code{fit = epinowcast::enw_fit_opts(seed = 1)} is what makes a fit reproducible.}
+unless you say so}: \code{enw_fit_opts()} has no \code{seed} argument of its own --
+\code{formals(epinowcast::enw_fit_opts)} on 0.7.0 lists \code{sampler}, \code{nowcast},
+\code{pp}, \code{likelihood}, \code{likelihood_aggregation}, \code{threads_per_chain}, \code{debug},
+\code{output_loglik}, \code{sparse_design}, \code{...} -- but its \code{...} are forwarded to
+the \code{sampler} (\code{enw_sample()}, i.e. \code{cmdstanr::sample()}), which does. Pass
+\code{fit = epinowcast::enw_fit_opts(seed = 1)} and the seed rides through to
+the sampler; that is what makes a fit reproducible.
+
+Two epinowcast 0.7.0 knobs worth knowing about, both reachable through the
+same pass-through:
+\itemize{
+\item a \strong{delay-only} fit -- reporting-delay distribution conditional on
+per-reference-date totals, with the latent process disabled -- via
+\code{obs = epinowcast::enw_obs(delay_only = TRUE, data = pobs)}. \code{obs} is not
+a named engine argument here, but \code{engine_epinowcast()} forwards \code{...} to
+\code{epinowcast::epinowcast()}, so passing it there works.
+\item a \strong{structural} reporting effect (e.g. a fixed day-of-week reporting
+hazard) via \code{report = enw_report(structural = ...)}. Build the metadata
+with \code{enw_dayofweek_structural_reporting()}; this is separate from a
+temporal-effect covariate that lands on \code{metareport} and is referenced
+through \verb{non_parametric =}.
+}}
 
 \item{max_D, moving_window, specs}{(\code{engine_nobbs()}) Arguments of
 \code{NobBS::NobBS()} / \code{NobBS::NobBS.strat()}. \code{moving_window} counts \strong{event
@@ -156,7 +186,19 @@ stratum is fitted on the same time axis.}
 EpiNow2 defaults to \code{delays = delay_opts()}, which is \code{Fixed(0)} -- no
 reporting delay at all -- and a one-day generation time. Those defaults
 describe a process with nothing to nowcast, so supply the epidemiology
-yourself.}
+yourself. \code{truncation = trunc_opts()} is likewise \code{Fixed(0)} -- \strong{without
+a fitted truncation, \code{estimate_infections()} is a smooth through the
+incomplete recent days, not a nowcast}. The vignette's \emph{EpiNow2} section
+walks through the two-step recipe (\code{estimate_truncation()} first, then
+pass its \code{get_parameters(...)[["truncation"]]} as \code{truncation} here).
+
+\strong{Reproducibility.} \code{EpiNow2::stan_opts()} picks a fresh random seed on
+every call (\code{seed = as.integer(runif(1, 1e8))}), so an unseeded fit
+cannot be reproduced -- and a pathological sample cannot be told apart
+from a bad model afterwards. Pin it with
+\verb{stan = stan_opts(samples = ..., warmup = ..., chains = ..., seed = <n>)};
+\code{stan_opts()} forwards \code{seed} through to \code{rstan::sampling()} /
+\code{cmdstanr::sample()}.}
 }
 \value{
 A \code{nowcast_engine}, as \code{\link[=engine]{engine()}} returns.

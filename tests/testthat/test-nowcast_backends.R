@@ -97,6 +97,59 @@ test_that("baselinenowcast nowcasts each stratum separately", {
   expect_setequal(unique(tidy(nowcast)$stratum), as.character(unique(x$gender)))
 })
 
+test_that("baselinenowcast works on a grouped tbl_now", {
+  skip_on_cran()
+  skip_if_not_installed("baselinenowcast")
+
+  # A grouped_tbl_now is a DIFFERENT class from a tbl_now (DEVELOPMENT_SKILL
+  # section 8): the engine must accept it, and the strata dispatch must not
+  # decide the answer differs because of an incidental grouping.
+  x <- backend_tbl_now(strata = TRUE)
+
+  set.seed(20260824)
+  nc_grouped <- suppressWarnings(
+    run_nowcast(
+      x |> dplyr::group_by(gender),
+      engine_baselinenowcast(draws = 25), verbose = FALSE
+    )
+  )
+  set.seed(20260824)
+  nc_ungrouped <- suppressWarnings(
+    run_nowcast(x, engine_baselinenowcast(draws = 25), verbose = FALSE)
+  )
+
+  expect_true(is_tbl_nowcast(nc_grouped))
+  expect_equal(
+    dplyr::arrange(as.data.frame(tidy(nc_grouped)), stratum, event_date),
+    dplyr::arrange(as.data.frame(tidy(nc_ungrouped)), stratum, event_date)
+  )
+})
+
+test_that("baselinenowcast passes `strata_sharing` through to the backend", {
+  skip_on_cran()
+  skip_if_not_installed("baselinenowcast")
+
+  x <- backend_tbl_now(strata = TRUE)
+
+  # `strata_sharing = "delay"` shares one delay PMF across strata; the fit
+  # still returns per-stratum draws in the same schema. The point of the test
+  # is that the argument is accepted and that both fits produce comparable
+  # tidy output, not that the numbers agree -- sharing is a modelling choice.
+  set.seed(20260824)
+  nc_none <- suppressWarnings(
+    run_nowcast(x, engine_baselinenowcast(draws = 25, strata_sharing = "none"),
+                verbose = FALSE)
+  )
+  set.seed(20260824)
+  nc_delay <- suppressWarnings(
+    run_nowcast(x, engine_baselinenowcast(draws = 25, strata_sharing = "delay"),
+                verbose = FALSE)
+  )
+
+  expect_setequal(unique(tidy(nc_delay)$stratum), as.character(unique(x$gender)))
+  expect_setequal(unique(tidy(nc_delay)$stratum), unique(tidy(nc_none)$stratum))
+})
+
 test_that("two baselinenowcast fits can be ensembled", {
   skip_on_cran()
   skip_if_not_installed("baselinenowcast")
@@ -469,6 +522,119 @@ test_that("EpiNow2 engine does not overwrite an explicit obs option", {
   )
 
   expect_identical(seen_args$obs, explicit_obs)
+})
+
+test_that("EpiNow2 engine warns when explicit obs shadows a declared week effect", {
+  skip_if_not_installed("EpiNow2")
+
+  # A declared report-date `day_of_week` effect is normally applied through
+  # `obs = obs_opts(week_effect = TRUE)`. If the user passes their own `obs`,
+  # the engine leaves it alone (by design, and the test above pins that) --
+  # but the declared effect then goes nowhere, and used to disappear
+  # silently. It must warn.
+  x <- counts_tbl_now() |>
+    add_temporal_effects(
+      temporal_effects(day_of_week = TRUE), date_type = "report_date"
+    )
+  local_mocked_bindings(
+    estimate_infections = function(data, ...) {
+      structure(list(), class = "estimate_infections")
+    },
+    .package = "EpiNow2"
+  )
+
+  warnings <- character()
+  withCallingHandlers(
+    suppressMessages(nowcast_fit(
+      engine_epinow2(obs = EpiNow2::obs_opts(week_effect = FALSE)),
+      x, verbose = FALSE
+    )),
+    warning = function(cnd) {
+      warnings <<- c(warnings, conditionMessage(cnd))
+      invokeRestart("muffleWarning")
+    }
+  )
+  expect_true(any(grepl("day_of_week", warnings)))
+  expect_true(any(grepl("obs", warnings)))
+})
+
+# The .quietly_if silencer used to swallow warnings ---------------------------
+#
+# DEVELOPMENT_SKILL section 9: a Stan fit that does not converge does not
+# error, it returns numbers, and a wrapper that hides divergent-transition
+# and low-ESS warnings turns a broken fit into a cached one. The silencer
+# captures stdout and the message stream so external constructors (surveillance
+# / JAGS / cat()-progress) do not chatter, but warnings must survive.
+
+test_that(".epinow2_unwrap reaches the fit without tripping defunct `$estimates`", {
+  # EpiNow2 1.9.0 made `epinow()$estimates` DEFUNCT and made the `epinow`
+  # object inherit from `estimate_infections`, so `x$estimates %||% x` --
+  # which was the pre-existing idiom -- errors on the LHS before `%||%` can
+  # pick the RHS. This was caught by test-engines-matrix.R fitting real
+  # EpiNow2 models and finding all twelve 2-strata shapes broken with
+  # "epinow()$estimates was deprecated in EpiNow2 1.9.0 and is now defunct".
+
+  # 1.9.0 shape: an epinow object IS an estimate_infections.
+  fit <- structure(list(), class = c("epinow", "estimate_infections", "list"))
+  expect_identical(tbl.now:::.epinow2_unwrap(fit), fit)
+
+  # Pre-1.9.0 shape simulated: both `$.epinow` (defunct error) and
+  # `[[.epinow` (refuses `exact = TRUE`, breaking `getElement()`) are still
+  # exported, so a naive `$` unwrap OR a `getElement()` unwrap both fail. The
+  # helper uses `.subset2()`, which bypasses S3 dispatch.
+  fake_defunct <- function(...) {
+    stop("epinow()$estimates was deprecated in EpiNow2 1.9.0 and is now defunct.",
+         call. = FALSE)
+  }
+  wrapped <- structure(
+    list(estimates = structure(list(marker = 1L), class = "estimate_infections")),
+    class = c("epinow", "list")
+  )
+  # Local S3 methods for `$` and `[[` on `epinow` that mimic 1.9.0's traps.
+  registerS3method("$", "epinow", fake_defunct, envir = globalenv())
+  registerS3method("[[", "epinow", function(x, i, ...) stop("no exact= here"),
+                   envir = globalenv())
+  on.exit({
+    if (exists("$.epinow", envir = globalenv(), inherits = FALSE)) {
+      rm("$.epinow", envir = globalenv())
+    }
+    if (exists("[[.epinow", envir = globalenv(), inherits = FALSE)) {
+      rm("[[.epinow", envir = globalenv())
+    }
+  }, add = TRUE)
+
+  # `$` on this shape would error; `.epinow2_unwrap` must not touch it.
+  expect_error(wrapped$estimates, "defunct")
+  # But the helper reaches the fit.
+  out <- tbl.now:::.epinow2_unwrap(wrapped)
+  expect_s3_class(out, "estimate_infections")
+  expect_equal(out$marker, 1L)
+})
+
+test_that(".quietly_if(verbose = FALSE) re-emits warnings from wrapped code", {
+  saw <- character()
+  withCallingHandlers(
+    tbl.now:::.quietly_if(warning("divergent transitions"), verbose = FALSE),
+    warning = function(cnd) {
+      saw <<- c(saw, conditionMessage(cnd))
+      invokeRestart("muffleWarning")
+    }
+  )
+  expect_true(any(grepl("divergent transitions", saw)))
+})
+
+test_that(".quietly_if(verbose = FALSE) still swallows messages and stdout", {
+  # Messages -- would otherwise show under `verbose = FALSE`.
+  expect_message(
+    tbl.now:::.quietly_if(message("progress"), verbose = FALSE), NA
+  )
+  # stdout -- surveillance and JAGS write here, so it must be captured. Assign
+  # the result so the outer capture.output() does not auto-print `NULL` and
+  # count that as escaped output.
+  seen <- utils::capture.output({
+    result <- tbl.now:::.quietly_if(cat("progress\n"), verbose = FALSE)
+  })
+  expect_length(seen, 0L)
 })
 
 test_that("EpiNow2 engine warns for unavailable temporal effects", {

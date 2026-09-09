@@ -9,6 +9,7 @@ nowcast_backtest(
   ...,
   now_dates = NULL,
   horizon = 4,
+  n_dates = 4L,
   seed = NULL,
   keep_draws = FALSE,
   on_error = c("warn", "abort"),
@@ -36,12 +37,15 @@ plain \code{engine_diseasenowcasting()} are backtested separately, so
 is labelled by its method.}
 
 \item{now_dates}{Vector of retrospective nowcast origins. Defaults to the
-four most recent report-axis dates that are at least \code{horizon} units before
-the object's \code{now}; these dates are used as as-of origins, not as a filter
-on target event dates.}
+\code{n_dates} most recent report-axis dates that are at least \code{horizon} units
+before the object's \code{now}; these dates are used as as-of origins, not as a
+filter on target event dates.}
 
 \item{horizon}{Number of time units of hindsight required when \code{now_dates} is
 chosen automatically. Default \code{4}.}
+
+\item{n_dates}{Number of automatic retrospective origins. Default \code{4}.
+Ignored when \code{now_dates} is supplied explicitly.}
 
 \item{seed}{Optional integer. When given, the RNG is seeded \strong{immediately
 before each fit}, from \code{seed} and the label and date that fit is for. One
@@ -80,6 +84,8 @@ An object of class \code{nowcast_backtest}: a list with
 \item{predictions}{A \code{tibble} of every retrospective quantile prediction.}
 \item{draws}{When \code{keep_draws = TRUE}, a \code{tibble} of the retained draws;
 otherwise \code{NULL}.}
+\item{timings}{A \code{tibble} with one row per attempted engine/date fit,
+its elapsed time in seconds, whether it succeeded, and any error text.}
 \item{truth}{The observed counts used for scoring.}
 \item{methods}{The labels that produced at least one nowcast.}
 \item{now_dates}{The dates that were nowcast.}
@@ -98,6 +104,33 @@ what turns a set of models into ensemble weights (see \code{\link[=nowcast_weigh
 Be aware that this refits every model once per date: with Bayesian backends
 and a long \code{now_dates} it is genuinely expensive.
 }
+\section{Use the result directly with scoringutils}{
+
+
+A \code{nowcast_backtest} has methods for
+\code{\link[scoringutils:as_forecast_quantile]{scoringutils::as_forecast_quantile()}},
+\code{\link[scoringutils:as_forecast_point]{scoringutils::as_forecast_point()}}, and
+\code{\link[scoringutils:as_forecast_sample]{scoringutils::as_forecast_sample()}}, so no manual reshaping is needed:
+
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{quantile_forecast <- scoringutils::as_forecast_quantile(bt)
+point_forecast <- scoringutils::as_forecast_point(bt)
+}\if{html}{\out{</div>}}
+
+For sample forecasts, create the backtest with \code{keep_draws = TRUE} and
+use \code{scoringutils::as_forecast_sample(bt)}. The returned forecast objects can
+be passed to any compatible scoringutils workflow. For example, relative WIS
+is obtained with:
+
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{relative_scores <- quantile_forecast |>
+  scoringutils::score() |>
+  scoringutils::add_relative_skill(metric = "wis")
+}\if{html}{\out{</div>}}
+
+\code{model}, \code{now}, the event-date column, and declared strata are retained as
+forecast units, allowing scores to be extended, regrouped, or summarised
+without returning to the internal \code{tbl.now} representation.
+}
+
 \section{Every engine must report the same quantile levels}{
 
 
@@ -149,11 +182,15 @@ if (requireNamespace("baselinenowcast", quietly = TRUE)) {
 
 }
 \seealso{
+\link{tbl_now_workflows} for choosing native model construction or cross-engine
+comparison;
 \code{\link[=engine]{engine()}} to specify each model being compared, and its \code{min_date} argument,
 which matters here because \code{now} moves between fits;
 \code{\link[=score_nowcast]{score_nowcast()}} for the scores computed at each \code{now};
 \code{\link[=nowcast_weights]{nowcast_weights()}} to turn the result into ensemble weights, and
-\code{\link[=nowcast_ensemble]{nowcast_ensemble()}} to use them. The
+\code{\link[=nowcast_ensemble]{nowcast_ensemble()}} to use them;
+\code{\link[scoringutils:score]{scoringutils::score()}} and \code{\link[scoringutils:add_relative_skill]{scoringutils::add_relative_skill()}} for an
+extensible scoring workflow. The
 \href{https://rodrigozepeda.github.io/tbl.now/articles/ensemble-nowcasting.html}{\emph{One call, many models} article}
 compares several packages this way.
 }

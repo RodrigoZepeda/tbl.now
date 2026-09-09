@@ -93,11 +93,20 @@ model that uses the report dimension a \code{tbl_now} exists to carry.}
 \item{\code{"estimate_secondary"}}{a \code{data.frame} of \code{date} / \code{primary} /
 \code{secondary}, where \code{primary} counts reported arrivals by \code{report_date}
 and \code{secondary} counts resolved revisions by \code{revision_date}, filtered by
-\code{secondary_type}.}
+\code{secondary_type}. This is a \strong{repurposing} of
+\code{\link[EpiNow2:estimate_secondary]{EpiNow2::estimate_secondary()}}: the model was written for two
+epidemiological streams linked by a delay (cases and deaths, say), and
+here the two streams are one series and its own revisions, so the fitted
+delay is report-to-revision. The converter warns about the repurposing
+when it runs.}
 \item{\code{"estimate_dist"}}{the interval-censored \code{pdate_lwr} / \code{pdate_upr} /
 \code{sdate_lwr} / \code{sdate_upr} / \code{obs_date} frame that
 \code{\link[EpiNow2:estimate_dist]{EpiNow2::estimate_dist()}} fits a \strong{delay distribution} to (new in
-\pkg{EpiNow2} 1.9.0). Count data rides along as the \code{n} weight column.}
+\pkg{EpiNow2} 1.9.0). Count data rides along as the \code{n} weight column.
+\code{estimate_dist()} vendors likelihood functions from
+\href{https://primarycensored.epinowcast.org/}{primarycensored}, and its
+help asks that you cite \pkg{primarycensored} alongside \pkg{EpiNow2}
+when using it (\code{citation("primarycensored")}).}
 }
 
 \code{tbl_now_from_EpiNow2()} inverts the snapshot form: snapshot \emph{k} is the series

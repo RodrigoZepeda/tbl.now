@@ -1,4 +1,4 @@
-# EpiNow2 takes four different input shapes, one per entry point, and the
+# EpiNow2 takes several different input shapes, one per entry point, and the
 # conversion is wrong in a different way for each. The dimensions that matter:
 #
 #   * EpiNow2 models a DAILY process and (as of 1.9.0) has no `timestep`, so a
@@ -757,4 +757,38 @@ test_that("tidy() gives regional_epinow one block per region", {
   expect_equal(sum(duplicated(out[, c("stratum", "event_date")])), 0L)
   expect_equal(out$estimate[out$stratum == "north"], c(10, 20))
   expect_equal(out$estimate[out$stratum == "south"], c(1000, 2000))
+})
+
+test_that("tidy() unwraps `$estimates` in a regional_epinow block", {
+  skip_if_not_installed("EpiNow2")
+  # `regional_epinow(output = c("regions", ...))` (the default) returns each
+  # region's `estimate_infections` fit wrapped under `$estimates` of the
+  # block. `.epinow2_draws()` already unwraps this; the `tidy.list` EpiNow2
+  # branch did not, so calling `get_predictions()` on the wrapping list found
+  # no method and errored -- one code path succeeding while the other did not,
+  # on the same fit. This pins the two paths in step.
+  predictions <- data.frame(
+    date = as.Date("2020-03-01") + 0:1,
+    median = c(10, 20),
+    lower_90 = c(8, 16),
+    upper_90 = c(12, 24)
+  )
+  withr::local_package("EpiNow2")
+  testthat::local_mocked_s3_method(
+    "get_predictions", "estimate_infections",
+    function(object, format = "summary", ...) predictions
+  )
+  wrapped_fit <- list(regional = list(
+    only = list(
+      estimates = structure(list(), class = c("estimate_infections", "list")),
+      # `regional_epinow()`'s blocks carry side outputs too (`summary`,
+      # `plots`, ...); the block itself is not an `estimate_infections`.
+      summary = list(),
+      plots = list()
+    )
+  ))
+
+  out <- tidy(wrapped_fit)
+  expect_setequal(unique(out$stratum), "only")
+  expect_equal(out$estimate, c(10, 20))
 })

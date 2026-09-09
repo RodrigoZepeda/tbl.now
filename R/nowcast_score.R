@@ -424,6 +424,7 @@
 #' 17(2), e1008618.
 #'
 #' @seealso
+#' [tbl_now_workflows] for the native/common workflow boundary;
 #' [nowcast_backtest()] to score many nowcasts at many `now` dates at once;
 #' [nowcast_weights()] to turn those scores into ensemble weights;
 #' [get_latest_reported_cases()][get_latest_first], which is how the truth is
@@ -544,9 +545,11 @@ score_nowcast <- function(x, truth = NULL, truth_axis = c("report", "revision"),
 #'   [nowcast_ensemble()] takes a named list of members. An engine with no label
 #'   is labelled by its method.
 #' @param now_dates Vector of retrospective nowcast origins. Defaults to the
-#'   four most recent report-axis dates that are at least `horizon` units before
-#'   the object's `now`; these dates are used as as-of origins, not as a filter
-#'   on target event dates.
+#'   `n_dates` most recent report-axis dates that are at least `horizon` units
+#'   before the object's `now`; these dates are used as as-of origins, not as a
+#'   filter on target event dates.
+#' @param n_dates Number of automatic retrospective origins. Default `4`.
+#'   Ignored when `now_dates` is supplied explicitly.
 #' @param horizon Number of time units of hindsight required when `now_dates` is
 #'   chosen automatically. Default `4`.
 #' @param seed Optional integer. When given, the RNG is seeded **immediately
@@ -572,10 +575,39 @@ score_nowcast <- function(x, truth = NULL, truth_axis = c("report", "revision"),
 #'     \item{predictions}{A `tibble` of every retrospective quantile prediction.}
 #'     \item{draws}{When `keep_draws = TRUE`, a `tibble` of the retained draws;
 #'       otherwise `NULL`.}
+#'     \item{timings}{A `tibble` with one row per attempted engine/date fit,
+#'       its elapsed time in seconds, whether it succeeded, and any error text.}
 #'     \item{truth}{The observed counts used for scoring.}
 #'     \item{methods}{The labels that produced at least one nowcast.}
 #'     \item{now_dates}{The dates that were nowcast.}
 #'   }
+#'
+#' @section Use the result directly with scoringutils:
+#'
+#' A `nowcast_backtest` has methods for
+#' [scoringutils::as_forecast_quantile()],
+#' [scoringutils::as_forecast_point()], and
+#' [scoringutils::as_forecast_sample()], so no manual reshaping is needed:
+#'
+#' ```r
+#' quantile_forecast <- scoringutils::as_forecast_quantile(bt)
+#' point_forecast <- scoringutils::as_forecast_point(bt)
+#' ```
+#'
+#' For sample forecasts, create the backtest with `keep_draws = TRUE` and
+#' use `scoringutils::as_forecast_sample(bt)`. The returned forecast objects can
+#' be passed to any compatible scoringutils workflow. For example, relative WIS
+#' is obtained with:
+#'
+#' ```r
+#' relative_scores <- quantile_forecast |>
+#'   scoringutils::score() |>
+#'   scoringutils::add_relative_skill(metric = "wis")
+#' ```
+#'
+#' `model`, `now`, the event-date column, and declared strata are retained as
+#' forecast units, allowing scores to be extended, regrouped, or summarised
+#' without returning to the internal `tbl.now` representation.
 #'
 #' @section Every engine must report the same quantile levels:
 #'
@@ -592,11 +624,15 @@ score_nowcast <- function(x, truth = NULL, truth_axis = c("report", "revision"),
 #' levels its members happened to share.
 #'
 #' @seealso
+#' [tbl_now_workflows] for choosing native model construction or cross-engine
+#' comparison;
 #' [engine()] to specify each model being compared, and its `min_date` argument,
 #' which matters here because `now` moves between fits;
 #' [score_nowcast()] for the scores computed at each `now`;
 #' [nowcast_weights()] to turn the result into ensemble weights, and
-#' [nowcast_ensemble()] to use them. The
+#' [nowcast_ensemble()] to use them;
+#' [scoringutils::score()] and [scoringutils::add_relative_skill()] for an
+#' extensible scoring workflow. The
 #' [*One call, many models* article](https://rodrigozepeda.github.io/tbl.now/articles/ensemble-nowcasting.html)
 #' compares several packages this way.
 #'
@@ -635,6 +671,7 @@ score_nowcast <- function(x, truth = NULL, truth_axis = c("report", "revision"),
 #'
 #' @export
 nowcast_backtest <- function(x, ..., now_dates = NULL, horizon = 4,
+                             n_dates = 4L,
                              seed = NULL, keep_draws = FALSE,
                              on_error = c("warn", "abort"), verbose = TRUE,
                              truth_axis = c("report", "revision"),
@@ -647,7 +684,13 @@ nowcast_backtest <- function(x, ..., now_dates = NULL, horizon = 4,
   labels <- names(engines)
 
   if (is.null(now_dates)) {
-    now_dates <- .default_backtest_dates(x, horizon = horizon)
+    if (!is.numeric(n_dates) || length(n_dates) != 1L || is.na(n_dates) ||
+        n_dates < 1 || n_dates != as.integer(n_dates)) {
+      cli::cli_abort("{.arg n_dates} must be one positive whole number.")
+    }
+    now_dates <- .default_backtest_dates(
+      x, horizon = horizon, n = as.integer(n_dates)
+    )
   }
   if (length(now_dates) == 0) {
     cli::cli_abort("No usable {.arg now_dates}: the object has too little history to backtest.")
@@ -662,6 +705,7 @@ nowcast_backtest <- function(x, ..., now_dates = NULL, horizon = 4,
   )
 
   results <- list()
+  timings <- list()
   for (now_date in as.list(now_dates)) {
     snapshot <- .nowcast_snapshot(x, now_date)
 
@@ -678,9 +722,12 @@ nowcast_backtest <- function(x, ..., now_dates = NULL, horizon = 4,
         set.seed(.backtest_seed(seed, label, now_date))
       }
 
+      fit_error <- NULL
+      started <- proc.time()[["elapsed"]]
       nowcast <- tryCatch(
         run_nowcast(snapshot, this_engine, verbose = FALSE),
         error = function(e) {
+          fit_error <<- conditionMessage(e)
           message <- c(
             "Engine {.val {label}} failed at {.val {now_date}}.",
             "x" = conditionMessage(e)
@@ -688,6 +735,13 @@ nowcast_backtest <- function(x, ..., now_dates = NULL, horizon = 4,
           if (on_error == "abort") cli::cli_abort(message) else cli::cli_warn(message)
           NULL
         }
+      )
+      timings[[length(timings) + 1L]] <- dplyr::tibble(
+        .method = label,
+        .now = now_date,
+        elapsed_seconds = unname(proc.time()[["elapsed"]] - started),
+        success = !is.null(nowcast),
+        error = fit_error %||% NA_character_
       )
       if (is.null(nowcast)) next
 
@@ -737,6 +791,7 @@ nowcast_backtest <- function(x, ..., now_dates = NULL, horizon = 4,
       scores = scores,
       predictions = predictions,
       draws = draws,
+      timings = dplyr::bind_rows(timings),
       truth = truth,
       methods = unique(scores$.method),
       now_dates = now_dates,

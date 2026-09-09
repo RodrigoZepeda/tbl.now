@@ -25,10 +25,14 @@ combination of the object's strata, together with the metadata needed to
 rebuild a \code{tbl_now} from it.
 
 It is a \strong{thin} class -- it is still a list, so \code{lapply()}, \code{[[} and friends
-work as usual:
+work as usual. Use it for \strong{inspecting} per-stratum triangles; for fitting
+a stratified nowcast, hand the long shape to
+\code{\link[baselinenowcast:baselinenowcast]{baselinenowcast::baselinenowcast()}} with its \code{strata_cols} argument
+instead -- that is the shape it consumes natively, and what
+\code{\link[=run_nowcast]{run_nowcast()}} does under the hood:
 
-\if{html}{\out{<div class="sourceCode r">}}\preformatted{triangles <- tbl_now_to_baselinenowcast(x, format = "triangle_list")
-lapply(triangles, baselinenowcast::baselinenowcast)
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{long_df <- tbl_now_to_baselinenowcast(x, format = "long")
+baselinenowcast::baselinenowcast(long_df, strata_cols = tbl.now::get_strata(x))
 }\if{html}{\out{</div>}}
 
 The class exists for one reason. \pkg{baselinenowcast} has a function,
