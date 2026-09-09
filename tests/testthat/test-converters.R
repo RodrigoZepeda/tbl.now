@@ -86,6 +86,7 @@ test_that("tbl_now_to_epinowcast works on a grouped tbl_now", {
   skip_on_cran()
   skip_if_not_installed("epinowcast")
   skip_if_not_installed("data.table")
+  library(data.table, quietly = TRUE, warn.conflicts = FALSE)
 
   obs <- head(epinowcast::germany_covid19_hosp, 400)
   x <- tbl_now_from_epinowcast(obs, strata = "age_group", verbose = FALSE)

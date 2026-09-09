@@ -24,6 +24,7 @@ tbl_now_to_epidist(
   primary_upper = NULL,
   secondary_upper = NULL,
   censoring_window = NULL,
+  obs_date = NULL,
   verbose = TRUE,
   quiet = FALSE
 )
@@ -53,6 +54,11 @@ covariate columns (\code{to}).}
 \item{censoring_window}{(\code{to} only) Optional positive integer width, in days,
 of the censoring windows. If \code{NULL} (default) it is derived from the
 \code{tbl_now} \code{event_units}.}
+
+\item{obs_date}{(\code{to} only) Optional \code{Date} of length one (or a vector of
+length \code{nrow(x)}) to use as \pkg{epidist}'s \code{obs_date} column. If \code{NULL}
+(default) it is set to \code{get_now(x) + censoring_window} so the
+right-truncation clock ends at the object's own \code{now}.}
 
 \item{quiet}{Logical. A \emph{different} channel from \code{verbose}: \code{verbose}
 controls the informational summary of what the conversion did, while \code{quiet}
@@ -160,44 +166,73 @@ conversion aborts saying so, rather than letting \pkg{epidist}'s own
 \section{Model choice for count data}{
 
 
-\code{\link[epidist:as_epidist_marginal_model]{epidist::as_epidist_marginal_model()}} is the one built for aggregated counts,
-but with \strong{epidist 0.4.0} and \strong{primarycensored 1.5.1} it fails at Stan
-compilation (its generated code calls \code{primarycensored_lpmf()} with 8
-arguments against a 9-argument signature). The latent model is unaffected but
-expands counts to \strong{one row per case}, so it is only practical on a short
-window. Check the epidist issue tracker for the current status.
+\code{\link[epidist:as_epidist_marginal_model]{epidist::as_epidist_marginal_model()}} is the model built for aggregated
+counts: it works from the \verb{(delay, observation time)} cells the converter
+produces, so a month of cases costs a few hundred \emph{weights} rather than a
+few thousand rows. The latent and naive models are alternatives that expand
+the counts back to one row per case.
+}
+
+\section{The \code{now} and the observation window}{
+
+
+\pkg{epidist} uses \code{obs_date} (an "observation stopped at" instant) to
+correct for right truncation: any case with an event date near the end of
+the series is under-observed, because there was less time for its report to
+arrive. \code{tbl_now_to_epidist()} sets \code{obs_date <- get_now(x) + w} (the end
+of the \code{now} period, widened by the censoring window \code{w}) so the truncation
+clock ends at the object's own \code{now} rather than at the last reported case.
+The two are usually the same on a fully-observed series and can differ when
+the tail is silent or when \code{\link[=change_now]{change_now()}} moves \code{now} forward for a
+backtest. Pass \code{obs_date} explicitly to override.
+
+\code{tbl_now_from_epidist()} reads the same column back on the \code{"auto"} path:
+\code{now} on the returned \code{tbl_now} is \code{max(obs_date) - w}, so a round trip
+preserves it (up to the censoring-window widening).
+}
+
+\section{Revision axis (not modelled)}{
+
+
+\pkg{epidist} estimates one delay distribution -- the primary-to-secondary
+delay, which the converter maps to \code{event_date} -> \code{report_date}. It has no
+way to represent the revision axis, so \code{has_revision(x)},
+\code{revision_type}, \code{is_censored_revision} and the revision dates are
+\strong{dropped} from the epidist object. \code{tbl_now_to_epidist()} warns once when
+it drops them, so a user who declared a revision process is told the
+converter is not surfacing it.
 }
 
 \examples{
 \dontshow{if (requireNamespace("epidist", quietly = TRUE)) withAutoprint(\{ # examplesIf}
 ## --- Linelist epidist data (one row per case) ---
-ll <- epidist::as_epidist_linelist_data(
+ll <- suppressMessages(epidist::as_epidist_linelist_data(
   data.frame(
     pdate_lwr = as.Date(c("2020-03-01", "2020-03-02", "2020-03-02")),
     sdate_lwr = as.Date(c("2020-03-05", "2020-03-04", "2020-03-06"))
   ),
   pdate_lwr = "pdate_lwr", sdate_lwr = "sdate_lwr"
-)
+))
 # -> a linelist tbl_now ...
-nowll <- tbl_now_from_epidist(ll)
+nowll <- tbl_now_from_epidist(ll, verbose = FALSE)
 get_data_type(nowll)
 # ... and back to an epidist_linelist_data
-tbl_now_to_epidist(nowll)
+tbl_now_to_epidist(nowll, verbose = FALSE, quiet = TRUE)
 
 ## --- Aggregate epidist data (counts in an `n` column) ---
-agg <- epidist::as_epidist_aggregate_data(
+agg <- suppressMessages(epidist::as_epidist_aggregate_data(
   data.frame(
     pdate_lwr = as.Date(c("2020-03-01", "2020-03-02")),
     sdate_lwr = as.Date(c("2020-03-05", "2020-03-04")),
     n = c(7, 3)
   ),
   n = "n", pdate_lwr = "pdate_lwr", sdate_lwr = "sdate_lwr"
-)
+))
 ## -> a count-incidence tbl_now (case_count = "n") ...
-nowagg <- tbl_now_from_epidist(agg)
+nowagg <- tbl_now_from_epidist(agg, verbose = FALSE)
 get_data_type(nowagg)
 ## ... and back to an epidist_aggregate_data (auto-detected from the counts)
-tbl_now_to_epidist(nowagg)
+tbl_now_to_epidist(nowagg, verbose = FALSE, quiet = TRUE)
 \dontshow{\}) # examplesIf}
 }
 \seealso{
