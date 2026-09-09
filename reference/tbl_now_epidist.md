@@ -74,6 +74,7 @@ tbl_now_to_epidist(
   primary_upper = NULL,
   secondary_upper = NULL,
   censoring_window = NULL,
+  obs_date = NULL,
   verbose = TRUE,
   quiet = FALSE
 )
@@ -122,6 +123,13 @@ tbl_now_to_epidist(
   (`to` only) Optional positive integer width, in days, of the censoring
   windows. If `NULL` (default) it is derived from the `tbl_now`
   `event_units`.
+
+- obs_date:
+
+  (`to` only) Optional `Date` of length one (or a vector of length
+  `nrow(x)`) to use as epidist's `obs_date` column. If `NULL` (default)
+  it is set to `get_now(x) + censoring_window` so the right-truncation
+  clock ends at the object's own `now`.
 
 - quiet:
 
@@ -179,12 +187,39 @@ epidist's own `Assertion on 'data$n' failed` through.
 ## Model choice for count data
 
 [`epidist::as_epidist_marginal_model()`](https://epidist.epinowcast.org/reference/as_epidist_marginal_model.html)
-is the one built for aggregated counts, but with **epidist 0.4.0** and
-**primarycensored 1.5.1** it fails at Stan compilation (its generated
-code calls `primarycensored_lpmf()` with 8 arguments against a
-9-argument signature). The latent model is unaffected but expands counts
-to **one row per case**, so it is only practical on a short window.
-Check the epidist issue tracker for the current status.
+is the model built for aggregated counts: it works from the
+`(delay, observation time)` cells the converter produces, so a month of
+cases costs a few hundred *weights* rather than a few thousand rows. The
+latent and naive models are alternatives that expand the counts back to
+one row per case.
+
+## The `now` and the observation window
+
+epidist uses `obs_date` (an "observation stopped at" instant) to correct
+for right truncation: any case with an event date near the end of the
+series is under-observed, because there was less time for its report to
+arrive. `tbl_now_to_epidist()` sets `obs_date <- get_now(x) + w` (the
+end of the `now` period, widened by the censoring window `w`) so the
+truncation clock ends at the object's own `now` rather than at the last
+reported case. The two are usually the same on a fully-observed series
+and can differ when the tail is silent or when
+[`change_now()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
+moves `now` forward for a backtest. Pass `obs_date` explicitly to
+override.
+
+`tbl_now_from_epidist()` reads the same column back on the `"auto"`
+path: `now` on the returned `tbl_now` is `max(obs_date) - w`, so a round
+trip preserves it (up to the censoring-window widening).
+
+## Revision axis (not modelled)
+
+epidist estimates one delay distribution – the primary-to-secondary
+delay, which the converter maps to `event_date` -\> `report_date`. It
+has no way to represent the revision axis, so `has_revision(x)`,
+`revision_type`, `is_censored_revision` and the revision dates are
+**dropped** from the epidist object. `tbl_now_to_epidist()` warns once
+when it drops them, so a user who declared a revision process is told
+the converter is not surfacing it.
 
 ## See also
 
@@ -209,37 +244,19 @@ fits the same data with every supported package.
 
 ``` r
 ## --- Linelist epidist data (one row per case) ---
-ll <- epidist::as_epidist_linelist_data(
+ll <- suppressMessages(epidist::as_epidist_linelist_data(
   data.frame(
     pdate_lwr = as.Date(c("2020-03-01", "2020-03-02", "2020-03-02")),
     sdate_lwr = as.Date(c("2020-03-05", "2020-03-04", "2020-03-06"))
   ),
   pdate_lwr = "pdate_lwr", sdate_lwr = "sdate_lwr"
-)
-#> ℹ No primary event upper bound provided, using the primary event lower bound + 1 day as the assumed upper bound.
-#> ℹ No secondary event upper bound provided, using the secondary event lower bound + 1 day as the assumed upper bound.
-#> ℹ No observation time column provided, using 2020-03-07 as the observation date (the maximum of the secondary event upper bound).
+))
 # -> a linelist tbl_now ...
-nowll <- tbl_now_from_epidist(ll)
-#> 
-#> ── Converted epidist <data> into a <tbl_now> 
-#> • event_date: "pdate_lwr"
-#> • report_date: "sdate_lwr"
-#> • data_type: "linelist"
-#> • now: "2020-03-06"
-#> • event_units: "days"
-#> • report_units: "days"
-#> • format: linelist (lower bounds -> event/report dates)
+nowll <- tbl_now_from_epidist(ll, verbose = FALSE)
 get_data_type(nowll)
 #> [1] "linelist"
 # ... and back to an epidist_linelist_data
-tbl_now_to_epidist(nowll)
-#> 
-#> ── Converting <tbl_now> into epidist linelist data 
-#> • pdate_lwr <- "pdate_lwr", sdate_lwr <- "sdate_lwr"
-#> • censoring window: 1 day (from "days")
-#> • left-censored rows (is_censored_report): 0
-#> ℹ No observation time column provided, using 2020-03-07 as the observation date (the maximum of the secondary event upper bound).
+tbl_now_to_epidist(nowll, verbose = FALSE, quiet = TRUE)
 #> # A tibble: 3 × 10
 #>   ptime_lwr ptime_upr stime_lwr stime_upr obs_time pdate_lwr  pdate_upr 
 #>       <dbl>     <dbl>     <dbl>     <dbl>    <dbl> <date>     <date>    
@@ -249,45 +266,25 @@ tbl_now_to_epidist(nowll)
 #> # ℹ 3 more variables: sdate_lwr <date>, sdate_upr <date>, obs_date <date>
 
 ## --- Aggregate epidist data (counts in an `n` column) ---
-agg <- epidist::as_epidist_aggregate_data(
+agg <- suppressMessages(epidist::as_epidist_aggregate_data(
   data.frame(
     pdate_lwr = as.Date(c("2020-03-01", "2020-03-02")),
     sdate_lwr = as.Date(c("2020-03-05", "2020-03-04")),
     n = c(7, 3)
   ),
   n = "n", pdate_lwr = "pdate_lwr", sdate_lwr = "sdate_lwr"
-)
-#> ℹ No primary event upper bound provided, using the primary event lower bound + 1 day as the assumed upper bound.
-#> ℹ No secondary event upper bound provided, using the secondary event lower bound + 1 day as the assumed upper bound.
-#> ℹ No observation time column provided, using 2020-03-06 as the observation date (the maximum of the secondary event upper bound).
+))
 ## -> a count-incidence tbl_now (case_count = "n") ...
-nowagg <- tbl_now_from_epidist(agg)
-#> 
-#> ── Converted epidist <data> into a <tbl_now> 
-#> • event_date: "pdate_lwr"
-#> • report_date: "sdate_lwr"
-#> • data_type: "count-incidence"
-#> • now: "2020-03-05"
-#> • event_units: "days"
-#> • report_units: "days"
-#> • case_count: "n"
-#> • format: aggregate (lower bounds -> event/report dates, n -> case_count)
+nowagg <- tbl_now_from_epidist(agg, verbose = FALSE)
 get_data_type(nowagg)
 #> [1] "count-incidence"
 ## ... and back to an epidist_aggregate_data (auto-detected from the counts)
-tbl_now_to_epidist(nowagg)
-#> 
-#> ── Converting <tbl_now> into epidist aggregate data 
-#> • pdate_lwr <- "pdate_lwr", sdate_lwr <- "sdate_lwr"
-#> • censoring window: 1 day (from "days")
-#> • left-censored rows (is_censored_report): 0
-#> • n <- "n"
-#> ℹ No observation time column provided, using 2020-03-06 as the observation date (the maximum of the secondary event upper bound).
+tbl_now_to_epidist(nowagg, verbose = FALSE, quiet = TRUE)
 #> # A tibble: 2 × 11
 #>   ptime_lwr ptime_upr stime_lwr stime_upr obs_time pdate_lwr  pdate_upr 
 #>       <dbl>     <dbl>     <dbl>     <dbl>    <dbl> <date>     <date>    
 #> 1         0         1         4         5        5 2020-03-01 2020-03-02
 #> 2         1         2         3         4        5 2020-03-02 2020-03-03
-#> # ℹ 4 more variables: sdate_lwr <date>, sdate_upr <date>, n <dbl>,
-#> #   obs_date <date>
+#> # ℹ 4 more variables: sdate_lwr <date>, sdate_upr <date>, obs_date <date>,
+#> #   n <dbl>
 ```

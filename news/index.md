@@ -2,6 +2,44 @@
 
 ## tbl.now (development version)
 
+### Sharper `epidist` integration
+
+Findings from the epidist audit against `epidist` 0.4.1:
+
+- **Fix (right truncation)**:
+  [`tbl_now_to_epidist()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_epidist.md)
+  now writes an `obs_date` column set to `get_now(x) + w` (the end of
+  the `now` period, widened by the censoring window), instead of letting
+  epidist default it to `max(sdate_upr)`. Without this the
+  right-truncation clock ended at the last observed report, so a
+  silent-tail series or a backtest under-corrected silently. Matches
+  what `tbl_now_to_EpiNow2(target = "estimate_dist")` has always done.
+- **New argument**: `tbl_now_to_epidist(obs_date = )` lets the caller
+  override the auto-set value (a single `Date`, or one per row).
+- **Fix (round trip)**:
+  [`tbl_now_from_epidist()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_epidist.md)
+  now recovers `now` from epidist’s `obs_date` column on the `"auto"`
+  path (`now = max(obs_date) - w`), so `to_epidist() |> from_epidist()`
+  preserves `now`.
+- **New warning**:
+  [`tbl_now_to_epidist()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_epidist.md)
+  warns once (silenced by `quiet = TRUE`) when the input carries a
+  revision process (`has_revision(x)` or `is_censored_revision`),
+  because epidist models one delay and the revision axis is dropped from
+  the converted object.
+- **Docs**: the stale “Model choice for count data” section is removed;
+  the Stan compilation failure it warned about was fixed in `epidist`
+  0.4.1 (NEWS
+  [\#583](https://github.com/RodrigoZepeda/tbl.now/issues/583)).
+  [`as_epidist_marginal_model()`](https://epidist.epinowcast.org/reference/as_epidist_marginal_model.html)
+  is now recommended for aggregated counts.
+- **Tests**: new `tests/testthat/test-converter-epidist.R` locks the
+  three contracts above (obs_date on every format, round-trip recovery,
+  revision warning) and extends
+  [`tidy.epidist_fit()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.delay_distribution.md)’s
+  bookkeeping filter so epidist’s `n`/`weight`/`.observation`/`.row`
+  cannot leak into the tidy output as bogus parameters.
+
 ### Sharper `epinowcast` integration
 
 Findings from the epinowcast audit against `epinowcast` 0.7.0:

@@ -51,6 +51,22 @@
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="development version" id="tblnow-development-version">tbl.now (development version)<a class="anchor" aria-label="anchor" href="#tblnow-development-version"></a></h2>
 <div class="section level3">
+<h3 id="sharper-epidist-integration-development-version">Sharper <code>epidist</code> integration<a class="anchor" aria-label="anchor" href="#sharper-epidist-integration-development-version"></a></h3>
+<p>Findings from the epidist audit against <code>epidist</code> 0.4.1:</p>
+<ul><li>
+<strong>Fix (right truncation)</strong>: <code><a href="../reference/tbl_now_epidist.html">tbl_now_to_epidist()</a></code> now writes an <code>obs_date</code> column set to <code>get_now(x) + w</code> (the end of the <code>now</code> period, widened by the censoring window), instead of letting epidist default it to <code>max(sdate_upr)</code>. Without this the right-truncation clock ended at the last observed report, so a silent-tail series or a backtest under-corrected silently. Matches what <code>tbl_now_to_EpiNow2(target = "estimate_dist")</code> has always done.</li>
+<li>
+<strong>New argument</strong>: <code>tbl_now_to_epidist(obs_date = )</code> lets the caller override the auto-set value (a single <code>Date</code>, or one per row).</li>
+<li>
+<strong>Fix (round trip)</strong>: <code><a href="../reference/tbl_now_epidist.html">tbl_now_from_epidist()</a></code> now recovers <code>now</code> from epidist’s <code>obs_date</code> column on the <code>"auto"</code> path (<code>now = max(obs_date) - w</code>), so <code>to_epidist() |&gt; from_epidist()</code> preserves <code>now</code>.</li>
+<li>
+<strong>New warning</strong>: <code><a href="../reference/tbl_now_epidist.html">tbl_now_to_epidist()</a></code> warns once (silenced by <code>quiet = TRUE</code>) when the input carries a revision process (<code>has_revision(x)</code> or <code>is_censored_revision</code>), because epidist models one delay and the revision axis is dropped from the converted object.</li>
+<li>
+<strong>Docs</strong>: the stale “Model choice for count data” section is removed; the Stan compilation failure it warned about was fixed in <code>epidist</code> 0.4.1 (NEWS <a href="https://github.com/RodrigoZepeda/tbl.now/issues/583" class="external-link">#583</a>). <code><a href="https://epidist.epinowcast.org/reference/as_epidist_marginal_model.html" class="external-link">as_epidist_marginal_model()</a></code> is now recommended for aggregated counts.</li>
+<li>
+<strong>Tests</strong>: new <code>tests/testthat/test-converter-epidist.R</code> locks the three contracts above (obs_date on every format, round-trip recovery, revision warning) and extends <code><a href="../reference/tidy.delay_distribution.html">tidy.epidist_fit()</a></code>’s bookkeeping filter so epidist’s <code>n</code>/<code>weight</code>/<code>.observation</code>/<code>.row</code> cannot leak into the tidy output as bogus parameters.</li>
+</ul></div>
+<div class="section level3">
 <h3 id="sharper-epinowcast-integration-development-version">Sharper <code>epinowcast</code> integration<a class="anchor" aria-label="anchor" href="#sharper-epinowcast-integration-development-version"></a></h3>
 <p>Findings from the epinowcast audit against <code>epinowcast</code> 0.7.0:</p>
 <ul><li>
