@@ -1125,7 +1125,14 @@ tidy.epidist_fit <- function(x, probs = NULL, level = 0.95, newdata = NULL,
   draws <- epidist::add_mean_sd(draws)
 
   # Everything except the bookkeeping columns is a parameter worth reporting.
-  bookkeeping <- c("draw", "index", ".draw", ".chain", ".iteration", "obs")
+  # epidist's marginal model carries `n` / `weight` on the aggregate path, and
+  # `predict_delay_parameters()` may append `.observation` / `.row`; neither is a
+  # delay parameter but both are numeric, so they leak into the output as bogus
+  # "parameters" without this filter. Add here whenever epidist ships a new one.
+  bookkeeping <- c(
+    "draw", "index", ".draw", ".chain", ".iteration", ".observation", ".row",
+    "obs", "n", "weight"
+  )
   terms <- setdiff(names(draws), bookkeeping)
   terms <- terms[vapply(draws[terms], is.numeric, logical(1))]
 

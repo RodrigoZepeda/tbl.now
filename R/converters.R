@@ -1963,6 +1963,10 @@ tbl_now_from_data_table <- function(data, event_date, report_date, ...,
 #' @param censoring_window (`to` only) Optional positive integer width, in days,
 #'   of the censoring windows. If `NULL` (default) it is derived from the
 #'   `tbl_now` `event_units`.
+#' @param obs_date (`to` only) Optional `Date` of length one (or a vector of
+#'   length `nrow(x)`) to use as \pkg{epidist}'s `obs_date` column. If `NULL`
+#'   (default) it is set to `get_now(x) + censoring_window` so the
+#'   right-truncation clock ends at the object's own `now`.
 #' @param verbose Logical. Print the choices that were made.
 #' @param quiet Logical. A *different* channel from `verbose`: `verbose`
 #'   controls the informational summary of what the conversion did, while `quiet`
@@ -1976,33 +1980,33 @@ tbl_now_from_data_table <- function(data, event_date, report_date, ...,
 #'
 #' @examplesIf requireNamespace("epidist", quietly = TRUE)
 #' ## --- Linelist epidist data (one row per case) ---
-#' ll <- epidist::as_epidist_linelist_data(
+#' ll <- suppressMessages(epidist::as_epidist_linelist_data(
 #'   data.frame(
 #'     pdate_lwr = as.Date(c("2020-03-01", "2020-03-02", "2020-03-02")),
 #'     sdate_lwr = as.Date(c("2020-03-05", "2020-03-04", "2020-03-06"))
 #'   ),
 #'   pdate_lwr = "pdate_lwr", sdate_lwr = "sdate_lwr"
-#' )
+#' ))
 #' # -> a linelist tbl_now ...
-#' nowll <- tbl_now_from_epidist(ll)
+#' nowll <- tbl_now_from_epidist(ll, verbose = FALSE)
 #' get_data_type(nowll)
 #' # ... and back to an epidist_linelist_data
-#' tbl_now_to_epidist(nowll)
+#' tbl_now_to_epidist(nowll, verbose = FALSE, quiet = TRUE)
 #'
 #' ## --- Aggregate epidist data (counts in an `n` column) ---
-#' agg <- epidist::as_epidist_aggregate_data(
+#' agg <- suppressMessages(epidist::as_epidist_aggregate_data(
 #'   data.frame(
 #'     pdate_lwr = as.Date(c("2020-03-01", "2020-03-02")),
 #'     sdate_lwr = as.Date(c("2020-03-05", "2020-03-04")),
 #'     n = c(7, 3)
 #'   ),
 #'   n = "n", pdate_lwr = "pdate_lwr", sdate_lwr = "sdate_lwr"
-#' )
+#' ))
 #' ## -> a count-incidence tbl_now (case_count = "n") ...
-#' nowagg <- tbl_now_from_epidist(agg)
+#' nowagg <- tbl_now_from_epidist(agg, verbose = FALSE)
 #' get_data_type(nowagg)
 #' ## ... and back to an epidist_aggregate_data (auto-detected from the counts)
-#' tbl_now_to_epidist(nowagg)
+#' tbl_now_to_epidist(nowagg, verbose = FALSE, quiet = TRUE)
 #' @section Delays of zero, and the lognormal:
 #'
 #' A delay distribution with a **point mass at zero** cannot be fitted with a
@@ -2045,12 +2049,37 @@ tbl_now_from_data_table <- function(data, event_date, report_date, ...,
 #'
 #' @section Model choice for count data:
 #'
-#' [epidist::as_epidist_marginal_model()] is the one built for aggregated counts,
-#' but with **epidist 0.4.0** and **primarycensored 1.5.1** it fails at Stan
-#' compilation (its generated code calls `primarycensored_lpmf()` with 8
-#' arguments against a 9-argument signature). The latent model is unaffected but
-#' expands counts to **one row per case**, so it is only practical on a short
-#' window. Check the epidist issue tracker for the current status.
+#' [epidist::as_epidist_marginal_model()] is the model built for aggregated
+#' counts: it works from the `(delay, observation time)` cells the converter
+#' produces, so a month of cases costs a few hundred *weights* rather than a
+#' few thousand rows. The latent and naive models are alternatives that expand
+#' the counts back to one row per case.
+#'
+#' @section The `now` and the observation window:
+#'
+#' \pkg{epidist} uses `obs_date` (an "observation stopped at" instant) to
+#' correct for right truncation: any case with an event date near the end of
+#' the series is under-observed, because there was less time for its report to
+#' arrive. `tbl_now_to_epidist()` sets `obs_date <- get_now(x) + w` (the end
+#' of the `now` period, widened by the censoring window `w`) so the truncation
+#' clock ends at the object's own `now` rather than at the last reported case.
+#' The two are usually the same on a fully-observed series and can differ when
+#' the tail is silent or when [change_now()] moves `now` forward for a
+#' backtest. Pass `obs_date` explicitly to override.
+#'
+#' `tbl_now_from_epidist()` reads the same column back on the `"auto"` path:
+#' `now` on the returned `tbl_now` is `max(obs_date) - w`, so a round trip
+#' preserves it (up to the censoring-window widening).
+#'
+#' @section Revision axis (not modelled):
+#'
+#' \pkg{epidist} estimates one delay distribution -- the primary-to-secondary
+#' delay, which the converter maps to `event_date` -> `report_date`. It has no
+#' way to represent the revision axis, so `has_revision(x)`,
+#' `revision_type`, `is_censored_revision` and the revision dates are
+#' **dropped** from the epidist object. `tbl_now_to_epidist()` warns once when
+#' it drops them, so a user who declared a revision process is told the
+#' converter is not surfacing it.
 #'
 #' @seealso
 #' [add] and [revision_delay], since \pkg{epidist} is about
@@ -2118,6 +2147,19 @@ tbl_now_from_epidist <- function(data, ..., format = c("auto", "interval"),
   }
   if (is.null(dots$event_units)) dots$event_units <- inferred_units
   if (is.null(dots$report_units)) dots$report_units <- dots$event_units
+
+  # Recover the `now` from epidist's `obs_date` column when the caller did not
+  # override it: `tbl_now_to_epidist()` writes `obs_date = now + w`, so the
+  # inverse is `now = max(obs_date) - w`. Without this, the round trip resets
+  # `now` to `max(report_date)` and a silent-tail series loses the value it was
+  # constructed with.
+  inferred_win_days <- .epidist_window_days(inferred_units)
+  if (is.null(dots$now) && "obs_date" %in% colnames(observations)) {
+    obs_max <- suppressWarnings(max(observations[["obs_date"]], na.rm = TRUE))
+    if (is.finite(obs_max)) {
+      dots$now <- as.Date(obs_max) - inferred_win_days
+    }
+  }
 
   # Decode left-censoring: a secondary window of the form [origin, report]
   # (lower bound at epidist time 0, i.e. the earliest event date) means the
@@ -3791,10 +3833,10 @@ tbl_now_to_epidist <- function(x, ...,
                                primary_upper = NULL,
                                secondary_upper = NULL,
                                censoring_window = NULL,
+                               obs_date = NULL,
                                verbose = TRUE, quiet = FALSE) {
   .assert_tbl_now(x, "tbl_now_to_epidist")
   .need_pkg("epidist")
-  #.warn_lossy_conversion("epidist", quiet)
   format <- match.arg(format)
 
   # A converter returns a foreign object, so the caller's grouping has nowhere
@@ -3802,6 +3844,12 @@ tbl_now_to_epidist <- function(x, ...,
   # and abort. Every other converter already tolerates a grouped input; this one
   # did not, and the error named `keep` rather than the grouping.
   x <- ungroup(x)
+
+  # epidist models one delay (primary -> secondary). A tbl_now revision process
+  # has no place in that schema, so `revision_date`, `revision_type` and
+  # `is_censored_revision` are dropped. Say so, once, when the caller declared
+  # one -- rather than silently ignore it (DEVELOPMENT_SKILL Definition of Done).
+  .warn_epidist_revision_dropped(x, quiet)
 
   # Materialise the lazy temporal-effect columns so they are carried as extra
   # covariate columns on the epidist data.
@@ -3846,10 +3894,17 @@ tbl_now_to_epidist <- function(x, ...,
         epidist_data, dplyr::select(observations, dplyr::all_of(carried_cols))
       )
     }
+    interval_win <- .epidist_window_days(get_event_units(x))
+    obs_date_value <- .epidist_resolve_obs_date(
+      obs_date, x, interval_win, nrow(epidist_data)
+    )
+    epidist_data[["obs_date"]] <- obs_date_value
     if (verbose) {
       cli::cli_h3("Converting {.cls tbl_now} into {.pkg epidist} interval data")
       cli::cli_ul()
       cli::cli_li("pdate_lwr/sdate_lwr <- dates, pdate_upr/sdate_upr <- covariates")
+      cli::cli_li("obs_date <- {.val {as.character(obs_date_value[1])}} \\
+                   (the {.field now}, widened to cover the censoring windows)")
       if (length(carried_cols) > 0) {
         cli::cli_li("kept columns: {.val {carried_cols}}")
       }
@@ -3860,7 +3915,8 @@ tbl_now_to_epidist <- function(x, ...,
         epidist::as_epidist_linelist_data,
         c(list(epidist_data),
           list(pdate_lwr = "pdate_lwr", pdate_upr = "pdate_upr",
-               sdate_lwr = "sdate_lwr", sdate_upr = "sdate_upr"),
+               sdate_lwr = "sdate_lwr", sdate_upr = "sdate_upr",
+               obs_date = "obs_date"),
           list(...))
       ),
       quiet
@@ -3912,6 +3968,16 @@ tbl_now_to_epidist <- function(x, ...,
   win          <- windows$width
   censored     <- windows$censored
 
+  # `obs_date` is when observation STOPPED. epidist uses it for right-truncation
+  # correction: any case whose event date is close to obs_date is under-observed.
+  # Setting it to `max(sdate_upr)` (epidist's default when the column is absent)
+  # collapses the truncation clock to the last observed report -- which is
+  # exactly the tail the nowcast is about, so the correction stops working the
+  # moment the last period is silent. Use the object's own `now`, widened to
+  # cover the censoring window, matching `tbl_now_to_EpiNow2(target = "estimate_dist")`.
+  obs_date_value <- .epidist_resolve_obs_date(obs_date, x, win, nrow(epidist_data))
+  epidist_data[["obs_date"]] <- obs_date_value
+
   # Strata are carried as ordinary columns so they can be used as covariates in an
   # epidist model formula (epidist estimates the delay distribution; it has no
   # dedicated grouping argument, so the strata travel as data columns).
@@ -3924,7 +3990,8 @@ tbl_now_to_epidist <- function(x, ...,
 
   constructor_args <- list(
     pdate_lwr = "pdate_lwr", pdate_upr = "pdate_upr",
-    sdate_lwr = "sdate_lwr", sdate_upr = "sdate_upr"
+    sdate_lwr = "sdate_lwr", sdate_upr = "sdate_upr",
+    obs_date  = "obs_date"
   )
   if (format == "aggregate") {
     epidist_data[["n"]] <- obs[[count_col]]
@@ -3936,6 +4003,8 @@ tbl_now_to_epidist <- function(x, ...,
     cli::cli_ul()
     cli::cli_li("pdate_lwr <- {.val {event_col}}, sdate_lwr <- {.val {report_col}}")
     cli::cli_li("censoring window: {.val {win}} day{?s} (from {.val {units}})")
+    cli::cli_li("obs_date <- {.val {as.character(obs_date_value[1])}} \\
+                 (the {.field now}, widened to cover the censoring windows)")
     cli::cli_li("left-censored rows ({.field is_censored_report}): {.val {sum(censored)}}")
     if (format == "aggregate") cli::cli_li("n <- {.val {count_col}}")
     if (length(carry_cols) > 0) {
@@ -3984,6 +4053,83 @@ tbl_now_to_epidist <- function(x, ...,
     return(suppressMessages(force(expr)))
   }
   force(expr)
+}
+
+#' Resolve the `obs_date` column for an epidist object
+#'
+#' Wrap the two rules in one place so the interval branch and the
+#' auto/linelist/aggregate branch cannot drift apart.
+#'
+#' * `NULL` (default): `obs_date <- get_now(x) + width` -- the end of the `now`
+#'   period, so epidist's right-truncation clock ends where the object says
+#'   observation stopped, not at the last observed report.
+#' * A single `Date`: recycled to every row.
+#' * A vector of length `n_rows`: used as-is (assumed already `Date`-coerced).
+#'
+#' Length-mismatch is an error rather than silent recycling. epidist itself
+#' asserts `obs_date >= sdate_upr` on every row.
+#'
+#' @param obs_date The `obs_date` argument as passed to `tbl_now_to_epidist()`.
+#' @param x The `tbl_now`.
+#' @param width Censoring-window width in days (from `.delay_censoring_windows()`).
+#' @param n_rows Row count of the epidist data being built.
+#'
+#' @return A `Date` vector of length `n_rows`.
+#'
+#' @keywords internal
+#' @noRd
+.epidist_resolve_obs_date <- function(obs_date, x, width, n_rows) {
+  if (is.null(obs_date)) {
+    return(rep(get_now(x) + width, n_rows))
+  }
+  obs_date <- as.Date(obs_date)
+  if (length(obs_date) == 1L) {
+    return(rep(obs_date, n_rows))
+  }
+  if (length(obs_date) != n_rows) {
+    cli::cli_abort(c(
+      "{.arg obs_date} must have length 1 or {.val {n_rows}} (nrow of the \\
+       resulting epidist data), not {.val {length(obs_date)}}."
+    ))
+  }
+  obs_date
+}
+
+#' Warn once when a revision-carrying `tbl_now` is handed to epidist
+#'
+#' epidist models one delay distribution (primary -> secondary), which the
+#' converter maps to event_date -> report_date. There is no place for the
+#' revision axis on that schema, so `revision_date`, `revision_type` and
+#' `is_censored_revision` are dropped. Say so once, when the caller declared any
+#' of them, so a user who set them is told the converter is not surfacing them.
+#'
+#' @param x A `tbl_now`.
+#' @param quiet Logical; when `TRUE`, no warning is emitted.
+#'
+#' @return `NULL`, invisibly.
+#'
+#' @keywords internal
+#' @noRd
+.warn_epidist_revision_dropped <- function(x, quiet = FALSE) {
+  if (isTRUE(quiet)) {
+    return(invisible(NULL))
+  }
+  has_rev  <- isTRUE(has_revision(x))
+  has_flag <- !is.null(get_is_censored_revision(x))
+  if (!has_rev && !has_flag) {
+    return(invisible(NULL))
+  }
+  cli::cli_warn(c(
+    "!" = "{.pkg epidist} models one delay (primary -> secondary), so the \\
+           revision process is dropped when converting.",
+    "i" = "{.field revision_date}, {.field revision_type} and \\
+           {.field is_censored_revision} are not surfaced on the resulting \\
+           epidist object.",
+    "i" = "Fit the revision delay separately by rebuilding {.arg x} with the \\
+           revision as its secondary event, or silence this with \\
+           {.code quiet = TRUE}."
+  ))
+  invisible(NULL)
 }
 
 #' @rdname tbl_now_tsibble
