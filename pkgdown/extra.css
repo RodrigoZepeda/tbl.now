@@ -1,3 +1,23 @@
+.small-table table {
+  font-size: 0.8rem;
+}
+
+.small-table th,
+.small-table td {
+  padding: 0.2rem 0.4rem;
+}
+
+.small-table th:first-child,
+.small-table td:first-child {
+  white-space: normal;
+  min-width: 220px;
+}
+
+.small-table th:not(:first-child),
+.small-table td:not(:first-child) {
+  white-space: nowrap;
+}
+
 /* ==========================================================================
    COLOUR TOKENS — light and dark.
 

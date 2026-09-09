@@ -21,7 +21,7 @@ Depends:
     R (>= 4.2.0)
 Suggests:
     almanac,
-    baselinenowcast,
+    baselinenowcast (>= 0.2.1),
     diseasenowcasting (>= 2.3.0),
     data.table,
     epidist,

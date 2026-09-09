@@ -1,10 +1,10 @@
 ---
-title: "One dataset, many nowcasts: using tbl.now with different modelling packages"
+title: "Using tbl.now with different modelling packages"
 output: rmarkdown::html_vignette
 bibliography: ../references.bib
 link-citations: true
 vignette: >
-  %\VignetteIndexEntry{One dataset, many nowcasts: using tbl.now with different modelling packages}
+  %\VignetteIndexEntry{Using tbl.now with different modelling packages}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -22,6 +22,12 @@ knitr::opts_chunk$set(
 #
 # Set TBL_NOW_RUN_MODELS=true to fit everything live instead. That is what the
 # precompute does, which is why the two can no longer drift apart.
+
+options(tibble.width = Inf, width = 160, pillar.width = 160)
+options(pillar.print_max = 5, pillar.print_min = 5, 
+        tibble.print_min = 5, dplyr.print_min = 5,
+        tibble.print_max = 5, dplyr.print_max = 5)
+
 run_models <- isTRUE(as.logical(Sys.getenv("TBL_NOW_RUN_MODELS", "false")))
 
 has <- function(pkg) requireNamespace(pkg, quietly = TRUE)
@@ -31,11 +37,11 @@ has <- function(pkg) requireNamespace(pkg, quietly = TRUE)
 
 Preparing the same data different ways for the different nowcasting models can be tedious and
 error-prone. This is exactly what [`tbl.now`](https://rodrigozepeda.github.io/tbl.now/)
-helps with. You can describe your data once by specifying which column is the event date, which
-is the report date, whether your data is linelist or has counts (and what _those_ counts mean!) and `tbl.now` will hand it to each modelling package in the format that package expects. 
+helps with. You can **describe your data once** by specifying which column is the `event_date`, which is the `report_date`, whether your data is linelist or has counts (and what _those_ counts mean!) and `tbl.now` will hand it to each modelling package in the format that package expects. 
 
-> In this vignette we take a single dataset (`covid_colombia`), and from that one object, use several different nowcasting / delay-estimation tools:
+In this vignette we take a single dataset (`covid_colombia`), and from that one object, use several different nowcasting / delay-estimation tools:
 
+<div class="small-table">
 | Package | What it does | Additional requirements | `tbl.now` converter | `run_nowcast()` method |
 |---|---|---|---|---|
 | [diseasenowcasting](https://rodrigozepeda.github.io/diseasenowcasting/) | flexible Bayesian nowcast (delay + epidemic processes) | none (uses `RTMB`) | consumes a `tbl_now` **directly** | `"diseasenowcasting"` |
@@ -45,30 +51,22 @@ is the report date, whether your data is linelist or has counts (and what _those
 | [NobBS](https://cran.r-project.org/package=NobBS) | Nowcasting by Bayesian Smoothing | **JAGS** | `tbl_now_to_nobbs()` | `"NobBS"` |
 | [surveillance](https://cran.r-project.org/package=surveillance) | the classic Höhle & an der Heiden nowcast | none for the method used here (**JAGS** for `bayes.trunc.ddcp`) | `tbl_now_to_surveillance()` | `"surveillance"` |
 | [EpiNow2](https://epiforecasts.io/EpiNow2/) | renewal-equation $R_t$, reporting truncation, and delay distributions | **Stan** (`cmdstanr`) | `tbl_now_to_EpiNow2()` | `"EpiNow2"` |
+</div> 
 
-You do not need to be an expert in any of them to follow along, the point is to show
-how little changes on *your* side when you switch models.
+You do not need to be an expert in any of these packages. The point of this vignette is to show you how to use any of them for nowcasting. 
 
 ::: {.alert .alert-info}
-This article shows how to use each package "by hand": convert, fit, and evaluate with `tidy()`.
-The `tbl.now` package also contains the experimental `run_nowcast()` function
-which allow you to do the same three steps in one call. See the companion
-article: [**One call, many models**](ensemble-nowcasting.html) to see
-how to use the `run_nowcast` function for any
-of the aforementioned methods and generate ensemble nowcasts. 
+This article shows you to to use each package individually. The `tbl.now` package contains the `run_nowcast()` function which allows you run nowcast models without requiring knowledge of each of the package's frameworks. We recommend reading that article  [**One call, many models**](ensemble-nowcasting.html) first if your priority is to do nowcasts. Read this one if your prioirity is understanding how to use `tbl.now` for a **specific** package. And in that case, read the description on [The data](#the-data) and then go to your favourite package's section. 
 :::
 
 ::: {.alert .alert-warning}
-**Note** This article aims only to show how to use each package for nowcasting.
-We are purposefully not using the optimal models from each 
-package for _this particular dataset_. Our goal is just to show
-_how one uses them_. Please **DO NOT CONCLUDE WHICH PACKAGE IS BEST BASED ON 
-THE RESULTS FROM THIS TUTORIAL**. 
+This article solely aims to show how to use `tbl.now` within each package's own framework. We are purposefully not using or searching for the most optimal models from each 
+package. Please **DO NOT CONCLUDE WHICH PACKAGE IS BEST BASED ON  THE RESULTS FROM THIS TUTORIAL**. 
 :::
 
-::: {.alert .alert-warning}
-**Each of these is a separate package, and `tbl.now` does not install any of
-them.** It only knows how to *talk* to them. Install whichever you actually want
+::: {.alert .alert-info}
+Each of these is a separate package, and `tbl.now` does not install any of
+them. It only knows how to *talk* to them. Install whichever you actually want
 to use. Note that some also need software outside R (the *Additional
 requirements* column above) like **Stan** or **JAGS**. 
 
@@ -77,23 +75,24 @@ requirements* column above) like **Stan** or **JAGS**.
 install.packages(c("baselinenowcast", "EpiNow2", "NobBS", "surveillance"))
 
 # Not on CRAN:
-install.packages("cmdstanr",   repos = c('https://stan-dev.r-universe.dev', getOption("repos")))
-install.packages("epidist",    repos = c('https://epinowcast.r-universe.dev', 
-getOption("repos")))
-install.packages("epinowcast", repos = c("https://epinowcast.r-universe.dev",
-getOption("repos")))
-install.packages("diseasenowcasting", repos = c("https://rodrigozepeda.r-universe.dev",
-getOption("repos")))
+install.packages("epidist", repos = c('https://epinowcast.r-universe.dev', getOption("repos")))
+install.packages("epinowcast", repos = c("https://epinowcast.r-universe.dev", getOption("repos")))
+install.packages("diseasenowcasting", repos = c("https://rodrigozepeda.r-universe.dev", getOption("repos")))
+
+# Additional installation for epidist/epinowcast:
+install.packages("cmdstanr", repos = c('https://stan-dev.r-universe.dev', getOption("repos")))
 ```
 
 :::
 
 ## The data
 
-`tbl.now` ships with `covid_colombia`, daily COVID-19 case counts from
+`tbl.now` includes `covid_colombia`, daily COVID-19 case counts from
 Colombia's national surveillance system (INS) from 2020 to 2023. Each row is a
 `(notification_date, diagnosis_date, sex)` combination with a case count `n`. It includes
-notification date as the date the case was first notified (`event_date`), and the date the laboratory diagnosis was registered (`report_date`). The gap between the two is the reporting delay.  **OUR GOAL IS TO NOWCAST THE CASES AS THEY HAPPEN ACCORDING TO `notification_date`**.
+notification date as the date the case was first notified (`event_date`), and the date the laboratory diagnosis was registered (`report_date`). The gap between the two is the reporting delay.  
+
+> **OUR GOAL IS TO NOWCAST THE CASES AS THEY HAPPEN ACCORDING TO `notification_date`**.
 
 ```{r setup, message=FALSE}
 library(dplyr)
@@ -109,7 +108,7 @@ head(covid_colombia)
 
 We  will build a single `tbl_now`. To do so, we state which column is the event date
 (`notification_date`), which is the report date (`diagnosis_date`), and which
- the counts (`n`); `tbl.now` infers the rest — that the grid is daily, and
+ the counts (`n`); `tbl.now` infers the rest: that the grid is daily, and
 that the "now" is the last report date.
 
 For this example we will cut **both** dates at the start of April 2021 (Colombia's third wave). The example will assume we are back on that date, with only the information available until then (`now = "2021-04-01"`). No data observed after that date is kept: 
@@ -119,7 +118,7 @@ cutoff <- as.Date("2021-04-01")
 
 #Filter to simulate being back on April 2021
 covid <- covid_colombia |>
-  filter(notification_date < cutoff, diagnosis_date < cutoff)
+  filter(notification_date < cutoff & diagnosis_date < cutoff)
 
 #Create the tbl_now object
 covid_now <- covid |>
@@ -138,15 +137,21 @@ covid_now
 **About the warning.** `sex` is in the data but was not declared as 
 a covariate or strata, so each
 `(notification_date, diagnosis_date)` cell has two rows (one per sex). 
-**You can ignore the warning.** The object will be
-valid, and every `tbl_now_to_*()` converter pools undeclared columns for you, so
-this article's pooled fits are one series summed over `sex`, exactly as intended.
+One can correct it by summing the `(notification_date, diagnosis_date)` combinations by sex with
+to count:
+
+```{r, eval = FALSE}
+covid_now |> 
+  to_count(to = "count-incidence")
+```
+
+Though for the purpose of this tutorial we will **ignore the warning.** That is because
+we will also create a second `tbl.now` from this one. The new one will be stratified by sex 
+to show how the related packages work both in the stratified and not stratified case. 
 :::
 
-That is `r format(sum(covid$n), big.mark = ",")` cases over
-`r dplyr::n_distinct(covid$notification_date)` days, from March 2020 to
-`r format(get_now(covid_now))`. Everything in this article — every fit, every
-figure — is built from this dataset.
+Everything in this article is built from either this dataset or a more complete one
+with strata and temporal effects. 
 
 ### A more complex object: strata and temporal effects
 
@@ -169,16 +174,14 @@ covid_seasonal <- covid_now |>
 
 
 ::: {.alert .alert-info}
-**A note on series length.** This dataset carries 2.3M cases, and what that costs
-depends entirely on whether a package counts rows or reads counts:
+**A note on series length.** This dataset carries `r round(sum(covid_now$n)/1000000, 2)` million cases. And not all packages will be able to handle that amount of data. Specifically we will see that:
 
-* `diseasenowcasting` takes the **whole** series untrimmed. Nothing is dropped.
-* `baselinenowcast` also keeps every day, but the **delays** are capped with
-  `max_delay = 30`. That is a modelling assumption, not a workaround: the long
-  tail carries under 1% of cases, and one 185-day straggler otherwise gives the
-  triangle 186 columns instead of 30.
+* `diseasenowcasting` can take the **whole** series.
+* `baselinenowcast` can keeps every day, but the **delays** will be capped with
+  `max_delay = 30` (the real maximum delay in the data corresponds to `r max(covid_now$.delay)` days).
 * The remaining packages (`NobBS`, `surveillance`, `epinowcast` and `epidist`)
-  are trimmed before converting as the time they take to run the models is prohibitively expensive. 
+  will be  trimmed both in the number of events and delays as the time they take 
+  to run the models is prohibitively expensive. 
 :::
 
 ```{r comparison-load, echo=FALSE, message=FALSE, purl=FALSE}
@@ -322,9 +325,8 @@ just hand it the object:
 ### Simple nowcast
 
 ```{r dnc, eval=run_models && has("diseasenowcasting")}
-# TODO: When the diseasenowcasting 2.3.0 ships without the tidy()
-# remove the :: and use library
-dnc_fit <- diseasenowcasting::nowcast(covid_now)
+library(diseasenowcasting)
+dnc_fit <- nowcast(covid_now)
 
 dnc_fit
 ```
@@ -348,7 +350,7 @@ show_tidy("diseasenowcasting")
 `diseasenowcasting` reaches into the `tbl_now` itself, so the enriched object needs no extra arguments: it picks up the `sex` stratum and the day-of-week / seasonal effect columns automatically.
 
 ```{r dnc-teff, eval=run_models && has("diseasenowcasting")}
-dnc_seasonal <- diseasenowcasting::nowcast(covid_seasonal)   # strata and effects used automatically
+dnc_seasonal <- nowcast(covid_seasonal)   # strata and effects used automatically
 ```
 
 ```{r dnc-teff-out, echo=FALSE, purl=FALSE, eval=!run_models}
@@ -396,8 +398,7 @@ covid_triangle[1:5, 1:6]
 
 ::: {.alert .alert-info}
 **Why cap the delays?**  The reporting
-triangle keeps every one of the `r nrow(covid_triangle)` event dates. 
-This makes the fit very slow for a tail that carries well under 1% of cases. 
+triangle keeps every one of the `r nrow(covid_triangle)` event dates. Because the maximum delay in our data is `r max(covid_now$.delay)`  days it would mean a matrix of `r nrow(covid_triangle)` $\times$  `r max(covid_now$.delay)` $=$ `r nrow(covid_triangle)*max(covid_now$.delay)` entries. This makes the fit extremely slow.
 :::
 
 From here you can follow `baselinenowcast`'s own workflow. For example calling
@@ -417,31 +418,42 @@ nowcast_samples <- baselinenowcast(
 
 ### With strata and effects.
 
-To nowcast each stratum we need to specify a
-`format = "triangle_list"`. This creates one reporting-triangle per stratum and
-returns them as a list.
+`baselinenowcast` (>= 0.2.1) takes a long tidy `data.frame` and nowcasts every
+stratum in one call, via its `strata_cols` argument. Use `format = "auto"`
+(the default) or `format = "long"` on `tbl_now_to_baselinenowcast()` to get
+that shape from a stratified `tbl_now`:
 
 ```{r bln-strata, eval=has("baselinenowcast"), message=FALSE, warning=FALSE}
-# One reporting triangle per stratum, straight from the object.
-triangles_by_stratum <- tbl_now_to_baselinenowcast(
+# Long tidy data frame with the strata columns present; `format = "auto"`
+# is what `tbl_now_to_baselinenowcast()` returns when the object has strata.
+by_stratum <- tbl_now_to_baselinenowcast(
   covid_seasonal,
-  max_delay = 30, 
-  format    = "triangle_list",
+  max_delay = 30,
   verbose   = FALSE
 )
 ```
 
 ```{r bln-strata-print, eval=has("baselinenowcast"), warning=FALSE}
-triangles_by_stratum
+head(by_stratum)
 ```
 
-This can be used to nowcast each stratum via `lapply`:
+Hand it to `baselinenowcast(strata_cols = ...)` for one fit per stratum, or
+opt into `strata_sharing = "delay"` / `"uncertainty"` to share the delay PMF
+or the uncertainty parameters across strata:
 
 ```{r bln-strata-fit, eval=run_models && has("baselinenowcast"), message=FALSE}
-# One nowcast per triangle, each trimmed the same way.
-nowcasts_by_stratum <- triangles_by_stratum |>
-  lapply(\(tri) baselinenowcast(tri, output_type = "samples", draws = 1000))
+# One `baselinenowcast_df` covering every stratum.
+nowcasts_by_stratum <- baselinenowcast(
+  by_stratum,
+  strata_cols = get_strata(covid_seasonal),
+  output_type = "samples", draws = 1000
+)
 ```
+
+If you want to inspect each stratum's reporting triangle on its own,
+`format = "triangle_list"` still returns one triangle per stratum -- but the
+strata-aware fit above is what `run_nowcast(engine_baselinenowcast())` does
+under the hood.
 
 In both stratified and unstratified cases the predictions can be recovered with `tidy`:
 

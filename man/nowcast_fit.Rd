@@ -26,6 +26,7 @@
   draws = 1000,
   delays_unit = NULL,
   max_delay = NULL,
+  strata_sharing = "none",
   quantile_levels = nowcast_quantile_levels(),
   verbose = TRUE
 )

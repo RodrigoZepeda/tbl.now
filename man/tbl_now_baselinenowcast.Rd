@@ -19,7 +19,7 @@ tbl_now_from_baselinenowcast(
 tbl_now_to_baselinenowcast(
   x,
   ...,
-  format = c("matrix", "long", "triangle_list"),
+  format = c("auto", "matrix", "long", "triangle_list"),
   delays_unit = NULL,
   max_delay = NULL,
   complete = "auto",
@@ -51,18 +51,27 @@ from the object's time units when the event and report units agree and are
 
 \item{format}{For \code{to}, one of:
 \itemize{
-\item \code{"matrix"} (default) -- a single \code{\link[baselinenowcast:as_reporting_triangle]{baselinenowcast::as_reporting_triangle()}}
-matrix. A triangle has no strata dimension, so any strata are \strong{pooled}
-(with a warning).
+\item \code{"auto"} (default) -- \code{"matrix"} when the object has no strata and
+\code{"long"} when it does. That is the shape \code{\link[baselinenowcast:baselinenowcast]{baselinenowcast::baselinenowcast()}}
+consumes natively in each case: it takes a \code{reporting_triangle} when there
+is only one series to fit, and a long \code{data.frame} with a \code{strata_cols}
+argument when there is more than one. Pick a specific format if you need
+a particular return type.
+\item \code{"matrix"} -- a single \code{\link[baselinenowcast:as_reporting_triangle]{baselinenowcast::as_reporting_triangle()}} matrix.
+A triangle has no strata dimension, so any strata are \strong{pooled} (with a
+warning).
 \item \code{"long"} -- a tidy data frame, which can also carry the strata,
 covariates, temporal-effect columns and the censoring indicator.
+\code{\link[baselinenowcast:baselinenowcast]{baselinenowcast::baselinenowcast()}} accepts this shape directly, using
+its \code{strata_cols} argument to name the strata columns.
 \item \code{"triangle_list"} -- one reporting triangle \strong{per stratum}, as a
-\link{tbl_now_triangle_list}. Use this instead of pooling when you want a
-nowcast per stratum. With no strata attached the result is still a list,
-of length one and named \code{"all"}, so the return type never depends on
-whether strata happen to be present. Unlike splitting the long format
-yourself, the delay unit and the strata are taken from the object, and
-\code{\link[=as_tbl_now]{as_tbl_now()}} can rebuild a \code{tbl_now} from the result.
+\link{tbl_now_triangle_list}. Useful for inspecting each stratum's triangle;
+for actually fitting stratified nowcasts, the \code{"long"} shape is what
+\pkg{baselinenowcast} consumes natively. With no strata attached the
+result is still a list, of length one and named \code{"all"}, so the return
+type never depends on whether strata happen to be present. The delay
+unit and the strata are taken from the object, and \code{\link[=as_tbl_now]{as_tbl_now()}} can
+rebuild a \code{tbl_now} from the result.
 }}
 
 \item{max_delay}{Number of delay periods to keep, in the object's report
@@ -109,15 +118,18 @@ matrix (rownames = reference dates, colnames = delays, incremental counts)
 and converts it into a \code{tbl_now} of \code{data_type = "count-incidence"}.
 
 \code{tbl_now_to_baselinenowcast()} returns either a \code{reporting_triangle} matrix
-(\code{format = "matrix"}, the default) via
-\code{\link[baselinenowcast:as_reporting_triangle]{baselinenowcast::as_reporting_triangle()}}, or the long
-\code{baselinenowcast}-style \code{data.frame} (\code{format = "long"}). The long format also
-carries the \strong{strata}, the
-covariates, the censoring indicator and any materialised temporal-effect
-columns (see \code{\link[=compute_temporal_effects]{compute_temporal_effects()}}); the matrix holds only the three
-core columns. A single reporting-triangle matrix has no strata dimension, so
-\code{format = "matrix"} \strong{pools} any strata (summing the counts) with a warning;
-use \code{format = "triangle_list"} to get one triangle per stratum instead.
+via \code{\link[baselinenowcast:as_reporting_triangle]{baselinenowcast::as_reporting_triangle()}}, or the long
+\code{baselinenowcast}-style \code{data.frame}. The default is
+\code{format = "auto"}, which returns a matrix when the object has no strata and
+a long data frame when it does -- the shape
+\code{\link[baselinenowcast:baselinenowcast]{baselinenowcast::baselinenowcast()}} consumes natively in each case
+(with \code{strata_cols} naming the strata columns in the long shape). The long
+format also carries the \strong{strata}, the covariates, the censoring indicator
+and any materialised temporal-effect columns (see
+\code{\link[=compute_temporal_effects]{compute_temporal_effects()}}); the matrix holds only the three core
+columns. A single reporting-triangle matrix has no strata dimension, so
+\code{format = "matrix"} on a stratified object \strong{pools} any strata (summing
+the counts) with a warning.
 }
 \section{Round-trip}{
 

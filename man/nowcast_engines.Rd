@@ -25,6 +25,7 @@ engine_baselinenowcast(
   draws = 1000,
   delays_unit = NULL,
   max_delay = NULL,
+  strata_sharing = "none",
   min_date = NULL,
   quantile_levels = nowcast_quantile_levels(),
   label = NULL
@@ -130,6 +131,15 @@ reference dates than delay columns, so a \strong{snapshot ("as of") series} --
 which re-reports every past period in every snapshot, and therefore has a
 delay axis as long as the series itself -- cannot be fitted at all until
 the axis is capped. The error says which number to use.}
+
+\item{strata_sharing}{(\code{engine_baselinenowcast()}) Whether to share
+estimates across the object's strata. \code{"none"} (default) fits every
+stratum independently. \code{"delay"} estimates the delay PMF once on the
+pooled counts and applies it to each stratum;
+\code{"uncertainty"} shares the uncertainty parameters the same way; pass
+\code{c("delay", "uncertainty")} to share both. Passed straight to
+\code{\link[baselinenowcast:baselinenowcast]{baselinenowcast::baselinenowcast()}}'s argument of the same name, and
+only meaningful when the object has strata.}
 
 \item{preprocess_args, expectation, reference, report, fit}{(\code{engine_epinowcast()}) \code{preprocess_args} is a list for
 \code{\link[=tbl_now_to_epinowcast]{tbl_now_to_epinowcast()}}, e.g. \code{list(max_delay = 30)}; the other four are

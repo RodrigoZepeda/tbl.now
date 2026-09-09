@@ -1,3 +1,32 @@
+# tbl.now (development version)
+
+## Native strata dispatch on `baselinenowcast`
+
+`baselinenowcast` >= 0.2.1 accepts a long tidy `data.frame` with a
+`strata_cols` argument and returns a single `baselinenowcast_df` with the
+strata columns still attached. `engine_baselinenowcast()` uses that path for
+stratified objects instead of looping one triangle at a time, which enables
+sharing estimates across strata and drops an internal wrapper class.
+
+* **New**: `engine_baselinenowcast(strata_sharing = )` -- passed straight
+  through to `baselinenowcast::baselinenowcast()`. `"none"` (default) fits
+  every stratum independently; `"delay"` shares the delay PMF across strata;
+  `"uncertainty"` shares the uncertainty parameters; both can be combined.
+  Meaningful only when the object has strata.
+* **New default**: `tbl_now_to_baselinenowcast(format = "auto")` -- returns a
+  reporting-triangle matrix when the object has no strata and the long tidy
+  `data.frame` (what `baselinenowcast()` consumes with `strata_cols = `) when
+  it does. Unstratified callers see no change; a stratified `tbl_now` used to
+  come back as a pooled matrix (with a warning) and now comes back as the
+  shape `baselinenowcast` can fit natively.
+* **Breaking (internal)**: the `baselinenowcast_strata` list class that
+  `nowcast_fit.baselinenowcast()` used to return for stratified fits is gone.
+  `run_nowcast()` returns the same `tbl_nowcast` as before. `tidy()` on a
+  bare list of `baselinenowcast_df` fits also stops routing through
+  `tidy.list()` -- pass strata to `baselinenowcast(strata_cols = )` (or use
+  `run_nowcast()`) rather than looping over `format = "triangle_list"`.
+* **Bump**: `baselinenowcast (>= 0.2.1)` is now the minimum.
+
 # tbl.now 0.35.2
 
 Fixed a bug in the `is_weekend()` function that made it work solely

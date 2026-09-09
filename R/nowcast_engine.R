@@ -387,6 +387,15 @@ is_nowcast_engine <- function(x) {
 #'   delay axis as long as the series itself -- cannot be fitted at all until
 #'   the axis is capped. The error says which number to use.
 #'
+#' @param strata_sharing (`engine_baselinenowcast()`) Whether to share
+#'   estimates across the object's strata. `"none"` (default) fits every
+#'   stratum independently. `"delay"` estimates the delay PMF once on the
+#'   pooled counts and applies it to each stratum;
+#'   `"uncertainty"` shares the uncertainty parameters the same way; pass
+#'   `c("delay", "uncertainty")` to share both. Passed straight to
+#'   [baselinenowcast::baselinenowcast()]'s argument of the same name, and
+#'   only meaningful when the object has strata.
+#'
 #' @param preprocess_args,expectation,reference,report,fit
 #'   (`engine_epinowcast()`) `preprocess_args` is a list for
 #'   [tbl_now_to_epinowcast()], e.g. `list(max_delay = 30)`; the other four are
@@ -449,13 +458,17 @@ engine_diseasenowcasting <- function(..., model = NULL, type = NULL,
 #' @rdname nowcast_engines
 #' @export
 engine_baselinenowcast <- function(..., draws = 1000, delays_unit = NULL,
-                                   max_delay = NULL, min_date = NULL,
+                                   max_delay = NULL, strata_sharing = "none",
+                                   min_date = NULL,
                                    quantile_levels = nowcast_quantile_levels(),
                                    label = NULL) {
   .new_engine(
     "baselinenowcast",
     c(
-      list(draws = draws, delays_unit = delays_unit, max_delay = max_delay),
+      list(
+        draws = draws, delays_unit = delays_unit, max_delay = max_delay,
+        strata_sharing = strata_sharing
+      ),
       list(...)
     ),
     min_date, quantile_levels, label

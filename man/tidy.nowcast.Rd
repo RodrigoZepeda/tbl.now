@@ -39,8 +39,8 @@ tidy(x, ...)
 \item{engine}{Optional string naming the engine. Needed only for the shapes
 that arrive as an \strong{unclassed list} -- a \pkg{NobBS} fit, an
 \code{\link[EpiNow2:regional_epinow]{EpiNow2::regional_epinow()}} result, or a per-stratum list of
-\pkg{baselinenowcast} or \code{\link[surveillance:nowcast]{surveillance::nowcast()}} fits -- which are
-otherwise recognised by their structure.}
+\code{\link[surveillance:nowcast]{surveillance::nowcast()}} fits -- which are otherwise recognised by their
+structure.}
 
 \item{level}{Interval width to report for an engine that does not say what it
 produced. Only used by the \pkg{NobBS} branch (see \code{level} under \emph{Value});
@@ -108,15 +108,15 @@ quantile they did not compute is an error rather than a silent approximation.
 
 \itemize{
 \item \code{nowcast_prediction} (S7) from \code{diseasenowcasting::predict()}
-\item \code{baselinenowcast_df} from \code{baselinenowcast::baselinenowcast()}
+\item \code{baselinenowcast_df} from \code{baselinenowcast::baselinenowcast()} -- both the
+single-series fit (from a \code{reporting_triangle}) and the stratified fit
+(from a long \code{data.frame} with \verb{strata_cols = }). A stratified fit is
+tidied one row per (stratum, event_date), with the strata columns pasted
+into the \code{stratum} label.
 \item \code{epinowcast} fits
 \item \code{stsNC} from \code{surveillance::nowcast()}
 \item the list returned by \code{NobBS::NobBS()} or by \code{NobBS::NobBS.strat()} (the
 stratified variant is recognised by its \code{stratum} column)
-\item a \strong{list of \code{baselinenowcast_df} fits}, one per stratum -- what
-\code{lapply()}-ing over a \link{tbl_now_triangle_list} produces. Each element is
-tidied and labelled with its list name, giving the same
-one-block-per-stratum table the natively stratified engines return.
 }
 }
 

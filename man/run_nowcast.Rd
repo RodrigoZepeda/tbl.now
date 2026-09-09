@@ -216,6 +216,8 @@ if (requireNamespace("baselinenowcast", quietly = TRUE)) {
 
 }
 \seealso{
+\link{tbl_now_workflows} for choosing a modelling package's native entry point or
+the shared engine interface;
 \code{\link[=engine]{engine()}} and \link{nowcast_engines} to specify which model to fit and how;
 \link[=autoplot.tbl_nowcast]{autoplot()} and \link[=tidy.tbl_nowcast]{tidy()} to look at
 the result; \code{\link[=nowcast_ensemble]{nowcast_ensemble()}} to combine several nowcasts;

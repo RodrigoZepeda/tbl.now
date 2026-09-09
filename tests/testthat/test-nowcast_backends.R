@@ -97,6 +97,59 @@ test_that("baselinenowcast nowcasts each stratum separately", {
   expect_setequal(unique(tidy(nowcast)$stratum), as.character(unique(x$gender)))
 })
 
+test_that("baselinenowcast works on a grouped tbl_now", {
+  skip_on_cran()
+  skip_if_not_installed("baselinenowcast")
+
+  # A grouped_tbl_now is a DIFFERENT class from a tbl_now (DEVELOPMENT_SKILL
+  # section 8): the engine must accept it, and the strata dispatch must not
+  # decide the answer differs because of an incidental grouping.
+  x <- backend_tbl_now(strata = TRUE)
+
+  set.seed(20260824)
+  nc_grouped <- suppressWarnings(
+    run_nowcast(
+      x |> dplyr::group_by(gender),
+      engine_baselinenowcast(draws = 25), verbose = FALSE
+    )
+  )
+  set.seed(20260824)
+  nc_ungrouped <- suppressWarnings(
+    run_nowcast(x, engine_baselinenowcast(draws = 25), verbose = FALSE)
+  )
+
+  expect_true(is_tbl_nowcast(nc_grouped))
+  expect_equal(
+    dplyr::arrange(as.data.frame(tidy(nc_grouped)), stratum, event_date),
+    dplyr::arrange(as.data.frame(tidy(nc_ungrouped)), stratum, event_date)
+  )
+})
+
+test_that("baselinenowcast passes `strata_sharing` through to the backend", {
+  skip_on_cran()
+  skip_if_not_installed("baselinenowcast")
+
+  x <- backend_tbl_now(strata = TRUE)
+
+  # `strata_sharing = "delay"` shares one delay PMF across strata; the fit
+  # still returns per-stratum draws in the same schema. The point of the test
+  # is that the argument is accepted and that both fits produce comparable
+  # tidy output, not that the numbers agree -- sharing is a modelling choice.
+  set.seed(20260824)
+  nc_none <- suppressWarnings(
+    run_nowcast(x, engine_baselinenowcast(draws = 25, strata_sharing = "none"),
+                verbose = FALSE)
+  )
+  set.seed(20260824)
+  nc_delay <- suppressWarnings(
+    run_nowcast(x, engine_baselinenowcast(draws = 25, strata_sharing = "delay"),
+                verbose = FALSE)
+  )
+
+  expect_setequal(unique(tidy(nc_delay)$stratum), as.character(unique(x$gender)))
+  expect_setequal(unique(tidy(nc_delay)$stratum), unique(tidy(nc_none)$stratum))
+})
+
 test_that("two baselinenowcast fits can be ensembled", {
   skip_on_cran()
   skip_if_not_installed("baselinenowcast")

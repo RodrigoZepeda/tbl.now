@@ -424,6 +424,7 @@
 #' 17(2), e1008618.
 #'
 #' @seealso
+#' [tbl_now_workflows] for the native/common workflow boundary;
 #' [nowcast_backtest()] to score many nowcasts at many `now` dates at once;
 #' [nowcast_weights()] to turn those scores into ensemble weights;
 #' [get_latest_reported_cases()][get_latest_first], which is how the truth is
@@ -583,8 +584,10 @@ score_nowcast <- function(x, truth = NULL, truth_axis = c("report", "revision"),
 #'
 #' @section Use the result directly with scoringutils:
 #'
-#' A `nowcast_backtest` has methods for all three standard forecast formats, so
-#' no manual reshaping is needed:
+#' A `nowcast_backtest` has methods for
+#' [scoringutils::as_forecast_quantile()],
+#' [scoringutils::as_forecast_point()], and
+#' [scoringutils::as_forecast_sample()], so no manual reshaping is needed:
 #'
 #' ```r
 #' quantile_forecast <- scoringutils::as_forecast_quantile(bt)
@@ -621,11 +624,15 @@ score_nowcast <- function(x, truth = NULL, truth_axis = c("report", "revision"),
 #' levels its members happened to share.
 #'
 #' @seealso
+#' [tbl_now_workflows] for choosing native model construction or cross-engine
+#' comparison;
 #' [engine()] to specify each model being compared, and its `min_date` argument,
 #' which matters here because `now` moves between fits;
 #' [score_nowcast()] for the scores computed at each `now`;
 #' [nowcast_weights()] to turn the result into ensemble weights, and
-#' [nowcast_ensemble()] to use them. The
+#' [nowcast_ensemble()] to use them;
+#' [scoringutils::score()] and [scoringutils::add_relative_skill()] for an
+#' extensible scoring workflow. The
 #' [*One call, many models* article](https://rodrigozepeda.github.io/tbl.now/articles/ensemble-nowcasting.html)
 #' compares several packages this way.
 #'

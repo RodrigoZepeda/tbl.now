@@ -291,6 +291,7 @@ nowcast_tidy.diseasenowcasting <- function(engine, fit, x, ..., quantile_levels)
 #' @export
 nowcast_fit.baselinenowcast <- function(engine, x, ..., draws = 1000,
                                         delays_unit = NULL, max_delay = NULL,
+                                        strata_sharing = "none",
                                         quantile_levels = nowcast_quantile_levels(),
                                         verbose = TRUE) {
   .need_pkg("baselinenowcast")
@@ -299,7 +300,7 @@ nowcast_fit.baselinenowcast <- function(engine, x, ..., draws = 1000,
   if (length(strata_cols) == 0) {
     triangle <- .quietly_if(
       tbl_now_to_baselinenowcast(
-        x,
+        x, format = "matrix",
         delays_unit = delays_unit, max_delay = max_delay, verbose = verbose
       ),
       verbose
@@ -313,17 +314,18 @@ nowcast_fit.baselinenowcast <- function(engine, x, ..., draws = 1000,
     ))
   }
 
-  # A reporting-triangle *matrix* has no strata dimension, so a stratified
-  # nowcast is one triangle (and one fit) per stratum. That is exactly what
-  # `format = "triangle_list"` returns, so ask for it rather than splitting the
-  # long format by hand: the long format is a tidy data frame with no grid, so
-  # the converter deliberately never completes it, and a line list has no row
-  # for an event period in which nothing was reported. Building the triangles
-  # from it silently shortened the reference axis -- the same object fitted 54
-  # reference times as a line list and 81 after `to_count() |>
-  # complete_zeroes()` (#67). The list format also restores the not-yet-observed
-  # cells to `NA` and absorbs negative increments, neither of which the
-  # hand-rolled split did.
+  # `baselinenowcast` >= 0.2.1 accepts a long tidy data.frame with a
+  # `strata_cols` argument and returns one `baselinenowcast_df` with the strata
+  # columns still attached, so a stratified nowcast is one call rather than a
+  # per-stratum loop. That is also the shape needed for
+  # `strata_sharing = "delay" / "uncertainty"` -- estimating the delay PMF or
+  # uncertainty parameters once on the pooled data and applying them to each
+  # stratum -- which the loop could not express.
+  #
+  # Peek through `format = "triangle_list"` first, purely for the shape check:
+  # `.baselinenowcast_check_shape()` emits a friendlier "triangle too wide"
+  # message per stratum than the arithmetic error the fit would give. The
+  # reshape is cheap next to the fit itself.
   triangles <- .quietly_if(
     tbl_now_to_baselinenowcast(
       x,
@@ -332,31 +334,42 @@ nowcast_fit.baselinenowcast <- function(engine, x, ..., draws = 1000,
     ),
     verbose
   )
-
-  # The strata VALUES travel with the list, one row per element, so the label is
-  # never parsed back into columns -- a stratum containing the separator would
-  # not round-trip.
-  lookup <- dplyr::as_tibble(attr(triangles, "strata_values")) |>
-    dplyr::mutate(.key = names(triangles), .before = 1)
-
-  # The list's own names paste with " | "; every message in the package names a
-  # stratum with `.tbl_now_strata_label()`, so build the label from the values.
   labels <- .tbl_now_strata_label(
     as.data.frame(attr(triangles, "strata_values")), strata_cols
   )
+  for (i in seq_along(triangles)) {
+    .baselinenowcast_check_shape(triangles[[i]], stratum = labels[i])
+  }
 
-  fits <- .quietly_if(
-    lapply(seq_along(triangles), function(i) {
-      .baselinenowcast_check_shape(triangles[[i]], stratum = labels[i])
-      baselinenowcast::baselinenowcast(
-        triangles[[i]], output_type = "samples", draws = draws, ...
-      )
-    }),
+  # The long-format converter deliberately does not complete zeros (a tidy data
+  # frame has no grid). A line list has no row for an event period in which
+  # nothing was reported, so handing it straight to baselinenowcast would
+  # silently shorten the reference axis (#67). Complete first, then convert:
+  # `format = "triangle_list"` did this implicitly above, and the long format
+  # needs the same treatment before it feeds `baselinenowcast(strata_cols = )`.
+  if (identical(get_data_type(x), "linelist")) {
+    x <- suppressWarnings(complete_zeroes(to_count(x, to = "count-incidence")))
+  }
+  long_df <- .quietly_if(
+    tbl_now_to_baselinenowcast(
+      x, format = "long",
+      delays_unit = delays_unit, max_delay = max_delay, verbose = verbose
+    ),
     verbose
   )
-  names(fits) <- names(triangles)
+  resolved_delays_unit <- .baselinenowcast_delays_unit(x, delays_unit)
 
-  structure(fits, strata_lookup = lookup, class = "baselinenowcast_strata")
+  .quietly_if(
+    baselinenowcast::baselinenowcast(
+      long_df,
+      output_type = "samples", draws = draws,
+      strata_cols = strata_cols,
+      strata_sharing = strata_sharing,
+      delays_unit = resolved_delays_unit,
+      ...
+    ),
+    verbose
+  )
 }
 
 #' Refuse a reporting triangle that is too wide to be fitted, and say what to cap
@@ -437,29 +450,25 @@ nowcast_fit.baselinenowcast <- function(engine, x, ..., draws = 1000,
 #' @export
 nowcast_tidy.baselinenowcast <- function(engine, fit, x, ..., quantile_levels) {
   event_col <- get_event_date(x)
+  strata_cols <- get_strata(x) %||% character(0)
 
-  tidy_one <- function(samples) {
-    dplyr::as_tibble(samples) |>
-      dplyr::filter(.data$output_type == "samples") |>
-      dplyr::transmute(
-        !!event_col := .data$reference_date,
-        .draw = as.integer(.data$draw),
-        .value = as.numeric(.data$pred_count)
-      )
+  # baselinenowcast's data.frame method returns a single `baselinenowcast_df`
+  # with the strata columns present as regular columns, so a stratified fit is
+  # tidied the same way as an unstratified one -- the extra columns are picked
+  # up alongside the samples and carry through to `run_nowcast()`'s draws frame.
+  samples <- dplyr::as_tibble(fit) |>
+    dplyr::filter(.data$output_type == "samples")
+
+  draws <- dplyr::tibble(
+    !!event_col := samples$reference_date,
+    .draw       = as.integer(samples$draw),
+    .value      = as.numeric(samples$pred_count)
+  )
+  if (length(strata_cols) > 0L) {
+    draws <- dplyr::bind_cols(
+      draws, samples[, strata_cols, drop = FALSE]
+    )
   }
-
-  if (!inherits(fit, "baselinenowcast_strata")) {
-    return(list(predictions = NULL, draws = tidy_one(fit)))
-  }
-
-  lookup <- attr(fit, "strata_lookup")
-  draws <- dplyr::bind_rows(lapply(names(fit), function(key) {
-    tidy_one(fit[[key]]) |> dplyr::mutate(.key = key)
-  }))
-
-  draws <- draws |>
-    dplyr::inner_join(lookup, by = ".key") |>
-    dplyr::select(-".key")
 
   list(predictions = NULL, draws = draws)
 }

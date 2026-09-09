@@ -1556,15 +1556,18 @@ tbl_now_from_epinowcast <- function(data, ...,
 #' and converts it into a `tbl_now` of `data_type = "count-incidence"`.
 #'
 #' `tbl_now_to_baselinenowcast()` returns either a `reporting_triangle` matrix
-#' (`format = "matrix"`, the default) via
-#' [baselinenowcast::as_reporting_triangle()], or the long
-#' `baselinenowcast`-style `data.frame` (`format = "long"`). The long format also
-#' carries the **strata**, the
-#' covariates, the censoring indicator and any materialised temporal-effect
-#' columns (see [compute_temporal_effects()]); the matrix holds only the three
-#' core columns. A single reporting-triangle matrix has no strata dimension, so
-#' `format = "matrix"` **pools** any strata (summing the counts) with a warning;
-#' use `format = "triangle_list"` to get one triangle per stratum instead.
+#' via [baselinenowcast::as_reporting_triangle()], or the long
+#' `baselinenowcast`-style `data.frame`. The default is
+#' `format = "auto"`, which returns a matrix when the object has no strata and
+#' a long data frame when it does -- the shape
+#' [baselinenowcast::baselinenowcast()] consumes natively in each case
+#' (with `strata_cols` naming the strata columns in the long shape). The long
+#' format also carries the **strata**, the covariates, the censoring indicator
+#' and any materialised temporal-effect columns (see
+#' [compute_temporal_effects()]); the matrix holds only the three core
+#' columns. A single reporting-triangle matrix has no strata dimension, so
+#' `format = "matrix"` on a stratified object **pools** any strata (summing
+#' the counts) with a warning.
 #'
 #' @param data A long `data.frame` or a `reporting_triangle` matrix.
 #' @param x A `tbl_now` object.
@@ -1584,18 +1587,27 @@ tbl_now_from_epinowcast <- function(data, ...,
 #'   delay -- which is fine on a short tail and expensive on a long one (see
 #'   *Cost of a long delay tail*).
 #' @param format For `to`, one of:
-#'   * `"matrix"` (default) -- a single [baselinenowcast::as_reporting_triangle()]
-#'     matrix. A triangle has no strata dimension, so any strata are **pooled**
-#'     (with a warning).
+#'   * `"auto"` (default) -- `"matrix"` when the object has no strata and
+#'     `"long"` when it does. That is the shape [baselinenowcast::baselinenowcast()]
+#'     consumes natively in each case: it takes a `reporting_triangle` when there
+#'     is only one series to fit, and a long `data.frame` with a `strata_cols`
+#'     argument when there is more than one. Pick a specific format if you need
+#'     a particular return type.
+#'   * `"matrix"` -- a single [baselinenowcast::as_reporting_triangle()] matrix.
+#'     A triangle has no strata dimension, so any strata are **pooled** (with a
+#'     warning).
 #'   * `"long"` -- a tidy data frame, which can also carry the strata,
 #'     covariates, temporal-effect columns and the censoring indicator.
+#'     [baselinenowcast::baselinenowcast()] accepts this shape directly, using
+#'     its `strata_cols` argument to name the strata columns.
 #'   * `"triangle_list"` -- one reporting triangle **per stratum**, as a
-#'     [tbl_now_triangle_list]. Use this instead of pooling when you want a
-#'     nowcast per stratum. With no strata attached the result is still a list,
-#'     of length one and named `"all"`, so the return type never depends on
-#'     whether strata happen to be present. Unlike splitting the long format
-#'     yourself, the delay unit and the strata are taken from the object, and
-#'     [as_tbl_now()] can rebuild a `tbl_now` from the result.
+#'     [tbl_now_triangle_list]. Useful for inspecting each stratum's triangle;
+#'     for actually fitting stratified nowcasts, the `"long"` shape is what
+#'     \pkg{baselinenowcast} consumes natively. With no strata attached the
+#'     result is still a list, of length one and named `"all"`, so the return
+#'     type never depends on whether strata happen to be present. The delay
+#'     unit and the strata are taken from the object, and [as_tbl_now()] can
+#'     rebuild a `tbl_now` from the result.
 #' @param complete For `to` with a triangle format: fill event periods that have
 #'   no reports at all with zeroes, out to the object's [get_now()], via
 #'   [complete_zeroes()]. `"auto"` (the default) does this for **line-list**
@@ -2497,7 +2509,7 @@ tbl_now_to_epinowcast <- function(x, ..., max_delay = NULL,
 #' @rdname tbl_now_baselinenowcast
 #' @export
 tbl_now_to_baselinenowcast <- function(x, ...,
-                                       format = c("matrix", "long", "triangle_list"),
+                                       format = c("auto", "matrix", "long", "triangle_list"),
                                        delays_unit = NULL, max_delay = NULL,
                                        complete = "auto",
                                        negatives = c("redistribute", "error"),
@@ -2513,6 +2525,15 @@ tbl_now_to_baselinenowcast <- function(x, ...,
   x <- .cap_max_delay(x, max_delay, "tbl_now_to_baselinenowcast", verbose = verbose)
   format <- match.arg(format)
   negatives <- match.arg(negatives)
+
+  # `"auto"` picks the shape baselinenowcast consumes natively in each case: a
+  # single reporting-triangle matrix when the object has no strata, and the long
+  # `data.frame` (fed to `baselinenowcast(data, strata_cols = ...)`) when it
+  # does. Pooling used to be the default; auto-selecting the strata-aware shape
+  # is the fix.
+  if (identical(format, "auto")) {
+    format <- if (length(get_strata(x)) > 0L) "long" else "matrix"
+  }
 
   # baselinenowcast needs incremental (count-incidence) counts.
   #  - count-incidence: use as-is.
@@ -4524,11 +4545,15 @@ get_surveillance_range <- function(x, ..., from = NULL, to = NULL, by = NULL) {
 #' rebuild a `tbl_now` from it.
 #'
 #' It is a **thin** class -- it is still a list, so `lapply()`, `[[` and friends
-#' work as usual:
+#' work as usual. Use it for **inspecting** per-stratum triangles; for fitting
+#' a stratified nowcast, hand the long shape to
+#' [baselinenowcast::baselinenowcast()] with its `strata_cols` argument
+#' instead -- that is the shape it consumes natively, and what
+#' [run_nowcast()] does under the hood:
 #'
 #' ```r
-#' triangles <- tbl_now_to_baselinenowcast(x, format = "triangle_list")
-#' lapply(triangles, baselinenowcast::baselinenowcast)
+#' long_df <- tbl_now_to_baselinenowcast(x, format = "long")
+#' baselinenowcast::baselinenowcast(long_df, strata_cols = tbl.now::get_strata(x))
 #' ```
 #'
 #' The class exists for one reason. \pkg{baselinenowcast} has a function,

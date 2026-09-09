@@ -307,10 +307,10 @@ snap_to_grid <- function(dates, grid) {
 }
 
 # A stratified fit is either one object that knows its own strata (epinowcast,
-# NobBS.strat, diseasenowcasting) or a named LIST of one-series fits
-# (baselinenowcast's triangle list, surveillance's `split()` loop). `tidy()`
-# handles both -- `tidy.list()` recognises the list shapes by structure -- so
-# there is nothing engine-specific here.
+# NobBS.strat, diseasenowcasting, and now baselinenowcast via its
+# data.frame method) or a named LIST of one-series fits (surveillance's
+# `split()` loop). `tidy()` handles both -- `tidy.list()` recognises the list
+# shape by structure -- so there is nothing engine-specific here.
 tidy_one <- function(object) {
   if (is.null(object)) return(NULL)
   tidied <- tryCatch(

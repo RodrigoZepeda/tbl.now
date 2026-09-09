@@ -207,52 +207,69 @@ test_that("a baselinenowcast SAMPLES fit still reports a 95% band", {
   expect_true(all(out$estimate <= out$conf.high))
 })
 
-# --- a per-stratum LIST of fits is not tidyable ------------------------------
+# --- a native strata baselinenowcast_df tidies per stratum ------------------
 
-# --- a per-stratum LIST of baselinenowcast fits ------------------------------
-
-# `?tbl_now_triangle_list` tells the reader to run
-# `lapply(triangles, baselinenowcast::baselinenowcast)`, which yields a bare list
-# of `baselinenowcast_df`s. `tidy()` used to refuse it (and point at NobBS).
-fake_bnc_fit <- function(base) {
+# `baselinenowcast()` on a long data.frame with `strata_cols = ...` returns one
+# `baselinenowcast_df` with the strata columns still attached. `tidy()` groups
+# by them and puts one row per (stratum, event_date) into the standard shape.
+fake_bnc_strata_fit <- function() {
+  dates <- rep(as.Date("2024-01-01") + 0:1, each = 3)
   structure(
     data.frame(
-      pred_count     = rep(base + c(-2, 0, 2), each = 1),
-      reference_date = rep(as.Date("2024-01-01") + 0:1, each = 3),
-      draw           = rep(1:3, times = 2),
-      output_type    = "samples"
+      pred_count     = c(8:10, 18:20, 98:100, 198:200),
+      reference_date = c(dates, dates),
+      draw           = c(rep(1:3, 2), rep(1:3, 2)),
+      output_type    = "samples",
+      nowcast        = TRUE,
+      region         = c(rep("alpha", 6), rep("zulu", 6))
     ),
     class = c("baselinenowcast_df", "data.frame")
   )
 }
 
-test_that("tidy() tidies a list of per-stratum baselinenowcast fits", {
-  fits <- list(alpha = fake_bnc_fit(10), zulu = fake_bnc_fit(100))
-  out <- tidy(fits)
+test_that("tidy() splits a stratified baselinenowcast_df by its strata columns", {
+  out <- tidy(fake_bnc_strata_fit())
 
   expect_setequal(unique(out$stratum), c("alpha", "zulu"))
   expect_unique_stratum_key(out)
   expect_equal(nrow(out), 4L)
   expect_equal(unique(out$engine), "baselinenowcast")
-  # The estimate must stay with its own list element.
-  expect_equal(unique(out$estimate[out$stratum == "alpha"]), 10)
-  expect_equal(unique(out$estimate[out$stratum == "zulu"]), 100)
+  # The estimate must stay with its own stratum (alpha values are 8-20, zulu are 98-200).
+  expect_true(all(out$estimate[out$stratum == "alpha"] < 50))
+  expect_true(all(out$estimate[out$stratum == "zulu"] >= 50))
 })
 
-test_that("a per-stratum list passes `probs` through and falls back on names", {
-  fits <- list(fake_bnc_fit(10), fake_bnc_fit(100))
-  out <- tidy(fits, probs = c(0.05, 0.95))
+test_that("a stratified baselinenowcast_df honours `probs`", {
+  out <- tidy(fake_bnc_strata_fit(), probs = c(0.05, 0.95))
 
   expect_true(all(c("q5", "q95") %in% names(out)))
   expect_true(all(out$q5 <= out$q95))
-  # An unnamed list is labelled by position rather than collapsed to "all".
-  expect_setequal(unique(out$stratum), c("1", "2"))
+  expect_setequal(unique(out$stratum), c("alpha", "zulu"))
+})
+
+test_that("tidy() no longer routes a bare list of baselinenowcast_df fits", {
+  # A bare list used to be supported (via a per-stratum lapply loop over
+  # `format = \"triangle_list\"`). Since baselinenowcast handles strata natively
+  # now, tidy.list has no baselinenowcast branch and the shape errors.
+  fake_one <- function(base) {
+    structure(
+      data.frame(
+        pred_count     = base + c(-2, 0, 2),
+        reference_date = as.Date("2024-01-01"),
+        draw           = 1:3,
+        output_type    = "samples"
+      ),
+      class = c("baselinenowcast_df", "data.frame")
+    )
+  }
+  expect_error(
+    tidy(list(alpha = fake_one(10), zulu = fake_one(100))),
+    "Don't know how to"
+  )
 })
 
 test_that("a list that is neither shape still errors helpfully", {
   expect_error(tidy(list(a = 1, b = 2)), "Don't know how to")
-  # A list with only SOME baselinenowcast_df elements is not a per-stratum list.
-  expect_error(tidy(list(fake_bnc_fit(10), 42)), "Don't know how to")
 })
 
 # --- NobBS: the width it does not report -------------------------------------
