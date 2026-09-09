@@ -541,7 +541,11 @@ with `recur_on_day_of_month()`, `recur_on_month_of_year()`,
   `event_date`, `report_date`, or `case_count`) via `select()`/`mutate(... = NULL)`
   — doing so **downgrades to a plain tibble** with a warning. Removing a strata
   or covariate column instead silently drops it from that attribute.
-- ❌ **`rowwise()` is NOT supported** — behaviour is undefined; avoid it.
+- ❌ **`rowwise()` is NOT supported** — it warns and **demotes** to a plain
+  `rowwise_df`, dropping every `tbl_now` attribute rather than carrying them
+  along stale. Rebuild afterwards with `ungroup()`, drop `.event_num` /
+  `.report_num` / `.delay`, then `as_tbl_now()` — or stay vectorised and keep
+  the class.
 - After any non-trivial pipe, confirm with `is_tbl_now(x)` before handing the
   object to `diseasenowcasting`.
 
@@ -1496,7 +1500,8 @@ data(hai_bucaramanga)  # healthcare-associated infections; deliberately messy
 - Undeclared extra columns are **summed away** by `to_count()`, not plotted per-value —
   a boxplot with spread on *daily* data is the days within a week, not a hidden stratum.
 - Removing a protected column **downgrades to a tibble** — check `is_tbl_now()` after heavy dplyr.
-- `rowwise()` is **unsupported**.
+- `rowwise()` is **unsupported**: it warns and returns a plain `rowwise_df` with
+  the attributes stripped, not a `tbl_now`.
 - For weekly data with fractional `.delay`, use `align_weeks`.
 - Count data types **require** a `case_count` column.
 - `diagnose_batches2(at =)` needs `at` to be on the **report grid**; a date that

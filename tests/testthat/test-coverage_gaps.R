@@ -335,10 +335,52 @@ test_that("compute_temporal_effects with overwrite=TRUE replaces existing cols",
 # dplyr_generics.R — rowwise, summarise, reframe, $<-.grouped_tbl_now
 # ============================================================
 
-test_that("rowwise.tbl_now emits message and returns a result", {
-  # cli_alert_warning fires as a message, not an R warning
+test_that("rowwise.tbl_now warns and demotes to a plain rowwise_df", {
   x <- base_weekly()
-  expect_message_quietly(result <- rowwise(x), "rowwise")
+  expect_warning(result <- rowwise(x), "not implemented")
+
+  # The demotion is complete: the class goes, and so do the attributes that
+  # described it. A `rowwise_df` still carrying `now` and `event_date` claims
+  # to be something it is not.
+  expect_false(is_tbl_now(result))
+  expect_s3_class(result, "rowwise_df")
+  expect_null(attr(result, "now"))
+  expect_null(attr(result, "event_date"))
+  expect_null(attr(result, "report_date"))
+})
+
+test_that("rowwise() on a grouped_tbl_now warns too", {
+  # `rowwise.grouped_df` sits before `tbl_now` in the class vector, so without
+  # a `grouped_tbl_now` method this path demoted leakily and in silence.
+  x <- group_by(base_weekly(strata = TRUE), sex)
+  expect_warning(result <- rowwise(x), "not implemented")
+
+  expect_false(is_tbl_now(result))
+  expect_null(attr(result, "now"))
+  expect_null(attr(result, "strata"))
+})
+
+test_that("rowwise.tbl_now still computes, and forwards its columns", {
+  x <- base_weekly(strata = TRUE)
+
+  result <- suppressWarnings(rowwise(x)) |> dplyr::mutate(one = max(n))
+  expect_equal(result$one, result$n)
+
+  # `...` reaches dplyr::rowwise() rather than being swallowed
+  expect_equal(dplyr::group_vars(suppressWarnings(rowwise(x, sex))), "sex")
+})
+
+test_that("the rebuild path the warning names actually works", {
+  x <- base_weekly()
+  demoted <- suppressWarnings(rowwise(x))
+
+  rebuilt <- demoted |>
+    dplyr::ungroup() |>
+    dplyr::select(-dplyr::any_of(c(".event_num", ".report_num", ".delay"))) |>
+    as_tbl_now(event_date = "onset", report_date = "report", verbose = FALSE)
+
+  expect_true(is_tbl_now(rebuilt))
+  expect_equal(get_now(rebuilt), get_now(x))
 })
 
 test_that("summarise.tbl_now with .groups argument works", {
