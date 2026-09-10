@@ -43,18 +43,7 @@
       <ul class="navbar-nav me-auto">
 <li class="nav-item"><a class="nav-link" href="articles/tbl.now.html">Get started</a></li>
 <li class="nav-item"><a class="nav-link" href="reference/index.html">Reference</a></li>
-<li class="nav-item dropdown">
-  <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
-<li><a class="dropdown-item" href="articles/custom-nowcast-models.html">Adding your own nowcasting model</a></li>
-    <li><a class="dropdown-item" href="articles/diagnosing-a-tbl-now.html">Diagnosing a tbl_now</a></li>
-    <li><a class="dropdown-item" href="articles/ensemble-nowcasting.html">Fitting models from different nowcasting frameworks, backtesting and building an ensemble</a></li>
-    <li><a class="dropdown-item" href="articles/example_revisions.html">The nowcasting workflow 2: COVID-19 case surveillance with revisions in the United States</a></li>
-    <li><a class="dropdown-item" href="articles/example.html">The nowcasting workflow 1: hospital-acquired infections in Bucaramanga, Colombia</a></li>
-    <li><a class="dropdown-item" href="articles/nowcasting-models.html">Using tbl.now with different modelling packages</a></li>
-    <li><a class="dropdown-item" href="articles/tbl.now.html">tbl.now</a></li>
-  </ul>
-</li>
+<li class="nav-item"><a class="nav-link" href="articles/index.html">Articles</a></li>
 <li class="nav-item"><a class="nav-link" href="news/index.html">Changelog</a></li>
       </ul>
 <ul class="navbar-nav">
@@ -256,7 +245,7 @@ Columns holding temporal effects (day of week, holidays, …) that some models c
 <span></span>
 <span><span class="co">#Which is just a tibble with extra attributes</span></span>
 <span><span class="va">denguedat</span></span>
-<span><span class="co">#&gt; # A tibble:  1,652 × 6</span></span>
+<span><span class="co">#&gt; # A tibble:  1,652 x 6</span></span>
 <span><span class="co">#&gt; # Data type: "linelist"</span></span>
 <span><span class="co">#&gt; # Frequency: Event: `weeks` | Report: `weeks`</span></span>
 <span><span class="co">#&gt;   onset_week   report_week   gender   .event_num .report_num .delay</span></span>
@@ -267,11 +256,11 @@ Columns holding temporal effects (day of week, holidays, …) that some models c
 <span><span class="co">#&gt; 3 2005-01-03   2005-01-10    Female            0           1      1</span></span>
 <span><span class="co">#&gt; 4 2005-01-03   2005-01-10    Male              0           1      1</span></span>
 <span><span class="co">#&gt; 5 2005-01-03   2005-01-10    Male              0           1      1</span></span>
-<span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────</span></span>
+<span><span class="co">#&gt; # ----------------------------------------------------------------------------------------------------------------------------------------------------------------</span></span>
 <span><span class="co">#&gt; # Now: 2005-09-26 | Event date: "onset_week" | Report date: "report_week"</span></span>
 <span><span class="co">#&gt; # Strata: "gender"</span></span>
-<span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────</span></span>
-<span><span class="co">#&gt; # ℹ 1,647 more rows</span></span></code></pre></div>
+<span><span class="co">#&gt; # ----------------------------------------------------------------------------------------------------------------------------------------------------------------</span></span>
+<span><span class="co">#&gt; # i 1,647 more rows</span></span></code></pre></div>
 <p>Once transformed, it can help you diagnose data problems (see <a href="https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html">this article</a>) or modeling requirements with your database:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">denguedat</span><span class="op">)</span></span></code></pre></div>
@@ -302,7 +291,7 @@ Columns holding temporal effects (day of week, holidays, …) that some models c
 <p>If this seems as exciting to you as it is to us, install the development version from <a href="https://rodrigozepeda.r-universe.dev/tbl.now" class="external-link">R universe</a>:</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"tbl.now"</span>, repos <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"https://rodrigozepeda.r-universe.dev"</span>, <span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">getOption</a></span><span class="op">(</span><span class="st">"repos"</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<p>and checkout our articles starting with the <a href="https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.html">Introduction</a>:</p>
+<p>and checkout our articles starting with the <a href="https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.html">Get started guide</a>:</p>
 <!-- Single source for "Learning more"; pulled in as a knitr child by README.Rmd and every article. Edit on `learning.more.Rmd`.-->
 <div class="alert alert-info">
 <p>If you have any questions or comments regarding the contents of this article please <a href="https://github.com/RodrigoZepeda/tbl.now/issues/new" class="external-link">open an issue on Github</a>.</p>
@@ -311,18 +300,23 @@ Columns holding temporal effects (day of week, holidays, …) that some models c
 <h2 id="learning-more">Learning more<a class="anchor" aria-label="anchor" href="#learning-more"></a>
 </h2>
 <ul>
-<li>End-to-end tutorial on real life surveillance data. Takes you from cleaning to diagnosing errors in the data to nowcasting: <a href="https://rodrigozepeda.github.io/tbl.now/articles/example.html" class="uri">https://rodrigozepeda.github.io/tbl.now/articles/example.html</a>
+<li>A <strong>tutorial</strong> on real life surveillance data. Takes you from cleaning to diagnosing errors in the data to nowcasting: <a href="https://rodrigozepeda.github.io/tbl.now/articles/example.html" class="uri">https://rodrigozepeda.github.io/tbl.now/articles/example.html</a>
 </li>
-<li>The same tutorial with a <strong>revision process</strong> — the optional third date, where a reported case is later confirmed, retracted or left pending: <a href="https://rodrigozepeda.github.io/tbl.now/articles/example_revisions.html" class="uri">https://rodrigozepeda.github.io/tbl.now/articles/example_revisions.html</a>
+<li>The <strong>second part of the tutorial</strong> with a revision process: the optional third date, where a reported case is later confirmed, retracted or left pending: <a href="https://rodrigozepeda.github.io/tbl.now/articles/example_revisions.html" class="uri">https://rodrigozepeda.github.io/tbl.now/articles/example_revisions.html</a>
 </li>
-<li>Introduction vignette: <a href="https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.html" class="uri">https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.html</a> for the full anatomy of a <code>tbl_now</code>, data types, and temporal effects.</li>
-<li>Tutorial on diagnosing your dataset — what is in it, what is structurally wrong with it, and detecting batches and other reporting-delay artifacts: <a href="https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html" class="uri">https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html</a>
+<li>The <strong>Get started vignette</strong>: the whole workflow, from a raw line list to a scored nowcast, in five minutes: <a href="https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.html" class="uri">https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.html</a>.</li>
+<li>
+<strong>More on the <code>tbl_now</code> object</strong>: every attribute, the three data types, the revision process, temporal effects and the <code>dplyr</code> methods: <a href="https://rodrigozepeda.github.io/tbl.now/articles/more-on-tbl-now.html" class="uri">https://rodrigozepeda.github.io/tbl.now/articles/more-on-tbl-now.html</a>
 </li>
-<li>Using different nowcasting engines for the same dataset: <a href="https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html" class="uri">https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html</a>
+<li>More thoughts on <strong>diagnosing your dataset</strong> with <code>tbl.now</code> <a href="https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html" class="uri">https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html</a>
 </li>
-<li>Ensemble nowcasting across different engines <a href="https://rodrigozepeda.github.io/tbl.now/articles/ensemble-nowcasting.html" class="uri">https://rodrigozepeda.github.io/tbl.now/articles/ensemble-nowcasting.html</a>
+<li>Detecting reporting <strong>batches</strong> with <code>tbl.now</code> <a href="https://rodrigozepeda.github.io/tbl.now/articles/batches.html" class="uri">https://rodrigozepeda.github.io/tbl.now/articles/batches.html</a>
 </li>
-<li>Adding your own nowcasting model <a href="https://rodrigozepeda.github.io/tbl.now/articles/custom-nowcast-models.html" class="uri">https://rodrigozepeda.github.io/tbl.now/articles/custom-nowcast-models.html</a>
+<li>How to use different nowcasting engines from <code>tbl.now</code>: here you can learn <strong>how it connects to the other nowcasting packages</strong>. <a href="https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html" class="uri">https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html</a>
+</li>
+<li>How to <strong>nowcast with multiple engines, backtest and ensemble</strong> nowcasts. <a href="https://rodrigozepeda.github.io/tbl.now/articles/ensemble-nowcasting.html" class="uri">https://rodrigozepeda.github.io/tbl.now/articles/ensemble-nowcasting.html</a>
+</li>
+<li>Adding your own <strong>custom nowcasting model</strong> <a href="https://rodrigozepeda.github.io/tbl.now/articles/custom-nowcast-models.html" class="uri">https://rodrigozepeda.github.io/tbl.now/articles/custom-nowcast-models.html</a>
 </li>
 <li>Package reference: <a href="https://rodrigozepeda.github.io/tbl.now/reference/" class="uri">https://rodrigozepeda.github.io/tbl.now/reference/</a>
 </li>

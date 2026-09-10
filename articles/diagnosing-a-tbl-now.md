@@ -9,1045 +9,621 @@ library(patchwork)
 library(tbl.now)
 ```
 
-> This was written automatically by an AI model. A human has yet to
-> review.
+Three questions frequently appear with every surveillance dataset:
 
-Three questions come up with every new surveillance dataset, and they
-are different questions that want different tools:
-
-1.  **What is in it?** – how many cases, over what period, arriving how
-    late, how sparse, how concentrated in one stratum.
-    [`summary()`](https://rdrr.io/r/base/summary.html) answers this.
-2.  **What is structurally wrong with it?** – missing dates, impossible
-    orderings, repeated rows, units that do not line up, data that stops
-    before its own `now`.
+1.  **What is structurally wrong with it?**: missing and impossible
+    dates, data that stops before its own `now`.
     [`diagnose()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose.md)
-    answers this, deterministically and with no model.
-3.  **What needs a statistical test?** – has the reporting delay
-    drifted, did reports arrive in batches, is a spike real cases or
-    released backlog.
-    [`diagnose()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose.md)
-    deliberately refuses these – answering them means choosing a method,
-    a window and a multiplicity correction – and leaves them to
-    [`diagnose_drift()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_drift.md)
-    and
-    [`diagnose_batches()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_batches.md).
+    answers this.
 
-This article walks the three in order. The first two return a
-**tibble**, not printed text, which is the design decision everything
-else follows from: an answer you can
-[`filter()`](https://dplyr.tidyverse.org/reference/filter.html),
-`join()`, plot or assert on in a test is worth far more than one you can
-only read. The third returns test results and figures, because a
-hypothesis test has a p-value and an effect size that a findings row has
-nowhere to put.
+2.  **What is in it?**: how many cases, over what period, arriving how
+    late, how sparse, how do they vary among strata.
+    [`summary()`](https://rdrr.io/r/base/summary.html) answers these.
+
+3.  **Are there any changes in the epidemic or the reporting
+    mechanism?** To answer these we look at batches, drifts as well as
+    visualizations of the processes.
+
+This article follows the `sari_bh` dataset, a linelist of severe acute
+respiratory illness (SARI) cases from Belo Horizonte (Brazil) from 2020
+to 2022:
 
 ``` r
 
-data(denguedat)
+data(sari_bh)
 
-dengue_now <- tbl_now(denguedat,
-  event_date  = "onset_week",
-  report_date = "report_week",
-  strata      = "gender",
-  verbose     = FALSE
+#Create an age category for strata
+sari_bh <- sari_bh |> 
+  mutate(age_cat = cut(age_yrs, breaks = c(0, 20, 40, 60, Inf), include.lowest = TRUE))
+
+sari <- tbl_now(sari_bh,
+  event_date  = symptom_onset_date,
+  report_date = record_date,
+  strata      = age_cat
 )
+
+sari
+#> # A tibble:  65,404 × 9
+#> # Data type: "linelist"
+#> # Frequency: Event: `days` | Report: `days`
+#>   symptom_onset_date record_date   final_classification case_evolution age_yrs age_cat  .event_num .report_num .delay
+#>   <date>             <date>        <chr>                <chr>            <dbl> <fct>         <dbl>       <dbl>  <dbl>
+#>   [event_date]       [report_date] [...]                [...]            [...] [strata]      [...]       [...]  [...]
+#> 1 2020-02-11         2020-03-05    Not specified        Cured               59 (40,60]          44          67     23
+#> 2 2020-01-21         2020-02-06    Not specified        Cured               79 (60,Inf]         23          39     16
+#> 3 2020-03-30         2020-04-17    Not specified        Cured               72 (60,Inf]         92         110     18
+#> 4 2020-03-26         2020-04-02    Not specified        Cured               82 (60,Inf]         88          95      7
+#> 5 2020-03-20         2020-04-13    Not specified        Cured               50 (40,60]          82         106     24
+#> # ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+#> # Now: 2022-04-03 | Event date: "symptom_onset_date" | Report date: "record_date"
+#> # Strata: "age_cat"
+#> # ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+#> # ℹ 65,399 more rows
 ```
 
-## Part 1 — What is in the data: `summary()`
+## 1. Diagnose what is structurally wrong
 
-### One table, several blocks
+### Linelist data
 
-[`summary()`](https://rdrr.io/r/base/summary.html) returns a table, and
-prints it one **component** at a time with the columns that component
-does not populate dropped — the schema is wide because it has to hold
-every block at once, and no single block fills more than a handful of
-it:
-
-``` r
-
-summary(dengue_now)
-#> ── Summary of a <tbl_now> ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-#> 46 rows in 5 components; strata: "Female" and "Male".
-#> 
-#> cases
-#>   n = dates on the grid; total = cases
-#>   quantity        stratum     n total  mean    sd   min   q25   q50   q75   q90   max prop_zero
-#>   <chr>           <chr>   <int> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl>     <dbl>
-#> 1 per_event_date  all      1095 52987  48.4  53.3     0    14    30    64   104   358   0.00365
-#> 2 per_event_date  Female   1095 26592  24.3  26.7     0     7    15    32    52   189   0.0119 
-#> 3 per_event_date  Male     1095 26395  24.1  27.0     0     7    15    31    53   176   0.0119 
-#> 4 per_report_date all      1095 52987  48.4  54.3     0    14    29    64   111   420   0.00274
-#> 5 per_report_date Female   1095 26592  24.3  27.3     0     7    15    32    57   217   0.0155 
-#> 6 per_report_date Male     1095 26395  24.1  27.5     0     7    15    32    54   203   0.0201 
-#> 
-#> zero_run
-#>   n = runs of consecutive zero dates; total = zero dates in those runs
-#>   quantity    stratum     n total  mean    sd   min   q25   q50   q75   q90   max
-#>   <chr>       <chr>   <int> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl>
-#> 1 event_date  all         2     4  2    1.41      1     1     1     3     3     3
-#> 2 event_date  Female     10    13  1.3  0.675     1     1     1     1     2     3
-#> 3 event_date  Male        8    13  1.62 0.916     1     1     1     2     3     3
-#> 4 report_date all         3     3  1    0         1     1     1     1     1     1
-#> 5 report_date Female     15    17  1.13 0.352     1     1     1     1     2     2
-#> 6 report_date Male       19    22  1.16 0.501     1     1     1     1     2     3
-#> 
-#> composition
-#>   n = (event, report) cells in the category; total = cases in the category
-#>   quantity            n total  prop
-#>   <chr>           <int> <dbl> <dbl>
-#> 1 strata = Female  4133 26592 0.502
-#> 2 strata = Male    4132 26395 0.498
-#> 
-#> coverage
-#>   n = cells, or distinct dates on a date row; total = cases
-#>    quantity    stratum     n total date_min   date_max  
-#>    <chr>       <chr>   <int> <dbl> <date>     <date>    
-#>  1 total_cases all      8265 52987 NA         NA        
-#>  2 event_date  all      1091 52987 1990-01-01 2010-11-29
-#>  3 report_date all      1092 52987 1990-01-01 2010-12-20
-#>  4 total_cases Female   4133 26592 NA         NA        
-#>  5 event_date  Female   1082 26592 1990-01-01 2010-11-29
-#>  6 report_date Female   1078 26592 1990-01-01 2010-12-20
-#>  7 total_cases Male     4132 26395 NA         NA        
-#>  8 event_date  Male     1082 26395 1990-01-01 2010-11-29
-#>  9 report_date Male     1073 26395 1990-01-01 2010-12-13
-#> 10 now         all        NA    NA 2010-12-20 2010-12-20
-#> ℹ 19 more rows.
-#> 
-#> delay
-#>   n = (event, report) cells; total = cases
-#>   quantity        stratum     n total  mean    sd   min   q25   q50   q75   q90   max
-#>   <chr>           <chr>   <int> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl>
-#> 1 event_to_report all      8265 52987  1.74  1.21     0     1     1     2     3    26
-#> 2 event_to_report Female   4133 26592  1.74  1.20     0     1     1     2     3    15
-#> 3 event_to_report Male     4132 26395  1.74  1.22     0     1     1     2     3    26
-#> 
-#> ℹ Use `dplyr::filter()` or `tibble::as_tibble()` for the full schema.
-```
-
-Underneath it is an ordinary tibble, so every `dplyr` verb works on it
-and
-[`tibble::as_tibble()`](https://tibble.tidyverse.org/reference/as_tibble.html)
-gives the full schema back. The `component` column says which block a
-row belongs to:
-
-``` r
-
-summary(dengue_now) |>
-  count(component)
-#> # A tibble: 5 × 2
-#>   component       n
-#>   <chr>       <int>
-#> 1 cases           6
-#> 2 composition     2
-#> 3 coverage       29
-#> 4 delay           3
-#> 5 zero_run        6
-```
-
-Every row is one quantity, described by up to eighteen columns. Not
-every column applies to every row — a delay distribution has a `mean`
-but no `prop`, a proportion has a `prop` but no `q90` — so the table is
-deliberately sparse:
-
-``` r
-
-summary(dengue_now) |>
-  filter(component == "cases") |>
-  select(component, quantity, stratum, n, total, mean, sd, min, q50, q90, max, prop_zero)
-#> ── Summary of a <tbl_now> ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-#> 6 rows in 1 component; strata: "Female" and "Male".
-#> 
-#> cases
-#>   n = dates on the grid; total = cases
-#>   quantity        stratum     n total  mean    sd   min   q50   q90   max prop_zero
-#>   <chr>           <chr>   <int> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl>     <dbl>
-#> 1 per_event_date  all      1095 52987  48.4  53.3     0    30   104   358   0.00365
-#> 2 per_event_date  Female   1095 26592  24.3  26.7     0    15    52   189   0.0119 
-#> 3 per_event_date  Male     1095 26395  24.1  27.0     0    15    53   176   0.0119 
-#> 4 per_report_date all      1095 52987  48.4  54.3     0    29   111   420   0.00274
-#> 5 per_report_date Female   1095 26592  24.3  27.3     0    15    57   217   0.0155 
-#> 6 per_report_date Male     1095 26395  24.1  27.5     0    15    54   203   0.0201 
-#> 
-#> ℹ Use `dplyr::filter()` or `tibble::as_tibble()` for the full schema.
-```
-
-`stratum` is always “which subset of the data does this row describe”:
-`"all"` for the pooled rows, or a stratum label. The *category* of a
-compositional row goes in `quantity` instead, which keeps the two ideas
-from colliding:
-
-``` r
-
-summary(dengue_now) |>
-  filter(component == "composition") |>
-  select(quantity, stratum, n, total, prop)
-#> # A tibble: 2 × 5
-#>   quantity        stratum     n total  prop
-#>   <chr>           <chr>   <int> <dbl> <dbl>
-#> 1 strata = Female all      4133 26592 0.502
-#> 2 strata = Male   all      4132 26395 0.498
-```
-
-### The blocks worth knowing
-
-**`delay`** — the case-weighted reporting delay. Weighted means “equal
-to what you would get by expanding the counts to one row per case”, so
-it needs no separate explanation:
-
-``` r
-
-delay_summary(dengue_now) |>
-  select(quantity, stratum, n, total, mean, sd, q50, q90, max)
-#> # A tibble: 3 × 9
-#>   quantity        stratum     n total  mean    sd   q50   q90   max
-#>   <chr>           <chr>   <int> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl>
-#> 1 event_to_report all      8265 52987  1.74  1.21     1     3    26
-#> 2 event_to_report Female   4133 26592  1.74  1.20     1     3    15
-#> 3 event_to_report Male     4132 26395  1.74  1.22     1     3    26
-```
-
-**[`reporting_completeness()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md)**
-— the share of each event date’s eventual total that had arrived by
-delay `d`. It says how far back a nowcast has anything left to estimate,
-and it is the one number here that most often changes a decision. It is
-**not** part of [`summary()`](https://rdrr.io/r/base/summary.html), and
-it warns on every call: it was written by an AI and has not yet been
-checked by a human, so read it as a starting point rather than as a
-verified statistic.
-
-``` r
-
-reporting_completeness(dengue_now, delays = 0:4) |>
-  filter(stratum == "all") |>
-  select(quantity, n, mean, q50, prop)
-#> # A tibble: 5 × 5
-#>   quantity       n   mean    q50   prop
-#>   <chr>      <int>  <dbl>  <dbl>  <dbl>
-#> 1 delay <= 0  1090 0.0381 0.0220 0.0396
-#> 2 delay <= 1  1090 0.510  0.510  0.502 
-#> 3 delay <= 2  1090 0.844  0.867  0.850 
-#> 4 delay <= 3  1090 0.931  0.953  0.941 
-#> 5 delay <= 4  1090 0.963  0.984  0.972
-```
-
-Four percent of a week’s cases are in by the end of that week, half by
-the end of the next, and 94% by three weeks. Beyond about three weeks
-there is very little missing to reconstruct.
-
-**`zero_run`** — how sparse the series is, measured as runs of
-consecutive zero dates rather than as a simple proportion. A series that
-is 30% zeros scattered at random is a very different modelling problem
-from one that is 30% zeros in three long gaps:
-
-``` r
-
-zero_run_summary(dengue_now, axis = "event") |>
-  select(quantity, stratum, n, total, mean, q50, max)
-#> # A tibble: 3 × 7
-#>   quantity   stratum     n total  mean   q50   max
-#>   <chr>      <chr>   <int> <dbl> <dbl> <dbl> <dbl>
-#> 1 event_date all         2     4  2        1     3
-#> 2 event_date Female     10    13  1.3      1     3
-#> 3 event_date Male        8    13  1.62     1     3
-```
-
-**`coverage`** — the reach of the object, including how stale it is:
-
-``` r
-
-triangle_occupancy(dengue_now) |>
-  filter(stratum == "all") |>
-  select(quantity, n, value)
-#> # A tibble: 6 × 3
-#>   quantity                    n  value
-#>   <chr>                   <int>  <dbl>
-#> 1 max_delay                  NA 26    
-#> 2 triangle_cells_observed  5154 NA    
-#> 3 triangle_cells_possible 29214 NA    
-#> 4 triangle_occupancy         NA  0.176
-#> 5 now_gap_event              NA  3    
-#> 6 now_gap_report             NA  0
-```
-
-### Every block is also a function
-
-[`summary()`](https://rdrr.io/r/base/summary.html) is exactly the
-[`bind_rows()`](https://dplyr.tidyverse.org/reference/bind_rows.html) of
-its components, and each one is exported, so you can ask a single
-question without computing the rest:
-
-``` r
-
-prop_strata(dengue_now) |>
-  select(quantity, total, prop)
-#> # A tibble: 2 × 3
-#>   quantity        total  prop
-#>   <chr>           <dbl> <dbl>
-#> 1 strata = Female 26592 0.502
-#> 2 strata = Male   26395 0.498
-```
-
-The full set is
-[`cases_per_date()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md),
-[`delay_summary()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md),
-[`zero_run_summary()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md),
-[`prop_censored()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md),
-[`prop_revision_type()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md),
-[`prop_strata()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md),
-[`prop_covariate_levels()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md),
-[`date_ranges()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md),
-[`triangle_occupancy()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md)
-and
-[`cumulative_growth()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md),
-plus the two unreviewed ones –
-[`case_autocorrelation()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md)
-and
-[`reporting_completeness()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md)
-– which share the schema but are not part of
-[`summary()`](https://rdrr.io/r/base/summary.html).
-
-**Quantiles are inverse-ECDF (type 1).** `q50` is the smallest value
-whose cumulative weight reaches 0.5 — for an even number of
-observations, the upper of the two middle values rather than their
-average. This is the same estimator
-[`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html)
-and
-[`plot_delay_drift()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_delay_drift.md)
-use, so the table and the figures always agree, and for count data it
-always returns a value that was actually observed. A half-case delay is
-not.
-
-## Part 2 — What is structurally wrong: `diagnose()`
-
-### Findings, worst first
-
+Once the `tbl_now` is specified,
 [`diagnose()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose.md)
-prints as a report: the errors, warnings and notes in full, each with
-its hint, and one line each for the checks that passed, that were
-deliberately not run, and that could not be assessed.
-`print(x, all = TRUE)` spells those out too.
+can be used to print a report: with errors, warnings and notes:
 
 ``` r
 
-diagnose(dengue_now)
+diagnose(sari)
 #> ── Diagnosis of a <tbl_now> ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-#> 9 notes, 15 passed, 5 skipped.
+#> 2 warnings, 16 notes, 12 passed, 5 skipped.
 #> 
-#> Notes (9)
-#> ℹ now/now_gap_event [Female]: The last event date is 3 weeks before now ("2010-12-20").
+#> Warnings (2)
+#> ! missing/record_date: 12 rows have NA values in the report_date column "record_date".
+#>   → A row with no report date cannot be placed on the reporting triangle.
+#> ! ordering/event_to_report: 30 rows have a `report_date` before `event_date`
+#>   → A negative reporting delay is not a delay; the two date columns may be swapped, or the rows may be data-entry errors.
+#> 
+#> Notes (16)
+#> ℹ declarations/undeclared: 3 columns "final_classification", "case_evolution", and "age_yrs" are not declared as strata or covariates.
+#>   → Declare them with `strata = ` to model them separately, or let `to_count()` pool them away -- which is what the `tbl_now_to_()` converters do.
+#> ℹ now/now_gap_event [(20,40]]: The last event date is 9 days before now ("2022-04-03").
 #>   → Everything in that window is still arriving; it is what a nowcast is for, and it is also what makes the last points of any plot look like a decline.
-#> ℹ now/now_gap_event [Male]: The last event date is 3 weeks before now ("2010-12-20").
-#> ℹ now/now_gap_event: The last event date is 3 weeks before now ("2010-12-20").
-#> ℹ now/now_gap_report [Male]: The last report date is 1 week before now ("2010-12-20").
-#> ℹ strata/size [Male]: The smallest stratum is "Male" with 26395 cases, 49.8% of the total.
-#> ℹ strata/sparsity [Female]: The sparsest stratum is "Female": 13 of the 1095 weeks between the minimum event (1990-01-01) and the now (2010-12-20) carry no cases at all (1.2%, against 0.4% pooled over every stratum).
+#> ℹ now/now_gap_event [(40,60]]: The last event date is 9 days before now ("2022-04-03").
+#> ℹ now/now_gap_event [(60,Inf]]: The last event date is 9 days before now ("2022-04-03").
+#> ℹ now/now_gap_event [[0,20]]: The last event date is 7 days before now ("2022-04-03").
+#> ℹ now/now_gap_event: The last event date is 7 days before now ("2022-04-03").
+#> ℹ now/now_gap_report [(20,40]]: The last report date is 2 days before now ("2022-04-03").
+#> ℹ now/now_gap_report [(40,60]]: The last report date is 2 days before now ("2022-04-03").
+#> ℹ now/now_gap_report [[0,20]]: The last report date is 2 days before now ("2022-04-03").
+#> ℹ strata/size [[0,20]]: The smallest stratum is "[0,20]" with 6286 cases, 9.6% of the total.
+#> ℹ strata/sparsity [(20,40]]: The sparsest stratum is "(20,40]": 66 of the 827 days between the minimum event (2019-12-29) and the now (2022-04-03) carry no cases at all (8%, against 1.2% pooled over every stratum).
 #>   → A stratum that is mostly zeros is the one a per-stratum fit will struggle with; pooling it is often better than fitting it. When every stratum is mostly zeros the grid is finer than the data -- `aggregate_time_units()` coarsens it.
-#> ℹ truncation/event_date [Female]: 1 event date is younger than the 95th percentile of the delay, so its counts are still filling in; an estimated 5.8% of its eventual total has not arrived.
-#>   → This is right-truncation, and it is the reason to nowcast rather than a defect. Cut the series at "2010-11-22" to describe it instead.
-#> ℹ truncation/event_date [Male]: 1 event date is younger than the 95th percentile of the delay, so its counts are still filling in; an estimated 5.9% of its eventual total has not arrived.
-#> ℹ truncation/event_date: 1 event date is younger than the 95th percentile of the delay, so its counts are still filling in; an estimated 5.9% of its eventual total has not arrived.
+#> ℹ truncation/event_date [(20,40]]: 66 event dates are younger than the 95th percentile of the delay, so their counts are still filling in; an estimated 18.5% of their eventual total has not arrived.
+#>   → This is right-truncation, and it is the reason to nowcast rather than a defect. Cut the series at "2022-01-08" to describe it instead.
+#> ℹ truncation/event_date [(40,60]]: 70 event dates are younger than the 95th percentile of the delay, so their counts are still filling in; an estimated 15.3% of their eventual total has not arrived.
+#> ℹ truncation/event_date [(60,Inf]]: 76 event dates are younger than the 95th percentile of the delay, so their counts are still filling in; an estimated 14.3% of their eventual total has not arrived.
+#> ℹ truncation/event_date [[0,20]]: 78 event dates are younger than the 95th percentile of the delay, so their counts are still filling in; an estimated 22% of their eventual total has not arrived.
+#> ℹ truncation/event_date: 78 event dates are younger than the 95th percentile of the delay, so their counts are still filling in; an estimated 17% of their eventual total has not arrived.
 #> 
-#> ✔ 15 passed: declarations/temporal_effects, declarations/undeclared, missing/gender, missing/onset_week, missing/report_week, now/event_date, now/now_gap_report, now/report_date, ordering/event_to_report, simultaneously missing/event and report dates, units/declared, units/delay, units/event_grid, and units/report_grid
+#> ✔ 12 passed: declarations/temporal_effects, missing/age_cat, missing/symptom_onset_date, now/event_date, now/now_gap_report, now/report_date, simultaneously missing/event and report dates, units/declared, units/delay, units/event_grid, and units/report_grid
 #> ─ 5 skipped: duplicates/key, negatives/count, ordering/event_to_revision, ordering/report_to_revision, and strata/pending
 #> 
-#> ℹ 29 findings. Use `dplyr::filter()` or `tibble::as_tibble()` for the table.
+#> ℹ 35 findings. Use `dplyr::filter()` or `tibble::as_tibble()` for the table.
 ```
 
-It is a tibble underneath, in the schema the rest of this section reads:
+in our case we have rows with missing report dates which we’ll input via
+censoring (we’ll utilize the last value observed):
 
 ``` r
 
-diagnose(dengue_now) |>
-  count(status)
-#> # A tibble: 3 × 2
-#>   status      n
-#>   <ord>   <int>
-#> 1 note        9
-#> 2 ok         15
-#> 3 skipped     5
+sari <- sari |> censor_reports(is.na(record_date))
 ```
 
-`status` is an **ordered factor** — `error` \> `warning` \> `note` \>
-`ok` \> `skipped` — so the table sorts itself and filtering to what
-needs acting on is a comparison rather than a set membership test:
+while for the 30 rows where the report date was set before the event
+we’ll drop them as there is no principled way of handling these cases:
 
 ``` r
 
-diagnose(dengue_now) |>
-  filter(status <= "note") |>
-  select(check, scope, stratum, status, n_affected, n_total, message)
-#> # A tibble: 9 × 7
-#>   check      scope          stratum status n_affected n_total message                                                                                           
-#>   <chr>      <chr>          <chr>   <ord>       <dbl>   <dbl> <chr>                                                                                             
-#> 1 now        now_gap_event  Female  note            3      NA "The last event date is 3 weeks before now (\"2010-12-20\")."                                     
-#> 2 now        now_gap_event  Male    note            3      NA "The last event date is 3 weeks before now (\"2010-12-20\")."                                     
-#> 3 now        now_gap_event  all     note            3      NA "The last event date is 3 weeks before now (\"2010-12-20\")."                                     
-#> 4 now        now_gap_report Male    note            1      NA "The last report date is 1 week before now (\"2010-12-20\")."                                     
-#> 5 strata     size           Male    note        26395   52987 "The smallest stratum is \"Male\" with 26395 cases, 49.8% of the total."                          
-#> 6 strata     sparsity       Female  note           13    1095 "The sparsest stratum is \"Female\": 13 of the 1095 weeks between the minimum event (1990-01-01) …
-#> 7 truncation event_date     Female  note            1    1082 "1 event date is younger than the 95th percentile of the delay, so its counts are still filling i…
-#> 8 truncation event_date     Male    note            1    1082 "1 event date is younger than the 95th percentile of the delay, so its counts are still filling i…
-#> 9 truncation event_date     all     note            1    1091 "1 event date is younger than the 95th percentile of the delay, so its counts are still filling i…
+sari <- sari |> filter(record_date >= symptom_onset_date)
 ```
 
-Each finding also carries a `hint` saying what to do about it, and a
-`rows` list-column of the offending row indices, so you can go straight
-to them:
+The notes can also be reduced.
+[`tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.md)
+aims for the bare minimum for a nowcast hence it complains about the
+extra columns that are neither covariates nor strata. We can remove them
+to silence the note:
 
 ``` r
 
-finding <- diagnose(dengue_now) |> filter(check == "declarations", status <= "note")
-
-finding$hint
-#> character(0)
+sari <- sari |> select(-age_yrs, -final_classification, -case_evolution)
 ```
 
-### The five statuses, and why `skipped` is not `ok`
-
-The distinction that matters most is between a check that **ran and
-found nothing** and one that **could not run**:
+This now leads to a cleaner diagnose which can be called the same way or
+printed as a tibble by assigning it to an object:
 
 ``` r
 
-diagnose(dengue_now) |>
-  filter(status == "skipped") |>
-  select(check, scope, message)
-#> # A tibble: 5 × 3
-#>   check      scope              message                                                                               
-#>   <chr>      <chr>              <chr>                                                                                 
-#> 1 duplicates key                A line list is one row per case, so identical rows are two cases rather than a repeat.
-#> 2 negatives  count              A line list has no count column to go negative.                                       
-#> 3 ordering   event_to_revision  The object carries no revision process.                                               
-#> 4 ordering   report_to_revision The object carries no revision process.                                               
-#> 5 strata     pending            The object carries no revision process.
+sari_diagnostic <- diagnose(sari) |> filter(status != "ok" & status != "skipped")
 ```
 
-`dengue_now` is a line list with no revision process, so four checks
-have nothing to work on. None of them is a pass. Reporting them as `ok`
-would be a quiet lie, and this is the single most common way a health
-check misleads: silence that reads as approval.
-
-Note the first row in particular.
-**[`diagnose()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose.md)
-will not look for duplicate records in a line list**, because a line
-list is one row per case — two identical rows are two infections, not a
-repeat. Deduplicating a line list needs a key the object does not have
-(a record id, say), so that check stays yours.
-
-### Structural, never statistical
-
-[`diagnose()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose.md)
-runs no statistical tests at all. It is fast, and its answer never
-depends on a random seed or an optional package. The questions that *do*
-need a test are simply not in it: they have their own functions, and you
-call one when you want its answer.
-
-Those calls —
-[`diagnose_drift()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_drift.md),
-[`diagnose_changepoint()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_changepoint.md),
-[`diagnose_batches()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_batches.md),
-[`diagnose_batches2()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_batches2.md)
-— are Part 3 of this article. They return their own shapes rather than
-the findings schema, because a hypothesis test has a p-value and an
-effect size that a findings row has nowhere to put.
+| stratum | n_affected | n_total | prop | message | rows |
+|:---|---:|---:|---:|:---|:---|
+| (20,40\] | 9 | NA | NA | The last event date is 9 days before now (“2022-04-03”). |  |
+| (40,60\] | 9 | NA | NA | The last event date is 9 days before now (“2022-04-03”). |  |
+| (60,Inf\] | 9 | NA | NA | The last event date is 9 days before now (“2022-04-03”). |  |
+| \[0,20\] | 7 | NA | NA | The last event date is 7 days before now (“2022-04-03”). |  |
+| all | 7 | NA | NA | The last event date is 7 days before now (“2022-04-03”). |  |
+| (20,40\] | 2 | NA | NA | The last report date is 2 days before now (“2022-04-03”). |  |
+| \[0,20\] | 6284 | 65374 | 0.0961238 | The smallest stratum is “\[0,20\]” with 6284 cases, 9.6% of the total. |  |
+| (20,40\] | 66 | 827 | 0.0798065 | The sparsest stratum is “(20,40\]”: 66 of the 827 days between the minimum event (2019-12-29) and the now (2022-04-03) carry no cases at all (8%, against 1.2% pooled over every stratum). |  |
+| (20,40\] | 66 | 761 | 0.0867280 | 66 event dates are younger than the 95th percentile of the delay, so their counts are still filling in; an estimated 18.5% of their eventual total has not arrived. |  |
+| (40,60\] | 70 | 780 | 0.0897436 | 70 event dates are younger than the 95th percentile of the delay, so their counts are still filling in; an estimated 15.4% of their eventual total has not arrived. |  |
+| (60,Inf\] | 76 | 810 | 0.0938272 | 76 event dates are younger than the 95th percentile of the delay, so their counts are still filling in; an estimated 14.3% of their eventual total has not arrived. |  |
+| \[0,20\] | 78 | 776 | 0.1005155 | 78 event dates are younger than the 95th percentile of the delay, so their counts are still filling in; an estimated 22.1% of their eventual total has not arrived. |  |
+| all | 78 | 817 | 0.0954712 | 78 event dates are younger than the 95th percentile of the delay, so their counts are still filling in; an estimated 17% of their eventual total has not arrived. |  |
 
 ### Cumulative data: the revisions
 
-Cumulative counts get revised downwards, and a downward revision becomes
-a **negative increment** the moment the series is de-accumulated.
-Anything consuming incidence has to cope with that, so
-[`diagnose()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose.md)
-counts them. FluSight is the standard example:
+Cumulative counts represent at each entry the best estimate of the
+running total of cases by that event-report date. As such, they can get
+revised downwards, and a downward revision can become a **negative
+‘increment’** the moment the series is de-accumulated. We can see this
+example with the `flusight` dataset:
 
 ``` r
 
 data(flusight)
 
 flu_now <- flusight |>
-  filter(location_name %in% c("Alabama", "Alaska", "Arizona"),
-         target_end_date >= as.Date("2023-01-01")) |>
+  filter(location_name == "Alabama", target_end_date >= as.Date("2023-01-01")) |>
   tbl_now(
     event_date  = target_end_date,
     report_date = as_of,
     case_count  = observation,
-    strata      = location_name,
-    data_type   = "count-cumulative",
-    verbose     = FALSE
+    data_type   = "count-cumulative"
   )
 
-diagnose_negatives(flu_now) |>
-  select(scope, stratum, status, n_affected, n_total, message)
-#> # A tibble: 4 × 6
-#>   scope     stratum status n_affected n_total message                                                  
-#>   <chr>     <chr>   <ord>       <dbl>   <dbl> <chr>                                                    
-#> 1 increment Alabama note           73    5499 73 de-accumulated increments are negative (total -175).  
-#> 2 increment Alaska  note           12    5499 12 de-accumulated increments are negative (total -26).   
-#> 3 increment Arizona note           71    5499 71 de-accumulated increments are negative (total -7522). 
-#> 4 increment all     note          156   16497 156 de-accumulated increments are negative (total -7723).
+diagnose(flu_now)
+#> ── Diagnosis of a <tbl_now> ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+#> 1 warning, 5 notes, 12 passed, 4 skipped.
+#> 
+#> Warnings (1)
+#> ! units/delay: 563 rows have a fractional `.delay`.
+#>   → A fractional delay is what a converter chokes on: the two date columns are on different grids. `align_weeks()` is the fix for weekly data.
+#> 
+#> Notes (5)
+#> ℹ declarations/undeclared: 1 column "location_name" is not declared as strata or covariates.
+#>   → Declare it with `strata = ` to model it separately, or let `to_count()` pool it away -- which is what the `tbl_now_to_()` converters do.
+#> ℹ negatives/increment: 73 de-accumulated increments are negative (total -175).
+#>   → A cumulative total that goes down is a revision. `to_count(x, to = "count-incidence")` shows the increments; the row indices are its rows, not this object's, so none are given.
+#> ℹ now/now_gap_event: The last event date is 0.57 weeks before now ("2025-11-12").
+#>   → Everything in that window is still arriving; it is what a nowcast is for, and it is also what makes the last points of any plot look like a decline.
+#> ℹ truncation/event_date: 24 event dates are younger than the 95th percentile of the delay, so their counts are still filling in; an estimated 7.6% of their eventual total has not arrived.
+#>   → This is right-truncation, and it is the reason to nowcast rather than a defect. Cut the series at "2025-05-28" to describe it instead.
+#> ℹ units/report_grid: "as_of" is declared "weeks" but 563 of its dates do not sit on the same grid as the earliest event date ("2023-01-07").
+#>   → Weekly columns on different weekdays are the usual cause; fix them with `align_weeks()` rather than rounding.
+#> 
+#> ✔ 12 passed: declarations/temporal_effects, duplicates/key, missing/as_of, missing/observation, missing/target_end_date, now/event_date, now/now_gap_report, now/report_date, ordering/event_to_report, simultaneously missing/event and report dates, units/declared, and units/event_grid
+#> ─ 4 skipped: ordering/event_to_revision, ordering/report_to_revision, strata/pending, and strata/size
+#> 
+#> ℹ 22 findings. Use `dplyr::filter()` or `tibble::as_tibble()` for the table.
 ```
 
-For cumulative data [`summary()`](https://rdrr.io/r/base/summary.html)
-also swaps its `delay` block for a `growth` one — the ratio of one
-delay’s running total to the previous one’s — because a cumulative total
-is not additive across delays and a case-weighted delay distribution
-would be meaningless:
+The first thing to note here is that data is weekly though sometimes
+reported on a Saturday and sometimes on a Wednesday. We can use the
+[`align_weeks()`](https://rodrigozepeda.github.io/tbl.now/reference/align_weeks.md)
+function to set all the days to the same day of the week so that the
+delays are integer numbers:
 
 ``` r
 
-cumulative_growth(flu_now, k = 3) |>
-  filter(stratum == "all") |>
-  select(quantity, n, total, mean, q50, max)
-#> # A tibble: 3 × 6
-#>   quantity     n total  mean   q50   max
-#>   <chr>    <int> <dbl> <dbl> <dbl> <dbl>
-#> 1 delay 1     64  2024 1.08      1  3.44
-#> 2 delay 2     75  -103 1.01      1  1.78
-#> 3 delay 3     81 -1042 0.993     1  1.72
+#Day 4 is a wednesday as per wday()
+flu_now <- flu_now |> align_weeks(align_on_day = 4)
 ```
 
-The mean ratio falls below 1 by the third delay, and the totals go
-negative: these series shrink on revision more often than they grow.
-[`delay_summary()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md)
-refuses to run on this object at all, and says why.
+The remaining notes refer to the distance between today and the now as
+well as the fact that this dataset sometimes gets revised in its number
+of cases (hence the negative ‘increments’)
 
-### The same findings, two presentations
+## 2. Summarise what is in the data
 
-[`validate_tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/validate_tbl_now.md)
-runs the **same engine** as
-[`diagnose()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose.md).
-It does not return the findings; it re-emits the `error` rows as an
-abort and the `warning` rows as warnings. That is why a malformed object
-complains the moment you build it, and why the two can never drift
-apart:
+The [`summary()`](https://rdrr.io/r/base/summary.html) function returns
+a table, and prints it one **component** at a time:
 
 ``` r
 
-bad <- denguedat |>
-  mutate(report_week = report_week - 400) |>
-  tbl_now(event_date = "onset_week", report_date = "report_week", verbose = FALSE)
+summary(sari)
+#> ── Summary of a <tbl_now> ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+#> 91 rows in 5 components; strata: "(20,40]", "(40,60]", "(60,Inf]", and "[0,20]".
+#> 
+#> cases
+#>   n = dates on the grid; total = cases
+#>    quantity                stratum      n total     mean      sd   min   q25   q50   q75   q90   max prop_zero
+#>    <chr>                   <chr>    <int> <dbl>    <dbl>   <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl>     <dbl>
+#>  1 per_event_date          all        827 65374 79.0     51.4        0    44    72   109   144   307    0.0121
+#>  2 censored_per_event_date all        827    12  0.0145   0.120      0     0     0     0     0     1    0.985 
+#>  3 per_event_date          (20,40]    827  6846  8.28     6.64       0     3     7    12    17    37    0.0798
+#>  4 censored_per_event_date (20,40]    827     0  0        0          0     0     0     0     0     0    1     
+#>  5 per_event_date          (40,60]    827 17949 21.7     19.4        0     8    16    31    51    96    0.0568
+#>  6 censored_per_event_date (40,60]    827     6  0.00726  0.0849     0     0     0     0     0     1    0.993 
+#>  7 per_event_date          (60,Inf]   827 34295 41.5     26.8        0    23    38    56    76   163    0.0206
+#>  8 censored_per_event_date (60,Inf]   827     5  0.00605  0.0776     0     0     0     0     0     1    0.994 
+#>  9 per_event_date          [0,20]     827  6284  7.60     5.22       0     4     7    10    14    28    0.0617
+#> 10 censored_per_event_date [0,20]     827     1  0.00121  0.0348     0     0     0     0     0     1    0.999 
+#> ℹ 10 more rows.
+#> 
+#> zero_run
+#>   n = runs of consecutive zero dates; total = zero dates in those runs
+#>    quantity    stratum      n total  mean    sd   min   q25   q50   q75   q90   max
+#>    <chr>       <chr>    <int> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl>
+#>  1 event_date  all          4    10  2.5  3         1     1     1     1     7     7
+#>  2 event_date  (20,40]     25    66  2.64 2.31      1     1     2     3     6     9
+#>  3 event_date  (40,60]     18    47  2.61 1.94      1     1     2     3     5     9
+#>  4 event_date  (60,Inf]     9    17  1.89 2.67      1     1     1     1     9     9
+#>  5 event_date  [0,20]      13    51  3.92 3.12      1     2     3     7     9     9
+#>  6 report_date all        119   210  1.76 0.945     1     1     2     2     2     9
+#>  7 report_date (20,40]    130   278  2.14 1.59      1     2     2     2     3    14
+#>  8 report_date (40,60]    128   255  1.99 1.30      1     1     2     2     3    14
+#>  9 report_date (60,Inf]   126   237  1.88 1.02      1     1     2     2     2    10
+#> 10 report_date [0,20]     127   289  2.28 1.41      1     2     2     2     3    10
+#> 
+#> composition
+#>   n = (event, report) cells in the category; total = cases in the category
+#>   quantity          stratum      n total     prop
+#>   <chr>             <chr>    <int> <dbl>    <dbl>
+#> 1 censored          all         12    12 0.000184
+#> 2 censored          (20,40]      0     0 0       
+#> 3 censored          (40,60]      6     6 0.000334
+#> 4 censored          (60,Inf]     5     5 0.000146
+#> 5 censored          [0,20]       1     1 0.000159
+#> 6 strata = (20,40]  all       5684  6846 0.105   
+#> 7 strata = (40,60]  all      11458 17949 0.275   
+#> 8 strata = (60,Inf] all      17880 34295 0.525   
+#> 9 strata = [0,20]   all       5072  6284 0.0961  
+#> 
+#> coverage
+#>   n = cells, or distinct dates on a date row; total = cases
+#>    quantity    stratum      n total date_min   date_max  
+#>    <chr>       <chr>    <int> <dbl> <date>     <date>    
+#>  1 total_cases all      40094 65374 NA         NA        
+#>  2 event_date  all        817 65374 2019-12-29 2022-03-27
+#>  3 report_date all        612 65374 2020-01-03 2022-04-03
+#>  4 total_cases (20,40]   5684  6846 NA         NA        
+#>  5 event_date  (20,40]    761  6846 2020-01-01 2022-03-25
+#>  6 report_date (20,40]    544  6846 2020-01-17 2022-04-01
+#>  7 total_cases (40,60]  11458 17949 NA         NA        
+#>  8 event_date  (40,60]    780 17949 2019-12-29 2022-03-25
+#>  9 report_date (40,60]    567 17949 2020-01-17 2022-04-03
+#> 10 total_cases (60,Inf] 17880 34295 NA         NA        
+#> ℹ 37 more rows.
+#> 
+#> delay
+#>   n = (event, report) cells; total = cases
+#>   quantity        stratum      n total  mean    sd   min   q25   q50   q75   q90   max
+#>   <chr>           <chr>    <int> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl>
+#> 1 event_to_report all      40094 65374  28.7  35.5     0    10    18    34    61   683
+#> 2 event_to_report (20,40]   5684  6846  29.8  35.8     0    11    18    36    64   483
+#> 3 event_to_report (40,60]  11458 17949  30.1  35.2     0    11    19    36    64   617
+#> 4 event_to_report (60,Inf] 17880 34295  28.3  35.6     0    10    17    33    60   683
+#> 5 event_to_report [0,20]    5072  6284  26.3  35.6     0     8    14    32    59   539
+#> 
+#> ℹ Use `dplyr::filter()` or `tibble::as_tibble()` for the full schema.
 ```
 
-The warning above and the `ordering` row of `diagnose(bad)` are the same
-finding, formatted for two different audiences: one for a person who is
-about to make a mistake, one for a program that needs to decide what to
-do.
+We’ll discuss each of the blocks individually:
 
-`note` rows are deliberately never promoted to warnings.
-[`validate_tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/validate_tbl_now.md)
-runs on every `dplyr` verb, so a new warning there would turn a quiet
-construction into a noisy one for data that has always been accepted.
+#### Delay block
 
-## Part 3 — What needs a statistical test: reporting artefacts
+Summarises the distribution of the reporting delay. Here we can see that
+on average it takes 29 days to get reported but some cases took more
+than 500 days!
 
-Everything above is structural: it can be decided by looking at the
-object, it gives the same answer every time, and it costs nothing. The
-questions Part 2 would not touch are where that stops. Whether the
-reporting delay has drifted, and whether a spike is released backlog or
-genuine new cases, are statements about a **distribution** — and
-answering them means picking a method, a window and a multiplicity
-correction, which is not a decision a health check should make on your
-behalf.
-
-So the rest of this article is the other half of the toolkit: the tests
-and the pictures for the questions
-[`diagnose()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose.md)
-refuses to answer.
-
-### Batch reporting
-
-Surveillance data does not always arrive smoothly. Sometimes the
-reporting system halts or reduces its output (e.g. a data-system outage,
-an overwhelmed jurisdiction) and the backlog is released later all at
-once. That release is called a **batch**: a collection of reports from
-previous periods that were held and reported all at once during a
-different reporting period. Intuivitively one can think of a batch as a
-collection of reports that –in an ideal scenario– *should have been
-reported* on a previous date but were actually released later.
-
-![](diagnosing-a-tbl-now_files/figure-html/unnamed-chunk-2-1.png)
-
-A batch is easy to confuse with an epidemic **surge**. The important
-part is that the batch happens on the **reporting date** axis while a
-surge happens on the **event date** axis. A batch just *moves* reports
-to a later date not adding new cases while a real epidemic surge *adds*
-new cases. The tools here are designed to help you visualize that
-difference.
-
-> This article shows each plot **twice**: first on a clean, made-up
-> outbreak with one obvious batch (so you learn the signature), then on
-> real, COVID-19 data from the CDC (see
-> [`covid_us`](https://rodrigozepeda.github.io/tbl.now/reference/covid_us.html)).
-
-### Two datasets to compare
-
-#### The made-up outbreak.
-
-This simulation consists of a bell-shaped curve over a hundred days,
-each case reported within a few days. For one week near the peak, the
-reporting system slows down with **half** of each day’s reports being
-held back and released days after. That release is the **batch**.
+You can also see the reporting delay via its plot:
 
 ``` r
 
-set.seed(82495)
-#Simulate a curve
-onset_days <- as.Date("2024-01-01") + 0:99
-bell       <- dnorm(seq(-2.5, 2.5, length.out = 100))
-per_day    <- round(400 * bell / max(bell)) + 8         
-onset      <- rep(onset_days, per_day)
-reported   <- onset + rpois(length(onset), 1.5)         
-
-clean_tn <- tbl_now(tibble(onset = onset, reported = reported),
-                    event_date = onset, report_date = reported,
-                    data_type = "linelist", verbose = FALSE)
-
-# Simulate a batch
-ideal <- simulate_batch(clean_tn,
-  closed_dates  = seq(as.Date("2024-02-19"), by = "day", length.out = 7),
-  held_fraction = 0.5)
+plot_delay_distribution(sari)
 ```
 
-We can see the simulated data both from the event-date and the
-report-date perspectives:
+![](diagnosing-a-tbl-now_files/figure-html/unnamed-chunk-8-1.png)
+
+Or get that specific table with:
 
 ``` r
 
-plot_epidemic_process(ideal)
-plot_reporting_process(ideal)
+delay_summary(sari)
+#> ── Summary of a <tbl_now> ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+#> 5 rows in 1 component; strata: "(20,40]", "(40,60]", "(60,Inf]", and "[0,20]".
+#> 
+#> delay
+#>   n = (event, report) cells; total = cases
+#>   quantity        stratum      n total  mean    sd   min   q25   q50   q75   q90   max
+#>   <chr>           <chr>    <int> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl>
+#> 1 event_to_report all      40094 65374  28.7  35.5     0    10    18    34    61   683
+#> 2 event_to_report (20,40]   5684  6846  29.8  35.8     0    11    18    36    64   483
+#> 3 event_to_report (40,60]  11458 17949  30.1  35.2     0    11    19    36    64   617
+#> 4 event_to_report (60,Inf] 17880 34295  28.3  35.6     0    10    17    33    60   683
+#> 5 event_to_report [0,20]    5072  6284  26.3  35.6     0     8    14    32    59   539
+#> 
+#> ℹ Use `dplyr::filter()` or `tibble::as_tibble()` for the full schema.
 ```
 
-![](diagnosing-a-tbl-now_files/figure-html/unnamed-chunk-4-1.png)
-
-#### The real data
-
-`covid_us` comes from the CDC’s individual-level [COVID-19 Case
-Surveillance Public Use
-Data](https://data.cdc.gov/Case-Surveillance/COVID-19-Case-Surveillance-Public-Use-Data/vbim-akqf/about_data).
-It carries three dates. Here we use the first and the last: symptom
-onset (`onset_dt`) as the event, and registration at CDC
-(`cdc_report_dt`) as the report. The middle one, `pos_spec_dt`, is the
-specimen collection, and it is pooled away along with `current_status`
-and `sex` – the batch question is about when reports *arrived*, not
-about who they were.
-
-``` r
-
-data(covid_us)
-
-covid_early <- covid_us |>
-  summarise(n = sum(n), .by = c(onset_dt, cdc_report_dt))
-
-tn <- tbl_now(covid_early, event_date = onset_dt,
-              report_date = cdc_report_dt, case_count = n,
-              data_type = "count-incidence", verbose = FALSE)
-```
-
-Half of all cases were reported within a few days, but the tail is long:
-some cases take weeks or months to surface.
-
-``` r
-
-stats::quantile(rep(tn$.delay, tn$n), c(0.5, 0.75, 0.9, 0.99))
-#> 50% 75% 90% 99% 
-#>   6  12  30 149
-```
-
-We can see this dataset again from both the event-date and the
-report-date perspectives:
-
-``` r
-
-plot_epidemic_process(tn)
-plot_reporting_process(tn)
-```
-
-![](diagnosing-a-tbl-now_files/figure-html/unnamed-chunk-6-1.png)
-
-### The reporting process
-
-This plot, which we have previously shown, shows how many reports
-arrived by date. Batches or surges might correspond to spikes towering
-over their neighbours.
-
-``` r
-
-plot_reporting_process(ideal)
-```
-
-![Reporting process of the simulated
-data](diagnosing-a-tbl-now_files/figure-html/unnamed-chunk-7-1.png)
-
-Reporting process of the simulated data
-
-On the real data the reporting is spikier; a handful of peaks stick up
-where smooth epidemic reporting should be. Those are reporting artefacts
-either pure backlog releases, or a mix of backlog + a genuine surge
-(we’ll come back to this characterization later). The tallest is a
-single day of about 50K reports on 12 December 2020, sixteen times the
-3K that arrive on a typical day; 10 June and 5 September are the other
-conspicuous ones.
-
-``` r
-
-plot_reporting_process(tn)
-```
-
-![Reporting process of the COVID-19
-data](diagnosing-a-tbl-now_files/figure-html/proc-covid-1.png)
-
-Reporting process of the COVID-19 data
-
-### The reporting triangle
-
-We provide two different visualizations of the reporting triangle. In
-both we plot the three temporal dimensions involved in the process: the
-event date, the reporting date and the delay. We cover the plots in
-tiles coloured by how many cases were registered then.
-
-#### The classical reporting triangle
-
-The classical view is given by
-[`plot_reporting_triangle()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_reporting_triangle.md)
-where each tile is described by *when it happened* (across) and *how
-long they took to be reported* (vertical). The diagonal shows reports
-that arrive on the same day.  
-An indicator of a batch is **a bright diagonal reaching high up** which
-reporesents many delayed cases being all reported on the same day.
-
-``` r
-
-plot_reporting_triangle(ideal)
-```
-
-![Classical reporting triangle of the simulated
-data](diagnosing-a-tbl-now_files/figure-html/unnamed-chunk-8-1.png)
-
-Classical reporting triangle of the simulated data
-
-On COVID-19, the triangle is a broad blue-grey haze (most cases reported
-over many months) crossed by bright diagonals. They correspond to the
-same spikes seen in the reporting process:
-
-``` r
-
-plot_reporting_triangle(tn)
-```
-
-![Classical reporting triangle of the COVID-19
-data](diagnosing-a-tbl-now_files/figure-html/unnamed-chunk-9-1.png)
-
-Classical reporting triangle of the COVID-19 data
-
-#### The reporting hexamap
-
-Event date, report date and reporting delay can be seen as an
-**age-period-cohort** triple (`report = event + delay`, exactly
-`period = cohort + age`), so the reporting triangle can be drawn as a
-hexamap in the style of [Jalal and Burke
-(2020)](https://doi.org/10.1097/EDE.0000000000001236): each
-`(event, delay)` cell is a point on a hexagonal lattice, coloured by its
-report count, with event date, report date and delay running along the
-three 60-degree axes. Because a batch is a happens in the **report
-date**, it shows up as a **vertical stripe**; the fast reporting bulk
-sits along the short-delay bottom edge.
-
-``` r
-
-plot_reporting_hexamap(ideal)
-```
-
-![](diagnosing-a-tbl-now_files/figure-html/hex-sim-1.png)
-
-The marks are sized in millimetres while the lattice is sized in data
-units, so no default can suit every combination of cell count and figure
-size. `size` is the knob: raise it until the points nearly touch at the
-size you are actually drawing, and `shape = 15` swaps the circles for
-squares, which tile more closely.
-
-``` r
-
-plot_reporting_hexamap(ideal, size = 3, shape = 15)
-```
-
-![](diagnosing-a-tbl-now_files/figure-html/hex-sim-big-1.png)
-
-On covid the vertical stripes are the 2020 backlog releases. The delay
-axis is capped with `max_delay` to keep the map to where the reports
-are.
-
-``` r
-
-plot_reporting_hexamap(tn, max_delay = 60)
-```
-
-![](diagnosing-a-tbl-now_files/figure-html/hex-covid-1.png)
-
-### Transport vs creation
-
-This is the main tool for detecting batches and surges. Before the plot,
-we will explain the whole idea. Consider a daily outbreak with reports
-incoming each day. Three things can change the number of reports:
-
-- a **hold** – a reporting office falls behind and some days’ reports
-  are withheld;
-- a **batch** – the day the backlog (hold) is finally released, all at
-  once;
-- a **surge** – an increase in the epidemic process: more people falling
-  ill and being reported.
-
-We simulate one of each in a clean epidemic and colour every day by its
-type (grey = ordinary day):
-
-![](diagnosing-a-tbl-now_files/figure-html/tut-data-1.png)
-
-In the previous plot, every bar is one report date. The **batch** towers
-where the held reports land together; the **hold** is the small blue dip
-just before it; the **surge** is a genuine bump of new cases.
-
-The transport discriminant turns each day into **two numbers**:
-
-- A **creation score** – did this stretch of days genuinely *gain*
-  cases? A larger surge implies a larger creation score.
-- A **transport score** – were the days just before *missing* reports? A
-  backlog release after a hold pushes it up.
-
-We plot every day by those two numbers and observe the directions of the
-three disturbances:
-
-![](diagnosing-a-tbl-now_files/figure-html/tut-plane-1.png)
-
-Identifying any bar with its dot we can conclude:
-
-- A **batch (backlog release, red)** shoots **up and right** – the days
-  before were depleted (high transport) but not as many new cases were
-  created (right);
-- A **surge (green)** shoots **right** – cases genuinely appeared (high
-  creation), with apparent preceding hole;
-- A **hold (blue)** drifts **left** – reports have apparently gone
-  missing (transport rising) while the window has *lost* cases (creation
-  negative).
-
-Ordinary days (grey) sit in the cloud through the middle. That is the
-whole idea behind
-[`transport_discriminant()`](https://rodrigozepeda.github.io/tbl.now/reference/transport_discriminant.md)
-and
-[`diagnose_batches()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_batches.md):
-**a batch is high transport with little creation**.
-
-#### The transport discriminant
-
-The previous plot can be done with the
-[`plot_transport_discriminant()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_transport_discriminant.md)
+### Composition
+
+The strata composition (i.e. the proportion of cases by strata) can be
+accessed with the
+[`prop_strata()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md)
 function:
 
 ``` r
 
-plot_transport_discriminant(ideal)
+prop_strata(sari)
+#> ── Summary of a <tbl_now> ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+#> 4 rows in 1 component.
+#> 
+#> composition
+#>   n = (event, report) cells in the category; total = cases in the category
+#>   quantity              n total   prop
+#>   <chr>             <int> <dbl>  <dbl>
+#> 1 strata = (20,40]   5684  6846 0.105 
+#> 2 strata = (40,60]  11458 17949 0.275 
+#> 3 strata = (60,Inf] 17880 34295 0.525 
+#> 4 strata = [0,20]    5072  6284 0.0961
+#> 
+#> ℹ Use `dplyr::filter()` or `tibble::as_tibble()` for the full schema.
 ```
 
-![](diagnosing-a-tbl-now_files/figure-html/disc-sim2-1.png)
+Here we see that half of the cases occurred in people 60 years or older.
 
-Which also works to identify the COVID-19 cases:
+### Sparcity
+
+The `zero_run_summary` explains how sparse the series is. It measures a
+zero-run: a collection of consecutive dates with no cases and quantifies
+how those runs behave. Here we can see that there is no sparcity (the
+longest zero runs are of 7 days with most of them lasting 1 day or
+less). The data is not at all sparse as we can see that if we see a
+zero, it is very likely the next day there will be cases (in contrast
+with another 0).
 
 ``` r
 
-plot_transport_discriminant(tn, period = 7)
+zero_run_summary(sari, axis = "event")
+#> ── Summary of a <tbl_now> ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+#> 5 rows in 1 component; strata: "(20,40]", "(40,60]", "(60,Inf]", and "[0,20]".
+#> 
+#> zero_run
+#>   n = runs of consecutive zero dates; total = zero dates in those runs
+#>   quantity   stratum      n total  mean    sd   min   q25   q50   q75   q90   max
+#>   <chr>      <chr>    <int> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl>
+#> 1 event_date all          4    10  2.5   3        1     1     1     1     7     7
+#> 2 event_date (20,40]     25    66  2.64  2.31     1     1     2     3     6     9
+#> 3 event_date (40,60]     18    47  2.61  1.94     1     1     2     3     5     9
+#> 4 event_date (60,Inf]     9    17  1.89  2.67     1     1     1     1     9     9
+#> 5 event_date [0,20]      13    51  3.92  3.12     1     2     3     7     9     9
+#> 
+#> ℹ Use `dplyr::filter()` or `tibble::as_tibble()` for the full schema.
 ```
 
-![](diagnosing-a-tbl-now_files/figure-html/disc-covid2-1.png)
+### Coverage
 
-#### Recovering the data
+The `date_ranges` show the minimum and maximum for each date per strata
+to see if there was a lapse in coverage for one:
+
+``` r
+
+date_ranges(sari)
+#> ── Summary of a <tbl_now> ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+#> 17 rows in 1 component; strata: "(20,40]", "(40,60]", "(60,Inf]", and "[0,20]".
+#> 
+#> coverage
+#>   n = cells, or distinct dates on a date row; total = cases
+#>    quantity    stratum      n total date_min   date_max  
+#>    <chr>       <chr>    <int> <dbl> <date>     <date>    
+#>  1 total_cases all      40094 65374 NA         NA        
+#>  2 event_date  all        817 65374 2019-12-29 2022-03-27
+#>  3 report_date all        612 65374 2020-01-03 2022-04-03
+#>  4 total_cases (20,40]   5684  6846 NA         NA        
+#>  5 event_date  (20,40]    761  6846 2020-01-01 2022-03-25
+#>  6 report_date (20,40]    544  6846 2020-01-17 2022-04-01
+#>  7 total_cases (40,60]  11458 17949 NA         NA        
+#>  8 event_date  (40,60]    780 17949 2019-12-29 2022-03-25
+#>  9 report_date (40,60]    567 17949 2020-01-17 2022-04-03
+#> 10 total_cases (60,Inf] 17880 34295 NA         NA        
+#> ℹ 7 more rows.
+#> 
+#> ℹ Use `dplyr::filter()` or `tibble::as_tibble()` for the full schema.
+```
+
+### The epidemic process
 
 The
-[`diagnose_batches()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_batches.md)
-function runs the transport test for the batch signature and returns,
-for every report date, the `batch` flag – a Benjamini-Hochberg-corrected
-verdict that controls the false-discovery rate across all dates (see
-[`?diagnose_batches`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_batches.md)
-for the full column reference). Keeping the `batch` rows gives the
-confirmed releases together with their `deficit` (how depleted the days
-just before were) and `delta` (how little the window total actually
-changed).
+[`cases_per_date()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md)
+function recovers the description of the number of cases with the mean
+number of cases reported per day and its distribution
 
 ``` r
 
-diagnose_batches(ideal) |>
-  filter(batch)
+cases_per_date(sari)
+#> ── Summary of a <tbl_now> ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+#> 10 rows in 1 component; strata: "(20,40]", "(40,60]", "(60,Inf]", and "[0,20]".
+#> 
+#> cases
+#>   n = dates on the grid; total = cases
+#>    quantity                stratum      n total     mean      sd   min   q25   q50   q75   q90   max prop_zero
+#>    <chr>                   <chr>    <int> <dbl>    <dbl>   <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl>     <dbl>
+#>  1 per_event_date          all        827 65374 79.0     51.4        0    44    72   109   144   307    0.0121
+#>  2 censored_per_event_date all        827    12  0.0145   0.120      0     0     0     0     0     1    0.985 
+#>  3 per_event_date          (20,40]    827  6846  8.28     6.64       0     3     7    12    17    37    0.0798
+#>  4 censored_per_event_date (20,40]    827     0  0        0          0     0     0     0     0     0    1     
+#>  5 per_event_date          (40,60]    827 17949 21.7     19.4        0     8    16    31    51    96    0.0568
+#>  6 censored_per_event_date (40,60]    827     6  0.00726  0.0849     0     0     0     0     0     1    0.993 
+#>  7 per_event_date          (60,Inf]   827 34295 41.5     26.8        0    23    38    56    76   163    0.0206
+#>  8 censored_per_event_date (60,Inf]   827     5  0.00605  0.0776     0     0     0     0     0     1    0.994 
+#>  9 per_event_date          [0,20]     827  6284  7.60     5.22       0     4     7    10    14    28    0.0617
+#> 10 censored_per_event_date [0,20]     827     1  0.00121  0.0348     0     0     0     0     0     1    0.999 
+#> 
+#> ℹ Use `dplyr::filter()` or `tibble::as_tibble()` for the full schema.
 ```
 
-    #> # A tibble: 1 × 7
-    #>   report_date reported baseline deficit delta p_transport_bh batch
-    #>   <date>         <dbl>    <dbl>   <dbl> <dbl>          <dbl> <lgl>
-    #> 1 2024-02-26      1773     336.    972.  465.       7.03e-47 TRUE
-
-On covid we pass `period = 7` to divide out the weekly reporting
-cadence. Only one date survives the Benjamini-Hochberg-corrected `batch`
-flag: **7 November 2020**, which reported about twice its baseline *and*
-was preceded by a matching deficit of roughly the same size. That
-pairing is the whole test – the taller spikes of 12 December and 10 June
-are not flagged, because nothing was withheld beforehand to release,
-which makes them surges rather than batches:
+The epidemic process can be seen with a plot too:S
 
 ``` r
 
-diagnose_batches(tn, period = 7) |>
-  filter(batch)
+plot_epidemic_process(sari)
 ```
 
-    #> # A tibble: 1 × 7
-    #>   report_date reported baseline deficit delta p_transport_bh batch
-    #>   <date>         <dbl>    <dbl>   <dbl> <dbl>          <dbl> <lgl>
-    #> 1 2020-11-07     15882    8174.   8053. -345.        0.00405 TRUE
+![](diagnosing-a-tbl-now_files/figure-html/unnamed-chunk-12-1.png)
 
-The sensitivity of the batch flag can be adapted with `alpha`.
+(to plot the unstratified one use `remove_strata` on the `tbl_now`
+before `plot_epidemic_process`)
 
-### Delay changes
+We can see, for example, the flusight dataset too where we can see that
+there were no reports for the off-season in 2024.
+
+``` r
+
+plot_epidemic_process(flu_now)
+```
+
+![](diagnosing-a-tbl-now_files/figure-html/unnamed-chunk-13-1.png)
+
+We can use the
+[`complete_zeroes()`](https://rodrigozepeda.github.io/tbl.now/reference/complete_zeroes.md)
+function to substitute those values for zeroes and complete the
+observations:
+
+``` r
+
+flu_now <- flu_now |> complete_zeroes(max_delay = 10)
+```
+
+## 3. Visualizing a `tbl.now`
+
+One can use
+[`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html) to
+glance at the main properties of a `tbl.now` where we can see that there
+is an effect of the weekend on the reporting:
+
+``` r
+
+autoplot(sari)
+```
+
+![](diagnosing-a-tbl-now_files/figure-html/unnamed-chunk-15-1.png)
+
+with less cases getting reported on Saturday/Sunday. Additional plots
+help you observe how the reports have changed over time where you can
+clearly see the emptyness of the weekends:
+
+``` r
+
+plot_reporting_process(sari)
+```
+
+![](diagnosing-a-tbl-now_files/figure-html/unnamed-chunk-16-1.png)
+
+The reporting triangle shows in the same plot the delays, reports and
+event dates
+
+``` r
+
+sari |> remove_all_strata() |> plot_reporting_triangle()
+```
+
+![](diagnosing-a-tbl-now_files/figure-html/unnamed-chunk-17-1.png)
+
+where we can again see the weekends leaving empty streaks.
+
+## 4. Identifying delay changes
 
 The reporting delay might change through time. Here we show two
 different plots for identifying delay problems.
 
 #### Reporting-delay drift
 
-The typical time from case to report, tracked over the outbreak. Shows
-the overall trend of the delay. Normally it will be steady; a batch can
-be seen as a **sudden bump upward** on the release day.
+This shows the typical time from event to report as it moved through the
+outbreak. It shows the overall trend of the delay and its quantiles.
 
 ``` r
 
-plot_delay_drift(ideal)
-```
-
-![](diagnosing-a-tbl-now_files/figure-html/drift-sim-1.png)
-
-On covid the delays show extreme variability in the beginning and a
-trend that decreases the delay in time:
-
-``` r
-
-plot_delay_drift(tn)
+plot_delay_drift(sari)
 ```
 
 ![](diagnosing-a-tbl-now_files/figure-html/drift-covid-1.png)
 
-The functions
+Here we can see that the first cases took so long to get reported.
+However, we can also see that after the initial chaos int he first
+months of 2020 the reporting delay became pretty stable. The functions
 [`diagnose_drift()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_drift.md)
 and
 [`diagnose_changepoint()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_changepoint.md)
-test for a gradual or abrupt changes in the delay. We can see, for
-example, that it correctly identifies the drift in the COVID-19 dataset
-both for the median (trend) and the spread (see the quantiles getting
-tighter). On the ideal example this doesn’t happen so it does not detect
-a drift:
+test for a gradual or abrupt changes in the delay.
+
+Here we can see that they identify a slight reduction (the delay reduces
+0.0105 days per day) and no changes in the intervals
 
 ``` r
 
-diagnose_drift(tn)
+diagnose_drift(sari)
 #> # A tibble: 2 × 9
-#>   strata stat       n    tau sens_slope statistic     p_value method    drift
-#>   <chr>  <chr>  <int>  <dbl>      <dbl>     <dbl>       <dbl> <chr>     <lgl>
-#> 1 all    median   305 -0.793     -0.108     -3.81 0.000142    hamed-rao TRUE 
-#> 2 all    spread   305 -0.730     -0.669     -5.29 0.000000120 hamed-rao TRUE
-diagnose_drift(ideal)
-#> # A tibble: 2 × 9
-#>   strata stat       n     tau sens_slope statistic p_value method    drift
-#>   <chr>  <chr>  <int>   <dbl>      <dbl>     <dbl>   <dbl> <chr>     <lgl>
-#> 1 all    median   100  0.0129          0     0.151   0.880 hamed-rao FALSE
-#> 2 all    spread   100 -0.0204          0    -0.305   0.760 hamed-rao FALSE
+#>   strata stat       n    tau sens_slope statistic p_value method    drift
+#>   <chr>  <chr>  <int>  <dbl>      <dbl>     <dbl>   <dbl> <chr>     <lgl>
+#> 1 all    median   739 0.266     0.0105      2.95  0.00323 hamed-rao TRUE 
+#> 2 all    spread   739 0.0245    0.00244     0.289 0.773   hamed-rao FALSE
 ```
 
-The change-point function also detects that by early June the COVID-19
-delay distribution has completely changed from before. In the case of
-the ideal example the change is not long enough to be detected:
+The change-point function on the other hand looks for changes in the
+distribution of the delay. The function however has to be used carfully
+as the changepoint function will **always** look for a changepoint in
+the data. So one has to first see the delay distribution to detect a
+possible changepoint before calling the diagnostic. The diagnostic will
+always find a changepoint no matter what. So here although it gives a
+very small p value we have decided to conclude there is no changepoint
+based on the delay plot:
 
 ``` r
 
-diagnose_changepoint(tn)
+diagnose_changepoint(sari)
 #> # A tibble: 2 × 10
-#>   strata stat       n changepoint statistic  p_value before after  shift changepoint_detected
-#>   <chr>  <chr>  <int> <date>          <dbl>    <dbl>  <dbl> <dbl>  <dbl> <lgl>               
-#> 1 all    median   305 2020-06-07      21432 1.79e-42   55.8  6.41  -49.4 TRUE                
-#> 2 all    spread   305 2020-06-18      20419 1.36e-38  128.  28.1  -100.  TRUE
-diagnose_changepoint(ideal)
-#> # A tibble: 2 × 10
-#>   strata stat       n changepoint statistic p_value before after  shift changepoint_detected
-#>   <chr>  <chr>  <int> <date>          <dbl>   <dbl>  <dbl> <dbl>  <dbl> <lgl>               
-#> 1 all    median   100 2024-02-17        387   0.822   1.06  1.46  0.399 FALSE               
-#> 2 all    spread   100 2024-02-21        335   1       3.44  3.02 -0.421 FALSE
+#>   strata stat       n changepoint statistic  p_value before after shift changepoint_detected
+#>   <chr>  <chr>  <int> <date>          <dbl>    <dbl>  <dbl> <dbl> <dbl> <lgl>               
+#> 1 all    median   739 2020-11-24      78877 1.53e-40   15.7  19.7  3.99 TRUE                
+#> 2 all    spread   739 2020-07-30      33299 1.42e- 7   63.0  55.1 -7.89 TRUE
 ```
 
-#### Delay profiles
+## Batches
 
-Each faint line is one day’s distirbution of reporting delays. Most days
-report quickly, so their lines hug the left and concentrate around the
-same distribution:
+Reporting batches are an important hurdle in surveillance systems. See
+[this vignette on
+batches](https://rodrigozepeda.github.io/tbl.now/articles/batches.html)
+for how we represent them and how to diagnose them. For the purpose of
+this tutorial we present two diagnosing functions. The
+[`diagnose_batches()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_batches.md)
+identifies potential dates that might carry reporting batches:
 
 ``` r
 
-plot_delay_profiles(ideal)
+sari |> remove_all_strata() |> diagnose_batches()
+#> ── Batch screen ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+#> 822 (report date, stratum) pairs; look-back 7; null "robust"
+#> ✔ No batches flagged at alpha = 0.05 (BH-adjusted).
 ```
 
-![](diagnosing-a-tbl-now_files/figure-html/prof-sim-1.png)
-
-On COVID-19 a whole spray of lines reaches far to the right days that
-reported cases months later.
+while
+[`diagnose_batches2()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_batches2.md)
+requires you to identify a date to test for batch-reporting:
 
 ``` r
 
-plot_delay_profiles(tn)
+sari |> remove_all_strata() |> diagnose_batches2(at = as.Date("2021/11/11"))
+#> # A tibble: 1 × 7
+#>   stratum  n_at n_reference mean_delay_at mean_delay_reference statistic p_value
+#>   <chr>   <int>       <int>         <dbl>                <dbl>     <dbl>   <dbl>
+#> 1 all        81         390          36.8                 42.1     -1.06   0.868
 ```
 
-![](diagnosing-a-tbl-now_files/figure-html/prof-covid-1.png)
+## Summary
 
-## The whole toolkit, on one page
-
-The structural tools come first because they are cheap and never wrong;
-the statistical ones come second because they cost a choice.
-
-| Tool | Question it answers |
-|----|----|
-| **[`summary()`](https://rdrr.io/r/base/summary.html)** | What is in the data: counts, delays, sparsity, composition, reach. |
-| **[`diagnose()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose.md)** | What is structurally wrong: ordering, missingness, duplicates, units, right-truncation. |
-| **[`validate_tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/validate_tbl_now.md)** | The same findings, raised as errors and warnings instead of returned. |
-
-Everything below needs a statistical choice, and every row is a
-different way of seeing the same thing – reports that were held back and
-then released together.
-
-| Plot or test | What to look for |
-|----|----|
-| **Reporting process** | Shows how reports were registered. |
-| **Reporting triangle** | Diagonals show cases with the same report date. |
-| **The reporting V** | Horizontal slices show cases with the same report date. |
-| **Transport discriminant** | A red dot up-and-left, in the “potential batch region” might indicate a batch. |
-| **[`diagnose_batches()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_batches.md)** | Shows the flagged reports in the discriminant as a `data.frame` |
-| **Delay profiles** | Show the delay distribution for each event date. |
-| **Reporting-delay drift** | Shows how the delay and its variance change through time. |
-
-Another practical notes from other data we have analyzed:
-
-- In general, **surges** (real new cases) seem harder to identify of
-  that **batches** (moved reports).
-- Batches are very difficult to identify in low-incidence scenarios.  
-- Batches very close to the now are difficult to identify without
-  additional modeling hypotheses.
-
-## Where to go next
-
-- [`?tbl_now_summary`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_summary.md)
-  and
-  [`?nowcast_summary_components`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md)
-  — every column, every block of Part 1.
-- [`?diagnose`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose.md)
-  and
-  [`?nowcast_diagnose_components`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_diagnose_components.md)
-  — every check, every status of Part 2.
-- [`?diagnose_drift`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_drift.md),
-  [`?diagnose_batches`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_batches.md)
-  and
-  [`?diagnostic_plot`](https://rodrigozepeda.github.io/tbl.now/reference/diagnostic_plot.md)
-  — the tests and figures of Part 3.
+Here we have shown how to diagnose, summarise and visualize a `tbl.now`
+to characterize its data.
 
 If you have any questions or comments regarding the contents of this
 article please [open an issue on
@@ -1055,25 +631,30 @@ Github](https://github.com/RodrigoZepeda/tbl.now/issues/new).
 
 ### Learning more
 
-- End-to-end tutorial on real life surveillance data. Takes you from
-  cleaning to diagnosing errors in the data to nowcasting:
+- A **tutorial** on real life surveillance data. Takes you from cleaning
+  to diagnosing errors in the data to nowcasting:
   <https://rodrigozepeda.github.io/tbl.now/articles/example.html>
-- The same tutorial with a **revision process** — the optional third
-  date, where a reported case is later confirmed, retracted or left
-  pending:
+- The **second part of the tutorial** with a revision process: the
+  optional third date, where a reported case is later confirmed,
+  retracted or left pending:
   <https://rodrigozepeda.github.io/tbl.now/articles/example_revisions.html>
-- Introduction vignette:
-  <https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.html> for
-  the full anatomy of a `tbl_now`, data types, and temporal effects.
-- Tutorial on diagnosing your dataset — what is in it, what is
-  structurally wrong with it, and detecting batches and other
-  reporting-delay artifacts:
+- The **Get started vignette**: the whole workflow, from a raw line list
+  to a scored nowcast, in five minutes:
+  <https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.html>.
+- **More on the `tbl_now` object**: every attribute, the three data
+  types, the revision process, temporal effects and the `dplyr` methods:
+  <https://rodrigozepeda.github.io/tbl.now/articles/more-on-tbl-now.html>
+- More thoughts on **diagnosing your dataset** with `tbl.now`
   <https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html>
-- Using different nowcasting engines for the same dataset:
+- Detecting reporting **batches** with `tbl.now`
+  <https://rodrigozepeda.github.io/tbl.now/articles/batches.html>
+- How to use different nowcasting engines from `tbl.now`: here you can
+  learn **how it connects to the other nowcasting packages**.
   <https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html>
-- Ensemble nowcasting across different engines
+- How to **nowcast with multiple engines, backtest and ensemble**
+  nowcasts.
   <https://rodrigozepeda.github.io/tbl.now/articles/ensemble-nowcasting.html>
-- Adding your own nowcasting model
+- Adding your own **custom nowcasting model**
   <https://rodrigozepeda.github.io/tbl.now/articles/custom-nowcast-models.html>
 - Package reference:
   <https://rodrigozepeda.github.io/tbl.now/reference/>

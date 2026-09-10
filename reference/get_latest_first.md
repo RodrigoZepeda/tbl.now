@@ -136,9 +136,7 @@ and friends for the same idea on the revision process;
 [`to_count()`](https://rodrigozepeda.github.io/tbl.now/reference/to_count.md)
 for the underlying data shapes;
 [`score_nowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/score_nowcast.md),
-which uses the latest counts as truth;
-[reporting_completeness()](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md)
-for the same information as a proportion.
+which uses the latest counts as truth.
 
 ## Examples
 

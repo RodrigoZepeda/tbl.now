@@ -49,7 +49,7 @@ tbl_now_to_epinowcast(
   ...,
   max_delay = NULL,
   timestep = NULL,
-  missing_reference = FALSE,
+  missing_reference = NULL,
   preprocess = TRUE,
   verbose = TRUE,
   quiet = FALSE
@@ -97,7 +97,11 @@ tbl_now_to_epinowcast(
   is inferred from the data as `max(.delay) + 1`. Because `.delay` is
   measured in the object's report units, this is only in `timestep`s
   when `timestep` matches those units — which is what the default
-  infers.
+  infers. The cap is applied by
+  [`epinowcast::enw_preprocess_data()`](https://package.epinowcast.org/reference/enw_preprocess_data.html)
+  after the full observed delay history has been completed, so
+  observations beyond the cap still contribute to epinowcast's
+  `max_confirm` calculation.
 
 - timestep:
 
@@ -112,10 +116,11 @@ tbl_now_to_epinowcast(
 
   Passed to
   [`epinowcast::enw_complete_dates()`](https://package.epinowcast.org/reference/enw_complete_dates.html).
-  Defaults to `FALSE` (unlike epinowcast's own default of `TRUE`): a
-  `tbl_now` never carries reports with a missing `reference_date`, so
-  leaving this `TRUE` would synthesise NA-reference padding rows the
-  data never had.
+  `NULL` (default) uses `TRUE` when the `tbl_now` contains reports with
+  a missing event/reference date and `FALSE` otherwise. This preserves
+  real missing-reference reports without synthesising padding rows when
+  none were observed. Supply `TRUE` or `FALSE` to override the
+  detection.
 
 - preprocess:
 
@@ -274,7 +279,7 @@ library(data.table)
 #>     %notin%
 library(epinowcast)
 #> ! `enw_cache_location` is not set.
-#> ℹ Using `tempdir()` at /tmp/Rtmp045l3T for the epinowcast model cache location.
+#> ℹ Using `tempdir()` at /tmp/Rtmp3P4XDh for the epinowcast model cache location.
 #> ℹ Set a specific cache location using `enw_set_cache` to control Stan
 #>   recompilation in this R session or across R sessions.
 #> ℹ For example: `enw_set_cache(tools::R_user_dir(package = "epinowcast",

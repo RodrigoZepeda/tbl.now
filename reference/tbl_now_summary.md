@@ -107,13 +107,7 @@ and filtered with
 - `component`:
 
   Which block the row belongs to: `"cases"`, `"delay"`, `"zero_run"`,
-  `"composition"`, `"growth"` or `"coverage"`. The `"autocorrelation"`
-  and `"completeness"` blocks are no longer part of
-  [`summary()`](https://rdrr.io/r/base/summary.html); call
-  [`case_autocorrelation()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md)
-  and
-  [`reporting_completeness()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md)
-  directly for those.
+  `"composition"`, `"growth"` or `"coverage"`.
 
 - `quantity`:
 
@@ -157,15 +151,13 @@ and filtered with
 
 - `prop`:
 
-  Proportion of cases in this category (compositional rows), or the
-  pooled share that had arrived by delay `d` (`"completeness"` rows).
+  Proportion of cases in this category (compositional rows).
 
 - `value`:
 
-  A single scalar that is not a distribution: a gap, an occupancy, an
-  autocorrelation. The `"completeness"` and `"growth"` rows are
-  distributions over event dates, so they populate `mean`/`sd`/the
-  quantiles (and `prop`) instead and leave `value` empty.
+  A single scalar that is not a distribution: a gap or an occupancy. The
+  `"growth"` rows are distributions over event dates, so they populate
+  `mean`/`sd`/the quantiles instead and leave `value` empty.
 
 - `date_min`, `date_max`:
 

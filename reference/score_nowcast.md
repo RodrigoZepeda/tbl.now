@@ -149,8 +149,6 @@ epidemic forecasts in an interval format. *PLoS Computational Biology*,
 
 ## See also
 
-[tbl_now_workflows](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_workflows.md)
-for the native/common workflow boundary;
 [`nowcast_backtest()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_backtest.md)
 to score many nowcasts at many `now` dates at once;
 [`nowcast_weights()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_weights.md)

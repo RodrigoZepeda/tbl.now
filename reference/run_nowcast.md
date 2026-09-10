@@ -225,9 +225,9 @@ object when you do not give them.
 
 ## See also
 
-[tbl_now_workflows](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_workflows.md)
-for choosing a modelling package's native entry point or the shared
-engine interface;
+The [*Get started*
+vignette](https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.html)
+for where a fit sits in the workflow;
 [`engine()`](https://rodrigozepeda.github.io/tbl.now/reference/engine.md)
 and
 [nowcast_engines](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_engines.md)

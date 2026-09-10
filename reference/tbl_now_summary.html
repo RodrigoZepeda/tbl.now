@@ -31,16 +31,7 @@ dplyr::bind_rows() of those pieces."><meta property="og:image" content="https://
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto"><li class="nav-item"><a class="nav-link" href="../articles/tbl.now.html">Get started</a></li>
 <li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
-<li class="nav-item dropdown">
-  <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/custom-nowcast-models.html">Adding your own nowcasting model</a></li>
-    <li><a class="dropdown-item" href="../articles/diagnosing-a-tbl-now.html">Diagnosing a tbl_now</a></li>
-    <li><a class="dropdown-item" href="../articles/ensemble-nowcasting.html">Fitting models from different nowcasting frameworks, backtesting and building an ensemble</a></li>
-    <li><a class="dropdown-item" href="../articles/example_revisions.html">The nowcasting workflow 2: COVID-19 case surveillance with revisions in the United States</a></li>
-    <li><a class="dropdown-item" href="../articles/example.html">The nowcasting workflow 1: hospital-acquired infections in Bucaramanga, Colombia</a></li>
-    <li><a class="dropdown-item" href="../articles/nowcasting-models.html">Using tbl.now with different modelling packages</a></li>
-    <li><a class="dropdown-item" href="../articles/tbl.now.html">tbl.now</a></li>
-  </ul></li>
+<li class="nav-item"><a class="nav-link" href="../articles/index.html">Articles</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
@@ -155,10 +146,7 @@ delay is not.</p>
 stacked with <code><a href="https://dplyr.tidyverse.org/reference/bind_rows.html" class="external-link">dplyr::bind_rows()</a></code> and filtered with <code><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">dplyr::filter()</a></code>.</p>
 <dl><dt><code>component</code></dt>
 <dd><p>Which block the row belongs to: <code>"cases"</code>, <code>"delay"</code>,
-<code>"zero_run"</code>, <code>"composition"</code>, <code>"growth"</code> or <code>"coverage"</code>. The
-<code>"autocorrelation"</code> and <code>"completeness"</code> blocks are no longer part of
-<code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code>; call <code><a href="nowcast_summary_components.html">case_autocorrelation()</a></code> and
-<code><a href="nowcast_summary_components.html">reporting_completeness()</a></code> directly for those.</p></dd>
+<code>"zero_run"</code>, <code>"composition"</code>, <code>"growth"</code> or <code>"coverage"</code>.</p></dd>
 
 <dt><code>quantity</code></dt>
 <dd><p>What the row describes, including the category for the
@@ -195,15 +183,13 @@ below on which estimator is used.</p></dd>
 <dd><p>Proportion of dates on the grid that are exactly zero.</p></dd>
 
 <dt><code>prop</code></dt>
-<dd><p>Proportion of cases in this category (compositional rows),
-or the pooled share that had arrived by delay <code>d</code> (<code>"completeness"</code>
-rows).</p></dd>
+<dd><p>Proportion of cases in this category (compositional rows).</p></dd>
 
 <dt><code>value</code></dt>
-<dd><p>A single scalar that is not a distribution: a gap, an
-occupancy, an autocorrelation. The <code>"completeness"</code> and <code>"growth"</code> rows
-are distributions over event dates, so they populate <code>mean</code>/<code>sd</code>/the
-quantiles (and <code>prop</code>) instead and leave <code>value</code> empty.</p></dd>
+<dd><p>A single scalar that is not a distribution: a gap or an
+occupancy. The <code>"growth"</code> rows are distributions over event dates, so
+they populate <code>mean</code>/<code>sd</code>/the quantiles instead and leave <code>value</code>
+empty.</p></dd>
 
 <dt><code>date_min</code>, <code>date_max</code></dt>
 <dd><p>Date range. Present only when the result

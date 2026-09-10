@@ -164,10 +164,8 @@ returns a tibble, and every block of it is also a function of its own.
   [`prop_revision_type()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md)
   [`prop_strata()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md)
   [`prop_covariate_levels()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md)
-  [`case_autocorrelation()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md)
   [`date_ranges()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md)
   [`triangle_occupancy()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md)
-  [`reporting_completeness()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md)
   [`cumulative_growth()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md)
   **\[stable\]** :
 
@@ -517,8 +515,6 @@ The methods that keep the class alive inside a pipeline.
   : Healthcare-Associated Infections – Bucaramanga, Colombia 2020-2023
 - [`mpoxdat`](https://rodrigozepeda.github.io/tbl.now/reference/mpoxdat.md)
   : mpoxdat: Mpox reporting data from the 2022 New York City outbreak
-
-## Workflows
-
-- [`tbl_now_workflows`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_workflows.md)
-  : Native and cross-engine nowcasting workflows
+- [`sari_bh`](https://rodrigozepeda.github.io/tbl.now/reference/sari_bh.md)
+  : sari_bh: Severe Acute Respiratory Illness data from Belo Horizonte
+  (Brazil), 2020-2022

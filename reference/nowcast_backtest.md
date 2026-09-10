@@ -198,8 +198,6 @@ to whatever levels its members happened to share.
 
 ## See also
 
-[tbl_now_workflows](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_workflows.md)
-for choosing native model construction or cross-engine comparison;
 [`engine()`](https://rodrigozepeda.github.io/tbl.now/reference/engine.md)
 to specify each model being compared, and its `min_date` argument, which
 matters here because `now` moves between fits;

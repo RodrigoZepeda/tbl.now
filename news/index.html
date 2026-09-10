@@ -17,16 +17,7 @@
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto"><li class="nav-item"><a class="nav-link" href="../articles/tbl.now.html">Get started</a></li>
 <li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
-<li class="nav-item dropdown">
-  <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/custom-nowcast-models.html">Adding your own nowcasting model</a></li>
-    <li><a class="dropdown-item" href="../articles/diagnosing-a-tbl-now.html">Diagnosing a tbl_now</a></li>
-    <li><a class="dropdown-item" href="../articles/ensemble-nowcasting.html">Fitting models from different nowcasting frameworks, backtesting and building an ensemble</a></li>
-    <li><a class="dropdown-item" href="../articles/example_revisions.html">The nowcasting workflow 2: COVID-19 case surveillance with revisions in the United States</a></li>
-    <li><a class="dropdown-item" href="../articles/example.html">The nowcasting workflow 1: hospital-acquired infections in Bucaramanga, Colombia</a></li>
-    <li><a class="dropdown-item" href="../articles/nowcasting-models.html">Using tbl.now with different modelling packages</a></li>
-    <li><a class="dropdown-item" href="../articles/tbl.now.html">tbl.now</a></li>
-  </ul></li>
+<li class="nav-item"><a class="nav-link" href="../articles/index.html">Articles</a></li>
 <li class="active nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
@@ -50,16 +41,43 @@
     </div>
 
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="development version" id="tblnow-development-version">tbl.now (development version)<a class="anchor" aria-label="anchor" href="#tblnow-development-version"></a></h2>
+<h2 class="pkg-version" data-toc-text="1.0.0" id="tblnow-100">tbl.now 1.0.0<a class="anchor" aria-label="anchor" href="#tblnow-100"></a></h2>
 <div class="section level3">
-<h3 id="autoplot-is-now-one-column-per-process-development-version">
-<code>autoplot()</code> is now one column per process<a class="anchor" aria-label="anchor" href="#autoplot-is-now-one-column-per-process-development-version"></a></h3>
+<h3 id="breaking-case_autocorrelation-and-reporting_completeness-are-gone-1-0-0">Breaking: <code>case_autocorrelation()</code> and <code>reporting_completeness()</code> are gone<a class="anchor" aria-label="anchor" href="#breaking-case_autocorrelation-and-reporting_completeness-are-gone-1-0-0"></a></h3>
+<p>Both were written by an AI and never reviewed by a human. They were taken out of <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> earlier for that reason and kept exported behind a warning on every call; shipping an unverified statistic in a CRAN release is a different proposition, so they are now removed from the package entirely and parked, tests and all, in <code>devel/unreviewed_summaries.R</code>. There is no deprecation shim.</p>
+<p>The <code>autocorrelation</code> and <code>completeness</code> components no longer exist anywhere, and <code>nowcast_summary_components</code> documents the ten remaining blocks. Nothing else in the family changes.</p>
+</div>
+<div class="section level3">
+<h3 id="the-get-started-vignette-is-now-a-five-minute-tour-1-0-0">The Get Started vignette is now a five-minute tour<a class="anchor" aria-label="anchor" href="#the-get-started-vignette-is-now-a-five-minute-tour-1-0-0"></a></h3>
+<p><code><a href="../articles/tbl.now.html">vignette("tbl.now")</a></code> used to be a 1,500-line reference that opened with the tidyverse and ended with format converters. It is now a <strong>five-minute walk of the whole workflow</strong> – clean, <code><a href="../reference/tbl_now.html">tbl_now()</a></code>, <code><a href="../reference/diagnose.html">diagnose()</a></code>, <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code>, <code><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot()</a></code>, and then the fork between <code>tbl_now_to_*()</code> and <code><a href="../reference/run_nowcast.html">run_nowcast()</a></code>/<code><a href="../reference/nowcast_backtest.html">nowcast_backtest()</a></code> – drawn as a diagram and run on the same dengue data as the README, with every stop linking to the article that covers it properly.</p>
+<p>Everything that was cut moved, unchanged, to a new article: <strong>More on the <code>tbl_now</code> object</strong> (<a href="https://rodrigozepeda.github.io/tbl.now/articles/more-on-tbl-now.html" class="uri">https://rodrigozepeda.github.io/tbl.now/articles/more-on-tbl-now.html</a>). It keeps the attribute reference (now complete: <code>revision_date</code>, <code>revision_type</code> and <code>revision_units</code> were missing), the three data types, censoring, temporal effects, the revision process, the <code>dplyr</code> methods and the utilities. The plotting and diagnostics sections were dropped in favour of the articles that already cover them.</p>
+<p>The website’s articles are now grouped into <strong>Tutorials</strong>, <strong>Diagnosing and visualizing</strong> and <strong>Miscellaneous</strong> rather than listed flat.</p>
+<p><code>?tbl_now_workflows</code> is gone; the vignette says the same thing with an example you can run.</p>
+</div>
+<div class="section level3">
+<h3 id="smaller-installation-1-0-0">Smaller installation<a class="anchor" aria-label="anchor" href="#smaller-installation-1-0-0"></a></h3>
+<p><code>LazyDataCompression: xz</code> plus the shorter vignette take the installed package from 5.1 Mb to 3.4 Mb, comfortably back under CRAN’s threshold. The datasets themselves are unchanged.</p>
+</div>
+<div class="section level3">
+<h3 id="upstream-examples-now-guard-converter-and-fit-equivalence-1-0-0">Upstream examples now guard converter and fit equivalence<a class="anchor" aria-label="anchor" href="#upstream-examples-now-guard-converter-and-fit-equivalence-1-0-0"></a></h3>
+<p>The shipped examples from epinowcast, NobBS, surveillance, EpiNow2 and epidist now exercise both halves of each integration: the package-native input is compared with the matching <code>tbl_now_to_*()</code> result, and a seeded native fit is compared with the native fit retained by <code><a href="../reference/run_nowcast.html">run_nowcast()</a></code> (or, for epidist, with the same delay-model pipeline, since epidist is not a nowcasting engine).</p>
+<ul><li>
+<strong>Fixed</strong>: <code>tbl_now_to_epinowcast(max_delay = ...)</code> no longer applies the modelling delay cap while completing observations. Later observations are retained long enough for <code><a href="https://package.epinowcast.org/reference/enw_preprocess_data.html" class="external-link">enw_preprocess_data()</a></code> to calculate <code>max_confirm</code>, matching epinowcast’s documented complete-then-preprocess workflow.</li>
+<li>Missing-reference reports retained by a <code>tbl_now</code> now make <code><a href="../reference/tbl_now_epinowcast.html">tbl_now_to_epinowcast()</a></code> select epinowcast’s <code>missing_reference = TRUE</code> behavior automatically. Ordinary inputs continue to use <code>FALSE</code> and do not gain synthetic missing-reference rows.</li>
+<li>
+<strong>Fixed</strong>: the epinowcast and EpiNow2 fixtures built their inputs with <code>data.table</code>’s <code>[</code> query syntax. A test file is evaluated in the package namespace, which imports no <code>data.table</code>, so <code>data.table:::cedta()</code> sent <code>DT[i]</code> to <code>[.data.frame</code> instead – a filter expression became an unknown object and a row index became a column index, erroring under <code>R CMD check</code> while passing from the global environment. The fixtures now subset with base semantics that mean the same thing under either dispatch.</li>
+<li>
+<code><a href="../reference/sari_bh.html">?sari_bh</a></code> credits the <code>nowcaster</code> package as the proximate source. The OpenDataSUS portal link it carried has been redirecting to an unreachable host.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="autoplot-is-now-one-column-per-process-1-0-0">
+<code>autoplot()</code> is now one column per process<a class="anchor" aria-label="anchor" href="#autoplot-is-now-one-column-per-process-1-0-0"></a></h3>
 <p>The gallery used to flow left to right in two columns, so which process a panel belonged to was something you read off its colour. It is now a <strong>matrix</strong>: the epidemic process is the first column, the reporting process the second, and the revision process – on an object that declares one – the third, with each row asking the same question of every process. A two-date object is therefore two columns wide and a three-date object three, and a row a process cannot answer (weekly data has no day-of-week panel) leaves that cell empty rather than sliding the next panel into the wrong column.</p>
 <p>The number of columns follows the selection, because the columns <em>are</em> the processes: <code>panels = "calendar"</code> or <code>panels = "delay_calendar"</code> now comes back as a single column rather than a two-wide flow.</p>
 </div>
 <div class="section level3">
-<h3 id="plot_revision_delay-is-removed-and-the-revision-delay-joins-the-gallery-development-version">
-<code>plot_revision_delay()</code> is removed, and the revision delay joins the gallery<a class="anchor" aria-label="anchor" href="#plot_revision_delay-is-removed-and-the-revision-delay-joins-the-gallery-development-version"></a></h3>
+<h3 id="plot_revision_delay-is-removed-and-the-revision-delay-joins-the-gallery-1-0-0">
+<code>plot_revision_delay()</code> is removed, and the revision delay joins the gallery<a class="anchor" aria-label="anchor" href="#plot_revision_delay-is-removed-and-the-revision-delay-joins-the-gallery-1-0-0"></a></h3>
 <p>(breaking)</p>
 <p><code>plot_revision_delay()</code> drew the report-to-resolution delay as boxplots split by outcome, and was the one delay picture that was not a panel of <code><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot()</a></code>.</p>
 <ul><li>
@@ -69,7 +87,7 @@
 <li>New <code><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot()</a></code> panel <code>"revision_distribution"</code>, which is that panel inside the gallery, and fills the revision column’s first row.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="delays-and-arrivals-can-be-split-by-revision-outcome-development-version">Delays and arrivals can be split by revision outcome<a class="anchor" aria-label="anchor" href="#delays-and-arrivals-can-be-split-by-revision-outcome-development-version"></a></h3>
+<h3 id="delays-and-arrivals-can-be-split-by-revision-outcome-1-0-0">Delays and arrivals can be split by revision outcome<a class="anchor" aria-label="anchor" href="#delays-and-arrivals-can-be-split-by-revision-outcome-1-0-0"></a></h3>
 <p><code><a href="../reference/plot_delay_distribution.html">plot_delay_distribution()</a></code> and <code><a href="../reference/plot_epidemic_process.html">plot_reporting_process()</a></code> gain <code>by_revision_type</code> (default <code>TRUE</code>). It splits the panel by how each case eventually resolved – <code>confirmed</code>, <code>pending</code>, <code>retracted</code> and <code>unknown</code> – so “do negative results come back faster than positive ones?” and “was that spike a day of retractions?” are visible rather than inferred.</p>
 <ul><li>
 <code><a href="../reference/tbl_now_palette.html">tbl_now_palette()</a></code> gains a <code>retracted</code> role, the counterpart of <code>revision</code>, so the four outcomes draw as ochre / white / blue / grey and re-theme as a unit.</li>
@@ -78,15 +96,15 @@
 <code><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot()</a></code> also takes <code>by_revision_type</code>, but defaults it to <code>FALSE</code>: the gallery is read as a grid of shapes, and <code><a href="../reference/diagnostic_plot.html">diagnostic_plot()</a></code> keeps its reporting panel in the reporting colour for the same reason.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="as_forecast_point-is-no-longer-exported-breaking-development-version">
-<code>as_forecast_point()</code> is no longer exported (breaking)<a class="anchor" aria-label="anchor" href="#as_forecast_point-is-no-longer-exported-breaking-development-version"></a></h3>
+<h3 id="as_forecast_point-is-no-longer-exported-breaking-1-0-0">
+<code>as_forecast_point()</code> is no longer exported (breaking)<a class="anchor" aria-label="anchor" href="#as_forecast_point-is-no-longer-exported-breaking-1-0-0"></a></h3>
 <p><code><a href="https://epiforecasts.io/scoringutils/reference/as_forecast_point.html" class="external-link">as_forecast_point()</a></code> is a  generic, and this package supplied both a method for it <em>and</em> an exported function of the same name. The exported copy masked the generic: after <code><a href="https://doi.org/10.48550/arXiv.2205.07090" class="external-link">library(scoringutils); library(tbl.now)</a></code> a bare <code><a href="https://epiforecasts.io/scoringutils/reference/as_forecast_point.html" class="external-link">as_forecast_point()</a></code> reached tbl.now’s version, which is not a generic and aborts on anything that is not a <code>tbl_nowcast</code> or a <code><a href="../reference/nowcast_backtest.html">nowcast_backtest()</a></code>. <code><a href="https://epiforecasts.io/scoringutils/reference/as_forecast_quantile.html" class="external-link">as_forecast_quantile()</a></code> and <code><a href="https://epiforecasts.io/scoringutils/reference/as_forecast_sample.html" class="external-link">as_forecast_sample()</a></code> were never exported this way, so the three were also inconsistent with each other.</p>
 <ul><li>
 <strong>Fixed</strong>: the exported <code><a href="https://epiforecasts.io/scoringutils/reference/as_forecast_point.html" class="external-link">as_forecast_point()</a></code> is gone. Call <code>scoringutils::as_forecast_point(x, truth = truth)</code>, exactly as you already call <code><a href="https://epiforecasts.io/scoringutils/reference/as_forecast_quantile.html" class="external-link">scoringutils::as_forecast_quantile()</a></code> and <code><a href="https://epiforecasts.io/scoringutils/reference/as_forecast_sample.html" class="external-link">scoringutils::as_forecast_sample()</a></code>. The methods for <code>tbl_nowcast</code>, ensembles and <code><a href="../reference/nowcast_backtest.html">nowcast_backtest()</a></code> are unchanged, so the only edit a caller needs is the <code>scoringutils::</code> prefix (or attaching  first).</li>
 </ul></div>
 <div class="section level3">
-<h3 id="diagnose-stops-reporting-the-revision-axis-as-a-defect-development-version">
-<code>diagnose()</code> stops reporting the revision axis as a defect<a class="anchor" aria-label="anchor" href="#diagnose-stops-reporting-the-revision-axis-as-a-defect-development-version"></a></h3>
+<h3 id="diagnose-stops-reporting-the-revision-axis-as-a-defect-1-0-0">
+<code>diagnose()</code> stops reporting the revision axis as a defect<a class="anchor" aria-label="anchor" href="#diagnose-stops-reporting-the-revision-axis-as-a-defect-1-0-0"></a></h3>
 <p>Declaring a revision axis made <code><a href="../reference/diagnose.html">diagnose()</a></code> complain about the two things that axis exists to record. A pending case has no revision date <em>yet</em>, and that <code>NA</code> was read as a value.</p>
 <ul><li>
 <strong>Fixed</strong>: rows carrying an <code>NA</code> anywhere in the uniqueness key are no longer compared against each other. Two pending cases in one <code>(event, report)</code> cell are byte-identical apart from a resolution neither has, yet they may still resolve on different days – calling them an “exact duplicate” and advising <code><a href="https://dplyr.tidyverse.org/reference/distinct.html" class="external-link">dplyr::distinct()</a></code> would have deleted a real case. Rows with a complete key are checked exactly as before, so a genuine repeat still warns.</li>
@@ -100,7 +118,7 @@
 <strong>Fixed</strong>: <code>infer_units()</code> drops <code>NA</code> before reading the spacing of a date column. A column holding one real date plus missings slipped past the “fewer than two dates” guard, and <code><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min()</a></code> warned about its own empty arguments before the abort that followed blamed the spacing.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="the-delay-distribution-converters-return-one-row-per-observed-delay-development-version">The delay-distribution converters return one row per observed delay<a class="anchor" aria-label="anchor" href="#the-delay-distribution-converters-return-one-row-per-observed-delay-development-version"></a></h3>
+<h3 id="the-delay-distribution-converters-return-one-row-per-observed-delay-1-0-0">The delay-distribution converters return one row per observed delay<a class="anchor" aria-label="anchor" href="#the-delay-distribution-converters-return-one-row-per-observed-delay-1-0-0"></a></h3>
 <p><code><a href="../reference/tbl_now_epidist.html">tbl_now_to_epidist()</a></code> and <code>tbl_now_to_EpiNow2(target = "estimate_dist")</code> are the two converters that keep the <code>is_censored_report</code> flag, and they were also the two that never pooled. Neither carries an undeclared column or the revision axis onto its result, so rows separated only by those arrived as duplicates that nothing downstream could tell apart: <code>covid_colombia</code> (which carries an undeclared <code>sex</code>) came back from <code><a href="../reference/tbl_now_epidist.html">tbl_now_to_epidist()</a></code> as 3456 rows covering 1898 distinct delays.</p>
 <ul><li>
 <strong>Fixed</strong>: both converters now pool over undeclared columns, exactly as <code><a href="../reference/tbl_now_baselinenowcast.html">tbl_now_to_baselinenowcast()</a></code> and <code><a href="../reference/tbl_now_tsibble.html">tbl_now_to_tsibble()</a></code> do, and report what they pooled under <code>verbose = TRUE</code>. Case totals are unchanged.</li>
@@ -113,8 +131,8 @@
 <strong>Fixed</strong>: <code><a href="../reference/add.html">remove_revision_date()</a></code> no longer loses the object’s <code>now</code>. It rebuilt without passing it, so the constructor re-inferred <code>now</code> from the dates that were left – and the revision axis is the one that usually holds the latest of them. This reached <code><a href="../reference/tbl_now_epidist.html">tbl_now_to_epidist()</a></code> as a wrong <code>obs_date</code>, epidist’s right-truncation clock.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="plot_scalogram-is-removed-development-version">
-<code>plot_scalogram()</code> is removed<a class="anchor" aria-label="anchor" href="#plot_scalogram-is-removed-development-version"></a></h3>
+<h3 id="plot_scalogram-is-removed-1-0-0">
+<code>plot_scalogram()</code> is removed<a class="anchor" aria-label="anchor" href="#plot_scalogram-is-removed-1-0-0"></a></h3>
 <p>The wavelet scalogram was shipped as <strong>very experimental</strong> and never earned its keep: it was never confirmed to identify batches reliably, and the two packages it needed to do so –  and  – were carried in <code>Suggests</code> for that one plot alone.</p>
 <ul><li>
 <strong>Breaking</strong>: <code>plot_scalogram()</code> is gone, with no deprecation. Its section in the <em>Diagnosing a <code>tbl_now</code></em> article and its row in that article’s summary table have been removed with it.</li>
@@ -124,39 +142,39 @@
 <strong>Dependencies</strong>:  and  are dropped from <code>Suggests</code>. Nothing else used either of them –  was in fact already unreferenced anywhere in the sources.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="most-of-the-package-is-now-stable-development-version">Most of the package is now <code>stable</code>
-<a class="anchor" aria-label="anchor" href="#most-of-the-package-is-now-stable-development-version"></a></h3>
+<h3 id="most-of-the-package-is-now-stable-1-0-0">Most of the package is now <code>stable</code>
+<a class="anchor" aria-label="anchor" href="#most-of-the-package-is-now-stable-1-0-0"></a></h3>
 <p>The lifecycle badges have been promoted: every exported topic now reads <code>stable</code>, except the surfaces still being worked on — <code><a href="https://rdrr.io/r/stats/update.html" class="external-link">update()</a></code>, <code>summary(&lt;tbl_now&gt;)</code>, <code><a href="../reference/diagnose.html">diagnose()</a></code>, <code><a href="../reference/diagnose_batches.html">diagnose_batches()</a></code>, <code><a href="../reference/diagnose_batches2.html">diagnose_batches2()</a></code>, <code><a href="../reference/simulate_batch.html">simulate_batch()</a></code>, <code><a href="../reference/transport_discriminant.html">transport_discriminant()</a></code>, <code><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot()</a></code> (both methods), <code><a href="../reference/tbl_now_EpiNow2.html">tbl_now_to_EpiNow2()</a></code> and <code><a href="../reference/tbl_now_epidist.html">tbl_now_to_epidist()</a></code>, which keep <code>experimental</code>.</p>
 <p>No behaviour changed; this is a statement about which signatures are now expected to hold still.</p>
 </div>
 <div class="section level3">
-<h3 id="autoplottbl_nowcast-gains-date_lim-and-ylim-development-version">
+<h3 id="autoplottbl_nowcast-gains-date_lim-and-ylim-1-0-0">
 <code>autoplot(&lt;tbl_nowcast&gt;)</code> gains <code>date_lim</code> and <code>ylim</code>
-<a class="anchor" aria-label="anchor" href="#autoplottbl_nowcast-gains-date_lim-and-ylim-development-version"></a></h3>
+<a class="anchor" aria-label="anchor" href="#autoplottbl_nowcast-gains-date_lim-and-ylim-1-0-0"></a></h3>
 <p>A nowcast covers the whole series but only <em>corrects</em> its final periods, so almost every call was followed by a <code><a href="https://ggplot2.tidyverse.org/reference/coord_cartesian.html" class="external-link">coord_cartesian()</a></code> to zoom on to them.</p>
 <ul><li>
 <strong>New</strong>: <code>autoplot(fit, date_lim = c(from, to))</code> and <code>autoplot(fit, ylim = c(lo, hi))</code>. <code>NA</code> in either position leaves that end free; <code>NULL</code> (the default) leaves the axis alone.</li>
 <li>Both are applied with <code><a href="https://ggplot2.tidyverse.org/reference/coord_cartesian.html" class="external-link">ggplot2::coord_cartesian()</a></code>, so they <strong>crop</strong> the drawn plot instead of filtering the data. That is the point: a scale limit drops the out-of-range rows before the ribbon is built, which cuts the fan off at the boundary rather than letting it run to the edge of the panel.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="two-fixes-the-revisions-article-turned-up-development-version">Two fixes the revisions article turned up<a class="anchor" aria-label="anchor" href="#two-fixes-the-revisions-article-turned-up-development-version"></a></h3>
+<h3 id="two-fixes-the-revisions-article-turned-up-1-0-0">Two fixes the revisions article turned up<a class="anchor" aria-label="anchor" href="#two-fixes-the-revisions-article-turned-up-1-0-0"></a></h3>
 <ul><li>
 <strong>Fix (<code><a href="../reference/run_nowcast.html">run_nowcast()</a></code> lost the engine’s <code>label</code>)</strong>: the fit recorded the backend’s package name as its <code>@method</code> while <code><a href="../reference/nowcast_backtest.html">nowcast_backtest()</a></code> scored the same engines under their <strong>labels</strong>. Two configurations of one backend – exactly what <code>label</code> exists for – were therefore indistinguishable once fitted, and <code>nowcast_ensemble(weights = "inverse_score", backtest = )</code> aborted with <em>“the backtest has no scores for method "diseasenowcasting"”</em>. <code><a href="../reference/run_nowcast.html">run_nowcast()</a></code> now records the label. An unlabelled engine is unaffected: its label defaults to its package name. A backend that returns a <code>tbl_nowcast</code> directly ( does) keeps its own name unless the caller supplied a label. <code>run_nowcast(verbose = TRUE)</code> now names the label as well, so two configurations no longer print the same line.</li>
 <li>
 <strong>Fix (<code><a href="../reference/diagnose.html">diagnose()</a></code>’s pending note printed an R object)</strong>: the <code>strata/pending</code> note built its “how overdue are they” clause as a deferred <code>.diagnose_text()</code> and then interpolated it into the outer template as <code>{against}</code>. cli deparsed the object, and the note read <em>“… 3.4% of the stratum; list(list(args = list(…), envir = <environment>)).”</environment></em> The two fragments are now joined rather than nested, and the note reads as prose in both of its branches.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="a-revisions-walk-through-development-version">A revisions walk-through<a class="anchor" aria-label="anchor" href="#a-revisions-walk-through-development-version"></a></h3>
+<h3 id="a-revisions-walk-through-1-0-0">A revisions walk-through<a class="anchor" aria-label="anchor" href="#a-revisions-walk-through-1-0-0"></a></h3>
 <ul><li>
 <strong>New article</strong>: <em>Nowcasting with revisions</em>, which picks up where the <code>hai_bucaramanga</code> walk-through leaves off and adds the third date, running <code><a href="../reference/run_nowcast.html">run_nowcast()</a></code>, <code><a href="../reference/nowcast_backtest.html">nowcast_backtest()</a></code> and <code><a href="../reference/nowcast_ensemble.html">nowcast_ensemble()</a></code> on a <code>tbl_now</code> that carries a revision process.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="site-development-version">Site<a class="anchor" aria-label="anchor" href="#site-development-version"></a></h3>
+<h3 id="site-1-0-0">Site<a class="anchor" aria-label="anchor" href="#site-1-0-0"></a></h3>
 <ul><li>The package version in the pkgdown navbar was the only item there that changed colour with the light switch: pkgdown renders it inside <code>.text-muted</code>, whose Bootstrap 5.3 definition follows the theme. It is now pinned to the same white as the package name in both modes.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="complete_zeroes-keeps-temporal-effects-computed-development-version">
-<code>complete_zeroes()</code> keeps temporal effects computed<a class="anchor" aria-label="anchor" href="#complete_zeroes-keeps-temporal-effects-computed-development-version"></a></h3>
+<h3 id="complete_zeroes-keeps-temporal-effects-computed-1-0-0">
+<code>complete_zeroes()</code> keeps temporal effects computed<a class="anchor" aria-label="anchor" href="#complete_zeroes-keeps-temporal-effects-computed-1-0-0"></a></h3>
 <p><code><a href="../reference/complete_zeroes.html">complete_zeroes()</a></code> adds rows, and materialised [<code><a href="../reference/temporal_effects.html">temporal_effects()</a></code>] columns are a per-row property, so the new cells joined in as <code>NA</code> while <code>computed_temporal_effect_cols</code> went on claiming the columns were computed. The function announced this with a <code>cli_alert_warning()</code> and left the caller to repair it.</p>
 <ul><li>
 <strong>Fix (stale columns)</strong>: the effect columns are now <strong>recomputed on the completed grid</strong> before the result is returned, so every added row carries its own calendar effects. The alert is gone – there is nothing left to warn about. A lazy specification that was never computed stays lazy. The one case that cannot be repaired – computed columns with the specification stripped by hand – still warns, and now says so accurately.</li>
@@ -167,8 +185,8 @@
 </ul><p>Reported downstream in <a href="https://github.com/RodrigoZepeda/diseasenowcasting/issues/126" class="external-link">diseasenowcasting#126</a>, where every count-cumulative fit calls <code><a href="../reference/complete_zeroes.html">complete_zeroes()</a></code> and so emitted the alert.</p>
 </div>
 <div class="section level3">
-<h3 id="rowwise-demotes-cleanly-development-version">
-<code>rowwise()</code> demotes cleanly<a class="anchor" aria-label="anchor" href="#rowwise-demotes-cleanly-development-version"></a></h3>
+<h3 id="rowwise-demotes-cleanly-1-0-0">
+<code>rowwise()</code> demotes cleanly<a class="anchor" aria-label="anchor" href="#rowwise-demotes-cleanly-1-0-0"></a></h3>
 <p><code><a href="https://dplyr.tidyverse.org/reference/rowwise.html" class="external-link">rowwise()</a></code> stays deliberately unimplemented for <code>tbl_now</code> – but it now says so properly and gets out of the way properly.</p>
 <ul><li>
 <strong>Fix (leaky demotion)</strong>: <code><a href="https://dplyr.tidyverse.org/reference/rowwise.html" class="external-link">rowwise()</a></code> returned a <code>rowwise_df</code> that still carried <code>event_date</code>, <code>report_date</code>, <code>now</code>, <code>strata</code> and the rest as attributes, describing a class the object was no longer an instance of. It now goes through the same demotion door as every other downgrade in the package, so the returned object carries none of them.</li>
@@ -179,7 +197,7 @@
 </ul><p>Implementing <code><a href="https://dplyr.tidyverse.org/reference/rowwise.html" class="external-link">rowwise()</a></code> properly was considered and rejected: it would need a second parallel <code>rowwise_tbl_now</code> class carrying the same dozen <code>dplyr</code> methods <code>grouped_tbl_now</code> already needs, and <code><a href="https://dplyr.tidyverse.org/reference/group_data.html" class="external-link">dplyr::group_vars()</a></code> reports the <em>rowwise</em> variables while <code><a href="https://dplyr.tidyverse.org/reference/grouped_df.html" class="external-link">dplyr::is_grouped_df()</a></code> is <code>FALSE</code> – so every function here that reads <code><a href="https://dplyr.tidyverse.org/reference/group_data.html" class="external-link">group_vars()</a></code> to pick an aggregation key (<code><a href="../reference/to_count.html">to_count()</a></code>, <code><a href="../reference/complete_zeroes.html">complete_zeroes()</a></code>, <code>censor_delays()</code>, <code><a href="../reference/align_weeks.html">align_weeks()</a></code>, …) would silently read a rowwise variable as a stratifying one.</p>
 </div>
 <div class="section level3">
-<h3 id="sharper-epidist-integration-development-version">Sharper <code>epidist</code> integration<a class="anchor" aria-label="anchor" href="#sharper-epidist-integration-development-version"></a></h3>
+<h3 id="sharper-epidist-integration-1-0-0">Sharper <code>epidist</code> integration<a class="anchor" aria-label="anchor" href="#sharper-epidist-integration-1-0-0"></a></h3>
 <p>Findings from the epidist audit against <code>epidist</code> 0.4.1:</p>
 <ul><li>
 <strong>Fix (right truncation)</strong>: <code><a href="../reference/tbl_now_epidist.html">tbl_now_to_epidist()</a></code> now writes an <code>obs_date</code> column set to <code>get_now(x) + w</code> (the end of the <code>now</code> period, widened by the censoring window), instead of letting epidist default it to <code>max(sdate_upr)</code>. Without this the right-truncation clock ended at the last observed report, so a silent-tail series or a backtest under-corrected silently. Matches what <code>tbl_now_to_EpiNow2(target = "estimate_dist")</code> has always done.</li>
@@ -195,7 +213,7 @@
 <strong>Tests</strong>: new <code>tests/testthat/test-converter-epidist.R</code> locks the three contracts above (obs_date on every format, round-trip recovery, revision warning) and extends <code><a href="../reference/tidy.delay_distribution.html">tidy.epidist_fit()</a></code>’s bookkeeping filter so epidist’s <code>n</code>/<code>weight</code>/<code>.observation</code>/<code>.row</code> cannot leak into the tidy output as bogus parameters.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="sharper-epinowcast-integration-development-version">Sharper <code>epinowcast</code> integration<a class="anchor" aria-label="anchor" href="#sharper-epinowcast-integration-development-version"></a></h3>
+<h3 id="sharper-epinowcast-integration-1-0-0">Sharper <code>epinowcast</code> integration<a class="anchor" aria-label="anchor" href="#sharper-epinowcast-integration-1-0-0"></a></h3>
 <p>Findings from the epinowcast audit against <code>epinowcast</code> 0.7.0:</p>
 <ul><li>
 <strong>Fix</strong>: <code><a href="../reference/tbl_now_epinowcast.html">tbl_now_to_epinowcast()</a></code> no longer reports materialised temporal-effect columns as “dropped covariates”. Those columns are actually threaded onto <code>metareference</code> / <code>metareport</code> – the earlier warning contradicted the docstring and confused users who had run <code><a href="../reference/add_temporal_effects.html">compute_temporal_effects()</a></code> before conversion.</li>
@@ -215,8 +233,8 @@
 <strong>Test</strong>: new grouped test for <code><a href="../reference/tbl_now_epinowcast.html">tbl_now_to_epinowcast()</a></code>; the converter ungroups internally, and this now asserts that.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="native-strata-dispatch-on-baselinenowcast-development-version">Native strata dispatch on <code>baselinenowcast</code>
-<a class="anchor" aria-label="anchor" href="#native-strata-dispatch-on-baselinenowcast-development-version"></a></h3>
+<h3 id="native-strata-dispatch-on-baselinenowcast-1-0-0">Native strata dispatch on <code>baselinenowcast</code>
+<a class="anchor" aria-label="anchor" href="#native-strata-dispatch-on-baselinenowcast-1-0-0"></a></h3>
 <p><code>baselinenowcast</code> &gt;= 0.2.1 accepts a long tidy <code>data.frame</code> with a <code>strata_cols</code> argument and returns a single <code>baselinenowcast_df</code> with the strata columns still attached. <code><a href="../reference/nowcast_engines.html">engine_baselinenowcast()</a></code> uses that path for stratified objects instead of looping one triangle at a time, which enables sharing estimates across strata and drops an internal wrapper class.</p>
 <ul><li>
 <strong>New</strong>: <code>engine_baselinenowcast(strata_sharing = )</code> – passed straight through to <code><a href="https://baselinenowcast.epinowcast.org/reference/baselinenowcast.html" class="external-link">baselinenowcast::baselinenowcast()</a></code>. <code>"none"</code> (default) fits every stratum independently; <code>"delay"</code> shares the delay PMF across strata; <code>"uncertainty"</code> shares the uncertainty parameters; both can be combined. Meaningful only when the object has strata.</li>
@@ -469,12 +487,12 @@ x Logical subscript must be size 1 or 4, not 0.</code></pre>
 </div>
 <div class="section level3">
 <h3 id="breaking-summary-no-longer-reports-autocorrelation-or-completeness-0-33-0">Breaking: <code>summary()</code> no longer reports autocorrelation or completeness<a class="anchor" aria-label="anchor" href="#breaking-summary-no-longer-reports-autocorrelation-or-completeness-0-33-0"></a></h3>
-<p><code><a href="../reference/nowcast_summary_components.html">case_autocorrelation()</a></code> and <code><a href="../reference/nowcast_summary_components.html">reporting_completeness()</a></code> were written by an AI and have not been reviewed by a human. They were part of <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code>, so every reader of a summary got two numbers nobody had checked, with nothing in the output saying so.</p>
+<p><code>case_autocorrelation()</code> and <code>reporting_completeness()</code> were written by an AI and have not been reviewed by a human. They were part of <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code>, so every reader of a summary got two numbers nobody had checked, with nothing in the output saying so.</p>
 <p>Both are still exported, and both now <strong>warn on every call</strong> – deliberately not throttled, unlike the experimental diagnostics, because the caveat belongs to the number rather than to the session that produced it. <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> loses its <code>lags</code>, <code>completeness_delays</code> and <code>mature_only</code> arguments, which only ever fed those two blocks; the <code>autocorrelation</code> and <code>completeness</code> components are gone from its output.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span>                        <span class="co"># no longer contains those two components</span></span>
-<span><span class="fu"><a href="../reference/nowcast_summary_components.html">case_autocorrelation</a></span><span class="op">(</span><span class="va">x</span>, lags <span class="op">=</span> <span class="fl">1</span><span class="op">)</span> <span class="co"># still there, and says what it is</span></span>
-<span><span class="fu"><a href="../reference/nowcast_summary_components.html">reporting_completeness</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu">case_autocorrelation</span><span class="op">(</span><span class="va">x</span>, lags <span class="op">=</span> <span class="fl">1</span><span class="op">)</span> <span class="co"># still there, and says what it is</span></span>
+<span><span class="fu">reporting_completeness</span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="the-batch-family-ignores-censored-arrival-dates-0-33-0">The batch family ignores censored arrival dates<a class="anchor" aria-label="anchor" href="#the-batch-family-ignores-censored-arrival-dates-0-33-0"></a></h3>
@@ -1109,7 +1127,7 @@ x Logical subscript must be size 1 or 4, not 0.</code></pre>
 <div class="section level3">
 <h3 id="every-block-of-the-summary-is-its-own-function-0-23-0">Every block of the summary is its own function<a class="anchor" aria-label="anchor" href="#every-block-of-the-summary-is-its-own-function-0-23-0"></a></h3>
 <p><code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> is exactly the <code><a href="https://dplyr.tidyverse.org/reference/bind_rows.html" class="external-link">bind_rows()</a></code> of these, and each returns the same schema, so they stack:</p>
-<p><code><a href="../reference/nowcast_summary_components.html">cases_per_date()</a></code>, <code><a href="../reference/nowcast_summary_components.html">delay_summary()</a></code>, <code><a href="../reference/nowcast_summary_components.html">zero_run_summary()</a></code>, <code><a href="../reference/nowcast_summary_components.html">prop_censored()</a></code>, <code>prop_confirmation_type()</code>, <code><a href="../reference/nowcast_summary_components.html">prop_strata()</a></code>, <code><a href="../reference/nowcast_summary_components.html">prop_covariate_levels()</a></code>, <code><a href="../reference/nowcast_summary_components.html">case_autocorrelation()</a></code>, <code><a href="../reference/nowcast_summary_components.html">date_ranges()</a></code>, <code><a href="../reference/nowcast_summary_components.html">triangle_occupancy()</a></code>, <code><a href="../reference/nowcast_summary_components.html">reporting_completeness()</a></code> and <code><a href="../reference/nowcast_summary_components.html">cumulative_growth()</a></code>.</p>
+<p><code><a href="../reference/nowcast_summary_components.html">cases_per_date()</a></code>, <code><a href="../reference/nowcast_summary_components.html">delay_summary()</a></code>, <code><a href="../reference/nowcast_summary_components.html">zero_run_summary()</a></code>, <code><a href="../reference/nowcast_summary_components.html">prop_censored()</a></code>, <code>prop_confirmation_type()</code>, <code><a href="../reference/nowcast_summary_components.html">prop_strata()</a></code>, <code><a href="../reference/nowcast_summary_components.html">prop_covariate_levels()</a></code>, <code>case_autocorrelation()</code>, <code><a href="../reference/nowcast_summary_components.html">date_ranges()</a></code>, <code><a href="../reference/nowcast_summary_components.html">triangle_occupancy()</a></code>, <code>reporting_completeness()</code> and <code><a href="../reference/nowcast_summary_components.html">cumulative_growth()</a></code>.</p>
 <p><code><a href="../reference/nowcast_summary_components.html">delay_summary()</a></code> names the three delays explicitly – <code>"event_to_report"</code>, <code>"event_to_confirmation"</code> and <code>"report_to_confirmation"</code> – because the first two are measured from the event and the last is the laboratory’s own turnaround, measured from the report, and confusing them is a documented hazard.</p>
 </div>
 <div class="section level3">
@@ -1236,7 +1254,7 @@ x Logical subscript must be size 1 or 4, not 0.</code></pre>
 <li>
 <code>test-converter-roundtrip-all.R</code> – a registry of every <code>tbl_now_to_*()</code> shape and whether <code><a href="../reference/as_tbl_now.html">as_tbl_now()</a></code> brings it back; <strong>fails when a converter is missing from it</strong>.</li>
 <li>
-<code>test-coercion-methods.R</code> – every converter must expose the target package’s own coercion generic (<code><a href="https://baselinenowcast.epinowcast.org/reference/as_reporting_triangle.html" class="external-link">as_reporting_triangle()</a></code>, <code>as_tsibble()</code>, …) as a thin wrapper, or record why that package has none. It re-checks the “has none” claims against the installed package, so we find out if one gains a verb.</li>
+<code>test-coercion-methods.R</code> – every converter must expose the target package’s own coercion generic (<code><a href="https://baselinenowcast.epinowcast.org/reference/as_reporting_triangle.html" class="external-link">as_reporting_triangle()</a></code>, <code><a href="https://tsibble.tidyverts.org/reference/as-tsibble.html" class="external-link">as_tsibble()</a></code>, …) as a thin wrapper, or record why that package has none. It re-checks the “has none” claims against the installed package, so we find out if one gains a verb.</li>
 </ul></div>
 <div class="section level3">
 <h3 id="articles-0-20-0">Articles<a class="anchor" aria-label="anchor" href="#articles-0-20-0"></a></h3>
@@ -1373,7 +1391,7 @@ i Declare it with `add_strata()` to nowcast it separately.</code></pre>
 <p><code>initial_accumulate</code> is passed explicitly rather than inferred: with <code>by</code>, EpiNow2 1.9.0’s inference drops each group’s first observation (a two-region weekly series of 336/167 cases came back as 295/147). Single-series inference is unaffected.</p>
 </li>
 <li><p><strong>The snapshot form has a real inverse.</strong> Snapshot <em>k</em> is the series as known at report date <em>k</em>, so differencing consecutive snapshots recovers <code>count-incidence</code> exactly. <code>tbl_now_epinow2_snapshots</code> carries the report dates so <code><a href="../reference/as_tbl_now.html">as_tbl_now()</a></code> can do it; a bare list needs <code>report_dates</code>. Verified against <code><a href="https://epiforecasts.io/EpiNow2/reference/example_truncated.html" class="external-link">EpiNow2::example_truncated</a></code>, which round-trips to the case for the case. (The commented-out draft of this converter asserted no inverse was possible. For a single series that is true; for snapshots it is not.)</p></li>
-<li><p><strong><code><a href="https://epiforecasts.io/EpiNow2/reference/estimate_secondary.html" class="external-link">estimate_secondary()</a></code> and <code><a href="https://epiforecasts.io/EpiNow2/reference/estimate_delay.html" class="external-link">estimate_delay()</a></code> get no target.</strong> The first models two data streams against each other and one <code>tbl_now</code> is one stream; the second is superseded by <code><a href="https://epiforecasts.io/EpiNow2/reference/estimate_dist.html" class="external-link">estimate_dist()</a></code> by EpiNow2’s own help and throws away the censoring a <code>tbl_now</code> carries.</p></li>
+<li><p><strong><code><a href="https://epiforecasts.io/EpiNow2/reference/estimate_secondary.html" class="external-link">estimate_secondary()</a></code> and <code><a href="https://baselinenowcast.epinowcast.org/reference/estimate_delay.html" class="external-link">estimate_delay()</a></code> get no target.</strong> The first models two data streams against each other and one <code>tbl_now</code> is one stream; the second is superseded by <code><a href="https://epiforecasts.io/EpiNow2/reference/estimate_dist.html" class="external-link">estimate_dist()</a></code> by EpiNow2’s own help and throws away the censoring a <code>tbl_now</code> carries.</p></li>
 </ul><p><strong><code>obs_date</code> and the censoring windows are different quantities</strong>, and the converter now treats them as such. <code>[sdate_lwr, sdate_upr)</code> brackets <em>when the report happened</em> – at weekly resolution <code>[W, W + 7)</code>, a half-open interval whose upper bound is the end of that week, not a claim that anything happened on day <code>W + 7</code>. <code>obs_date</code> is <em>when observation stopped</em>, which <code><a href="https://epiforecasts.io/EpiNow2/reference/estimate_dist.html" class="external-link">estimate_dist()</a></code> asserts is <code>&gt;= sdate_upr</code> on every row. A <code>tbl_now</code>’s <code>now</code> <strong>labels a period</strong>, so the instant observation stopped is the end of it: <code>obs_date = now + w</code>. That makes the assertion hold by construction, and nothing is observed after it. Clamping the windows at <code>now</code> instead was tried and rejected – it moves reports in the final period into an earlier one, which the epidist round-trip test caught.</p>
 <p>The <code>nowcasting-models</code> article now covers  across all three strata, with its results precomputed into <code>nowcast-comparison.rds</code> like every other engine. Two caveats are stated in the article itself: the delay distributions are ’s shipped examples rather than distributions fitted to the Colombian data, and sampling is lighter than the default (500 draws, 250 warmup, 2 chains) because it is much the slowest engine in the comparison.</p>
 <p><code>data-raw/nowcast_comparison.R</code> now takes engine names (<code>Rscript data-raw/nowcast_comparison.R EpiNow2</code>) and merges them into the existing file, leaving every other engine’s rows and recorded timings alone; with no arguments it rebuilds everything as before. This replaces a second script that re-created the setup by parsing the first one.</p>
@@ -1632,7 +1650,7 @@ i Declare it with `add_strata()` to nowcast it separately.</code></pre>
 </li>
 <li>Refactored <code>converters.R</code> for readability (dplyr column operations instead of base indexing, full variable names, lintr-clean).</li>
 <li>The <code>tbl_now_to_*()</code> converters now keep the <code>covariates</code> and <code>is_censored</code> columns wherever the target format can hold them (<code>data.table</code>, <code>tsibble</code>, <code>baselinenowcast</code> long format, <code>epidist</code> linelist); the fixed modelling objects (<code>enw_preprocess_data</code>, the reporting-triangle matrix, the EpiNow2 series) still cannot carry them.</li>
-<li>Added S3 methods on the other packages’ coercion generics so they accept a <code>tbl_now</code> directly: <code><a href="https://epidist.epinowcast.org/reference/as_epidist_linelist_data.html" class="external-link">as_epidist_linelist_data()</a></code>, <code><a href="https://baselinenowcast.epinowcast.org/reference/as_reporting_triangle.html" class="external-link">as_reporting_triangle()</a></code>, <code>as_tsibble()</code> and <code><a href="https://rdrr.io/pkg/data.table/man/as.data.table.html" class="external-link">as.data.table()</a></code>, each wrapping the matching <code>tbl_now_to_*()</code>.</li>
+<li>Added S3 methods on the other packages’ coercion generics so they accept a <code>tbl_now</code> directly: <code><a href="https://epidist.epinowcast.org/reference/as_epidist_linelist_data.html" class="external-link">as_epidist_linelist_data()</a></code>, <code><a href="https://baselinenowcast.epinowcast.org/reference/as_reporting_triangle.html" class="external-link">as_reporting_triangle()</a></code>, <code><a href="https://tsibble.tidyverts.org/reference/as-tsibble.html" class="external-link">as_tsibble()</a></code> and <code><a href="https://rdrr.io/pkg/data.table/man/as.data.table.html" class="external-link">as.data.table()</a></code>, each wrapping the matching <code>tbl_now_to_*()</code>.</li>
 <li>Fixed <code><a href="../reference/tbl_now_data_table.html">tbl_now_to_data_table()</a></code> checking for <code>baselinenowcast</code> instead of <code>data.table</code>, and <code>tbl_now_to_baselinenowcast(format = "long")</code> no longer requiring <code>baselinenowcast</code> to be installed.</li>
 </ul></div>
     <div class="section level2">

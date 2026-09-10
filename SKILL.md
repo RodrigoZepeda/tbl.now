@@ -281,11 +281,6 @@ Focused summaries include
 [`triangle_occupancy()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md),
 and
 [`cumulative_growth()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md).
-The experimental, human-review-pending
-[`case_autocorrelation()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md)
-and
-[`reporting_completeness()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md)
-are not part of the default summary and warn on every call.
 
 [`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html)
 chooses applicable panels for the object’s units, temporal-effect spec,

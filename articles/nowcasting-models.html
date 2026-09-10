@@ -38,18 +38,7 @@
       <ul class="navbar-nav me-auto">
 <li class="nav-item"><a class="nav-link" href="../articles/tbl.now.html">Get started</a></li>
 <li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
-<li class="active nav-item dropdown">
-  <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
-<li><a class="dropdown-item" href="../articles/custom-nowcast-models.html">Adding your own nowcasting model</a></li>
-    <li><a class="dropdown-item" href="../articles/diagnosing-a-tbl-now.html">Diagnosing a tbl_now</a></li>
-    <li><a class="dropdown-item" href="../articles/ensemble-nowcasting.html">Fitting models from different nowcasting frameworks, backtesting and building an ensemble</a></li>
-    <li><a class="dropdown-item" href="../articles/example_revisions.html">The nowcasting workflow 2: COVID-19 case surveillance with revisions in the United States</a></li>
-    <li><a class="dropdown-item" href="../articles/example.html">The nowcasting workflow 1: hospital-acquired infections in Bucaramanga, Colombia</a></li>
-    <li><a class="dropdown-item" href="../articles/nowcasting-models.html">Using tbl.now with different modelling packages</a></li>
-    <li><a class="dropdown-item" href="../articles/tbl.now.html">tbl.now</a></li>
-  </ul>
-</li>
+<li class="active nav-item"><a class="nav-link" href="../articles/index.html">Articles</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul>
 <ul class="navbar-nav">
@@ -1255,25 +1244,34 @@ on Github</a>.</p>
 <h2 id="learning-more">Learning more<a class="anchor" aria-label="anchor" href="#learning-more"></a>
 </h2>
 <ul>
-<li>End-to-end tutorial on real life surveillance data. Takes you from
-cleaning to diagnosing errors in the data to nowcasting: <a href="https://rodrigozepeda.github.io/tbl.now/articles/example.html">https://rodrigozepeda.github.io/tbl.now/articles/example.html</a>
+<li>A <strong>tutorial</strong> on real life surveillance data. Takes
+you from cleaning to diagnosing errors in the data to nowcasting: <a href="https://rodrigozepeda.github.io/tbl.now/articles/example.html">https://rodrigozepeda.github.io/tbl.now/articles/example.html</a>
 </li>
-<li>The same tutorial with a <strong>revision process</strong> — the
-optional third date, where a reported case is later confirmed, retracted
-or left pending: <a href="https://rodrigozepeda.github.io/tbl.now/articles/example_revisions.html">https://rodrigozepeda.github.io/tbl.now/articles/example_revisions.html</a>
+<li>The <strong>second part of the tutorial</strong> with a revision
+process: the optional third date, where a reported case is later
+confirmed, retracted or left pending: <a href="https://rodrigozepeda.github.io/tbl.now/articles/example_revisions.html">https://rodrigozepeda.github.io/tbl.now/articles/example_revisions.html</a>
 </li>
-<li>Introduction vignette: <a href="https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.html">https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.html</a>
-for the full anatomy of a <code>tbl_now</code>, data types, and temporal
-effects.</li>
-<li>Tutorial on diagnosing your dataset — what is in it, what is
-structurally wrong with it, and detecting batches and other
-reporting-delay artifacts: <a href="https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html">https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html</a>
+<li>The <strong>Get started vignette</strong>: the whole workflow, from
+a raw line list to a scored nowcast, in five minutes: <a href="https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.html">https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.html</a>.</li>
+<li>
+<strong>More on the <code>tbl_now</code> object</strong>: every
+attribute, the three data types, the revision process, temporal effects
+and the <code>dplyr</code> methods: <a href="https://rodrigozepeda.github.io/tbl.now/articles/more-on-tbl-now.html">https://rodrigozepeda.github.io/tbl.now/articles/more-on-tbl-now.html</a>
 </li>
-<li>Using different nowcasting engines for the same dataset: <a href="https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html">https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html</a>
+<li>More thoughts on <strong>diagnosing your dataset</strong> with
+<code>tbl.now</code> <a href="https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html">https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html</a>
 </li>
-<li>Ensemble nowcasting across different engines <a href="https://rodrigozepeda.github.io/tbl.now/articles/ensemble-nowcasting.html">https://rodrigozepeda.github.io/tbl.now/articles/ensemble-nowcasting.html</a>
+<li>Detecting reporting <strong>batches</strong> with
+<code>tbl.now</code> <a href="https://rodrigozepeda.github.io/tbl.now/articles/batches.html">https://rodrigozepeda.github.io/tbl.now/articles/batches.html</a>
 </li>
-<li>Adding your own nowcasting model <a href="https://rodrigozepeda.github.io/tbl.now/articles/custom-nowcast-models.html">https://rodrigozepeda.github.io/tbl.now/articles/custom-nowcast-models.html</a>
+<li>How to use different nowcasting engines from <code>tbl.now</code>:
+here you can learn <strong>how it connects to the other nowcasting
+packages</strong>. <a href="https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html">https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html</a>
+</li>
+<li>How to <strong>nowcast with multiple engines, backtest and
+ensemble</strong> nowcasts. <a href="https://rodrigozepeda.github.io/tbl.now/articles/ensemble-nowcasting.html">https://rodrigozepeda.github.io/tbl.now/articles/ensemble-nowcasting.html</a>
+</li>
+<li>Adding your own <strong>custom nowcasting model</strong> <a href="https://rodrigozepeda.github.io/tbl.now/articles/custom-nowcast-models.html">https://rodrigozepeda.github.io/tbl.now/articles/custom-nowcast-models.html</a>
 </li>
 <li>Package reference: <a href="https://rodrigozepeda.github.io/tbl.now/reference/">https://rodrigozepeda.github.io/tbl.now/reference/</a>
 </li>

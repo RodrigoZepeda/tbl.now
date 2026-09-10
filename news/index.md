@@ -1,6 +1,90 @@
 # Changelog
 
-## tbl.now (development version)
+## tbl.now 1.0.0
+
+### Breaking: `case_autocorrelation()` and `reporting_completeness()` are gone
+
+Both were written by an AI and never reviewed by a human. They were
+taken out of [`summary()`](https://rdrr.io/r/base/summary.html) earlier
+for that reason and kept exported behind a warning on every call;
+shipping an unverified statistic in a CRAN release is a different
+proposition, so they are now removed from the package entirely and
+parked, tests and all, in `devel/unreviewed_summaries.R`. There is no
+deprecation shim.
+
+The `autocorrelation` and `completeness` components no longer exist
+anywhere, and `nowcast_summary_components` documents the ten remaining
+blocks. Nothing else in the family changes.
+
+### The Get Started vignette is now a five-minute tour
+
+[`vignette("tbl.now")`](https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.md)
+used to be a 1,500-line reference that opened with the tidyverse and
+ended with format converters. It is now a **five-minute walk of the
+whole workflow** – clean,
+[`tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.md),
+[`diagnose()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose.md),
+[`summary()`](https://rdrr.io/r/base/summary.html),
+[`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html),
+and then the fork between `tbl_now_to_*()` and
+[`run_nowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/run_nowcast.md)/[`nowcast_backtest()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_backtest.md)
+– drawn as a diagram and run on the same dengue data as the README, with
+every stop linking to the article that covers it properly.
+
+Everything that was cut moved, unchanged, to a new article: **More on
+the `tbl_now` object**
+(<https://rodrigozepeda.github.io/tbl.now/articles/more-on-tbl-now.html>).
+It keeps the attribute reference (now complete: `revision_date`,
+`revision_type` and `revision_units` were missing), the three data
+types, censoring, temporal effects, the revision process, the `dplyr`
+methods and the utilities. The plotting and diagnostics sections were
+dropped in favour of the articles that already cover them.
+
+The website’s articles are now grouped into **Tutorials**, **Diagnosing
+and visualizing** and **Miscellaneous** rather than listed flat.
+
+`?tbl_now_workflows` is gone; the vignette says the same thing with an
+example you can run.
+
+### Smaller installation
+
+`LazyDataCompression: xz` plus the shorter vignette take the installed
+package from 5.1 Mb to 3.4 Mb, comfortably back under CRAN’s threshold.
+The datasets themselves are unchanged.
+
+### Upstream examples now guard converter and fit equivalence
+
+The shipped examples from epinowcast, NobBS, surveillance, EpiNow2 and
+epidist now exercise both halves of each integration: the package-native
+input is compared with the matching `tbl_now_to_*()` result, and a
+seeded native fit is compared with the native fit retained by
+[`run_nowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/run_nowcast.md)
+(or, for epidist, with the same delay-model pipeline, since epidist is
+not a nowcasting engine).
+
+- **Fixed**: `tbl_now_to_epinowcast(max_delay = ...)` no longer applies
+  the modelling delay cap while completing observations. Later
+  observations are retained long enough for
+  [`enw_preprocess_data()`](https://package.epinowcast.org/reference/enw_preprocess_data.html)
+  to calculate `max_confirm`, matching epinowcast’s documented
+  complete-then-preprocess workflow.
+- Missing-reference reports retained by a `tbl_now` now make
+  [`tbl_now_to_epinowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_epinowcast.md)
+  select epinowcast’s `missing_reference = TRUE` behavior automatically.
+  Ordinary inputs continue to use `FALSE` and do not gain synthetic
+  missing-reference rows.
+- **Fixed**: the epinowcast and EpiNow2 fixtures built their inputs with
+  `data.table`’s `[` query syntax. A test file is evaluated in the
+  package namespace, which imports no `data.table`, so
+  `data.table:::cedta()` sent `DT[i]` to `[.data.frame` instead – a
+  filter expression became an unknown object and a row index became a
+  column index, erroring under `R CMD check` while passing from the
+  global environment. The fixtures now subset with base semantics that
+  mean the same thing under either dispatch.
+- [`?sari_bh`](https://rodrigozepeda.github.io/tbl.now/reference/sari_bh.md)
+  credits the `nowcaster` package as the proximate source. The
+  OpenDataSUS portal link it carried has been redirecting to an
+  unreachable host.
 
 ### `autoplot()` is now one column per process
 
@@ -1069,13 +1153,11 @@ the function is experimental and warns on every call.
 
 ### Breaking: `summary()` no longer reports autocorrelation or completeness
 
-[`case_autocorrelation()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md)
-and
-[`reporting_completeness()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md)
-were written by an AI and have not been reviewed by a human. They were
-part of [`summary()`](https://rdrr.io/r/base/summary.html), so every
-reader of a summary got two numbers nobody had checked, with nothing in
-the output saying so.
+`case_autocorrelation()` and `reporting_completeness()` were written by
+an AI and have not been reviewed by a human. They were part of
+[`summary()`](https://rdrr.io/r/base/summary.html), so every reader of a
+summary got two numbers nobody had checked, with nothing in the output
+saying so.
 
 Both are still exported, and both now **warn on every call** –
 deliberately not throttled, unlike the experimental diagnostics, because
@@ -2507,11 +2589,10 @@ these, and each returns the same schema, so they stack:
 `prop_confirmation_type()`,
 [`prop_strata()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md),
 [`prop_covariate_levels()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md),
-[`case_autocorrelation()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md),
+`case_autocorrelation()`,
 [`date_ranges()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md),
 [`triangle_occupancy()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md),
-[`reporting_completeness()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md)
-and
+`reporting_completeness()` and
 [`cumulative_growth()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md).
 
 [`delay_summary()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md)
@@ -2858,9 +2939,10 @@ axis can be varied at a time:
 - `test-coercion-methods.R` – every converter must expose the target
   package’s own coercion generic
   ([`as_reporting_triangle()`](https://baselinenowcast.epinowcast.org/reference/as_reporting_triangle.html),
-  `as_tsibble()`, …) as a thin wrapper, or record why that package has
-  none. It re-checks the “has none” claims against the installed
-  package, so we find out if one gains a verb.
+  [`as_tsibble()`](https://tsibble.tidyverts.org/reference/as-tsibble.html),
+  …) as a thin wrapper, or record why that package has none. It
+  re-checks the “has none” claims against the installed package, so we
+  find out if one gains a verb.
 
 ### Articles
 
@@ -3231,7 +3313,7 @@ Three things worth knowing:
 
 - **[`estimate_secondary()`](https://epiforecasts.io/EpiNow2/reference/estimate_secondary.html)
   and
-  [`estimate_delay()`](https://epiforecasts.io/EpiNow2/reference/estimate_delay.html)
+  [`estimate_delay()`](https://baselinenowcast.epinowcast.org/reference/estimate_delay.html)
   get no target.** The first models two data streams against each other
   and one `tbl_now` is one stream; the second is superseded by
   [`estimate_dist()`](https://epiforecasts.io/EpiNow2/reference/estimate_dist.html)
@@ -4679,7 +4761,8 @@ mathematics in a **“The mathematics”** section of its help page.
   accept a `tbl_now` directly:
   [`as_epidist_linelist_data()`](https://epidist.epinowcast.org/reference/as_epidist_linelist_data.html),
   [`as_reporting_triangle()`](https://baselinenowcast.epinowcast.org/reference/as_reporting_triangle.html),
-  `as_tsibble()` and
+  [`as_tsibble()`](https://tsibble.tidyverts.org/reference/as-tsibble.html)
+  and
   [`as.data.table()`](https://rdrr.io/pkg/data.table/man/as.data.table.html),
   each wrapping the matching `tbl_now_to_*()`.
 - Fixed

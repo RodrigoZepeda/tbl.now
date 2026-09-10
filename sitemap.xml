@@ -4,12 +4,14 @@
 <url><loc>https://rodrigozepeda.github.io/tbl.now/LICENSE-text.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/LICENSE.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/SKILL.html</loc></url>
+<url><loc>https://rodrigozepeda.github.io/tbl.now/articles/batches.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/articles/custom-nowcast-models.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/articles/ensemble-nowcasting.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/articles/example.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/articles/example_revisions.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/articles/index.html</loc></url>
+<url><loc>https://rodrigozepeda.github.io/tbl.now/articles/more-on-tbl-now.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/authors.html</loc></url>
@@ -75,6 +77,7 @@
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/revised_cases.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/revision_delay.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/run_nowcast.html</loc></url>
+<url><loc>https://rodrigozepeda.github.io/tbl.now/reference/sari_bh.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/score_nowcast.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/simulate_batch.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/surveillance_grids.html</loc></url>
@@ -95,7 +98,6 @@
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_surveillance_list.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_triangle_list.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_tsibble.html</loc></url>
-<url><loc>https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_workflows.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/tbl_nowcast.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/temporal_effects.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/tidy.delay_distribution.html</loc></url>

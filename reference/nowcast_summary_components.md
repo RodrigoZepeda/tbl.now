@@ -12,11 +12,7 @@ Every one of these returns the same schema as
 [`summary()`](https://rdrr.io/r/base/summary.html) itself, so they can
 be stacked with
 [`dplyr::bind_rows()`](https://dplyr.tidyverse.org/reference/bind_rows.html),
-compared across datasets, or used alone. Two of them –
-`case_autocorrelation()` and `reporting_completeness()` – were written
-by an AI and have not been checked by a human, so they are **not** part
-of [`summary()`](https://rdrr.io/r/base/summary.html) and warn on every
-call:
+compared across datasets, or used alone.
 
 - `cases_per_date()` – case counts per date on one axis.
 
@@ -33,22 +29,10 @@ call:
 - `prop_covariate_levels()` – proportion of cases per level of each
   categorical covariate.
 
-- `case_autocorrelation()` – lagged autocorrelation of the case series.
-  **Unreviewed:** not part of
-  [`summary()`](https://rdrr.io/r/base/summary.html), and warns on every
-  call.
-
 - `date_ranges()` – totals, date ranges and `now`.
 
 - `triangle_occupancy()` – how full the reporting triangle is, and how
   stale the object is.
-
-- `reporting_completeness()` – share of each event date's eventual total
-  that had arrived by delay `d`, as a distribution over event dates
-  (`mean`, `sd`, the quantiles) plus the pooled share in `prop`.
-  **Unreviewed:** not part of
-  [`summary()`](https://rdrr.io/r/base/summary.html), and warns on every
-  call.
 
 - `cumulative_growth()` – ratio of one delay's running total to the
   previous one's.
@@ -85,25 +69,9 @@ prop_strata(x, strata = NULL)
 
 prop_covariate_levels(x, by_strata = NULL, strata = NULL)
 
-case_autocorrelation(
-  x,
-  lags = 1,
-  axis = c("event", "report", "revision"),
-  by_strata = NULL,
-  strata = NULL
-)
-
 date_ranges(x, by_strata = NULL, strata = NULL)
 
 triangle_occupancy(x, by_strata = NULL, strata = NULL)
-
-reporting_completeness(
-  x,
-  delays = NULL,
-  mature_only = TRUE,
-  by_strata = NULL,
-  strata = NULL
-)
 
 cumulative_growth(x, k = 7, by_strata = NULL, strata = NULL)
 ```
@@ -134,23 +102,6 @@ cumulative_growth(x, k = 7, by_strata = NULL, strata = NULL)
   `"event_to_revision"` (the same span measured to the revision, so the
   two are comparable) or `"report_to_revision"` (the laboratory's
   turnaround, the `.revision_delay` column).
-
-- lags:
-
-  Integer vector of lags.
-
-- delays:
-
-  Integer vector of delays to report completeness at. Defaults to every
-  observed delay.
-
-- mature_only:
-
-  Logical. Drop event dates too recent to have been fully reported. The
-  cutoff is `now` minus the 95th percentile of the delay distribution –
-  the same rule
-  [`autoplot.tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/autoplot.tbl_now.md)
-  uses.
 
 - k:
 
@@ -215,9 +166,7 @@ delay_summary(ndata)
 #> 
 #> ℹ Use `dplyr::filter()` or `tibble::as_tibble()` for the full schema.
 
-# How sparse the series is, and how strongly one week predicts the next.
-# `case_autocorrelation` warns because it is unreviewed; the warning is
-# deliberately not suppressed here, since it belongs with the number.
+# How sparse the series is.
 zero_run_summary(ndata, axis = "event")
 #> ── Summary of a <tbl_now> ──────────────────────────────────────────────────────
 #> 3 rows in 1 component; strata: "Female" and "Male".
@@ -229,23 +178,6 @@ zero_run_summary(ndata, axis = "event")
 #> 1 event_date all         2     4  2    1.41      1     1     1     3     3     3
 #> 2 event_date Female     10    13  1.3  0.675     1     1     1     1     2     3
 #> 3 event_date Male        8    13  1.62 0.916     1     1     1     2     3     3
-#> 
-#> ℹ Use `dplyr::filter()` or `tibble::as_tibble()` for the full schema.
-case_autocorrelation(ndata, lags = 1)
-#> Warning: ! `case_autocorrelation()` is experimental and was written by an AI; it has not
-#>   yet been reviewed by a human.
-#> ℹ It is no longer part of `summary()`. Check the numbers before you rely on
-#>   them.
-#> ── Summary of a <tbl_now> ──────────────────────────────────────────────────────
-#> 3 rows in 1 component; strata: "Female" and "Male".
-#> 
-#> autocorrelation
-#>   n = lagged date pairs
-#>   quantity             stratum     n value
-#>   <chr>                <chr>   <int> <dbl>
-#> 1 per_event_date lag 1 all      1094 0.958
-#> 2 per_event_date lag 1 Female   1094 0.944
-#> 3 per_event_date lag 1 Male     1094 0.941
 #> 
 #> ℹ Use `dplyr::filter()` or `tibble::as_tibble()` for the full schema.
 
@@ -308,32 +240,8 @@ triangle_occupancy(ndata)
 #> 
 #> ℹ Use `dplyr::filter()` or `tibble::as_tibble()` for the full schema.
 
-# What share of a week's eventual total had arrived by delay d, and how fast
-# the total is still growing. Both are distributions over event dates, so
-# they fill `mean`/`q50` -- and completeness also `prop`, the pooled share --
-# rather than the scalar `value` column. `reporting_completeness` is
-# unreviewed and warns; see above.
-reporting_completeness(ndata, delays = 0:3) |>
-  dplyr::select(quantity, stratum, n, mean, q50, prop)
-#> Warning: ! `reporting_completeness()` is experimental and was written by an AI; it has
-#>   not yet been reviewed by a human.
-#> ℹ It is no longer part of `summary()`. Check the numbers before you rely on
-#>   them.
-#> # A tibble: 12 × 6
-#>    quantity   stratum     n   mean    q50   prop
-#>    <chr>      <chr>   <int>  <dbl>  <dbl>  <dbl>
-#>  1 delay <= 0 all      1090 0.0381 0.0220 0.0396
-#>  2 delay <= 1 all      1090 0.510  0.510  0.502 
-#>  3 delay <= 2 all      1090 0.844  0.867  0.850 
-#>  4 delay <= 3 all      1090 0.931  0.953  0.941 
-#>  5 delay <= 0 Female   1081 0.0367 0      0.0391
-#>  6 delay <= 1 Female   1081 0.509  0.514  0.501 
-#>  7 delay <= 2 Female   1081 0.849  0.879  0.850 
-#>  8 delay <= 3 Female   1081 0.933  0.971  0.942 
-#>  9 delay <= 0 Male     1081 0.0384 0      0.0402
-#> 10 delay <= 1 Male     1081 0.516  0.509  0.504 
-#> 11 delay <= 2 Male     1081 0.839  0.867  0.849 
-#> 12 delay <= 3 Male     1081 0.929  0.967  0.941 
+# How fast the running total is still growing. This is a distribution over
+# event dates, so it fills `mean`/`q50` rather than the scalar `value`.
 cumulative_growth(ndata, k = 3)
 #> ── Summary of a <tbl_now> ──────────────────────────────────────────────────────
 #> 9 rows in 1 component; strata: "Female" and "Male".

@@ -1,13 +1,13 @@
-# tbl.now: Tidy Data Structures and Workflows for Epidemiological Nowcasting
+# tbl.now: A Tidy Workflow for Epidemiological Nowcasting
 
 Defines tidy data structures and package-agnostic workflows for
 epidemiological nowcasting. The 'tbl_now' class records event, report,
-and optional revision dates together with strata, covariates, censoring,
-and reporting-delay metadata while remaining compatible with 'dplyr'.
-Tools support validation, manipulation, diagnostics, visualization,
-format conversion, retrospective evaluation, and multiple modelling
-engines. The 'tbl_nowcast' class standardizes probabilistic predictions
-for plotting, scoring, comparison, and ensembling.
+and revision dates alongside strata, covariates, censoring, and
+reporting-delay metadata while remaining compatible with 'dplyr'. Tools
+support validation, manipulation, diagnostics, visualization, format
+conversion, retrospective evaluation, and multiple modelling engines.
+The 'tbl_nowcast' class standardizes probabilistic predictions for
+plotting, scoring, comparison, and ensembling.
 
 ## Details
 
@@ -76,25 +76,22 @@ fitting, scoring – follows from that declaration.
     combines several.
 
 [`vignette("tbl.now")`](https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.md)
-walks through this end to end. The [package
+walks this end to end, from a raw line list to a scored nowcast, and
+marks the point where you choose between a modelling package's native
+fitting API and the common cross-engine one. The [package
 website](https://rodrigozepeda.github.io/tbl.now/) carries longer
-articles on the modelling packages, batch reporting, ensembles and
-writing your own backend.
-
-See
-[tbl_now_workflows](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_workflows.md)
-for the explicit boundary between a modelling package's native
-fitting/diagnostic API and the common cross-engine result, plotting,
-backtesting, scoring, and ensembling API.
+articles on the class itself, the modelling packages, batch reporting,
+ensembles and writing your own backend.
 
 ## Datasets
 
-Six surveillance datasets ship with the package for experimenting:
+Seven surveillance datasets ship with the package for experimenting:
 [denguedat](https://rodrigozepeda.github.io/tbl.now/reference/denguedat.md),
 [mpoxdat](https://rodrigozepeda.github.io/tbl.now/reference/mpoxdat.md),
 [flusight](https://rodrigozepeda.github.io/tbl.now/reference/flusight.md),
 [covid_colombia](https://rodrigozepeda.github.io/tbl.now/reference/covid_colombia.md),
-[covid_us](https://rodrigozepeda.github.io/tbl.now/reference/covid_us.md)
+[covid_us](https://rodrigozepeda.github.io/tbl.now/reference/covid_us.md),
+[sari_bh](https://rodrigozepeda.github.io/tbl.now/reference/sari_bh.md)
 and
 [hai_bucaramanga](https://rodrigozepeda.github.io/tbl.now/reference/hai_bucaramanga.md)
 – the last deliberately messy, for the diagnostics.
