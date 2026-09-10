@@ -235,62 +235,62 @@ A [tbl_now()](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.html) st
 </thead>
 <tbody>
 <tr>
-<td align="center"><img src="man/figures/event_date.svg" height="80" style="height:80px;width:auto;max-width:80px;" alt="event_date"></td>
+<td align="center"><img src="https://rodrigozepeda.github.io/tbl.now/reference/figures/event_date.svg" height="80" style="height:80px;width:auto;max-width:80px;" alt="event_date"></td>
 <td align="left"><code>event_date</code></td>
 <td align="left">The column storing <strong>event dates</strong>; i.e. when the epidemiological phenomenon of interest happened (symptom onset, hospitalisation, death, &hellip;). <strong>Required.</strong></td>
 </tr>
 <tr>
-<td align="center"><img src="man/figures/report_date.svg" height="80" style="height:80px;width:auto;max-width:80px;" alt="report_date"></td>
+<td align="center"><img src="https://rodrigozepeda.github.io/tbl.now/reference/figures/report_date.svg" height="80" style="height:80px;width:auto;max-width:80px;" alt="report_date"></td>
 <td align="left"><code>report_date</code></td>
 <td align="left">The column storing <strong>report dates</strong>; i.e. when that event became known to the surveillance system. <strong>Required</strong>, unless it is reconstructed from <code>delay</code>.</td>
 </tr>
 <tr>
-<td align="center"><img src="man/figures/revision_date.svg" height="80" style="height:80px;width:auto;max-width:80px;" alt="revision"></td>
+<td align="center"><img src="https://rodrigozepeda.github.io/tbl.now/reference/figures/revision_date.svg" height="80" style="height:80px;width:auto;max-width:80px;" alt="revision"></td>
 <td align="left"><code>revision_date</code></td>
 <td align="left">An optional third date indicating when the report was resolved (see <code>revision_type</code>). <em>Optional</em>.</td>
 </tr>
 <tr>
-<td align="center"><img src="man/figures/revision_type.svg" height="80" style="height:80px;width:auto;max-width:80px;" alt="revision"></td>
+<td align="center"><img src="https://rodrigozepeda.github.io/tbl.now/reference/figures/revision_type.svg" height="80" style="height:80px;width:auto;max-width:80px;" alt="revision"></td>
 <td align="left"><code>revision_type</code>, <code>revision_levels</code></td>
 <td align="left">What the revision date resolved to. Only <code>confirmed</code>, <code>retracted</code>, <code>pending</code> or <code>NA</code> are ever stored; set <code>revision_levels</code> as a named dictionary mapping the data's labels into those four ( e.g. <code>c(positive = "confirmed")</code>). <em>Optional</em>.</td>
 </tr>
 <tr>
-<td align="center"><img src="man/figures/now.svg" height="80" style="height:80px;width:auto;max-width:80px;" alt="now"></td>
+<td align="center"><img src="https://rodrigozepeda.github.io/tbl.now/reference/figures/now.svg" height="80" style="height:80px;width:auto;max-width:80px;" alt="now"></td>
 <td align="left"><code>now</code></td>
 <td align="left">The date the nowcast is anchored to &mdash; &ldquo;today&rdquo; from the model's point of view. <em>Optional</em>; defaults to the latest date.</td>
 </tr>
 <tr>
-<td align="center"><img src="man/figures/strata.svg" height="80" style="height:80px;width:auto;max-width:80px;" alt="strata"></td>
+<td align="center"><img src="https://rodrigozepeda.github.io/tbl.now/reference/figures/strata.svg" height="80" style="height:80px;width:auto;max-width:80px;" alt="strata"></td>
 <td align="left"><code>strata</code></td>
 <td align="left">Columns you want a separate nowcast for (e.g. gender, region). <em>Optional</em>.</td>
 </tr>
 <tr>
-<td align="center"><img src="man/figures/covariates.svg" height="80" style="height:80px;width:auto;max-width:80px;" alt="covariates"></td>
+<td align="center"><img src="https://rodrigozepeda.github.io/tbl.now/reference/figures/covariates.svg" height="80" style="height:80px;width:auto;max-width:80px;" alt="covariates"></td>
 <td align="left"><code>covariates</code></td>
 <td align="left">Columns that inform the nowcast but that you do <em>not</em> want it broken down by (e.g. temperature or precipitation). <em>Optional</em>.</td>
 </tr>
 <tr>
-<td align="center"><img src="man/figures/case_count.svg" height="80" style="height:80px;width:auto;max-width:80px;" alt="case_count"></td>
+<td align="center"><img src="https://rodrigozepeda.github.io/tbl.now/reference/figures/case_count.svg" height="80" style="height:80px;width:auto;max-width:80px;" alt="case_count"></td>
 <td align="left"><code>case_count</code></td>
 <td align="left">The column holding the counts when the data is given as aggregated (rather than line-list). <em>Optional</em>.</td>
 </tr>
 <tr>
-<td align="center"><img src="man/figures/datatype.svg" height="80" style="height:80px;width:auto;max-width:80px;" alt="data_type"></td>
+<td align="center"><img src="https://rodrigozepeda.github.io/tbl.now/reference/figures/datatype.svg" height="80" style="height:80px;width:auto;max-width:80px;" alt="data_type"></td>
 <td align="left"><code>data_type</code></td>
 <td align="left">Whether the data represents a <code>linelist</code> (each row is a case), <code>count-incidence</code>(each row is a collection of cases per event-report date) or <code>count-cumulative</code>(each row is the cummulative number cases for that event accumulating in the report axis). <em>Optional</em>; inferred by default.</td>
 </tr>
 <tr>
-<td align="center"><img src="man/figures/units.svg" height="80" style="height:80px;width:auto;max-width:80px;" alt="units"></td>
+<td align="center"><img src="https://rodrigozepeda.github.io/tbl.now/reference/figures/units.svg" height="80" style="height:80px;width:auto;max-width:80px;" alt="units"></td>
 <td align="left"><code>event_units</code>, <code>report_units</code>, <code>revision_units</code></td>
 <td align="left">The time grid each date lives on: <code>days</code>, <code>weeks</code>, <code>months</code>, <code>years</code> or <code>numeric</code>. <em>Optional</em>; inferred (<code>"auto"</code>) by default.</td>
 </tr>
 <tr>
-<td align="center"><img src="man/figures/censoring.svg" height="80" style="height:80px;width:auto;max-width:80px;" alt="is_censored_report"></td>
+<td align="center"><img src="https://rodrigozepeda.github.io/tbl.now/reference/figures/censoring.svg" height="80" style="height:80px;width:auto;max-width:80px;" alt="is_censored_report"></td>
 <td align="left"><code>is_censored_report</code>,<code>is_censored_revision</code></td>
 <td align="left">Flags dates from either the report or the revision axis that are only an upper bound, i.e. the true report happened <i>before</i> the date given in the database.  <em>Optional</em>.</td>
 </tr>
 <tr>
-<td align="center"><img src="man/figures/temporal_effects.svg" height="80" style="height:80px;width:auto;max-width:80px;" alt="temporal_effects"></td>
+<td align="center"><img src="https://rodrigozepeda.github.io/tbl.now/reference/figures/temporal_effects.svg" height="80" style="height:80px;width:auto;max-width:80px;" alt="temporal_effects"></td>
 <td align="left"><code>t_effects</code></td>
 <td align="left">Columns holding temporal effects (day of week, holidays, &hellip;) that some models can use. <em>Optional</em>.</td>
 </tr>
