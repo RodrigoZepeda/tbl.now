@@ -59,6 +59,16 @@ the same delay-model pipeline, since epidist is not a nowcasting engine).
   `tbl_now_to_epinowcast()` select epinowcast's `missing_reference = TRUE`
   behavior automatically. Ordinary inputs continue to use `FALSE` and do not
   gain synthetic missing-reference rows.
+* **Fixed**: the epinowcast and EpiNow2 fixtures built their inputs with
+  `data.table`'s `[` query syntax. A test file is evaluated in the package
+  namespace, which imports no `data.table`, so `data.table:::cedta()` sent
+  `DT[i]` to `[.data.frame` instead -- a filter expression became an unknown
+  object and a row index became a column index, erroring under `R CMD check`
+  while passing from the global environment. The fixtures now subset with base
+  semantics that mean the same thing under either dispatch.
+* `?sari_bh` credits the `nowcaster` package as the proximate source. The
+  OpenDataSUS portal link it carried has been redirecting to an unreachable
+  host.
 
 ## `autoplot()` is now one column per process
 

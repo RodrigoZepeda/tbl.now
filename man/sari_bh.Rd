@@ -19,7 +19,10 @@ as YYYY-MM-DD. May be \code{NA} when no record date was available.}
 }
 }
 \source{
-\url{https://opendatasus.saude.gov.br/}
+Redistributed from the \pkg{nowcaster} package
+(\url{https://github.com/covid19br/nowcaster}), which derives it from the
+Brazilian Ministry of Health's SIVEP-Gripe respiratory surveillance system,
+published on the OpenDataSUS portal.
 }
 \usage{
 sari_bh

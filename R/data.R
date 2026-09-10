@@ -540,7 +540,10 @@
 #'     \code{"Dead (other causes)"}, \code{"Unknown"}, or \code{"Not in dictionary"}.}
 #'   \item{age_yrs}{Age of the patient in years.}
 #' }
-#' @source \url{https://opendatasus.saude.gov.br/}
+#' @source Redistributed from the \pkg{nowcaster} package
+#'   (\url{https://github.com/covid19br/nowcaster}), which derives it from the
+#'   Brazilian Ministry of Health's SIVEP-Gripe respiratory surveillance system,
+#'   published on the OpenDataSUS portal.
 #' @references From the `nowcaster` package.
 #'  Bastos, S L, Economou, Theodoros, Gomes, FC M, Villela, AM D, Coelho, C F, Cruz, G O, Stoner, Oliver, Bailey,
 #'  Trevor, Codeço, T C (2019). “A Modelling approach for correcting reporting delays in disease surveillance

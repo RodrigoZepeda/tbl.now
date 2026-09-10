@@ -19,9 +19,19 @@ skip_without_cmdstan <- function() {
   skip_if(is.null(version), "CmdStan is not installed")
 }
 
+# `[.data.table`'s query syntax is only enabled for callers whose namespace is
+# "data table aware" (`data.table:::cedta()`), and a test file is evaluated in
+# the package namespace, which imports no data.table.  There, `DT[i]` silently
+# falls back to `[.data.frame`, so a filter expression becomes an unknown object
+# and a row index becomes a column index.  Subset these fixtures with base
+# semantics that mean the same thing under either dispatch.
+.dt_rows <- function(data, keep) {
+  data.table::as.data.table(as.data.frame(data)[keep, , drop = FALSE])
+}
+
 epinowcast_example_data <- function() {
   data <- data.table::copy(epinowcast::germany_covid19_hosp)
-  data <- data[location == "DE"][age_group == "00+"]
+  data <- .dt_rows(data, data$location == "DE" & data$age_group == "00+")
   data <- epinowcast::enw_filter_report_dates(
     data, latest_date = "2021-10-01"
   )
@@ -31,7 +41,9 @@ epinowcast_example_data <- function() {
   data <- epinowcast::enw_filter_report_dates(data, remove_days = 40)
   data <- epinowcast::enw_filter_reference_dates(data, include_days = 40)
 
-  observations <- data[, .(reference_date, report_date, confirm)]
+  observations <- data.table::as.data.table(
+    as.data.frame(data)[, c("reference_date", "report_date", "confirm")]
+  )
   list(
     raw = data,
     observations = observations,
@@ -211,7 +223,7 @@ test_that("surveillance's HUS fit matches run_nowcast()", {
 })
 
 epinow2_example_data <- function() {
-  data <- as.data.frame(EpiNow2::example_confirmed[1:40])
+  data <- as.data.frame(EpiNow2::example_confirmed)[1:40, , drop = FALSE]
   input <- data
   input$report_date <- input$date
   list(
