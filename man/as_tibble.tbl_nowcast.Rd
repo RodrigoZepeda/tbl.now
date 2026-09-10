@@ -4,6 +4,9 @@
 \alias{as_tibble.tbl_nowcast}
 \alias{as_tibble_tbl_nowcast}
 \title{Coerce a \code{tbl_nowcast} into a \code{tibble}}
+\usage{
+\method{as_tibble}{tbl_nowcast}(x, ..., type = c("quantiles", "draws"))
+}
 \arguments{
 \item{x}{A \link{tbl_nowcast}.}
 

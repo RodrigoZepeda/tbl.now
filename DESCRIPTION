@@ -1,6 +1,6 @@
 Package: tbl.now
 Type: Package
-Title: A Tidy Workflow for Epidemiological Nowcasting
+Title: Tidy Workflow for Epidemiological Nowcasting
 Version: 1.0.0
 Authors@R: 
     c(person("Rodrigo", "Zepeda-Tello", , "rzepeda17@gmail.com", role = c("aut", "cre"),

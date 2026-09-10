@@ -98,7 +98,7 @@
 #' tidy(nc)
 #'
 #' @name tidy.tbl_nowcast
-#' @usage NULL
+#' @usage \method{tidy}{tbl_nowcast}(x, probs = NULL, ...)
 tidy_tbl_nowcast <- function(x, probs = NULL, ...) {
   .assert_tbl_nowcast(x)
 

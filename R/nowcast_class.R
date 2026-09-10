@@ -409,7 +409,7 @@ S7::method(print, tbl_nowcast) <- function(x, ..., n = 6) {
 #' tibble::as_tibble(nc)
 #'
 #' @name as_tibble.tbl_nowcast
-#' @usage NULL
+#' @usage \method{as_tibble}{tbl_nowcast}(x, ..., type = c("quantiles", "draws"))
 as_tibble_tbl_nowcast <- function(x, ..., type = c("quantiles", "draws")) {
   type <- match.arg(type)
   if (type == "draws") {

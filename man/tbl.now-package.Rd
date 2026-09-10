@@ -4,7 +4,7 @@
 \name{tbl.now-package}
 \alias{tbl.now}
 \alias{tbl.now-package}
-\title{tbl.now: A Tidy Workflow for Epidemiological Nowcasting}
+\title{tbl.now: Tidy Workflow for Epidemiological Nowcasting}
 \description{
 \if{html}{\figure{logo.png}{options: style='float: right' alt='logo' width='120'}}
 

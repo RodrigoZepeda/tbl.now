@@ -127,6 +127,10 @@
 #'   a nowcast is an estimate of the **epidemic** process (cases by event date),
 #'   which the package always draws in green, with red reserved for the
 #'   reporting process.
+#' @param linewidth Multiplier on the width of the median line. Default `1`; it
+#'   multiplies rather than replaces the geom's own width.
+#' @param palette A named colour palette (see [tbl_now_palette()]). Each colour
+#'   is named for the role it plays, so overriding one role re-themes the plot.
 #' @param date_lim Length-2 vector of event-axis limits, as `Date`s (or as
 #'   numbers on a numeric event axis). `NA` in either position leaves that end
 #'   alone. A nowcast covers the whole series but only *corrects* its final
@@ -160,7 +164,9 @@
 #' autoplot(nc, date_lim = c(as.Date("2020-01-19"), as.Date("2020-02-02")))
 #'
 #' @name autoplot.tbl_nowcast
-#' @usage NULL
+#' @usage \method{autoplot}{tbl_nowcast}(object, ..., levels = NULL,
+#'   show_reported = TRUE, colour = NULL, linewidth = 1, date_lim = NULL,
+#'   ylim = NULL, palette = .tbl_now_palette())
 #' @importFrom ggplot2 autoplot
 #' @export
 S7::method(autoplot, tbl_nowcast) <- function(object, ..., levels = NULL,

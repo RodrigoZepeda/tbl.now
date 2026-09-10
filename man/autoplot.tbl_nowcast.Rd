@@ -3,6 +3,11 @@
 \name{autoplot.tbl_nowcast}
 \alias{autoplot.tbl_nowcast}
 \title{Plot a nowcast}
+\usage{
+\method{autoplot}{tbl_nowcast}(object, ..., levels = NULL,
+  show_reported = TRUE, colour = NULL, linewidth = 1, date_lim = NULL,
+  ylim = NULL, palette = .tbl_now_palette())
+}
 \arguments{
 \item{object}{A \link{tbl_nowcast} object.}
 
@@ -28,6 +33,9 @@ a nowcast is an estimate of the \strong{epidemic} process (cases by event date),
 which the package always draws in green, with red reserved for the
 reporting process.}
 
+\item{linewidth}{Multiplier on the width of the median line. Default \code{1}; it
+multiplies rather than replaces the geom's own width.}
+
 \item{date_lim}{Length-2 vector of event-axis limits, as \code{Date}s (or as
 numbers on a numeric event axis). \code{NA} in either position leaves that end
 alone. A nowcast covers the whole series but only \emph{corrects} its final
@@ -43,6 +51,9 @@ cuts the fan off at the boundary instead of letting it run to the edge.}
 \code{NULL} (default) leaves the axis to \pkg{ggplot2}. Note that a stratified
 nowcast facets with \code{scales = "free_y"}, so one pair of limits is imposed
 on every panel.}
+
+\item{palette}{A named colour palette (see \code{\link[=tbl_now_palette]{tbl_now_palette()}}). Each colour
+is named for the role it plays, so overriding one role re-themes the plot.}
 }
 \value{
 A \code{ggplot} object.

@@ -4,6 +4,9 @@
 \alias{tidy.tbl_nowcast}
 \alias{tidy_tbl_nowcast}
 \title{Tidy a nowcast produced by \code{run_nowcast()} or \code{nowcast_ensemble()}}
+\usage{
+\method{tidy}{tbl_nowcast}(x, probs = NULL, ...)
+}
 \arguments{
 \item{x}{A \link{tbl_nowcast}.}
 
