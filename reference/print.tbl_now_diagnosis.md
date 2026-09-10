@@ -1,6 +1,6 @@
 # Print a `tbl_now` diagnosis
 
-**\[experimental\]**
+**\[stable\]**
 
 Prints the findings
 [`diagnose()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose.md)

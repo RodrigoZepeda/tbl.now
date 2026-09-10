@@ -1,6 +1,6 @@
 # Coerce a `tbl_now` to a tibble or a data frame
 
-**\[experimental\]**
+**\[stable\]**
 
 [`tibble::as_tibble()`](https://tibble.tidyverse.org/reference/as_tibble.html)
 and [`as.data.frame()`](https://rdrr.io/r/base/as.data.frame.html)

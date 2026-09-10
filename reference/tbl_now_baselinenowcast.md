@@ -1,6 +1,6 @@
 # Convert between `tbl_now` and baselinenowcast
 
-**\[experimental\]**
+**\[stable\]**
 
 `tbl_now_from_baselinenowcast()` accepts either the long `data.frame`
 (`reference_date`, `report_date`, `count`) or a `reporting_triangle`

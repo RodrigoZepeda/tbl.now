@@ -1,6 +1,6 @@
 # Plot the per-date delay profiles
 
-**\[experimental\]**
+**\[stable\]**
 
 One translucent curve per date (see `by`) giving that date's share of
 reports at each delay, coloured by its mean delay. A batch is a lone

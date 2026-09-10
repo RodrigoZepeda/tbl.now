@@ -1,6 +1,6 @@
 # Plot the transport-discriminant plane
 
-**\[experimental\]**
+**\[stable\]**
 
 Places each report date by its creation score (x) and transport /
 deficit score (y) from

@@ -1,6 +1,6 @@
 # How much of each day has been resolved
 
-**\[experimental\]**
+**\[stable\]**
 
 The share of each event date's cases that are **confirmed**,
 **retracted** or still **pending**, as of the object's `now`.

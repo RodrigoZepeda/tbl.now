@@ -1,6 +1,6 @@
 # Convert between `tbl_now` and data.table
 
-**\[experimental\]**
+**\[stable\]**
 
 `tbl_now_from_data_table()` converts a `data.table` into a `tbl_now`
 (requires explicit `event_date` / `report_date` columns).

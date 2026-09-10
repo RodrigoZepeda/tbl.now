@@ -1,6 +1,6 @@
 # Transform an object into a `tbl_now`
 
-**\[experimental\]**
+**\[stable\]**
 
 Convert a supported object into a
 [tbl_now](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.md).

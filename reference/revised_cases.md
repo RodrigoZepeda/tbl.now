@@ -1,6 +1,6 @@
 # Cases at a chosen point in the revision process
 
-**\[experimental\]**
+**\[stable\]**
 
 The same three questions as
 [get_latest_reported_cases()](https://rodrigozepeda.github.io/tbl.now/reference/get_latest_first.md),

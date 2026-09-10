@@ -15,7 +15,7 @@ visible as the gap between the bars and the fan."><meta property="og:image" cont
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.35.4</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -29,8 +29,9 @@ visible as the gap between the bars and the fan."><meta property="og:image" cont
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/custom-nowcast-models.html">Adding your own nowcasting model</a></li>
     <li><a class="dropdown-item" href="../articles/diagnosing-a-tbl-now.html">Diagnosing a tbl_now</a></li>
-    <li><a class="dropdown-item" href="../articles/ensemble-nowcasting.html">One call, many models: run_nowcast(), custom backends and ensembles</a></li>
-    <li><a class="dropdown-item" href="../articles/example.html">The nowcasting workflow: hospital-acquired infections in Bucaramanga, Colombia</a></li>
+    <li><a class="dropdown-item" href="../articles/ensemble-nowcasting.html">Fitting models from different nowcasting frameworks, backtesting and building an ensemble</a></li>
+    <li><a class="dropdown-item" href="../articles/example_revisions.html">The nowcasting workflow 2: COVID-19 case surveillance with revisions in the United States</a></li>
+    <li><a class="dropdown-item" href="../articles/example.html">The nowcasting workflow 1: hospital-acquired infections in Bucaramanga, Colombia</a></li>
     <li><a class="dropdown-item" href="../articles/nowcasting-models.html">Using tbl.now with different modelling packages</a></li>
     <li><a class="dropdown-item" href="../articles/tbl.now.html">tbl.now</a></li>
   </ul></li>
@@ -102,6 +103,25 @@ a nowcast is an estimate of the <strong>epidemic</strong> process (cases by even
 which the package always draws in green, with red reserved for the
 reporting process.</p></dd>
 
+
+<dt id="arg-date-lim">date_lim<a class="anchor" aria-label="anchor" href="#arg-date-lim"></a></dt>
+<dd><p>Length-2 vector of event-axis limits, as <code>Date</code>s (or as
+numbers on a numeric event axis). <code>NA</code> in either position leaves that end
+alone. A nowcast covers the whole series but only <em>corrects</em> its final
+periods, so the interesting part is usually the last few weeks; this zooms
+on to them.</p>
+<p>The limits are applied with <code><a href="https://ggplot2.tidyverse.org/reference/coord_cartesian.html" class="external-link">ggplot2::coord_cartesian()</a></code>, so they <strong>crop</strong>
+the drawn plot rather than filter the data. That matters here: a scale
+limit would drop the out-of-range rows before the ribbon is built, which
+cuts the fan off at the boundary instead of letting it run to the edge.</p></dd>
+
+
+<dt id="arg-ylim">ylim<a class="anchor" aria-label="anchor" href="#arg-ylim"></a></dt>
+<dd><p>Length-2 vector of count-axis limits, applied the same way.
+<code>NULL</code> (default) leaves the axis to <span class="pkg">ggplot2</span>. Note that a stratified
+nowcast facets with <code>scales = "free_y"</code>, so one pair of limits is imposed
+on every panel.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -124,6 +144,10 @@ reporting process.</p></dd>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">nc</span><span class="op">)</span></span></span>
 <span class="r-plt img"><img src="autoplot.tbl_nowcast-1.png" alt="" width="700" height="433"></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Zoom on to the corrected weeks without dropping the rows that build the fan.</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">nc</span>, date_lim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2020-01-19"</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2020-02-02"</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-plt img"><img src="autoplot.tbl_nowcast-2.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

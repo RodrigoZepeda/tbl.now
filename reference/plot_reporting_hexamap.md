@@ -1,6 +1,6 @@
 # Plot the reporting triangle as an age-period-cohort hexamap
 
-**\[experimental\]**
+**\[stable\]**
 
 Draws the reporting triangle as a hexagonal age-period-cohort map, using
 the projection of Jalal and Burke (2020). Event date, report date and

@@ -5,13 +5,15 @@ arrive you can ask how good the claim was.
 score_nowcast() scores it here: the weighted interval score (WIS,
 lower is better), the absolute error of the median, and whether the truth
 fell inside the 50% and 90% intervals – one row per event date and stratum.
-as_forecast_point() hands the median prediction and the same truth to
-scoringutils, so you can use its point-score functions and plots.
+scoringutils::as_forecast_point() hands the median prediction and the
+same truth to scoringutils, so you can use its point-score functions
+and plots.
 scoringutils::as_forecast_quantile() and
-scoringutils::as_forecast_sample() also accept these objects directly
-when scoringutils is installed.
+scoringutils::as_forecast_sample() accept the same objects directly.
 
 
+All three are scoringutils generics; this package only supplies the
+methods, so call them qualified (or after library(scoringutils)).
 In each case truth is a tbl_now seen later, after the information the
 nowcast was predicting has arrived. The observed counts are computed from
 truth_axis and truth_type: by default this is
@@ -23,13 +25,15 @@ arrive you can ask how good the claim was.
 score_nowcast() scores it here: the weighted interval score (WIS,
 lower is better), the absolute error of the median, and whether the truth
 fell inside the 50% and 90% intervals – one row per event date and stratum.
-as_forecast_point() hands the median prediction and the same truth to
-scoringutils, so you can use its point-score functions and plots.
+scoringutils::as_forecast_point() hands the median prediction and the
+same truth to scoringutils, so you can use its point-score functions
+and plots.
 scoringutils::as_forecast_quantile() and
-scoringutils::as_forecast_sample() also accept these objects directly
-when scoringutils is installed.
+scoringutils::as_forecast_sample() accept the same objects directly.
 
 
+All three are scoringutils generics; this package only supplies the
+methods, so call them qualified (or after library(scoringutils)).
 In each case truth is a tbl_now seen later, after the information the
 nowcast was predicting has arrived. The observed counts are computed from
 truth_axis and truth_type: by default this is
@@ -43,7 +47,7 @@ observed column to name; the count column is read from the tbl_now.'><meta prope
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.35.4</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -57,8 +61,9 @@ observed column to name; the count column is read from the tbl_now.'><meta prope
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/custom-nowcast-models.html">Adding your own nowcasting model</a></li>
     <li><a class="dropdown-item" href="../articles/diagnosing-a-tbl-now.html">Diagnosing a tbl_now</a></li>
-    <li><a class="dropdown-item" href="../articles/ensemble-nowcasting.html">One call, many models: run_nowcast(), custom backends and ensembles</a></li>
-    <li><a class="dropdown-item" href="../articles/example.html">The nowcasting workflow: hospital-acquired infections in Bucaramanga, Colombia</a></li>
+    <li><a class="dropdown-item" href="../articles/ensemble-nowcasting.html">Fitting models from different nowcasting frameworks, backtesting and building an ensemble</a></li>
+    <li><a class="dropdown-item" href="../articles/example_revisions.html">The nowcasting workflow 2: COVID-19 case surveillance with revisions in the United States</a></li>
+    <li><a class="dropdown-item" href="../articles/example.html">The nowcasting workflow 1: hospital-acquired infections in Bucaramanga, Colombia</a></li>
     <li><a class="dropdown-item" href="../articles/nowcasting-models.html">Using tbl.now with different modelling packages</a></li>
     <li><a class="dropdown-item" href="../articles/tbl.now.html">tbl.now</a></li>
   </ul></li>
@@ -86,17 +91,19 @@ observed column to name; the count column is read from the tbl_now.'><meta prope
     </div>
 
     <div class="ref-description section level2">
-    <p><a href="https://lifecycle.r-lib.org/articles/stages.html#experimental" class="external-link"><img src="figures/lifecycle-experimental.svg" alt="[Experimental]"></a></p>
+    <p><a href="https://lifecycle.r-lib.org/articles/stages.html#stable" class="external-link"><img src="figures/lifecycle-stable.svg" alt="[Stable]"></a></p>
 <p>A nowcast is a claim about numbers that are not in yet. Once the late reports
 arrive you can ask how good the claim was.</p><ul><li><p><code>score_nowcast()</code> scores it here: the <strong>weighted interval score</strong> (WIS,
 lower is better), the absolute error of the median, and whether the truth
 fell inside the 50% and 90% intervals – one row per event date and stratum.</p></li>
-<li><p><code>as_forecast_point()</code> hands the median prediction and the same truth to
-<span class="pkg">scoringutils</span>, so you can use its point-score functions and plots.</p></li>
+<li><p><code><a href="https://epiforecasts.io/scoringutils/reference/as_forecast_point.html" class="external-link">scoringutils::as_forecast_point()</a></code> hands the median prediction and the
+same truth to <span class="pkg">scoringutils</span>, so you can use its point-score functions
+and plots.</p></li>
 <li><p><code><a href="https://epiforecasts.io/scoringutils/reference/as_forecast_quantile.html" class="external-link">scoringutils::as_forecast_quantile()</a></code> and
-<code><a href="https://epiforecasts.io/scoringutils/reference/as_forecast_sample.html" class="external-link">scoringutils::as_forecast_sample()</a></code> also accept these objects directly
-when <span class="pkg">scoringutils</span> is installed.</p></li>
-</ul><p>In each case <code>truth</code> is a <code>tbl_now</code> seen <em>later</em>, after the information the
+<code><a href="https://epiforecasts.io/scoringutils/reference/as_forecast_sample.html" class="external-link">scoringutils::as_forecast_sample()</a></code> accept the same objects directly.</p></li>
+</ul><p>All three are <span class="pkg">scoringutils</span> generics; this package only supplies the
+methods, so call them qualified (or after <code><a href="https://doi.org/10.48550/arXiv.2205.07090" class="external-link">library(scoringutils)</a></code>).</p>
+<p>In each case <code>truth</code> is a <code>tbl_now</code> seen <em>later</em>, after the information the
 nowcast was predicting has arrived. The observed counts are computed from
 <code>truth_axis</code> and <code>truth_type</code>: by default this is
 <a href="get_latest_first.html">get_latest_reported_cases()</a> with <code>type = "total"</code>, while
@@ -111,14 +118,6 @@ observed column to name; the count column is read from the <code>tbl_now</code>.
 <span>  truth <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  truth_axis <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"report"</span>, <span class="st">"revision"</span><span class="op">)</span>,</span>
 <span>  truth_type <span class="op">=</span> <span class="st">"total"</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="fu">as_forecast_point</span><span class="op">(</span></span>
-<span>  <span class="va">x</span>,</span>
-<span>  truth <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  truth_axis <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"report"</span>, <span class="st">"revision"</span><span class="op">)</span>,</span>
-<span>  truth_type <span class="op">=</span> <span class="st">"total"</span>,</span>
-<span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># S3 method for class 'nowcast_backtest'</span></span>
@@ -154,8 +153,7 @@ observed column to name; the count column is read from the <code>tbl_now</code>.
 
 
 <dl><dt id="arg-x">x<a class="anchor" aria-label="anchor" href="#arg-x"></a></dt>
-<dd><p>For <code>score_nowcast()</code>, a <a href="tbl_nowcast.html">tbl_nowcast</a>. For <code>as_forecast_point()</code>, a
-<a href="tbl_nowcast.html">tbl_nowcast</a> (including an ensemble) or a <code><a href="nowcast_backtest.html">nowcast_backtest()</a></code>.</p></dd>
+<dd><p>A <a href="tbl_nowcast.html">tbl_nowcast</a>.</p></dd>
 
 
 <dt id="arg-truth">truth<a class="anchor" aria-label="anchor" href="#arg-truth"></a></dt>
@@ -185,13 +183,13 @@ types such as <code>"confirmed"</code>, <code>"retracted"</code>, <code>"pending
 one observed value per event-date/stratum target.</p></dd>
 
 
+<dt id="arg-data">data<a class="anchor" aria-label="anchor" href="#arg-data"></a></dt>
+<dd><p>A <code><a href="nowcast_backtest.html">nowcast_backtest()</a></code>.</p></dd>
+
+
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
 <dd><p>Passed to the corresponding <span class="pkg">scoringutils</span> coercion generic,
 most commonly <code>forecast_unit</code>.</p></dd>
-
-
-<dt id="arg-data">data<a class="anchor" aria-label="anchor" href="#arg-data"></a></dt>
-<dd><p>A <code><a href="nowcast_backtest.html">nowcast_backtest()</a></code>.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -199,19 +197,13 @@ most commonly <code>forecast_unit</code>.</p></dd>
     <p><code>score_nowcast()</code> returns a <code>tibble</code> with the event-date column, the strata
 columns, and the columns <code>.observed</code>, <code>wis</code>, <code>ae_median</code>, <code>coverage_50</code> and
 <code>coverage_90</code> – one row per event date and stratum.</p>
-<p><code>as_forecast_point()</code> accepts either a single <a href="tbl_nowcast.html">tbl_nowcast</a> (including one
-returned by <code><a href="nowcast_ensemble.html">nowcast_ensemble()</a></code>) or a <code><a href="nowcast_backtest.html">nowcast_backtest()</a></code>. It returns a
-<code>forecast_point</code> object from <span class="pkg">scoringutils</span>, using the nowcast's median
-quantile as <code>predicted</code> and the resolved truth as <code>observed</code>.</p>
 <p>The <code>scoringutils::as_forecast_*()</code> methods return the corresponding
 <code>forecast_quantile</code>, <code>forecast_sample</code> or <code>forecast_point</code> object from
-<span class="pkg">scoringutils</span>.</p>
-<p>When <span class="pkg">scoringutils</span> is installed, calling its coercion generic directly
-is equivalent: <code>scoringutils::as_forecast_quantile(x, truth = truth)</code> and
-<code>scoringutils::as_forecast_point(x, truth = truth)</code> work for a
-<a href="tbl_nowcast.html">tbl_nowcast</a>, an ensemble, and a <code><a href="nowcast_backtest.html">nowcast_backtest()</a></code>. A backtest already
-carries the truth it was scored against, so its <code>truth</code> can normally be
-omitted.</p>
+<span class="pkg">scoringutils</span>. Each accepts a <a href="tbl_nowcast.html">tbl_nowcast</a>, an ensemble and a
+<code><a href="nowcast_backtest.html">nowcast_backtest()</a></code>; <code><a href="https://epiforecasts.io/scoringutils/reference/as_forecast_point.html" class="external-link">scoringutils::as_forecast_point()</a></code> keeps the nowcast's
+median quantile as <code>predicted</code> and the resolved truth as <code>observed</code>. A
+backtest already carries the truth it was scored against, so its <code>truth</code> can
+normally be omitted.</p>
 <p><code><a href="https://epiforecasts.io/scoringutils/reference/as_forecast_sample.html" class="external-link">scoringutils::as_forecast_sample()</a></code> also accepts those objects when they
 carry posterior draws. Draws are retained by a <code>linear_pool</code> ensemble, but
 not by a quantile ensemble. A backtest retains them only when run with
@@ -285,7 +277,7 @@ read off <code>truth</code>; <code><a href="nowcast_quantile_levels.html">nowcas
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># The same comparison handed to scoringutils as a point forecast.</span></span></span>
 <span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/ns-load.html" class="external-link">requireNamespace</a></span><span class="op">(</span><span class="st">"scoringutils"</span>, quietly <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span></span>
-<span class="r-in"><span>  <span class="fu">as_forecast_point</span><span class="op">(</span><span class="va">nc</span>, truth <span class="op">=</span> <span class="va">truth</span><span class="op">)</span></span></span>
+<span class="r-in"><span>  <span class="fu">scoringutils</span><span class="fu">::</span><span class="fu"><a href="https://epiforecasts.io/scoringutils/reference/as_forecast_point.html" class="external-link">as_forecast_point</a></span><span class="op">(</span><span class="va">nc</span>, truth <span class="op">=</span> <span class="va">truth</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span></span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">Forecast type: </span>point</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">Forecast unit:</span></span>

@@ -1,6 +1,6 @@
 # Compare revision delays between confirmed and retracted cases
 
-**\[experimental\]**
+**\[stable\]**
 
 A negative result often comes back faster than a positive one – or
 slower, if positives are prioritised. Either way the delay from report
@@ -9,14 +9,13 @@ a nowcast that assumes it is will be wrong about how many pending cases
 are still to be confirmed.
 
 `diagnose_revision_delay()` compares the two delay distributions;
-`plot_revision_delay()` shows them.
+[`plot_delay_distribution()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_delay_distribution.md)
+with `axis = "revision"` shows them.
 
 ## Usage
 
 ``` r
 diagnose_revision_delay(x, by = NULL)
-
-plot_revision_delay(x, by = NULL, linewidth = 1, palette = .tbl_now_palette())
 ```
 
 ## Arguments
@@ -29,23 +28,11 @@ plot_revision_delay(x, by = NULL, linewidth = 1, palette = .tbl_now_palette())
 
   Optional stratum column to compare within; `NULL` (default) pools.
 
-- linewidth:
-
-  Multiplier on the box outlines of `plot_revision_delay()`. Default `1`
-  (drawn at `0.5`).
-
-- palette:
-
-  A named colour palette (see
-  [`tbl_now_palette()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_palette.md)).
-
 ## Value
 
 `diagnose_revision_delay()` returns a one-row-per-comparison `tibble`
 with `stratum`, `n_confirmed`, `n_retracted`, `median_confirmed`,
 `median_retracted`, `difference`, `statistic` and `p.value`.
-
-`plot_revision_delay()` returns a `ggplot`.
 
 ## The test
 
@@ -73,6 +60,8 @@ to attach a revision process;
 for resolutions that never arrive;
 [revised_cases](https://rodrigozepeda.github.io/tbl.now/reference/revised_cases.md)
 for counting the outcomes;
+[`plot_delay_distribution()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_delay_distribution.md)
+with `axis = "revision"` for the picture of the same comparison;
 [`diagnose_drift()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_drift.md)
 for the same question about the *reporting* delay over time. The
 [*Diagnosing a tbl_now*
@@ -105,6 +94,6 @@ diagnose_revision_delay(flu)
 #> # ℹ 2 more variables: statistic <dbl>, p.value <dbl>
 
 # The same comparison as a picture.
-plot_revision_delay(flu)
+plot_delay_distribution(flu, axis = "revision")
 
 ```

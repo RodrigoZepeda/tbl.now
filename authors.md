@@ -13,6 +13,7 @@
   [](https://orcid.org/0000-0001-8349-3151)
 
 - **Jeffrey Shaman**. Contributor.
+  [](https://orcid.org/0000-0002-7216-7809)
 
 - **Columbia University in the City of New York**. Copyright holder,
   funder.
@@ -22,14 +23,14 @@
 Source:
 [`DESCRIPTION`](https://github.com/RodrigoZepeda/tbl.now/blob/main/DESCRIPTION)
 
-Zepeda-Tello R, Yaari R, Perini M (2026). *tbl.now: Tidy Extension for
-Nowcasting*. R package version 0.35.4,
+Zepeda-Tello R, Yaari R, Perini M (2026). *tbl.now: A Tidy Workflow for
+Epidemiological Nowcasting*. R package version 1.0.0,
 <https://rodrigozepeda.github.io/tbl.now/>.
 
     @Manual{,
-      title = {tbl.now: Tidy Extension for Nowcasting},
+      title = {tbl.now: A Tidy Workflow for Epidemiological Nowcasting},
       author = {Rodrigo Zepeda-Tello and Rami Yaari and Matteo Perini},
       year = {2026},
-      note = {R package version 0.35.4},
+      note = {R package version 1.0.0},
       url = {https://rodrigozepeda.github.io/tbl.now/},
     }

@@ -1,6 +1,6 @@
 # Specify a nowcasting model and its arguments
 
-**\[experimental\]**
+**\[stable\]**
 
 An **engine** is one modelling package plus every argument that package
 needs. It is what

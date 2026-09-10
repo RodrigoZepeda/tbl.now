@@ -4,9 +4,19 @@
 
 Produces a multi-panel diagnostic overview of a `tbl_now` using
 [`ggplot2::ggplot()`](https://ggplot2.tidyverse.org/reference/ggplot.html)
-and patchwork. Two families of panels are available — one describing the
-**case counts** and one describing the **reporting delay** — and you
-choose which to draw with the `panels` argument.
+and patchwork. The gallery is a **matrix with one column per process**:
+the **case counts** on the left, the **reporting delay** next to them,
+and — when the object declares a revision axis — the **revision
+process** on the right. Each row asks the same question of every
+process, so an object with two dates comes out two columns wide and one
+with three dates three columns wide. You choose which panels to draw
+with the `panels` argument, and the number of columns follows: a
+selection covering one family only (`panels = "calendar"`) is one
+column.
+
+A row a process cannot answer — weekly data has no day-of-week panel —
+leaves that cell empty rather than closing the gap, so the columns keep
+their meaning all the way down.
 
 **Case-count panels**
 
@@ -75,6 +85,20 @@ choose which to draw with the `panels` argument.
   series, whose peak marks a cycle in the reporting delay (e.g. a weekly
   reporting rhythm).
 
+**Revision-process panels** (only when the object declares a revision
+axis)
+
+- `"revision_distribution"` — the reporting-delay histogram's twin on
+  the revision axis: a (case-count weighted) histogram of
+  `.revision_delay`, the time from a report to its resolution. A case
+  still `"pending"` has no resolution and so no revision delay, and does
+  not appear.
+
+- `"revision_weekday"`, `"revision_week"`, `"revision_month"`,
+  `"revision_holiday"`, `"revision_holiday_lag"`,
+  `"revision_seasonality"` — the same calendar and periodogram questions
+  asked of the dates resolutions arrived on.
+
 Every panel is colour-coded by the process it describes — **red** for
 the reporting-delay panels, **green** for the case-count (epidemic) ones
 — and says which one it is in its subtitle, so a single panel still
@@ -109,6 +133,7 @@ autoplot(
   by_strata = FALSE,
   strata = NULL,
   measure = c("percent", "normalized"),
+  by_revision_type = FALSE,
   level = 0.95,
   plotly = FALSE,
   size = 1,
@@ -189,6 +214,20 @@ autoplot(
   share would mostly report how the calendar is built rather than how
   the data behave: "29% of cases at the weekend" is average, not low.
 
+- by_revision_type:
+
+  Logical (default `FALSE`). When `TRUE`, the two delay-distribution
+  panels are split by how each case eventually resolved: `confirmed`,
+  `pending`, `retracted` and `unknown`, stacked, in the palette's
+  outcome colours (see
+  [`tbl_now_palette()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_palette.md)).
+  Ignored on an object with no revision axis, and when
+  `by_strata = TRUE`, which already spends the fill on the strata. It
+  defaults to `FALSE` here because the gallery is read as a grid of
+  shapes, and to `TRUE` in
+  [`plot_delay_distribution()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_delay_distribution.md),
+  where the panel is the whole plot.
+
 - level:
 
   Completeness level used for the incompleteness line in the
@@ -232,8 +271,9 @@ autoplot(
 
 ## Value
 
-A patchwork object combining the selected panels, or — when a single
-panel is selected — that panel as a ggplot2 object.
+A patchwork object combining the selected panels, one column per
+process, or — when a single panel is selected — that panel as a ggplot2
+object.
 
 ## See also
 

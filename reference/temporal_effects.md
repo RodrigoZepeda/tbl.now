@@ -172,17 +172,13 @@ it for every year. Avoid hardcoding specific dates such as
 A calendar has four building blocks:
 
 - **Built-in holidays.** almanac ships rules for common US holidays:
-  [`hol_us_thanksgiving()`](https://rdrr.io/pkg/almanac/man/holidays.html),
-  [`hol_us_memorial_day()`](https://rdrr.io/pkg/almanac/man/holidays.html),
-  [`hol_christmas()`](https://rdrr.io/pkg/almanac/man/holidays.html),
-  [`hol_us_election_day()`](https://rdrr.io/pkg/almanac/man/holidays.html),
-  and so on. See
+  `hol_us_thanksgiving()`, `hol_us_memorial_day()`, `hol_christmas()`,
+  `hol_us_election_day()`, and so on. See
   [`almanac::rholiday()`](https://rdrr.io/pkg/almanac/man/rholiday.html)
   for the list.
 
 - **Your own holidays.** Anything without a built-in rule is a
-  [`yearly()`](https://rdrr.io/pkg/almanac/man/rrule.html) recurrence
-  narrowed with `recur_on_*()` and named with
+  `yearly()` recurrence narrowed with `recur_on_*()` and named with
   [`almanac::rholiday()`](https://rdrr.io/pkg/almanac/man/rholiday.html).
 
 - **Observance.**
@@ -209,8 +205,7 @@ to check what you built before modelling with it.
 NYC observes the US federal holidays plus Lincoln's Birthday and
 Election Day, and calls the October holiday Columbus Day. Only Lincoln's
 Birthday needs a hand-written rule; everything else is built-in, with
-[`hol_observe()`](https://rdrr.io/pkg/almanac/man/holiday-utilities.html)
-on the fixed-date holidays.
+`hol_observe()` on the fixed-date holidays.
 
     library(almanac)
 

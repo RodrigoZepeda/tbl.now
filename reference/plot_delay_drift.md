@@ -1,6 +1,6 @@
 # Visualise whether the reporting-delay distribution drifts over time
 
-**\[experimental\]**
+**\[stable\]**
 
 Draws a **rolling fan chart** of the count-weighted reporting-delay
 distribution indexed by **event date**: a solid line for the rolling

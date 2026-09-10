@@ -93,7 +93,7 @@ argument).'><meta property="og:image" content="https://rodrigozepeda.github.io/t
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.35.4</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -107,8 +107,9 @@ argument).'><meta property="og:image" content="https://rodrigozepeda.github.io/t
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/custom-nowcast-models.html">Adding your own nowcasting model</a></li>
     <li><a class="dropdown-item" href="../articles/diagnosing-a-tbl-now.html">Diagnosing a tbl_now</a></li>
-    <li><a class="dropdown-item" href="../articles/ensemble-nowcasting.html">One call, many models: run_nowcast(), custom backends and ensembles</a></li>
-    <li><a class="dropdown-item" href="../articles/example.html">The nowcasting workflow: hospital-acquired infections in Bucaramanga, Colombia</a></li>
+    <li><a class="dropdown-item" href="../articles/ensemble-nowcasting.html">Fitting models from different nowcasting frameworks, backtesting and building an ensemble</a></li>
+    <li><a class="dropdown-item" href="../articles/example_revisions.html">The nowcasting workflow 2: COVID-19 case surveillance with revisions in the United States</a></li>
+    <li><a class="dropdown-item" href="../articles/example.html">The nowcasting workflow 1: hospital-acquired infections in Bucaramanga, Colombia</a></li>
     <li><a class="dropdown-item" href="../articles/nowcasting-models.html">Using tbl.now with different modelling packages</a></li>
     <li><a class="dropdown-item" href="../articles/tbl.now.html">tbl.now</a></li>
   </ul></li>
@@ -267,6 +268,28 @@ by <code>tbl_now_to_epidist()</code>.</p></dd>
 <code>epidist_aggregate_data</code> object (<code>to</code>).</p>
     </div>
     <div class="section level2">
+    <h2 id="one-row-one-observed-delay">One row, one observed delay<a class="anchor" aria-label="anchor" href="#one-row-one-observed-delay"></a></h2>
+
+
+
+<p>Every row of the result is a distinct delay observation, and for the
+aggregate shape <code>n</code> is its weight. Two things would otherwise break that, and
+<code>tbl_now_to_epidist()</code> resolves both before building the object:</p><ul><li><p><strong>Columns the object was never told about.</strong> <a href="covid_colombia.html">covid_colombia</a> carries
+<code>sex</code>, so an object built without <code>strata = sex</code> has two rows per
+<code>(notification_date, diagnosis_date)</code> cell. <code>sex</code> is not carried onto the
+epidist data, so those rows would arrive as indistinguishable duplicates;
+they are pooled instead, exactly as <code><a href="tbl_now_baselinenowcast.html">tbl_now_to_baselinenowcast()</a></code> and
+<code><a href="tbl_now_tsibble.html">tbl_now_to_tsibble()</a></code> do. Declare the column with <code><a href="add.html">add_strata()</a></code> to keep it
+as a model covariate rather than pool it away.</p></li>
+<li><p><strong>The revision axis</strong>, which is dropped (see below) and therefore cannot
+keep two rows apart either. Pooling over it gives the <code>"total"</code> case count:
+every case has exactly one outcome, so no case is counted twice.</p></li>
+</ul><p>Line lists are left alone – one row is already one case – and declared
+strata, covariates, materialised temporal-effect columns and the
+<code>is_censored_report</code> flag all keep rows apart, because all of them reach the
+epidist object (the flag through the censoring windows).</p>
+    </div>
+    <div class="section level2">
     <h2 id="delays-of-zero-and-the-lognormal">Delays of zero, and the lognormal<a class="anchor" aria-label="anchor" href="#delays-of-zero-and-the-lognormal"></a></h2>
 
 
@@ -344,7 +367,9 @@ way to represent the revision axis, so <code>has_revision(x)</code>,
 <code>revision_type</code>, <code>is_censored_revision</code> and the revision dates are
 <strong>dropped</strong> from the epidist object. <code>tbl_now_to_epidist()</code> warns once when
 it drops them, so a user who declared a revision process is told the
-converter is not surfacing it.</p>
+converter is not surfacing it. Count rows that differed only in their
+revision date or outcome are then pooled, so the drop does not leave
+duplicate rows behind.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

@@ -1,6 +1,6 @@
 # Coerce a `tbl_nowcast` into a `tibble`
 
-**\[experimental\]**
+**\[stable\]**
 
 Turns a fitted nowcast into an ordinary `tibble` you can plot, join or
 write out: one row per event date and quantile level by default, or one

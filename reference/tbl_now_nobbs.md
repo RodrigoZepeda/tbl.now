@@ -1,6 +1,6 @@
 # Convert a `tbl_now` into the line list NobBS nowcasts from
 
-**\[experimental\]**
+**\[stable\]**
 
 [`NobBS::NobBS()`](https://rdrr.io/pkg/NobBS/man/NobBS.html) counts
 **rows**: it takes an individual-level line list with one column for the

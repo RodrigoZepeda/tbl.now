@@ -1,19 +1,4 @@
-# One call, many models: run_nowcast(), custom backends and ensembles
-
-**Everything on this page is experimental.**
-[`run_nowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/run_nowcast.md),
-[`nowcast_ensemble()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_ensemble.md),
-[`nowcast_backtest()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_backtest.md),
-[`nowcast_weights()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_weights.md),
-[`score_nowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/score_nowcast.md)
-and the `tbl_nowcast` class are all marked
-[experimental](https://lifecycle.r-lib.org/articles/stages.html#experimental):
-they work, they are tested, and their **interfaces may still change** —
-argument names, defaults and the shape of what comes back. The extension
-([`nowcast_fit()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_fit.md)
-/
-[`nowcast_tidy()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_tidy.md))
-is the part most likely to move, because it is the most recent.
+# Fitting models from different nowcasting frameworks, backtesting and building an ensemble
 
 ## Why this vignette?
 
@@ -21,42 +6,39 @@ This vignette is about how to run nowcasts from different `R` packages
 all within the same `tbl_now` framework as well as on how to backtest
 and do ensembles.
 
-Here we describe how:
+Here we describe how to:
 
-- **`engine_*()`** says which model to fit and with what arguments,
-- **`run_nowcast(x, engine)`** fits *any* supported package and always
-  returns the same kind of object,
-- **[`nowcast_ensemble()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_ensemble.md)**
-  combines several of those objects into an ensemble,
-- **[`nowcast_backtest()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_backtest.md)**
-  and
-  **[`nowcast_weights()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_weights.md)**
-  decide, from data, how much each member should count,
-- and
-  **[`nowcast_fit()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_fit.md)
-  /
-  [`nowcast_tidy()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_tidy.md)**
-  let you add a nowcasting framework that has not been built into
-  `tbl.now`.
+- Use **`engine_*()`** to setup the model and its arguments,
+- Fit any model with **`run_nowcast(x, engine)`**.
+- Build backtest with
+  **[`nowcast_backtest()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_backtest.md)**
+  to evaluate your models.
+- Use
+  **[`nowcast_ensemble()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_ensemble.md)**
+  to combines several models into an ensemble model.
 
-**Two ways to do the same.** You can either use
-`run_nowcast(x, engine_epinowcast())` as explained in this vignette or
-step by step:
+**There are two ways to do the same.** You can either use
+`run_nowcast(x, engine_epinowcast())` to use the same call for any
+nowcast (this is what this vignette explains). Alternatively you can use
+the converters to use the original method from the specific package:
 
-    tbl_now_to_epinowcast(x) |> epinowcast::epinowcast() |> tidy()
+``` r
+
+tbl_now_to_epinowcast(x) |> epinowcast::epinowcast() 
+```
 
 Ideally you should:
 
-1.  Use the converter when you want to pass that package’s own
-    arguments, inspect what it was handed, or do something the `tbl.now`
-    backend does not.
+1.  Use the converter (`tbl_now_to_*`) when you want to pass that
+    package’s own arguments, inspect what it was handed, or do something
+    the `tbl.now` backend does not.
 
 2.  Use
     [`run_nowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/run_nowcast.md)
     when you want several models that can be compared via
-    [`nowcast_ensemble()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_ensemble.md)
+    [`nowcast_backtest()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_backtest.md)
     and
-    [`score_nowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/score_nowcast.md).
+    [`nowcast_ensemble()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_ensemble.md).
 
 ``` r
 
@@ -66,1057 +48,330 @@ library(tbl.now)
 data(denguedat)
 ```
 
-The examples below use dengue in Puerto Rico: a **weekly line list**:
-one row per case, with an onset and a report week.
+The examples below use `denguedat`: a **weekly line list** of dengue
+cases in Puerto Rico:
 
 ``` r
 
 dengue <- denguedat |>
   tbl_now(
-    event_date  = onset_week,
-    report_date = report_week,
+    event_date  = onset_week,  #symptom onset
+    report_date = report_week, #when it was reported
     verbose     = FALSE
   )
 
-# Nowcast as of a date in the past, so that later reports exist to score against
-now <- as.Date("2010-10-04")   # a Monday: these weeks start on Mondays
-
-snapshot <- dengue |>
-  filter(report_week <= now) |>
-  change_now(now = now)
-
-get_now(snapshot)
-#> [1] "2010-10-04"
+dengue
+#> # A tibble:  52,987 × 6
+#> # Data type: "linelist"
+#> # Frequency: Event: `weeks` | Report: `weeks`
+#>   onset_week   report_week   gender .event_num .report_num .delay
+#>   <date>       <date>        <chr>       <dbl>       <dbl>  <dbl>
+#>   [event_date] [report_date] [...]       [...]       [...]  [...]
+#> 1 1990-01-01   1990-01-01    Male            0           0      0
+#> 2 1990-01-01   1990-01-01    Female          0           0      0
+#> 3 1990-01-01   1990-01-01    Female          0           0      0
+#> 4 1990-01-01   1990-01-08    Female          0           1      1
+#> 5 1990-01-01   1990-01-08    Male            0           1      1
+#> # ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+#> # Now: 2010-12-20 | Event date: "onset_week" | Report date: "report_week"
+#> # ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+#> # ℹ 52,982 more rows
 ```
 
-## 1. One call per model
-
-[`run_nowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/run_nowcast.md)
-takes two things: the `tbl_now`, and an **engine**.
+This tutorial requires installation of baselinenowcast, NobBS and
+surveillance. You can do it as:
 
 ``` r
 
-baseline <- run_nowcast(
-  snapshot,
-  engine_baselinenowcast(draws = 1000),
-  verbose = FALSE
-)
-
-baseline
+install.packages(c("baselinenowcast","surveillance","NobBS"))
 ```
 
-    #> ── A <tbl_nowcast> from method "baselinenowcast" ─────────────────────────────────────────────────────────────────────────────
-    #> • now: "2010-10-04"
-    #> • event dates: 1084
-    #> • quantile levels: 0.025, 0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95, and 0.975
-    #> • draws: 1000
-    #> 
-    #> Nowcast at "2010-10-04" (q50, 2.5-97.5% interval):
-    #> • 502 [80.9, 1,619]
-    #> 
-    #> # A tibble: 6 × 3
-    #>   onset_week .quantile_level .value
-    #>   <date>               <dbl>  <dbl>
-    #> 1 1990-01-01           0.025     61
-    #> 2 1990-01-01           0.05      61
-    #> 3 1990-01-01           0.1       61
-    #> 4 1990-01-01           0.25      61
-    #> 5 1990-01-01           0.5       61
-    #> 6 1990-01-01           0.75      61
-    #> ℹ 9750 more rows. Use `as_tibble()` for all of them.
+## 1. Fitting a nowcast
 
-An engine is *the model and everything it needs*:
-[`engine_baselinenowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_engines.md)
-names `baselinenowcast`’s own arguments, and there is one such
-constructor per supported package. The data and `verbose` are the only
-things that sit outside it.
-
-That is not decoration. Before engines, arguments travelled in a `...`
-on
+The
 [`run_nowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/run_nowcast.md)
-and in a `method_args` list of lists on
-[`nowcast_backtest()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_backtest.md),
-and both failed the same silent way: an argument that missed its backend
-simply vanished, and you got a fitted model at its default with nothing
-to say so. A named formal turns that into an error at the call, where
-you can see it.
+function takes two arguments: the `tbl_now`, and an
+[`engine()`](https://rodrigozepeda.github.io/tbl.now/reference/engine.md):
+
+``` r
+
+#Here we run a baselinenowcast as an example with very few draws
+#because its a tutorial
+baseline <- dengue |> 
+  run_nowcast(engine_baselinenowcast(draws = 100))
+
+baseline
+#> ── A <tbl_nowcast> from method "baselinenowcast" ───────────────────────────────────────────────────────────────────────────────────────────────────────────────
+#> • now: "2010-12-20"
+#> • event dates: 1095
+#> • quantile levels: 0.025, 0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95, and 0.975
+#> • draws: 100
+#> 
+#> Nowcast at "2010-12-20" (q50, 2.5-97.5% interval):
+#> • 45.5 [5, 202.4]
+#> 
+#> # A tibble: 6 × 3
+#>   onset_week .quantile_level .value
+#>   <date>               <dbl>  <dbl>
+#> 1 1990-01-01           0.025     61
+#> 2 1990-01-01           0.05      61
+#> 3 1990-01-01           0.1       61
+#> 4 1990-01-01           0.25      61
+#> 5 1990-01-01           0.5       61
+#> # ℹ 1 more row
+#> ℹ 9849 more rows. Use `as_tibble()` for all of them.
+```
+
+An engine includes *the model and all of its arguments*. For example,
+[`engine_baselinenowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_engines.md)
+names
+[`baselinenowcast::baselinenowcast()`](https://baselinenowcast.epinowcast.org/reference/baselinenowcast.html)’s
+own arguments. For example in the previous case we modified the number
+of draws which is an argument from
+[`baselinenowcast::baselinenowcast()`](https://baselinenowcast.epinowcast.org/reference/baselinenowcast.html):
 
 ``` r
 
 engine_baselinenowcast(draws = 1000)
-#> ── <nowcast_engine: "baselinenowcast"> ─────────────────────────────────────────
+#> ── <nowcast_engine: "baselinenowcast"> ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 #> • quantile levels: 0.025, 0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95, and 0.975
 #> • arguments: draws and strata_sharing
 ```
 
+You can call
 [`list_nowcast_methods()`](https://rodrigozepeda.github.io/tbl.now/reference/list_nowcast_methods.md)
-tells you what is available in your session:
+to see all the methods available in this package
 
 ``` r
 
 list_nowcast_methods()
-#> [1] "baselinenowcast"   "diseasenowcasting" "EpiNow2"          
-#> [4] "epinowcast"        "example"           "NobBS"            
-#> [7] "surveillance"
+#> [1] "baselinenowcast"   "diseasenowcasting" "EpiNow2"           "epinowcast"        "example"           "NobBS"             "surveillance"
 ```
 
-### One card per engine
-
-Each of these routes through the `tbl_now_to_*()` converter documented
-in `vignette("nowcasting-models")`, which is where you go to learn a
-package’s own API. What follows is the other half: the call through
-[`run_nowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/run_nowcast.md),
-and the **one thing about that engine most likely to catch you out**.
-
-#### baselinenowcast
-
-Fast, assumption-light, and the only engine here that needs no external
-toolchain. It works from a reporting triangle, so the delay axis is a
-modelling choice you make.
-
-``` r
-
-baseline <- run_nowcast(snapshot, engine_baselinenowcast(draws = 1000))  # fitted above
-```
-
-**Watch for:** `max_delay` caps the triangle’s *width*. Left unset it is
-inferred from the longest delay present, so a single straggler can give
-the triangle hundreds of near-empty columns and turn a fast fit into a
-slow one. It keeps draws, so it can join a `type = "linear_pool"`
-ensemble.
-
-#### diseasenowcasting
-
-The one engine that takes the `tbl_now` **directly**: it reads the
-strata and the temporal-effect columns off the object, so there is
-nothing to pass.
-
-``` r
-
-dnc <- run_nowcast(snapshot, engine_diseasenowcasting())
-
-dnc
-```
-
-    #> ── A <tbl_nowcast> from method "diseasenowcasting" ───────────────────────────────────────────────────────────────────────────
-    #> • now: "2010-10-04"
-    #> • event dates: 1084
-    #> • quantile levels: 0.025, 0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95, and 0.975
-    #> • draws: 2000
-    #> 
-    #> Nowcast at "2010-10-04" (q50, 2.5-97.5% interval):
-    #> • 264 [127.0, 484.1]
-    #> 
-    #> # A tibble: 6 × 3
-    #>   onset_week .quantile_level .value
-    #>   <date>               <dbl>  <dbl>
-    #> 1 1990-01-01           0.025     61
-    #> 2 1990-01-01           0.05      61
-    #> 3 1990-01-01           0.1       61
-    #> 4 1990-01-01           0.25      61
-    #> 5 1990-01-01           0.5       61
-    #> 6 1990-01-01           0.75      61
-    #> ℹ 9750 more rows. Use `as_tibble()` for all of them.
-
-**Watch for:** it is also the one engine whose *model* you can swap
-without changing packages — see the ensemble below, which uses two of
-them. On `count-cumulative` data, diseasenowcasting selects its
-cumulative model automatically unless you pass an explicit
-`model(cumulative = cumulative_process())`.
-
-#### epinowcast
-
-A flexible Bayesian model with separate modules for the reporting delay
-and the reference process. Preprocessing arguments go through
-`preprocess_args`; everything else goes to
-[`epinowcast()`](https://package.epinowcast.org/reference/epinowcast.html)
-itself.
-
-``` r
-
-enw <- run_nowcast(snapshot, engine_epinowcast(
-  preprocess_args = list(max_delay = 10),
-  fit = epinowcast::enw_fit_opts(
-    sampler = epinowcast::enw_pathfinder, draws = 1000, seed = 20260824
-  ),
-  # The slowest engine here, and it scales with the number of REFERENCE dates,
-  # so it gets a window where the others get the whole series. See below.
-  min_date = 96
-))
-
-enw
-```
-
-    #> ── A <tbl_nowcast> from method "epinowcast" ──────────────────────────────────────────────────────────────────────────────────
-    #> • now: "2010-10-04"
-    #> • event dates: 10
-    #> • quantile levels: 0.025, 0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95, and 0.975
-    #> • draws: 1000
-    #> 
-    #> Nowcast at "2010-10-04" (q50, 2.5-97.5% interval):
-    #> • 349 [172, 450]
-    #> 
-    #> # A tibble: 6 × 3
-    #>   onset_week .quantile_level .value
-    #>   <date>               <dbl>  <dbl>
-    #> 1 2010-08-02           0.025    328
-    #> 2 2010-08-02           0.05     328
-    #> 3 2010-08-02           0.1      328
-    #> 4 2010-08-02           0.25     328
-    #> 5 2010-08-02           0.5      328
-    #> 6 2010-08-02           0.75     328
-    #> ℹ 84 more rows. Use `as_tibble()` for all of them.
-
-**Watch for:** it is **unseeded** unless you say otherwise.
-[`enw_fit_opts()`](https://package.epinowcast.org/reference/enw_fit_opts.html)
-passes `...` to the sampler, so `seed =` reaches Stan — without it, the
-same fit can take forty minutes on one run and six hours on the next,
-and neither reproduces. It handles a weekly object natively
-(`timestep = "week"`), so its reference dates line up with the object’s
-grid.
-
-#### NobBS
-
-Nowcasting by Bayesian Smoothing. Needs **JAGS** installed as a separate
-program.
-
-``` r
-
-nobbs <- run_nowcast(snapshot, engine_nobbs(max_D = 10, moving_window = 64))
-
-nobbs
-```
-
-    #> ── A <tbl_nowcast> from method "NobBS" ───────────────────────────────────────────────────────────────────────────────────────
-    #> • now: "2010-10-04"
-    #> • event dates: 64
-    #> • quantile levels: 0.025, 0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95, and 0.975
-    #> • draws: none (quantiles only)
-    #> 
-    #> Nowcast at "2010-10-04" (q50, 2.5-97.5% interval):
-    #> • 360 [255, 521.0]
-    #> 
-    #> # A tibble: 6 × 3
-    #>   onset_week .quantile_level .value
-    #>   <date>               <dbl>  <dbl>
-    #> 1 2009-07-20           0.025     28
-    #> 2 2009-07-20           0.05      28
-    #> 3 2009-07-20           0.1       28
-    #> 4 2009-07-20           0.25      28
-    #> 5 2009-07-20           0.5       28
-    #> 6 2009-07-20           0.75      28
-    #> ℹ 570 more rows. Use `as_tibble()` for all of them.
-
-**Watch for:** it keeps **no draws per event date**, so it cannot join a
-`type = "linear_pool"` ensemble, and it can only report quantiles it was
-asked for *at fit time*: pass `specs = list(quantiles = ...)` and
-`tidy(fit, probs =)` will return them, but a level it never computed is
-an error rather than an approximation. It also counts **rows**, so the
-converter expands your counts to one row per case — trim before fitting
-on a long series.
-
-#### surveillance
-
-The classic Höhle & an der Heiden nowcast. No external toolchain for the
-method used here.
-
-``` r
-
-sur <- run_nowcast(snapshot, engine_surveillance(D = 10))
-
-sur
-```
-
-    #> ── A <tbl_nowcast> from method "surveillance" ────────────────────────────────────────────────────────────────────────────────
-    #> • now: "2010-10-04"
-    #> • event dates: 11
-    #> • quantile levels: 0.025, 0.5, and 0.975
-    #> • draws: none (quantiles only)
-    #> 
-    #> Nowcast at "2010-10-04" (q50, 2.5-97.5% interval):
-    #> • 216 [105, 391]
-    #> 
-    #> # A tibble: 6 × 3
-    #>   onset_week .quantile_level .value
-    #>   <date>               <dbl>  <dbl>
-    #> 1 2010-07-26           0.025    302
-    #> 2 2010-07-26           0.5      302
-    #> 3 2010-07-26           0.975    302
-    #> 4 2010-08-02           0.025    328
-    #> 5 2010-08-02           0.5      329
-    #> 6 2010-08-02           0.975    332
-    #> ℹ 27 more rows. Use `as_tibble()` for all of them.
-
-**Watch for:**
-[`surveillance::nowcast()`](https://rdrr.io/pkg/surveillance/man/nowcast.html)
-has **no strata argument at all**, so
-[`run_nowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/run_nowcast.md)
-fits one model per stratum and labels the blocks for you. Both date
-grids it needs come from the object via
-[`get_surveillance_when()`](https://rodrigozepeda.github.io/tbl.now/reference/surveillance_grids.md)
-and
-[`get_surveillance_range()`](https://rodrigozepeda.github.io/tbl.now/reference/surveillance_grids.md)
-— the second matters because a line list cannot express a zero, so the
-quiet days at the `now` edge would otherwise fall off the grid entirely.
-
-#### EpiNow2
-
-A renewal-equation model of the *infection* process, with the reporting
-correction supplied separately.
-
-``` r
-
-en2 <- run_nowcast(snapshot, engine_epinow2(
-  generation_time = EpiNow2::gt_opts(EpiNow2::example_generation_time),
-  delays          = EpiNow2::delay_opts(EpiNow2::example_incubation_period),
-  stan            = EpiNow2::stan_opts(
-    method = "pathfinder", backend = "cmdstanr", samples = 500
-  ),
-  min_date        = 96
-))
-
-en2
-```
-
-    #> ── A <tbl_nowcast> from method "EpiNow2" ─────────────────────────────────────────────────────────────────────────────────────
-    #> • now: "2010-10-04"
-    #> • event dates: 96
-    #> • quantile levels: 0.025, 0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95, and 0.975
-    #> • draws: 500
-    #> 
-    #> Nowcast at "2010-10-04" (q50, 2.5-97.5% interval):
-    #> • 90 [90, 90]
-    #> 
-    #> # A tibble: 6 × 3
-    #>   onset_week .quantile_level .value
-    #>   <date>               <dbl>  <dbl>
-    #> 1 2008-12-08           0.025     19
-    #> 2 2008-12-08           0.05      19
-    #> 3 2008-12-08           0.1       19
-    #> 4 2008-12-08           0.25      19
-    #> 5 2008-12-08           0.5       19
-    #> 6 2008-12-08           0.75      28
-    #> ℹ 858 more rows. Use `as_tibble()` for all of them.
-
-**Watch for:** EpiNow2 has no `timestep` — it always models a *daily*
-process. The converter therefore lays a weekly object onto EpiNow2’s
-daily grid, putting each week’s count on the week-ending day and marking
-the rest `accumulate = TRUE`. EpiNow2 honours that on the way out as
-well as in the likelihood, so predictions come back on **your** grid at
-**your** scale; you do not have to undo anything. It is also the one
-engine here that *forecasts* — it returns one period past the end of the
-data — and
-[`run_nowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/run_nowcast.md)
-drops that, because a nowcast estimates what has already happened.
-
-**Its priors are not fitted from your data unless you say so.** The
-generation time and incubation period default to EpiNow2’s shipped
-examples. Those are properties of transmission rather than of reporting,
-and no amount of reporting data identifies them — but they are still an
-assumption you are making, not a detail. See
-`vignette("nowcasting-models")` for fitting the truncation from the
-report dimension, which *is* what a `tbl_now` measures.
+In general each of the methods for the
+[`engine()`](https://rodrigozepeda.github.io/tbl.now/reference/engine.md)
+requires you to install the corresponding package. You can only use
+those you have installed.
 
 ### How much history to fit on: `min_date`
 
-The engines above are not shown the same data, and that is deliberate.
+In general not all nowcasts can fit all of the same data fast enough to
+be useful. As a rule of thumb:
 
-`baselinenowcast` and `diseasenowcasting` take the **whole series** in
-their stride: one estimates a delay distribution from the reporting
-triangle, the other fits a state-space model whose cost grows gently
-with the number of periods. More history is more information about the
-delay, and there is no reason to throw it away.
-
-`epinowcast` and `EpiNow2` are different. Both scale with the number of
-**reference dates** they are given – `epinowcast` carries a parameter
-block per reference date, `EpiNow2` models a latent infection curve over
-every day of it – so a series that costs `baselinenowcast` a second
-costs them an afternoon. Trimming them is not a workaround; it is a
-modelling decision about how much history the reporting process is
-assumed to be stable over.
-
-`min_date` puts that decision **on the engine**, so each model gets the
-window it needs and no global
-[`filter()`](https://dplyr.tidyverse.org/reference/filter.html) has to
-be applied to all of them at once:
+1.  `diseasenowcasting` can take the **whole series** and produce a
+    nowcast in less than a minute.
+2.  `baselinenowcast` can take all of the event dates however one
+    usually has to truncate the number of delays in the delay
+    distribution.
+3.  `epinowcast`, `EpiNow2`, `surveillance` and `NobBS` all require an
+    event-window so that for a long time series not all event dates are
+    passed. You can use the `min_date` argument to select the size of
+    the window for the engine.
 
 ``` r
 
-run_nowcast(snapshot, engine_epinowcast(min_date = 96))          # last 96 weeks
-run_nowcast(snapshot, engine_epinowcast(min_date = as.Date("2009-01-05")))
-run_nowcast(snapshot, engine_baselinenowcast())                  # whole series
+run_nowcast(dengue, engine_epinowcast(min_date = 20))
 ```
 
-It takes either shape:
+For backtesting and ensembles it is important to utilize the `min_date`
+in the engine so that the backtest knows to truncate the data to the
+last `min_date` periods for every single test.
 
-| `min_date` | means |
-|----|----|
-| `NULL` (default) | the whole series |
-| a `Date` | keep event dates on or after it |
-| a number | keep the last *n* periods before `now`, in the object’s **own units** |
+## 2. Cleaning and evaluating the nowcast
 
-The number is usually what you want, and in a
-[`nowcast_backtest()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_backtest.md)
-it is the only one that behaves: `now` moves between fits, so a fixed
-calendar cut makes the fitted window **grow** as the backtest walks
-forward, and the last fit is trained on more data than the first.
-`min_date = 96` on this weekly object is ninety-six weeks at every
-retrospective date.
-
-**`min_date` trims the event axis, not `now`.** The nowcast is still
-made as of the same date, and the trimmed object is what the result
-carries – so
-[`score_nowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/score_nowcast.md)
-and
-[`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html)’s
-reported counts describe the series the model was actually shown.
-
-### What you get back
-
-Every method returns a `tbl_nowcast`. Whatever the package produced — a
-Stan fit, a matrix of samples, a data frame of quantiles — the
-predictions are always in the same tidy shape:
-
-``` r
-
-as_tibble(baseline)
-```
-
-    #> # A tibble: 9,756 × 3
-    #>    onset_week .quantile_level .value
-    #>    <date>               <dbl>  <dbl>
-    #>  1 1990-01-01           0.025     61
-    #>  2 1990-01-01           0.05      61
-    #>  3 1990-01-01           0.1       61
-    #>  4 1990-01-01           0.25      61
-    #>  5 1990-01-01           0.5       61
-    #>  6 1990-01-01           0.75      61
-    #>  7 1990-01-01           0.9       61
-    #>  8 1990-01-01           0.95      61
-    #>  9 1990-01-01           0.975     61
-    #> 10 1990-01-08           0.025     50
-    #> # ℹ 9,746 more rows
-
-and, when the backend is sample-based, the draws are there too:
-
-``` r
-
-as_tibble(baseline, type = "draws")
-```
-
-    #> # A tibble: 1,084,000 × 3
-    #>    onset_week .draw .value
-    #>    <date>     <int>  <dbl>
-    #>  1 1990-01-01     1     61
-    #>  2 1990-01-01     2     61
-    #>  3 1990-01-01     3     61
-    #>  4 1990-01-01     4     61
-    #>  5 1990-01-01     5     61
-    #>  6 1990-01-01     6     61
-    #>  7 1990-01-01     7     61
-    #>  8 1990-01-01     8     61
-    #>  9 1990-01-01     9     61
-    #> 10 1990-01-01    10     61
-    #> # ℹ 1,083,990 more rows
-
-### `tidy()` works here too
-
-[`as_tibble()`](https://tibble.tidyverse.org/reference/as_tibble.html)
-gives you the quantiles in full.
-[`tidy()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast.md)
-gives you the **same summary table every other engine in this package
-produces** — the one documented at
-[`?tidy.nowcast`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast.md)
-— so a nowcast fitted through
-[`run_nowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/run_nowcast.md)
-and one fitted by calling a package by hand are read the same way:
+Every method called by `run_engine` returns a `tbl_nowcast` which can be
+cleaned with `tidy`:
 
 ``` r
 
 tidy(baseline)
+#> # A tibble: 1,095 × 7
+#>   event_date stratum estimate conf.low conf.high level engine         
+#>   <date>     <chr>      <dbl>    <dbl>     <dbl> <dbl> <chr>          
+#> 1 1990-01-01 all           61       61        61  0.95 baselinenowcast
+#> 2 1990-01-08 all           50       50        50  0.95 baselinenowcast
+#> 3 1990-01-15 all           44       44        44  0.95 baselinenowcast
+#> 4 1990-01-22 all           46       46        46  0.95 baselinenowcast
+#> 5 1990-01-29 all           39       39        39  0.95 baselinenowcast
+#> # ℹ 1,090 more rows
 ```
 
-    #> # A tibble: 1,084 × 7
-    #>    event_date stratum estimate conf.low conf.high level engine         
-    #>    <date>     <chr>      <dbl>    <dbl>     <dbl> <dbl> <chr>          
-    #>  1 1990-01-01 all           61       61        61  0.95 baselinenowcast
-    #>  2 1990-01-08 all           50       50        50  0.95 baselinenowcast
-    #>  3 1990-01-15 all           44       44        44  0.95 baselinenowcast
-    #>  4 1990-01-22 all           46       46        46  0.95 baselinenowcast
-    #>  5 1990-01-29 all           39       39        39  0.95 baselinenowcast
-    #>  6 1990-02-05 all           34       34        34  0.95 baselinenowcast
-    #>  7 1990-02-12 all           24       24        24  0.95 baselinenowcast
-    #>  8 1990-02-19 all           17       17        17  0.95 baselinenowcast
-    #>  9 1990-02-26 all           17       17        17  0.95 baselinenowcast
-    #> 10 1990-03-05 all           16       16        16  0.95 baselinenowcast
-    #> # ℹ 1,074 more rows
-
-Those first weeks look odd until you notice what they are: `estimate`,
-`conf.low` and `conf.high` are identical because early 2008 was
-**settled** long before this `now`. Every case had been reported, so
-there is nothing left to nowcast and no uncertainty to report. The
-interesting rows are at the `now` end.
-
-Two columns there are read off the object rather than assumed. `engine`
-is the method that produced it. `level` is the width of the **widest
-symmetric pair of quantiles the nowcast actually carries** — `0.95` for
-the default
-[`nowcast_quantile_levels()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_quantile_levels.md),
-`0.8` for a nowcast summarised at `c(0.1, 0.5, 0.9)`, and `NA` when no
-symmetric pair exists at all. A guessed width would defeat the point of
-the column, which is to stop a 90% band being compared with a 95% one as
-though they were the same thing.
-
-Nothing is thrown away. The `fit` property still holds the backend’s own
-object, so you can keep using that package’s diagnostics:
-
-``` r
-
-class(baseline@fit)
-#> [1] "baselinenowcast_df" "data.frame"
-```
-
-And there is an
-[`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html)
-method for a quick look. It is drawn in **green**, the colour this
-package reserves for the epidemic process — a nowcast is an estimate of
-*what happened*, not of *when we found out*:
+or visualized with
+[`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html):
 
 ``` r
 
 autoplot(baseline)
 ```
 
-![A green fan chart of the dengue nowcast: nested prediction intervals
-around a median line, with the counts reported so far as
-points.](ensemble-nowcasting_files/figure-html/bln-plot-1.png)
+![](ensemble-nowcasting_files/figure-html/unnamed-chunk-3-1.png)
 
-### Strata are handled for you
-
-When the `tbl_now` declares strata,
-[`run_nowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/run_nowcast.md)
-does whatever that backend needs to honour them — one reporting triangle
-per stratum for `baselinenowcast`, `NobBS.strat()` instead of `NobBS()`,
-one fit per stratum for `surveillance`, `regional_epinow()` instead of
-`estimate_infections()` — and the stratum ends up as an ordinary column
-of the output:
-
-``` r
-
-dengue_by_sex <- denguedat |>
-  filter(onset_week >= as.Date("2008-01-01")) |>
-  count(onset_week, report_week, gender, name = "n") |>
-  tbl_now(
-    event_date = onset_week, report_date = report_week, case_count = n,
-    strata = gender, data_type = "count-incidence", verbose = FALSE
-  ) |>
-  filter(report_week <= now) |>
-  change_now(now = now)
-
-by_sex <- run_nowcast(dengue_by_sex, engine = engine_baselinenowcast(draws = 1000))
-
-as_tibble(by_sex)
-```
-
-    #> # A tibble: 2,556 × 4
-    #>    onset_week gender .quantile_level .value
-    #>    <date>     <chr>            <dbl>  <dbl>
-    #>  1 2008-01-07 Female           0.025      9
-    #>  2 2008-01-07 Female           0.05       9
-    #>  3 2008-01-07 Female           0.1        9
-    #>  4 2008-01-07 Female           0.25       9
-    #>  5 2008-01-07 Female           0.5        9
-    #>  6 2008-01-07 Female           0.75       9
-    #>  7 2008-01-07 Female           0.9        9
-    #>  8 2008-01-07 Female           0.95       9
-    #>  9 2008-01-07 Female           0.975      9
-    #> 10 2008-01-07 Male             0.025     13
-    #> # ℹ 2,546 more rows
-
-[`tidy()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast.md)
-labels each block with its stratum, so `(stratum, event_date)` is a
-unique key and the two series can never be confused for one another:
-
-``` r
-
-tidy(by_sex)
-```
-
-    #> # A tibble: 284 × 7
-    #>    event_date stratum estimate conf.low conf.high level engine         
-    #>    <date>     <chr>      <dbl>    <dbl>     <dbl> <dbl> <chr>          
-    #>  1 2008-01-07 Female         9        9         9  0.95 baselinenowcast
-    #>  2 2008-01-14 Female         9        9         9  0.95 baselinenowcast
-    #>  3 2008-01-21 Female         3        3         3  0.95 baselinenowcast
-    #>  4 2008-01-28 Female         4        4         4  0.95 baselinenowcast
-    #>  5 2008-02-04 Female         3        3         3  0.95 baselinenowcast
-    #>  6 2008-02-11 Female         2        2         2  0.95 baselinenowcast
-    #>  7 2008-02-18 Female         3        3         3  0.95 baselinenowcast
-    #>  8 2008-02-25 Female         5        5         5  0.95 baselinenowcast
-    #>  9 2008-03-10 Female         1        1         1  0.95 baselinenowcast
-    #> 10 2008-03-17 Female         1        1         1  0.95 baselinenowcast
-    #> # ℹ 274 more rows
-
-If a backend genuinely cannot stratify, it warns and pools rather than
-pretending.
-
-## 2. Scoring a nowcast
-
+If enough cases have been observed so that the “truth” is settled, one
+can use the
 [`score_nowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/score_nowcast.md)
-compares the predictive quantiles with a resolved truth table, using the
-weighted interval score (WIS) of Bracher et al.
+function which compares the predictive quantiles with a resolved truth
+table using the weighted interval score (WIS) of Bracher et al.
 ([2021](#ref-bracher2021)), plus the absolute error of the median and
-the 50% and 90% interval coverage. By default that truth is the total
-eventually reported on the report axis; revision-aware series can
-instead be scored with `truth_axis = "revision"` and the matching
-`truth_type`.
-
-Scoring only makes sense against data the model had not seen, which is
-why `snapshot` was truncated at `now` and the truth comes from the full
-series:
+the 50% and 90% interval coverage:
 
 ``` r
 
 score_nowcast(baseline, truth = dengue)
+#> # A tibble: 1,095 × 7
+#>   .method         onset_week .observed   wis ae_median coverage_50 coverage_90
+#>   <chr>           <date>         <dbl> <dbl>     <dbl> <lgl>       <lgl>      
+#> 1 baselinenowcast 1990-01-01        61     0         0 TRUE        TRUE       
+#> 2 baselinenowcast 1990-01-08        50     0         0 TRUE        TRUE       
+#> 3 baselinenowcast 1990-01-15        44     0         0 TRUE        TRUE       
+#> 4 baselinenowcast 1990-01-22        46     0         0 TRUE        TRUE       
+#> 5 baselinenowcast 1990-01-29        39     0         0 TRUE        TRUE       
+#> # ℹ 1,090 more rows
 ```
 
-    #> # A tibble: 8 × 7
-    #>   .method         onset_week .observed     wis ae_median coverage_50 coverage_90
-    #>   <chr>           <date>         <dbl>   <dbl>     <dbl> <lgl>       <lgl>      
-    #> 1 baselinenowcast 2010-08-16       355 2.22e-2         0 TRUE        TRUE       
-    #> 2 baselinenowcast 2010-08-23       258 4.44e-2         0 TRUE        TRUE       
-    #> 3 baselinenowcast 2010-08-30       287 2.67e-1         1 TRUE        TRUE       
-    #> 4 baselinenowcast 2010-09-06       298 4.22e-1         1 TRUE        TRUE       
-    #> 5 baselinenowcast 2010-09-13       275 1.08e+0         2 TRUE        TRUE       
-    #> 6 baselinenowcast 2010-09-20       250 9.45e+0        21 FALSE       FALSE      
-    #> 7 baselinenowcast 2010-09-27       201 3.59e+1        70 FALSE       TRUE       
-    #> 8 baselinenowcast 2010-10-04       147 1.49e+2       355 FALSE       TRUE
-
-Lower WIS is better; `coverage_90` should be `TRUE` about nine times in
-ten if the intervals are honest.
-
-If you would rather use the full score suite, its coercion generic
-accepts the nowcast directly. Supply the later, full `tbl_now` as
-`truth`:
+or more directly one can use the package:
 
 ``` r
 
 baseline |>
   scoringutils::as_forecast_quantile(truth = dengue) |>
   scoringutils::score()
+#>       onset_week           model         wis overprediction underprediction dispersion  bias interval_coverage_50 interval_coverage_90 ae_median
+#>           <Date>          <char>       <num>          <num>           <num>      <num> <num>               <lgcl>               <lgcl>     <num>
+#>    1: 1990-01-01 baselinenowcast  0.00000000        0.00000               0 0.00000000     0                 TRUE                 TRUE       0.0
+#>    2: 1990-01-08 baselinenowcast  0.00000000        0.00000               0 0.00000000     0                 TRUE                 TRUE       0.0
+#>    3: 1990-01-15 baselinenowcast  0.00000000        0.00000               0 0.00000000     0                 TRUE                 TRUE       0.0
+#>    4: 1990-01-22 baselinenowcast  0.00000000        0.00000               0 0.00000000     0                 TRUE                 TRUE       0.0
+#>    5: 1990-01-29 baselinenowcast  0.00000000        0.00000               0 0.00000000     0                 TRUE                 TRUE       0.0
+#>   ---                                                                                                                                           
+#> 1091: 2010-11-22 baselinenowcast  0.05555556        0.00000               0 0.05555556     0                 TRUE                 TRUE       0.0
+#> 1092: 2010-11-29 baselinenowcast  0.13625000        0.00000               0 0.13625000     0                 TRUE                 TRUE       0.0
+#> 1093: 2010-12-06 baselinenowcast  0.00000000        0.00000               0 0.00000000     0                 TRUE                 TRUE       0.0
+#> 1094: 2010-12-13 baselinenowcast  0.11111111        0.00000               0 0.11111111     0                 TRUE                 TRUE       0.0
+#> 1095: 2010-12-20 baselinenowcast 24.06319444       15.86667               0 8.19652778     1                FALSE                FALSE      45.5
 ```
 
-For point-score workflows, `as_forecast_point(baseline, truth = dengue)`
-keeps the median prediction and hands that to .
+Because the dataset ends at `r`get_now(dengue)\` and we nowcasted for
+that date the scores are not very useful here (we don’t know how many
+cases *arrived* eventually). A better option is to perform a backtest to
+evaluate historical performance as the dataset knows how many cases have
+already settled from dates in the past.
 
-When the nowcast retains posterior draws, it can instead become a sample
-forecast. This follows the same adapter pattern used by :
+## 3. Backtests and ensembles
+
+Models fail in different directions and combining them cancels part of
+that. An ensemble combines multiple nowcasting for robustness. To build
+an ensemble one has to specify different engines, backtest them and then
+build the ensemble.
+
+Here for example we will create an ensemble from `NobBS`, and two
+`baselinenowcast` options. It is important to utilize the `label`
+argument when using the same engine with different parameters:
 
 ``` r
 
-baseline |>
-  scoringutils::as_forecast_sample(truth = dengue) |>
-  scoringutils::score()
+#NobBS
+model1 <- engine_nobbs(min_date = 52, max_D = 15, label = "NobBS")
+
+#baselinenowcast
+model2 <- engine_baselinenowcast(max_delay = 15, label = "baselinenowcast")
+
+#a baselinenowcast model with a different specification
+model3 <- engine_baselinenowcast(max_delay = 10, prop_delay = 0.75, label = "baselinenowcast 2")
 ```
 
-Sample conversion is deliberately unavailable for a quantile-only
-nowcast: samples cannot be reconstructed from a handful of quantiles.
-
-`tbl.now`’s own `wis` and the one computes agree to machine precision —
-the package’s test suite checks exactly that, on the same numbers,
-rather than trusting either implementation on its own.
-
-## 3. Ensembles
-
-Models fail in different directions, and combining them cancels part of
-that: an ensemble is rarely the single best model, but it is also rarely
-the worst, which is worth a great deal when you have to commit to
-something before you know which epidemic you are facing. *How* you
-combine them matters more than most write-ups admit, and the two rules
-below behave differently enough that the choice is worth making
-deliberately. Because every
-[`run_nowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/run_nowcast.md)
-result has the same shape, combining them is one call.
-
-The members below are the fits from the cards above, so nothing is
-refitted:
+Once the models are specified we can backtest through several past
+dates:
 
 ``` r
 
-members <- list(
-  baselinenowcast   = baseline,
-  diseasenowcasting = dnc,
-  # The SAME package, a different epidemic process. An ensemble is not only a
-  # hedge across packages -- two structurally different models from one package
-  # disagree in their own way, and that disagreement is worth combining too.
-  dnc_ar1           = run_nowcast(
-    snapshot,
-    engine_diseasenowcasting(
-      model = diseasenowcasting::model(
-        epidemic = diseasenowcasting::ar1_epidemic()
-      ),
-      label = "dnc_ar1"
-    )
-  ),
-  epinowcast        = enw,
-  NobBS             = nobbs,
-  EpiNow2           = en2
-)
-
-ensemble <- nowcast_ensemble(members)
+#We evaluate the performance of our models in 2 past dates
+#in real life change n_dates to a bigger number (we use 2 for the tutorial)
+models_backtest <- dengue |> 
+  nowcast_backtest(model1, model2, model3, n_dates = 2)
+#> ℹ Backtesting "NobBS" at 2010-11-15.
+#> ℹ Backtesting "baselinenowcast" at 2010-11-15.
+#> ℹ Backtesting "baselinenowcast 2" at 2010-11-15.
+#> ℹ Backtesting "NobBS" at 2010-11-22.
+#> ℹ Backtesting "baselinenowcast" at 2010-11-22.
+#> ℹ Backtesting "baselinenowcast 2" at 2010-11-22.
 ```
 
-    #> ── A <tbl_nowcast> from method "ensemble" ────────────────────────────────────────────────────────────────────────────────────
-    #> • now: "2010-10-04"
-    #> • event dates: 10
-    #> • quantile levels: 0.025, 0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95, and 0.975
-    #> • draws: none (quantiles only)
-    #> 
-    #> Nowcast at "2010-10-04" (q50, 2.5-97.5% interval):
-    #> • 290.7 [135.2, 574.7]
-    #> 
-    #> # A tibble: 6 × 3
-    #>   onset_week .quantile_level .value
-    #>   <date>               <dbl>  <dbl>
-    #> 1 2010-08-02           0.025   308 
-    #> 2 2010-08-02           0.05    308 
-    #> 3 2010-08-02           0.1     308 
-    #> 4 2010-08-02           0.25    308 
-    #> 5 2010-08-02           0.5     320.
-    #> 6 2010-08-02           0.75    320.
-    #> ℹ 84 more rows. Use `as_tibble()` for all of them.
-
-### The ensemble against its parts
-
-The reason to build one is easier to see than to describe. Each thin
-line below is one member’s median, the green fan is the ensemble, and
-the dashed line is what those weeks eventually reached. The window is
-the ensemble’s own: it keeps only the dates **every** member covers, and
-`epinowcast` reports just the reference dates it is nowcasting.
-
-![Coloured lines, one per member, fan out over the final weeks; the
-ensemble's shaded band sits among them and its median tracks the
-eventual truth more closely than most single
-members.](ensemble-nowcasting_files/figure-html/ensemble-vs-members-1.png)
-
-The quantile ensemble against each of its members over the last weeks
-before `now`.
-
-Three things are worth reading off it.
-
-Most members **fan out at the `now` edge** and lie on top of each other
-before it. That is the shape of the problem: the settled weeks have
-nothing left to nowcast, so any sane model reproduces them, and the
-disagreement concentrates exactly where the answer is not yet known. The
-spread at the right is what an ensemble exists to absorb.
-
-`EpiNow2` is the exception, and it disagrees **everywhere**. It is not
-estimating the same thing as the others: it fits a latent *infection*
-curve and reports the smooth implied by it, rather than correcting each
-week’s reported count for its outstanding delay. A member that is off by
-a constant factor on settled weeks is usually a sign of that kind of
-mismatch rather than of a bad fit.
-
-And the ensemble’s median sits **inside** the spread rather than at
-either edge of it. That is the entire trade: it is rarely the best line
-on any given week, and it is rarely the worst either — which is worth a
-great deal when you have to commit before knowing which member was
-right.
-
-**An ensemble reports only what every member can.** The fan above has as
-many bands as the levels its members share, and here that is all nine of
-[`nowcast_quantile_levels()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_quantile_levels.md)
-— every member either keeps draws or was asked for those levels at fit
-time. Add `surveillance`, which keeps none and reports a fixed
-`{0.025, 0.5, 0.975}`, and the fan collapses to a single 95% band. That
-is why it is a card above but not a member here — see the note below.
-
-**These fits use approximate inference.** `epinowcast` runs through
-[`enw_pathfinder()`](https://package.epinowcast.org/reference/enw_pathfinder.html)
-and `EpiNow2` through `stan_opts(method = "pathfinder")` so this article
-rebuilds in minutes rather than overnight. That is fine for showing how
-the ensemble *machinery* behaves and is **not** a tuned posterior for
-either model — do not read any single member’s band as that package’s
-considered answer.
-
-An ensemble is a `tbl_nowcast` like any other, so it scores, plots and
-tidies the same way. Its `engine` is the ensemble’s name rather than a
-package:
+The backtest now gives us enough information to evaluate each of the
+models:
 
 ``` r
 
-tidy(ensemble)
+models_backtest |> 
+  scoringutils::as_forecast_quantile(truth = dengue) |>
+  scoringutils::score() |> 
+  scoringutils::summarise_scores() 
+#>                model        wis overprediction underprediction dispersion         bias interval_coverage_50 interval_coverage_90  ae_median
+#>               <char>      <num>          <num>           <num>      <num>        <num>                <num>                <num>      <num>
+#> 1:             NobBS 0.66998397    0.501068376      0.03418803 0.13472756  0.033653846            0.9326923            0.9711538 1.08653846
+#> 2:   baselinenowcast 0.02820801    0.001528351      0.01426461 0.01241505 -0.006373223            0.9926639            0.9940394 0.04332875
+#> 3: baselinenowcast 2 0.18177964    0.001477406      0.16862805 0.01167418 -0.131957818            0.8670335            0.8674920 0.19669876
 ```
 
-    #> # A tibble: 10 × 7
-    #>    event_date stratum estimate conf.low conf.high level engine  
-    #>    <date>     <chr>      <dbl>    <dbl>     <dbl> <dbl> <chr>   
-    #>  1 2010-08-02 all         320.     308       320.  0.95 ensemble
-    #>  2 2010-08-09 all         371.     349.      371.  0.95 ensemble
-    #>  3 2010-08-16 all         346      346       353.  0.95 ensemble
-    #>  4 2010-08-23 all         264.     262.      265.  0.95 ensemble
-    #>  5 2010-08-30 all         286      275.      288.  0.95 ensemble
-    #>  6 2010-09-06 all         304.     293.      308.  0.95 ensemble
-    #>  7 2010-09-13 all         277      261.      287   0.95 ensemble
-    #>  8 2010-09-20 all         263.     244.      298.  0.95 ensemble
-    #>  9 2010-09-27 all         264.     196.      414.  0.95 ensemble
-    #> 10 2010-10-04 all         291.     135.      575.  0.95 ensemble
-
-It can also be a member of another ensemble. This makes it possible, for
-example, to combine a `diseasenowcasting` HSGP/AR ensemble with an
-`epinowcast` random walk and a baseline. Quantile ensembles can always
-be nested; a nested member of a `linear_pool` must itself have draws, so
-its inner ensemble must also use `type = "linear_pool"`.
-
-### Two ways of combining
-
-`type = "quantile"` (the default) averages the members’ quantiles level
-by level — *vincentization*. It is the workhorse of the forecast hubs,
-it always applies because every backend produces quantiles, and it tends
-to produce **narrower** intervals than the members.
-
-`type = "linear_pool"` instead pools the members’ draws into a mixture
-distribution and re-summarises it. It needs draws from every member and
-generally produces **wider** intervals, because disagreement between
-models becomes extra spread rather than being averaged away.
+Once the historical evaluation is performed one needs to fit each of the
+models individually and then can put them together into a
+`nowcast_ensemble` along its backtest. The ensemble will then average
+all the models in a way that optimizes the WIS (if `weights = "optim"`
+or proportional to the WIS if `weights = "inverse_score"`).
 
 ``` r
 
-sharp <- nowcast_ensemble(members, type = "quantile")
+#We fit each of the individual models
+nowcast1 <- dengue |> run_nowcast(model1)
+#> NOTE: Stopping adaptation
+nowcast2 <- dengue |> run_nowcast(model2)
+nowcast3 <- dengue |> run_nowcast(model3)
 
-# The pool needs draws, so it takes the members that have them.
-with_draws <- members[c("baselinenowcast", "diseasenowcasting",
-                        "dnc_ar1", "epinowcast")]
-wide <- nowcast_ensemble(with_draws, type = "linear_pool", n_draws = 4000)
+#And then ensemble to optimize for the best WIS
+ensemble_nowcast <-  
+  nowcast_ensemble(nowcast1, nowcast2, nowcast3, 
+                   weights = "optim", backtest = models_backtest)
 ```
 
-Which one you want depends on whether you read between-model
-disagreement as noise to be averaged out (quantile) or as genuine
-uncertainty to be propagated (linear pool).
-
-**The linear pool needs draws, and not every backend has them.** Of the
-six engines above, `baselinenowcast`, `diseasenowcasting`, `epinowcast`
-and `EpiNow2` keep per-event-date draws; `NobBS` and `surveillance`
-report summaries only. (`NobBS`’s `nowcast.post.samps` cover the `now`
-date rather than every event date, which is not the same thing.)
-`type = "linear_pool"` **refuses** a set of members that includes one of
-the two, rather than silently dropping it and returning a
-differently-composed ensemble under the same name — which is why the
-call above selects its members explicitly.
-
-**Members must agree on what they are predicting.** An ensemble combines
-members target by target, so a date one member covers and another does
-not cannot be combined: averaging over whoever happens to be present
-would report a single member’s own value as the ensemble’s. Those
-targets are dropped, with a warning saying how many. This is not
-hypothetical — `EpiNow2` forecasts one period past the end of the data,
-and before
-[`run_nowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/run_nowcast.md)
-trimmed it that lone extra week landed exactly at the `now` edge, which
-is the part of the picture people read.
-
-That agreement is semantic as well as tabular.
-[`nowcast_ensemble()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_ensemble.md)
-checks the date grid, strata and quantile levels it can see, but it
-assumes the members target the same reporting or revision quantity.
-Combine models that answer the same question, then score the result with
-the matching `truth_axis` and `truth_type` in
-[`score_nowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/score_nowcast.md).
-
-**Why `surveillance` is not a member here.** There *is* a principled
-reason, and it is arithmetic. `surveillance` keeps no per-date draws and
-reports a **fixed** `{0.025, 0.5, 0.975}`, so it cannot be asked for any
-other level after the fit. An ensemble reports only the levels **every**
-member carries, so adding it drops the ensemble from the nine hub levels
-to those three — one 95% band instead of a fan — and every other
-member’s extra resolution is thrown away to accommodate one that has
-none.
-
-[`nowcast_ensemble()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_ensemble.md)
-warns when this happens rather than pretending. The fix is at fit time:
-leave it out, or widen what it reports where the package lets you
-(`surveillance`’s `control$alpha`). Nothing in
-[`nowcast_ensemble()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_ensemble.md)
-treats it specially.
-
-### Weights
-
-By default every member counts the same. You can also give weights
-directly:
-
-``` r
-
-nowcast_ensemble(members, weights = c(
-  baselinenowcast = 0.3, diseasenowcasting = 0.2, dnc_ar1 = 0.1,
-  epinowcast = 0.2, NobBS = 0.1, EpiNow2 = 0.1
-))
-```
-
-or *learn* them from how the members actually performed.
-[`nowcast_backtest()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_backtest.md)
-walks back through time: at each retrospective date it truncates the
-data to the reports available then, refits every method, and scores the
-result against the resolved truth defined by `truth_axis` and
-`truth_type` (reported totals by default).
-
-It takes the **same engines** you fitted with, so there is no second
-place to keep the arguments in step. An engine’s `label` becomes its
-name in the result — which is how one package appears twice, so the two
-`diseasenowcasting` models above can be weighted separately rather than
-sharing one weight:
-
-``` r
-
-backtest <- nowcast_backtest(
-  dengue,
-  engine_baselinenowcast(draws = 1000),
-  engine_diseasenowcasting(),
-  engine_diseasenowcasting(
-    model = diseasenowcasting::model(
-      epidemic = diseasenowcasting::ar1_epidemic()
-    ),
-    label = "dnc_ar1"
-  ),
-  engine_nobbs(max_D = 10, moving_window = 64),
-  now_dates = now - 7 * 8 * (3:1),
-  seed      = 20260824
-)
-
-tidy(backtest)
-```
-
-    #> # A tibble: 6 × 13
-    #>   method now        event_date stratum observed estimate conf.low conf.high
-    #>   <chr>  <date>     <date>     <chr>      <dbl>    <dbl>    <dbl>     <dbl>
-    #> 1 NobBS  2010-04-19 2009-02-02 all           48       48       48        48
-    #> 2 NobBS  2010-04-19 2009-02-09 all           47       47       47        47
-    #> 3 NobBS  2010-04-19 2009-02-16 all           43       43       43        43
-    #> 4 NobBS  2010-04-19 2009-02-23 all           42       42       42        42
-    #> 5 NobBS  2010-04-19 2009-03-02 all           24       24       24        24
-    #> 6 NobBS  2010-04-19 2009-03-09 all           27       27       27        27
-    #> # ℹ 5 more variables: level <dbl>, wis <dbl>, ae_median <dbl>,
-    #> #   coverage_50 <lgl>, coverage_90 <lgl>
-
-**Why not every ensemble member is backtested here.** A backtest is
-`length(methods) × length(now_dates)` model fits. `epinowcast` and
-`EpiNow2` are both Stan models and each would add three more, so they
-are left out of *this* backtest to keep the article buildable — not
-because anything stops them. If you weight an ensemble from a backtest
-that does not cover every member, give the uncovered ones weights
-yourself;
-[`nowcast_ensemble()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_ensemble.md)
-will not invent them.
-
+One can visualize the ensemble with
+[`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html) or
+get its results with
 [`tidy()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast.md)
-on a backtest gives one row per (method, `now` date, target), carrying
-the retrospective prediction (`estimate`, `conf.low`, `conf.high`) next
-to what was eventually `observed` and the scores that comparison earned.
-It goes straight into `dplyr` or `ggplot2`:
-
-    #> # A tibble: 12 × 4
-    #>    method            now        mean_wis coverage_90
-    #>    <chr>             <date>        <dbl>       <dbl>
-    #>  1 baselinenowcast   2010-04-19      0          1   
-    #>  2 diseasenowcasting 2010-04-19      0          1   
-    #>  3 dnc_ar1           2010-04-19      0          1   
-    #>  4 NobBS             2010-04-19      0.2        0.94
-    #>  5 baselinenowcast   2010-06-14      0.1        1   
-    #>  6 diseasenowcasting 2010-06-14      0.1        1   
-    #>  7 dnc_ar1           2010-06-14      0.2        1   
-    #>  8 NobBS             2010-06-14      1.7        0.91
-    #>  9 diseasenowcasting 2010-08-09      0.1        1   
-    #> 10 dnc_ar1           2010-08-09      0.1        1   
-    #> 11 baselinenowcast   2010-08-09      0.2        1   
-    #> 12 NobBS             2010-08-09      4          0.89
-
-The backtest also converts directly to ; it already stores the truth,
-and `now` remains a forecast unit so repeated retrospective predictions
-of one target stay distinct:
+as in the case of a regular nowcast.
 
 ``` r
 
-backtest |>
-  scoringutils::as_forecast_quantile() |>
-  scoringutils::score() |>
-  scoringutils::add_relative_skill()
+autoplot(ensemble_nowcast, date_lim = c(as.Date("2010/10/01"), as.Date("2010/12/20")))
 ```
 
-Quantile conversion above needs no extra storage. To use
-`as_forecast_sample()` instead, build the backtest with
-`keep_draws = TRUE`. This can make the object much larger, and every
-included engine must return draws; a mixed backtest containing a
-quantile-only engine is refused rather than scored on only a subset of
-its methods.
-
-This is the expensive part of the workflow — it is
-`length(methods) × length(now_dates)` model fits — so keep `now_dates`
-short when the members are Bayesian. Pass `seed` so the backtest is
-reproducible: one [`set.seed()`](https://rdrr.io/r/base/Random.html)
-before the whole thing only pins anything if every method draws the same
-random numbers in the same order, which stops being true the moment you
-drop a method.
-
-From the backtest,
-[`nowcast_weights()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_weights.md)
-offers two rules:
-
-``` r
-
-fitted_weights <- nowcast_weights(backtest, type = "inverse_score")
-fitted_weights                                    # w proportional to 1 / mean WIS
-
-nowcast_weights(backtest, type = "optim")         # w minimising the ensemble's WIS
-```
-
-    #>             NobBS   baselinenowcast diseasenowcasting           dnc_ar1 
-    #>             0.013             0.284             0.493             0.211
-
-`"inverse_score"` is the safe default: it is monotone in performance,
-never collapses onto a single model, and cannot overfit. `"optim"`
-searches the simplex for the weights that would have minimised the
-ensemble’s WIS over the training window; it is better in principle, but
-with only a handful of retrospective dates it happily overfits, so
-prefer it when the training window is long.
-
-Either rule plugs straight into the ensemble:
-
-``` r
-
-nowcast_ensemble(members, weights = "inverse_score", backtest = backtest)
-```
+![](ensemble-nowcasting_files/figure-html/unnamed-chunk-7-1.png)
 
 ## 4. Adding your own model
 
-This is the part that makes the whole thing worth building. A back-end
-is **two S3 methods**, and they can live in your own package, your
-analysis script, or a one-off chunk. Nothing inside `tbl.now` needs to
-change.
+You can add any model built by yourself or from any other package to the
+fitting so that it has its own engine, its own tidy to clean and can be
+used in conjunction with
+[`tidy()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast.md),
+[`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html) as
+well as the backtesting and ensemble methods. You can read more about it
+in [the corresponding
+article](https://rodrigozepeda.github.io/tbl.now/articles/custom-nowcast-models.html).
 
-`run_nowcast(x, engine = engine("mymodel"))` builds a little object of
-class `c("mymodel", "nowcast_method")` and calls
-
-- `nowcast_fit(method, x, ...)` — run the model, return whatever it
-  returns;
-- `nowcast_tidy(method, fit, x, ..., quantile_levels)` — describe the
-  result as `predictions` (one row per event date, stratum and quantile
-  level) or `draws` (one row per event date, stratum and draw). Either
-  may be `NULL`, not both.
-
-`vignette("custom-nowcast-models")` is the full account: what your
-method may assume about the `tbl_now` it is handed, how to reuse the
-converters instead of reshaping by hand, a complete worked back-end that
-needs no modelling package, and what shipping one in a package involves.
-
-## References
+If you have any questions or comments regarding the contents of this
+article please [open an issue on
+Github](https://github.com/RodrigoZepeda/tbl.now/issues/new).
 
 ## Learning more
 
+- End-to-end tutorial on real life surveillance data. Takes you from
+  cleaning to diagnosing errors in the data to nowcasting:
+  <https://rodrigozepeda.github.io/tbl.now/articles/example.html>
+- The same tutorial with a **revision process** — the optional third
+  date, where a reported case is later confirmed, retracted or left
+  pending:
+  <https://rodrigozepeda.github.io/tbl.now/articles/example_revisions.html>
 - Introduction vignette:
   <https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.html> for
   the full anatomy of a `tbl_now`, data types, and temporal effects.
-- End-to-end tutorial on real, messy surveillance data — cleaning,
-  diagnostics and nowcasting:
-  <https://rodrigozepeda.github.io/tbl.now/articles/example.html>
 - Tutorial on diagnosing your dataset — what is in it, what is
   structurally wrong with it, and detecting batches and other
   reporting-delay artifacts:
@@ -1129,6 +384,8 @@ needs no modelling package, and what shipping one in a package involves.
   <https://rodrigozepeda.github.io/tbl.now/articles/custom-nowcast-models.html>
 - Package reference:
   <https://rodrigozepeda.github.io/tbl.now/reference/>
+
+## References
 
 Bracher, Johannes, Evan L. Ray, Tilmann Gneiting, and Nicholas G. Reich.
 2021. “Evaluating Epidemic Forecasts in an Interval Format.” *PLoS

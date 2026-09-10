@@ -1,6 +1,6 @@
 # Individual blocks of a `tbl_now` summary
 
-**\[experimental\]**
+**\[stable\]**
 
 [summary()](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_summary.md)
 answers a dozen questions about a `tbl_now` at once. When you only want

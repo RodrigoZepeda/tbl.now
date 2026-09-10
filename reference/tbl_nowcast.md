@@ -1,6 +1,6 @@
 # A nowcast produced by [`run_nowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/run_nowcast.md)
 
-**\[experimental\]**
+**\[stable\]**
 
 An S7 object holding a nowcast in a package-agnostic shape. It is what
 [`run_nowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/run_nowcast.md)

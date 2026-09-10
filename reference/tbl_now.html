@@ -31,7 +31,7 @@ dates without being told again."><meta property="og:image" content="https://rodr
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.35.4</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -45,8 +45,9 @@ dates without being told again."><meta property="og:image" content="https://rodr
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/custom-nowcast-models.html">Adding your own nowcasting model</a></li>
     <li><a class="dropdown-item" href="../articles/diagnosing-a-tbl-now.html">Diagnosing a tbl_now</a></li>
-    <li><a class="dropdown-item" href="../articles/ensemble-nowcasting.html">One call, many models: run_nowcast(), custom backends and ensembles</a></li>
-    <li><a class="dropdown-item" href="../articles/example.html">The nowcasting workflow: hospital-acquired infections in Bucaramanga, Colombia</a></li>
+    <li><a class="dropdown-item" href="../articles/ensemble-nowcasting.html">Fitting models from different nowcasting frameworks, backtesting and building an ensemble</a></li>
+    <li><a class="dropdown-item" href="../articles/example_revisions.html">The nowcasting workflow 2: COVID-19 case surveillance with revisions in the United States</a></li>
+    <li><a class="dropdown-item" href="../articles/example.html">The nowcasting workflow 1: hospital-acquired infections in Bucaramanga, Colombia</a></li>
     <li><a class="dropdown-item" href="../articles/nowcasting-models.html">Using tbl.now with different modelling packages</a></li>
     <li><a class="dropdown-item" href="../articles/tbl.now.html">tbl.now</a></li>
   </ul></li>
@@ -74,7 +75,7 @@ dates without being told again."><meta property="og:image" content="https://rodr
     </div>
 
     <div class="ref-description section level2">
-    <p><a href="https://lifecycle.r-lib.org/articles/stages.html#experimental" class="external-link"><img src="figures/lifecycle-experimental.svg" alt="[Experimental]"></a></p>
+    <p><a href="https://lifecycle.r-lib.org/articles/stages.html#stable" class="external-link"><img src="figures/lifecycle-stable.svg" alt="[Stable]"></a></p>
 <p>Surveillance data arrives late. A case that happened on Monday may only reach
 the surveillance system on Thursday, so counts for the most recent days always
 look artificially low. <em>Nowcasting</em> corrects that artifact: it estimates how
@@ -279,9 +280,12 @@ Default = <code>FALSE</code>.</p></dd>
 
 
 <dt id="arg-warn-non-uniqueness">warn_non_uniqueness<a class="anchor" aria-label="anchor" href="#arg-warn-non-uniqueness"></a></dt>
-<dd><p>(optional) Logical. Whether to throw a warning if data
-has multiple observations for same event and report date (conditional on covariates
-and strata)</p></dd>
+<dd><p>(optional) Logical. Whether to throw a warning if
+data has several rows on the same full key: the event, report and (when
+declared) revision dates, the revision type, the strata, the covariates and
+the censoring flags. Rows carrying an <code>NA</code> anywhere in that key – a pending
+case has no revision date – are left out of the comparison, because an
+unobserved value cannot be shown to equal another.</p></dd>
 
 
 <dt id="arg-align-weeks">align_weeks<a class="anchor" aria-label="anchor" href="#arg-align-weeks"></a></dt>

@@ -23,7 +23,7 @@ every role below – the plots validate it and name what is missing.'><meta prop
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.35.4</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -37,8 +37,9 @@ every role below – the plots validate it and name what is missing.'><meta prop
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/custom-nowcast-models.html">Adding your own nowcasting model</a></li>
     <li><a class="dropdown-item" href="../articles/diagnosing-a-tbl-now.html">Diagnosing a tbl_now</a></li>
-    <li><a class="dropdown-item" href="../articles/ensemble-nowcasting.html">One call, many models: run_nowcast(), custom backends and ensembles</a></li>
-    <li><a class="dropdown-item" href="../articles/example.html">The nowcasting workflow: hospital-acquired infections in Bucaramanga, Colombia</a></li>
+    <li><a class="dropdown-item" href="../articles/ensemble-nowcasting.html">Fitting models from different nowcasting frameworks, backtesting and building an ensemble</a></li>
+    <li><a class="dropdown-item" href="../articles/example_revisions.html">The nowcasting workflow 2: COVID-19 case surveillance with revisions in the United States</a></li>
+    <li><a class="dropdown-item" href="../articles/example.html">The nowcasting workflow 1: hospital-acquired infections in Bucaramanga, Colombia</a></li>
     <li><a class="dropdown-item" href="../articles/nowcasting-models.html">Using tbl.now with different modelling packages</a></li>
     <li><a class="dropdown-item" href="../articles/tbl.now.html">tbl.now</a></li>
   </ul></li>
@@ -87,6 +88,7 @@ every role below – the plots validate it and name what is missing.</p>
 <span>  epidemic_dark <span class="op">=</span> <span class="st">"#334335"</span>,</span>
 <span>  revision <span class="op">=</span> <span class="st">"#C79800"</span>,</span>
 <span>  revision_light <span class="op">=</span> <span class="st">"#E6CE80"</span>,</span>
+<span>  retracted <span class="op">=</span> <span class="st">"#3E6F9E"</span>,</span>
 <span>  ink <span class="op">=</span> <span class="st">"#262626"</span>,</span>
 <span>  ink_muted <span class="op">=</span> <span class="st">"#607060"</span>,</span>
 <span>  ink_inverse <span class="op">=</span> <span class="st">"#FFFFFF"</span>,</span>
@@ -137,11 +139,17 @@ ramp).</p></dd>
 
 
 <dt id="arg-revision">revision<a class="anchor" aria-label="anchor" href="#arg-revision"></a></dt>
-<dd><p>Strong colour of the revision process.</p></dd>
+<dd><p>Strong colour of the revision process, and of a <code>confirmed</code>
+outcome on it.</p></dd>
 
 
 <dt id="arg-revision-light">revision_light<a class="anchor" aria-label="anchor" href="#arg-revision-light"></a></dt>
 <dd><p>Attenuated revision colour (box fills).</p></dd>
+
+
+<dt id="arg-retracted">retracted<a class="anchor" aria-label="anchor" href="#arg-retracted"></a></dt>
+<dd><p>A report the revision process took back. The counterpart of
+<code>revision</code>, so that the two resolutions can be told apart at a glance.</p></dd>
 
 
 <dt id="arg-ink">ink<a class="anchor" aria-label="anchor" href="#arg-ink"></a></dt>
@@ -165,8 +173,7 @@ ramp).</p></dd>
 
 
 <dt id="arg-surface-dark">surface_dark<a class="anchor" aria-label="anchor" href="#arg-surface-dark"></a></dt>
-<dd><p>Deep surface for a region with no estimate (the
-scalogram's cone of influence).</p></dd>
+<dd><p>Deep surface for a region with no estimate.</p></dd>
 
 
 <dt id="arg-grid-major">grid_major<a class="anchor" aria-label="anchor" href="#arg-grid-major"></a></dt>
@@ -228,6 +235,15 @@ resolution arrivals. Ochre by default.</p></li>
 three data states that are not a process (<code>zero</code>, <code>pending</code>, <code>observed</code>).</p>
     </div>
     <div class="section level2">
+    <h2 id="revision-outcomes">Revision outcomes<a class="anchor" aria-label="anchor" href="#revision-outcomes"></a></h2>
+    <p>A panel that splits the revision axis by outcome (see the
+<code>by_revision_type</code> argument of <code><a href="plot_delay_distribution.html">plot_delay_distribution()</a></code> and
+<code><a href="plot_epidemic_process.html">plot_reporting_process()</a></code>) draws <code>confirmed</code> in the <code>revision</code> colour,
+<code>pending</code> in <code>surface</code>, <code>retracted</code> in <code>retracted</code> and an unrecorded outcome
+in <code>neutral</code>. Ochre and blue are the two resolutions, white is the case that
+has not resolved, grey the one whose outcome was never written down.</p>
+    </div>
+    <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
     <div class="dont-index"><p><a href="autoplot.tbl_now.html">autoplot()</a>, <code><a href="diagnostic_plot.html">diagnostic_plot()</a></code> and
 <code><a href="plot_reporting_hexamap.html">plot_reporting_hexamap()</a></code>, all of which take a <code>palette</code> argument.</p></div>
@@ -245,6 +261,7 @@ three data states that are not a process (<code>zero</code>, <code>pending</code
 <span class="r-out co"><span class="r-pr">#&gt;</span> epidemic_dark    #334335</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> revision         #C79800</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> revision_light   #E6CE80</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> retracted        #3E6F9E</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ink              #262626</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ink_muted        #607060</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ink_inverse      #FFFFFF</span>
@@ -272,6 +289,7 @@ three data states that are not a process (<code>zero</code>, <code>pending</code
 <span class="r-out co"><span class="r-pr">#&gt;</span> epidemic_dark    #334335</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> revision         #C79800</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> revision_light   #E6CE80</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> retracted        #3E6F9E</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ink              #262626</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ink_muted        #607060</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ink_inverse      #FFFFFF</span>

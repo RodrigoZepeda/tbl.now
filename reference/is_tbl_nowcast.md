@@ -1,6 +1,6 @@
 # Is this object a `tbl_nowcast`?
 
-**\[experimental\]**
+**\[stable\]**
 
 Tests whether an object is a fitted nowcast – the thing
 [`run_nowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/run_nowcast.md)

@@ -1,6 +1,6 @@
 # List the available nowcasting methods
 
-**\[experimental\]**
+**\[stable\]**
 
 Scans the S3 methods registered for
 [`nowcast_fit()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_fit.md)

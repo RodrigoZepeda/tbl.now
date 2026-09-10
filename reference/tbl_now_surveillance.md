@@ -1,6 +1,6 @@
 # Convert a `tbl_now` into the line list surveillance nowcasts from
 
-**\[experimental\]**
+**\[stable\]**
 
 [`surveillance::nowcast()`](https://rdrr.io/pkg/surveillance/man/nowcast.html)
 works from an individual-level line list with one column holding the

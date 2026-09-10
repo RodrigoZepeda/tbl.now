@@ -49,7 +49,11 @@ over unchanged:
   likelihood functions from
   [primarycensored](https://primarycensored.epinowcast.org/), and its
   help asks that you cite primarycensored alongside EpiNow2 when using
-  it (`citation("primarycensored")`).
+  it (`citation("primarycensored")`). Like
+  [`tbl_now_to_epidist()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_epidist.md),
+  this target returns one row per observed delay: the revision axis is
+  dropped and undeclared columns are pooled, because neither reaches
+  `estimate_dist()` and so neither can keep two rows apart.
 
 `tbl_now_from_EpiNow2()` inverts the snapshot form: snapshot *k* is the
 series as known at report date *k*, so differencing consecutive

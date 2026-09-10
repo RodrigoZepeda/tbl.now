@@ -1,6 +1,6 @@
 # Periodogram of the case counts or of the reporting delay
 
-**\[experimental\]**
+**\[stable\]**
 
 The `"seasonality"` / `"delay_seasonality"` panels of
 [`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html),
@@ -10,9 +10,6 @@ pass to
 [`temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/temporal_effects.md);
 for `type = "report"` (red) it marks a cycle in the reporting delay
 itself, such as a weekly reporting rhythm.
-
-For a *time-resolved* view — which cycles are strong **when** — see
-[`plot_scalogram()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_scalogram.md).
 
 ## Usage
 
@@ -45,7 +42,6 @@ A ggplot2 object (or a plotly widget when `plotly = TRUE`).
 ## See also
 
 [`autoplot.tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/autoplot.tbl_now.md),
-[`plot_scalogram()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_scalogram.md),
 [calendar_effect_plots](https://rodrigozepeda.github.io/tbl.now/reference/calendar_effect_plots.md).
 
 ## Examples

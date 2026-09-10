@@ -1,6 +1,6 @@
 # Convert between `tbl_now` and tsibble
 
-**\[experimental\]**
+**\[stable\]**
 
 A
 [`tsibble::tsibble()`](https://tsibble.tidyverts.org/reference/tsibble.html)

@@ -1,6 +1,6 @@
 # Engines for the built-in nowcasting packages
 
-**\[experimental\]**
+**\[stable\]**
 
 One constructor per supported modelling package. Each is
 [`engine()`](https://rodrigozepeda.github.io/tbl.now/reference/engine.md)

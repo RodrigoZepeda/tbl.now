@@ -1,6 +1,6 @@
 # Individual blocks of a `tbl_now` diagnosis
 
-**\[experimental\]**
+**\[stable\]**
 
 Each function returns one block of
 [`diagnose()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose.md),
@@ -18,7 +18,10 @@ or used on their own.
   `NA` *count* is reported neutrally: in a reporting triangle it means
   *not yet observed*, which is correct data rather than a defect.
 
-- `diagnose_duplicates()` – rows that repeat on the full key.
+- `diagnose_duplicates()` – rows that repeat on the full key: the
+  declared dates, the revision type, the strata, the covariates and the
+  censoring flags. A row with an `NA` in that key is not compared,
+  because *unobserved* cannot be shown to equal *unobserved*.
 
 - `diagnose_units()` – the declared units against each other, against
   the calendar the dates actually land on, and against the delay they

@@ -51,6 +51,28 @@ between the bars and the fan.
   date), which the package always draws in green, with red reserved for
   the reporting process.
 
+- date_lim:
+
+  Length-2 vector of event-axis limits, as `Date`s (or as numbers on a
+  numeric event axis). `NA` in either position leaves that end alone. A
+  nowcast covers the whole series but only *corrects* its final periods,
+  so the interesting part is usually the last few weeks; this zooms on
+  to them.
+
+  The limits are applied with
+  [`ggplot2::coord_cartesian()`](https://ggplot2.tidyverse.org/reference/coord_cartesian.html),
+  so they **crop** the drawn plot rather than filter the data. That
+  matters here: a scale limit would drop the out-of-range rows before
+  the ribbon is built, which cuts the fan off at the boundary instead of
+  letting it run to the edge.
+
+- ylim:
+
+  Length-2 vector of count-axis limits, applied the same way. `NULL`
+  (default) leaves the axis to ggplot2. Note that a stratified nowcast
+  facets with `scales = "free_y"`, so one pair of limits is imposed on
+  every panel.
+
 ## Value
 
 A `ggplot` object.
@@ -73,5 +95,9 @@ predictions$.value <- 10 + 30 * predictions$.quantile_level
 nc <- tbl_nowcast(predictions = predictions, method = "toy", event_date = "onset_week")
 
 autoplot(nc)
+
+
+# Zoom on to the corrected weeks without dropping the rows that build the fan.
+autoplot(nc, date_lim = c(as.Date("2020-01-19"), as.Date("2020-02-02")))
 
 ```

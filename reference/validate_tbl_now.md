@@ -1,6 +1,6 @@
 # Check that an object is a valid `tbl_now`
 
-**\[experimental\]**
+**\[stable\]**
 
 Two different questions about an object, and one function for each.
 
@@ -34,9 +34,12 @@ is_tbl_now(x)
 
 - warn_non_uniqueness:
 
-  (optional) Logical. Whether to throw a warning if data has multiple
-  observations for same event and report date (conditional on covariates
-  and strata)
+  (optional) Logical. Whether to throw a warning if data has several
+  rows on the same full key: the event, report and (when declared)
+  revision dates, the revision type, the strata, the covariates and the
+  censoring flags. Rows carrying an `NA` anywhere in that key – a
+  pending case has no revision date – are left out of the comparison,
+  because an unobserved value cannot be shown to equal another.
 
 - warn_now:
 

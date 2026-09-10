@@ -25,7 +25,7 @@ every stratum, leaving only the not-yet-reported cells absent."><meta property="
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.35.4</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -39,8 +39,9 @@ every stratum, leaving only the not-yet-reported cells absent."><meta property="
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/custom-nowcast-models.html">Adding your own nowcasting model</a></li>
     <li><a class="dropdown-item" href="../articles/diagnosing-a-tbl-now.html">Diagnosing a tbl_now</a></li>
-    <li><a class="dropdown-item" href="../articles/ensemble-nowcasting.html">One call, many models: run_nowcast(), custom backends and ensembles</a></li>
-    <li><a class="dropdown-item" href="../articles/example.html">The nowcasting workflow: hospital-acquired infections in Bucaramanga, Colombia</a></li>
+    <li><a class="dropdown-item" href="../articles/ensemble-nowcasting.html">Fitting models from different nowcasting frameworks, backtesting and building an ensemble</a></li>
+    <li><a class="dropdown-item" href="../articles/example_revisions.html">The nowcasting workflow 2: COVID-19 case surveillance with revisions in the United States</a></li>
+    <li><a class="dropdown-item" href="../articles/example.html">The nowcasting workflow 1: hospital-acquired infections in Bucaramanga, Colombia</a></li>
     <li><a class="dropdown-item" href="../articles/nowcasting-models.html">Using tbl.now with different modelling packages</a></li>
     <li><a class="dropdown-item" href="../articles/tbl.now.html">tbl.now</a></li>
   </ul></li>
@@ -68,7 +69,7 @@ every stratum, leaving only the not-yet-reported cells absent."><meta property="
     </div>
 
     <div class="ref-description section level2">
-    <p><a href="https://lifecycle.r-lib.org/articles/stages.html#experimental" class="external-link"><img src="figures/lifecycle-experimental.svg" alt="[Experimental]"></a></p>
+    <p><a href="https://lifecycle.r-lib.org/articles/stages.html#stable" class="external-link"><img src="figures/lifecycle-stable.svg" alt="[Stable]"></a></p>
 <p>Surveillance data records what happened, not what didn't. If no dengue case
 with onset on 3 January was reported on 5 January, there is simply no row for
 that combination – which is <em>not</em> the same as a row saying zero, even though
@@ -107,7 +108,15 @@ reports at all does not appear in the data; several downstream converters
 build their time grid from the rows they are given and would silently stop
 short. A supplied <code>until</code> is never allowed to truncate below the data, and
 has no effect beyond the <code>now</code>: an event date later than the <code>now</code> cannot
-carry any report on or before it, so no row would survive for it.</p></dd>
+carry any report on or before it, so no row would survive for it.</p><div class="section">
+<h3 id="temporal-effects">Temporal effects<a class="anchor" aria-label="anchor" href="#temporal-effects"></a></h3>
+
+
+<p>If <code>x</code> arrived with materialised <code><a href="temporal_effects.html">temporal_effects()</a></code> columns, they are
+<strong>recomputed on the completed grid</strong> before the result is returned, so the
+rows this function adds carry their own calendar effects rather than <code>NA</code>.
+A lazy specification that has not been computed yet stays lazy.</p>
+</div></dd>
 
 </dl></div>
     <div class="section level2">
@@ -115,7 +124,8 @@ carry any report on or before it, so no row would survive for it.</p></dd>
     <p>A <code>tbl_now</code> object with the same columns as <code>x</code>, plus the rows that
 were implicitly zero, carrying <code>0</code> in the <code>case_count</code> column. Explicit
 missing counts in the input remain <code>NA</code>; only cells created by
-<code>complete_zeroes()</code> are filled. The data type is preserved.</p>
+<code>complete_zeroes()</code> are filled. The data type is preserved, as are any
+computed temporal-effect columns (recomputed over the new rows).</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>

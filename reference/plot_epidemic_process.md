@@ -1,6 +1,6 @@
 # The epidemic process and the reporting process
 
-**\[experimental\]**
+**\[stable\]**
 
 The same cases, counted on two different clocks. Comparing the two is
 the single most useful thing you can do to tell a real outbreak from a
@@ -25,6 +25,7 @@ plot_reporting_process(
   x,
   plotly = FALSE,
   axis = c("report", "revision"),
+  by_revision_type = TRUE,
   palette = .tbl_now_palette()
 )
 
@@ -58,6 +59,19 @@ plot_epidemic_process(
   [add_revision_date()](https://rodrigozepeda.github.io/tbl.now/reference/add.md));
   cases still `"pending"` have no revision date and are left out.
 
+- by_revision_type:
+
+  Logical (default `TRUE`), `plot_reporting_process()` only. Stack each
+  bar by how the arrivals it counts eventually resolved – `confirmed`,
+  `pending`, `retracted` and `unknown`, in the palette's outcome colours
+  (see
+  [`tbl_now_palette()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_palette.md))
+  – so a day whose reports were mostly taken back is visible as such
+  rather than as an ordinary day. Ignored on an object with no revision
+  axis. It cannot be taken from `count-cumulative` data, which records
+  running totals rather than cases, and warns and draws the unsplit bars
+  there.
+
 - palette:
 
   A named colour palette (see
@@ -79,8 +93,6 @@ Both are facetted by stratum when the object has strata.
 which draws these alongside the rest of the reporting-process gallery;
 [`plot_observed_cases()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_observed_cases.md)
 for the epidemic process with the incompleteness cutoff marked;
-[`plot_scalogram()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_scalogram.md)
-to separate the two processes by timescale;
 [`diagnose_batches()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_batches.md)
 to test a suspicious spike rather than eyeball it.
 

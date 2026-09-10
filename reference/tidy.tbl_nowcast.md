@@ -1,6 +1,6 @@
 # Tidy a nowcast produced by `run_nowcast()` or `nowcast_ensemble()`
 
-**\[experimental\]**
+**\[stable\]**
 
 Turns a
 [tbl_nowcast](https://rodrigozepeda.github.io/tbl.now/reference/tbl_nowcast.md)

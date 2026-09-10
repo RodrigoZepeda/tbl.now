@@ -1230,10 +1230,9 @@ faster than it confirms them will bias any nowcast that treats the two
 alike.
 [`diagnose_revision_delay()`](https://rodrigozepeda.github.io/tbl.now/reference/revision_delay.md)
 tests exactly that (a Wilcoxon rank-sum test on the two delay
-distributions) and
-[`plot_revision_delay()`](https://rodrigozepeda.github.io/tbl.now/reference/revision_delay.md)
-draws it. `covid_us` records no retractions, so there is nothing to
-compare here.
+distributions) and `plot_delay_distribution(axis = "revision")` draws
+it, one colour per outcome. `covid_us` records no retractions, so there
+is nothing to compare here.
 
 ### Getting, removing and changing attributes
 
@@ -1352,7 +1351,7 @@ drops both the spec and any computed columns:
 df_now <- df_now |>
   remove_temporal_effects() |>
   remove_all_strata()
-#> Warning: *Non-unique*: 832 rows share an (dx_date, dx_report_date) combination.
+#> Warning: *Non-unique*: 832 rows share a (dx_date, dx_report_date) combination.
 #> ℹ 2 columns "race" and "RACE_UPPER" are not declared, so they split each cell
 #>   into several rows. Declare them with `strata = ` to model them separately, or
 #>   `to_count()` to pool them away. The `tbl_now_to_()` converters pool
@@ -2368,16 +2367,22 @@ See the [vignette on using different
 models](https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html)
 to see all conversion formats.
 
-## References
+If you have any questions or comments regarding the contents of this
+article please [open an issue on
+Github](https://github.com/RodrigoZepeda/tbl.now/issues/new).
 
 ## Learning more
 
+- End-to-end tutorial on real life surveillance data. Takes you from
+  cleaning to diagnosing errors in the data to nowcasting:
+  <https://rodrigozepeda.github.io/tbl.now/articles/example.html>
+- The same tutorial with a **revision process** — the optional third
+  date, where a reported case is later confirmed, retracted or left
+  pending:
+  <https://rodrigozepeda.github.io/tbl.now/articles/example_revisions.html>
 - Introduction vignette:
   <https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.html> for
   the full anatomy of a `tbl_now`, data types, and temporal effects.
-- End-to-end tutorial on real, messy surveillance data — cleaning,
-  diagnostics and nowcasting:
-  <https://rodrigozepeda.github.io/tbl.now/articles/example.html>
 - Tutorial on diagnosing your dataset — what is in it, what is
   structurally wrong with it, and detecting batches and other
   reporting-delay artifacts:
@@ -2390,6 +2395,8 @@ to see all conversion formats.
   <https://rodrigozepeda.github.io/tbl.now/articles/custom-nowcast-models.html>
 - Package reference:
   <https://rodrigozepeda.github.io/tbl.now/reference/>
+
+## References
 
 Dancho, Matt, and Davis Vaughan. 2023. *Timetk: A Tool Kit for Working
 with Time Series*. <https://doi.org/10.32614/CRAN.package.timetk>.

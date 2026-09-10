@@ -1,6 +1,6 @@
 # Print a `tbl_now` summary
 
-**\[experimental\]**
+**\[stable\]**
 
 Prints the table
 [summary()](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_summary.md)

@@ -1,6 +1,6 @@
 # Score a nowcast against observed data
 
-**\[experimental\]**
+**\[stable\]**
 
 A nowcast is a claim about numbers that are not in yet. Once the late
 reports arrive you can ask how good the claim was.
@@ -10,13 +10,18 @@ reports arrive you can ask how good the claim was.
   the truth fell inside the 50% and 90% intervals – one row per event
   date and stratum.
 
-- `as_forecast_point()` hands the median prediction and the same truth
-  to scoringutils, so you can use its point-score functions and plots.
+- [`scoringutils::as_forecast_point()`](https://epiforecasts.io/scoringutils/reference/as_forecast_point.html)
+  hands the median prediction and the same truth to scoringutils, so you
+  can use its point-score functions and plots.
 
 - [`scoringutils::as_forecast_quantile()`](https://epiforecasts.io/scoringutils/reference/as_forecast_quantile.html)
   and
   [`scoringutils::as_forecast_sample()`](https://epiforecasts.io/scoringutils/reference/as_forecast_sample.html)
-  also accept these objects directly when scoringutils is installed.
+  accept the same objects directly.
+
+All three are scoringutils generics; this package only supplies the
+methods, so call them qualified (or after
+[`library(scoringutils)`](https://doi.org/10.48550/arXiv.2205.07090)).
 
 In each case `truth` is a `tbl_now` seen *later*, after the information
 the nowcast was predicting has arrived. The observed counts are computed
@@ -35,14 +40,6 @@ score_nowcast(
   truth = NULL,
   truth_axis = c("report", "revision"),
   truth_type = "total"
-)
-
-as_forecast_point(
-  x,
-  truth = NULL,
-  truth_axis = c("report", "revision"),
-  truth_type = "total",
-  ...
 )
 
 # S3 method for class 'nowcast_backtest'
@@ -77,12 +74,8 @@ as_forecast_sample(
 
 - x:
 
-  For `score_nowcast()`, a
+  A
   [tbl_nowcast](https://rodrigozepeda.github.io/tbl.now/reference/tbl_nowcast.md).
-  For `as_forecast_point()`, a
-  [tbl_nowcast](https://rodrigozepeda.github.io/tbl.now/reference/tbl_nowcast.md)
-  (including an ensemble) or a
-  [`nowcast_backtest()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_backtest.md).
 
 - truth:
 
@@ -115,15 +108,15 @@ as_forecast_sample(
   `"by_type"` is refused because scoring needs one observed value per
   event-date/stratum target.
 
-- ...:
-
-  Passed to the corresponding scoringutils coercion generic, most
-  commonly `forecast_unit`.
-
 - data:
 
   A
   [`nowcast_backtest()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_backtest.md).
+
+- ...:
+
+  Passed to the corresponding scoringutils coercion generic, most
+  commonly `forecast_unit`.
 
 ## Value
 
@@ -131,28 +124,16 @@ as_forecast_sample(
 strata columns, and the columns `.observed`, `wis`, `ae_median`,
 `coverage_50` and `coverage_90` – one row per event date and stratum.
 
-`as_forecast_point()` accepts either a single
-[tbl_nowcast](https://rodrigozepeda.github.io/tbl.now/reference/tbl_nowcast.md)
-(including one returned by
-[`nowcast_ensemble()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_ensemble.md))
-or a
-[`nowcast_backtest()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_backtest.md).
-It returns a `forecast_point` object from scoringutils, using the
-nowcast's median quantile as `predicted` and the resolved truth as
-`observed`.
-
 The `scoringutils::as_forecast_*()` methods return the corresponding
 `forecast_quantile`, `forecast_sample` or `forecast_point` object from
-scoringutils.
-
-When scoringutils is installed, calling its coercion generic directly is
-equivalent: `scoringutils::as_forecast_quantile(x, truth = truth)` and
-`scoringutils::as_forecast_point(x, truth = truth)` work for a
+scoringutils. Each accepts a
 [tbl_nowcast](https://rodrigozepeda.github.io/tbl.now/reference/tbl_nowcast.md),
-an ensemble, and a
-[`nowcast_backtest()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_backtest.md).
-A backtest already carries the truth it was scored against, so its
-`truth` can normally be omitted.
+an ensemble and a
+[`nowcast_backtest()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_backtest.md);
+[`scoringutils::as_forecast_point()`](https://epiforecasts.io/scoringutils/reference/as_forecast_point.html)
+keeps the nowcast's median quantile as `predicted` and the resolved
+truth as `observed`. A backtest already carries the truth it was scored
+against, so its `truth` can normally be omitted.
 
 [`scoringutils::as_forecast_sample()`](https://epiforecasts.io/scoringutils/reference/as_forecast_sample.html)
 also accepts those objects when they carry posterior draws. Draws are
@@ -233,7 +214,7 @@ score_nowcast(nc, truth = truth)
 
 # The same comparison handed to scoringutils as a point forecast.
 if (requireNamespace("scoringutils", quietly = TRUE)) {
-  as_forecast_point(nc, truth = truth)
+  scoringutils::as_forecast_point(nc, truth = truth)
 }
 #> Forecast type: point
 #> Forecast unit:

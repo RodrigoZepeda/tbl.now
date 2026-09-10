@@ -1,6 +1,6 @@
 # Convert between `tbl_now` and epinowcast
 
-**\[experimental\]**
+**\[stable\]**
 
 epinowcast represents the same observations in several shapes:
 
@@ -274,7 +274,7 @@ library(data.table)
 #>     %notin%
 library(epinowcast)
 #> ! `enw_cache_location` is not set.
-#> ℹ Using `tempdir()` at /tmp/RtmpxLblda for the epinowcast model cache location.
+#> ℹ Using `tempdir()` at /tmp/Rtmp045l3T for the epinowcast model cache location.
 #> ℹ Set a specific cache location using `enw_set_cache` to control Stan
 #>   recompilation in this R session or across R sessions.
 #> ℹ For example: `enw_set_cache(tools::R_user_dir(package = "epinowcast",

@@ -1,6 +1,6 @@
 # Ensemble weights from a backtest
 
-**\[experimental\]**
+**\[stable\]**
 
 Turns the retrospective scores of a
 [`nowcast_backtest()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_backtest.md)

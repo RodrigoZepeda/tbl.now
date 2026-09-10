@@ -1,6 +1,6 @@
 # Test whether the reporting-delay distribution drifts over time
 
-**\[experimental\]**
+**\[stable\]**
 
 Runs an **autocorrelation-robust monotonic-trend test** on the
 per-period, count-weighted delay summaries, to answer "do delays drift

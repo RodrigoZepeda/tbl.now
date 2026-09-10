@@ -1,6 +1,6 @@
 # Nowcast a `tbl_now` with any supported modelling package
 
-**\[experimental\]**
+**\[stable\]**
 
 Fits a nowcasting model to a `tbl_now` and returns the result in a
 package-agnostic shape, so that models from different packages can be

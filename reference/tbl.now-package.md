@@ -1,11 +1,13 @@
-# tbl.now: Tidy Extension for Nowcasting
+# tbl.now: Tidy Data Structures and Workflows for Epidemiological Nowcasting
 
-Provides a 'tbl_now' class for temporal data for performing nowcasts.
-The 'tbl_now' allows for easy manipulation of event dates, report dates,
-strata and covariates for implementing different nowcasting models while
-at the same time permitting ease of use with 'dplyr' functions. It also
-provides a grammar to systematize nowcasting across several frameworks
-and produce ensemble nowcasts.
+Defines tidy data structures and package-agnostic workflows for
+epidemiological nowcasting. The 'tbl_now' class records event, report,
+and optional revision dates together with strata, covariates, censoring,
+and reporting-delay metadata while remaining compatible with 'dplyr'.
+Tools support validation, manipulation, diagnostics, visualization,
+format conversion, retrospective evaluation, and multiple modelling
+engines. The 'tbl_nowcast' class standardizes probabilistic predictions
+for plotting, scoring, comparison, and ensembling.
 
 ## Details
 
@@ -126,7 +128,8 @@ Other contributors:
 - Teresa Yamana ([ORCID](https://orcid.org/0000-0001-8349-3151))
   \[contributor\]
 
-- Jeffrey Shaman \[contributor\]
+- Jeffrey Shaman ([ORCID](https://orcid.org/0000-0002-7216-7809))
+  \[contributor\]
 
 - Columbia University in the City of New York \[copyright holder,
   funder\]

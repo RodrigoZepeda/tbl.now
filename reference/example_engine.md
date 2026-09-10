@@ -1,6 +1,6 @@
 # A toy engine for examples
 
-**\[experimental\]**
+**\[stable\]**
 
 A deliberately naive nowcasting engine that needs no modelling package.
 It exists so that the examples in this package can actually run: every

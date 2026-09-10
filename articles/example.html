@@ -5,7 +5,7 @@
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<title>The nowcasting workflow: hospital-acquired infections in Bucaramanga, Colombia • tbl.now</title>
+<title>The nowcasting workflow 1: hospital-acquired infections in Bucaramanga, Colombia • tbl.now</title>
 <!-- favicons --><link rel="icon" type="image/png" sizes="96x96" href="../favicon-96x96.png">
 <link rel="icon" type="”image/svg+xml”" href="../favicon.svg">
 <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
@@ -17,7 +17,7 @@
 <script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><link href="../extra.css" rel="stylesheet">
-<meta property="og:title" content="The nowcasting workflow: hospital-acquired infections in Bucaramanga, Colombia">
+<meta property="og:title" content="The nowcasting workflow 1: hospital-acquired infections in Bucaramanga, Colombia">
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -27,7 +27,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.35.4</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -43,8 +43,9 @@
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="../articles/custom-nowcast-models.html">Adding your own nowcasting model</a></li>
     <li><a class="dropdown-item" href="../articles/diagnosing-a-tbl-now.html">Diagnosing a tbl_now</a></li>
-    <li><a class="dropdown-item" href="../articles/ensemble-nowcasting.html">One call, many models: run_nowcast(), custom backends and ensembles</a></li>
-    <li><a class="dropdown-item" href="../articles/example.html">The nowcasting workflow: hospital-acquired infections in Bucaramanga, Colombia</a></li>
+    <li><a class="dropdown-item" href="../articles/ensemble-nowcasting.html">Fitting models from different nowcasting frameworks, backtesting and building an ensemble</a></li>
+    <li><a class="dropdown-item" href="../articles/example_revisions.html">The nowcasting workflow 2: COVID-19 case surveillance with revisions in the United States</a></li>
+    <li><a class="dropdown-item" href="../articles/example.html">The nowcasting workflow 1: hospital-acquired infections in Bucaramanga, Colombia</a></li>
     <li><a class="dropdown-item" href="../articles/nowcasting-models.html">Using tbl.now with different modelling packages</a></li>
     <li><a class="dropdown-item" href="../articles/tbl.now.html">tbl.now</a></li>
   </ul>
@@ -77,7 +78,7 @@
 
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
-      <img src="../logo.png" class="logo" alt=""><h1>The nowcasting workflow: hospital-acquired infections in Bucaramanga, Colombia</h1>
+      <img src="../logo.png" class="logo" alt=""><h1>The nowcasting workflow 1: hospital-acquired infections in Bucaramanga, Colombia</h1>
             
       
       <small class="dont-index">Source: <a href="https://github.com/RodrigoZepeda/tbl.now/blob/main/vignettes/articles/example.Rmd" class="external-link"><code>vignettes/articles/example.Rmd</code></a></small>
@@ -86,13 +87,9 @@
 
     
     
-<!-- This article has been thoroughly reviewed by a human. Any correction done by an AI
-that has not been reviewed by a human should preface the corresponding section by
-stating "This section was last edited by an AI model automatically". These labels
-can only be removed by humans.-->
 <p>This article is an end-to-end walk-through of the
-<code>tbl.now</code> workflow on a real, <strong>deliberately
-unpolished</strong> dataset. We will:</p>
+<code>tbl.now</code> workflow on a real-life, <strong>deliberately
+messy</strong> dataset. We will:</p>
 <ol style="list-style-type: decimal">
 <li>
 <strong>Build</strong> a <code>tbl_now</code> from a messy
@@ -114,8 +111,10 @@ data.</li>
 we found.</li>
 </ol>
 <p>We’ll start the process by nowcasting with two dates (event and
-report dates) and then we’ll focus on nowcasting with three dates
-(event, report, and revision dates).</p>
+report dates). We suggest following this example first and then moving
+to the <a href="https://rodrigozepeda.github.io/tbl.now/articles/example_revisions.html">nowcasting
+with revisions</a> article if your data also contains revisions (i.e.
+cases can become ‘confirmed’ or ‘retracted’).</p>
 <p>Let’s start by calling the libraries:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span></span>
@@ -159,16 +158,16 @@ the laboratory issued the result.</li>
 </ul>
 <p>For the tutorial, we will do perform a nowcast assuming we are
 standing on July 18th 2022. For that purpose we filter our data to what
-it would have looked like:</p>
+it would have looked like back then:</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">hai_bucaramanga</span> <span class="op">&lt;-</span> <span class="va">hai_bucaramanga</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">specimen_date</span><span class="op">)</span> <span class="op">|</span> <span class="va">specimen_date</span> <span class="op">&lt;=</span> <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2022/07/18"</span><span class="op">)</span><span class="op">)</span>, </span>
 <span>         <span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">report_date</span><span class="op">)</span>   <span class="op">|</span> <span class="va">report_date</span>   <span class="op">&lt;=</span> <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2022/07/18"</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <div class="alert alert-warning">
-<p>For this tutorial we are keeping those events that have missing
-dates. That is what the <code><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na()</a></code> section on the left side of
-the filter is doing as we keep either cases by July 18th 2022 or
-missing.</p>
+<p>For this tutorial we are keeping those events that have missing dates
+to show how to detect them with the package. That is what the
+<code><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na()</a></code> section on the left side of the filter is
+doing.</p>
 </div>
 </div>
 <div class="section level2">
@@ -221,8 +220,9 @@ Let’s take a look!</p>
 a third <code>revision_date</code> where reports that have already been
 submitted by <code>report_date</code> are either <code>confirmed</code>
 or <code>rejected</code> (or maybe just one of those). We show more
-diagnostics for such an example in the <a href="https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html">article
-on diagnosing a <code>tbl.now()</code></a>.</p>
+diagnostics for such an example in <a href="https://rodrigozepeda.github.io/tbl.now/articles/example_revisions.html">its
+own article</a> though we suggest familiarizing yourself with this one
+first.</p>
 </div>
 </div>
 <div class="section level2">
@@ -268,15 +268,16 @@ additional notes:</p>
 <div class="section level3">
 <h3 id="the-warnings">The warnings<a class="anchor" aria-label="anchor" href="#the-warnings"></a>
 </h3>
-<p>In general the warnings will look for missing data within the dates
-and the strata or for violations of the nowcasting hypotheses (for
-example reports that “see the future” and identify an event before it
-happens!). In our case, specifically we identify missing dates in both
-the report and the event as well as some reports that have incorrect
-dates.</p>
-<p>There is no solution that works in all cases for these problems and
-oftentimes the ideal solution is to identify the reason for the
-misingness. Here we posit some approaches for the warnings:</p>
+<p>In general <strong>the warnings will look for missing data</strong>
+within the dates and the strata <strong>or for violations of the
+nowcasting hypotheses</strong> (for example reports that “see the
+future” and identify an event before it happens!). In our case,
+specifically we identify missing dates in both the report and the event
+as well as some reports that have incorrect dates.</p>
+<p><strong>There is no solution that works in all cases</strong> for
+these problems and oftentimes the ideal solution is to identify the
+reason for the misingness. Here we posit some approaches for the
+warnings:</p>
 <ol style="list-style-type: decimal">
 <li>
 <strong>For simultaneosuly missing event and report dates</strong>
@@ -302,8 +303,8 @@ censored.</li>
 </ol>
 <p>When calling the function we specify that the ones we are censoring
 are the missing values and that the date they should input is
-“2022/10/18” which corresponds to the date of the nowcast in this
-example.</p>
+<code>"2022/10/18"</code> which corresponds to the date of the nowcast
+in this example.</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">hai_bucaramanga</span> <span class="op">&lt;-</span> <span class="va">hai_bucaramanga</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="../reference/censoring.html">censor_reports</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">report_date</span><span class="op">)</span>, to_report <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2022/07/18"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
@@ -346,7 +347,7 @@ format <code>year-day-month</code> (read with
 <li>Currently there is <strong>nothing we can do for the cases were the
 event date is unknown</strong>. Hence we just document them and we’ll
 remove from the dataset given that they represent such a small percent
-(5.6569343%).</li>
+(5.7%).</li>
 </ol>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">hai_bucaramanga</span> <span class="op">&lt;-</span> <span class="va">hai_bucaramanga</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">specimen_date</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
@@ -490,6 +491,9 @@ you require it (see them at the end of the tbl_now).</p>
 <span><span class="co">#&gt; # T. effect cols: <span style="color: #0000BB;">".event_weekend"</span></span></span>
 <span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># ℹ 494 more rows</span></span></span></code></pre></div>
+<p>For a deeper explanation on what to see in each of the panels when
+there are effects and no effects you can see the article on <a href="https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html">diagnosing
+a tbl.now</a></p>
 </div>
 <div class="section level2">
 <h2 id="looking-at-the-data">6. Looking at the data<a class="anchor" aria-label="anchor" href="#looking-at-the-data"></a>
@@ -566,9 +570,10 @@ explode by the 90th quantile (<code>q90</code>):</p>
 <p>The <code><a href="../reference/nowcast_summary_components.html">zero_run_summary()</a></code> quantifies the sparcity by
 counting how many days with continuous zeroes happened for either the
 event or the report dates. That is, it measures the distribution of days
-of continuous zeroes. You can see that usually there are on average 3.06
-continuous zeroes before a case. However there have been runs of 25
-continuous days with no cases (continuous zeroes) until one case:</p>
+when nothing happened (hence zero registries). You can see that usually
+there are on average 3.06 days with no cases before one with a case. You
+can also see that there have been runs of 25 continuous days with no
+cases (continuous zeroes) until one case:</p>
 <div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/nowcast_summary_components.html">zero_run_summary</a></span><span class="op">(</span><span class="va">hai_bucaramanga</span><span class="op">)</span></span>
 <span><span class="co">#&gt; ── Summary of a <span style="color: #0000BB;">&lt;tbl_now&gt;</span> ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────</span></span>
@@ -629,14 +634,11 @@ diseasenowcasting package:</p>
 <div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">hai_fit</span> <span class="op">&lt;-</span> <span class="va">hai_bucaramanga</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="../reference/run_nowcast.html">run_nowcast</a></span><span class="op">(</span>engine <span class="op">=</span> <span class="fu"><a href="../reference/nowcast_engines.html">engine_diseasenowcasting</a></span><span class="op">(</span>temporal_effects <span class="op">=</span> <span class="st">"none"</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Nowcasting with <span style="color: #0000BB;">"diseasenowcasting"</span> as of <span style="color: #0000BB;">2022-07-18</span>.</span></span>
-<span><span class="co">#&gt; Warning: The fit is finite but did not pass the gradient stability gate.</span></span>
-<span><span class="co">#&gt; <span style="color: #BB0000;">✖</span> Maximum absolute gradient: 99.65.</span></span>
-<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Inspect `fit$gradient_status`, `fit$max_gradient`, and `fit$opt` before using predictions.</span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Nowcasting with <span style="color: #0000BB;">"diseasenowcasting"</span> as of <span style="color: #0000BB;">2022-07-18</span>.</span></span></code></pre></div>
 <p>Due to the sparcity, the nowcast predicts almost no cases at any time
 with just maybe a second case at the now for males:</p>
 <div class="sourceCode" id="cb36"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">hai_fit</span><span class="op">)</span> </span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">hai_fit</span>, date_lim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2022-07-01"</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2022-07-19"</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p><img src="example_files/figure-html/unnamed-chunk-19-1.png" class="r-plt" alt="A sparse nowcast" width="100%" style="display: block; margin: auto;"></p>
 </div>
 <div class="section level2">
@@ -661,9 +663,9 @@ shape:</p>
 <p><img src="example_files/figure-html/unnamed-chunk-21-1.png" class="r-plt" alt="The now auto plot with weekly data" width="100%" style="display: block; margin: auto;"></p>
 <p>One should run again the <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> and
 <code><a href="../reference/diagnose.html">diagnose()</a></code> in the aggregated to draw conclusions from this
-data. For us, however it will suffice to see that the sparcity has
-reduced to usually just 1 week with zero cases before having cases
-again:</p>
+data. For this tutorial, however it will suffice to see that the
+sparcity has reduced to usually just 1 week with zero cases before
+having cases again:</p>
 <div class="sourceCode" id="cb39"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/nowcast_summary_components.html">zero_run_summary</a></span><span class="op">(</span><span class="va">hai_bucaramanga</span><span class="op">)</span></span>
 <span><span class="co">#&gt; ── Summary of a <span style="color: #0000BB;">&lt;tbl_now&gt;</span> ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────</span></span>
@@ -742,9 +744,11 @@ axis:</p>
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_epidemic_process.html">plot_reporting_process</a></span><span class="op">(</span><span class="va">hai_bucaramanga</span><span class="op">)</span></span></code></pre></div>
 <p><img src="example_files/figure-html/unnamed-chunk-23-1.png" class="r-plt" alt="" width="100%" style="display: block; margin: auto;"></p>
 <p>We can see that there were several reports that dropped near the end
-of 2022. The reporting hexamap allows us to visualize the date of the
-report at the same time as the day of the event and the corresponding
-delay</p>
+of 2022. That is our censoring. However if we didn’t know better
+(i.e. if we ignored that we censored it) we would analyze those reports
+to try to explain whether they are batches.</p>
+<p>The reporting hexamap allows us to visualize the date of the report
+at the same time as the day of the event and the corresponding delay</p>
 <div class="sourceCode" id="cb44"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_reporting_hexamap.html">plot_reporting_hexamap</a></span><span class="op">(</span><span class="va">hai_bucaramanga</span><span class="op">)</span></span></code></pre></div>
 <p><img src="example_files/figure-html/unnamed-chunk-24-1.png" class="r-plt" alt="" width="100%" style="display: block; margin: auto;"></p>
@@ -808,10 +812,9 @@ batches:</p>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1 × 7</span></span></span>
 <span><span class="co">#&gt;   stratum  n_at n_reference mean_delay_at mean_delay_reference statistic p_value</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>                <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> all        11          14          11.4                 2.93      2.68   0.002</span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> all        11          14          11.4                 2.93      2.68   0.004</span></span></code></pre></div>
 <p>Where we further identify the date of <code>2021-11-28</code> as a
-potential batch with its <code>p_value &lt; 0.003</code>.</p>
-<p>Given that the</p>
+potential batch with its <code>p_value &lt; 0.05</code>.</p>
 </div>
 <div class="section level2">
 <h2 id="nowcasting">11. Nowcasting<a class="anchor" aria-label="anchor" href="#nowcasting"></a>
@@ -855,7 +858,7 @@ fan the nowcast’s prediction intervals.</p>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>            </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> 2022-07-03 Female         0        0         1  0.95 diseasenowcasting</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> 2022-07-03 Male           0        0         1  0.95 diseasenowcasting</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> 2022-07-10 Female         0        0         2  0.95 diseasenowcasting</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> 2022-07-10 Female         0        0         1  0.95 diseasenowcasting</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> 2022-07-10 Male           0        0         2  0.95 diseasenowcasting</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> 2022-07-17 Female         0        0         2  0.95 diseasenowcasting</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># ℹ 1 more row</span></span></span></code></pre>
@@ -863,14 +866,15 @@ fan the nowcast’s prediction intervals.</p>
 <div class="section level2">
 <h2 id="evaluate-your-nowcast">12. Evaluate your nowcast<a class="anchor" aria-label="anchor" href="#evaluate-your-nowcast"></a>
 </h2>
-<p>One way to evaluate the nowcast is to go back in time and see, what
-would the nowcast have produced with the information available at a
-previous date contrasting it with the information known by now. You can
-use <code><a href="../reference/nowcast_backtest.html">nowcast_backtest()</a></code> for that purpose: for every past
-date it truncates the data to the reports that were available
-<em>then</em>, refits the nowcast, and scores the result against the
-resolved truth defined by <code>truth_axis</code> and
-<code>truth_type</code> (reported totals by default).</p>
+<p>One way to evaluate the nowcast is to go back in time and see
+<strong>what would the nowcast have produced with the information
+available at a previous date</strong> and contrast it with the
+information known by now. You can use <code><a href="../reference/nowcast_backtest.html">nowcast_backtest()</a></code>
+for that purpose: <strong>for every past date it truncates the data to
+the reports that were available <em>then</em>, refits the nowcast, and
+scores the result against the final observation</strong> defined by
+<code>truth_axis</code> and <code>truth_type</code> (reported totals by
+default).</p>
 <p>To best evaluate the nowcast we need something to compare against.
 Hence we will fit a second model: <code>baselinenowcast</code>.</p>
 <p>One can fit it with the same call just a different engine</p>
@@ -889,21 +893,20 @@ any conclusions:</p>
 <span>    now_dates <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2022-04-24"</span><span class="op">)</span>, <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2022-05-22"</span><span class="op">)</span>, <span class="fu"><a href="https://lubridate.tidyverse.org/reference/ymd.html" class="external-link">ymd</a></span><span class="op">(</span><span class="st">"2022-06-19"</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>    seed      <span class="op">=</span> <span class="fl">20260904</span></span>
 <span>  <span class="op">)</span></span></code></pre></div>
-<p>Printing the object shows the results from the backtest which
-includes the individual results for the weighted interval score
-(<code>wis</code>), the median absolute error (<code>ae_median</code>),
-and the coverage of the 50 and 90% intervals
-(<code>coverage_*</code>):</p>
+<p>The backtest is compatible with
+<code><a href="https://epiforecasts.io/scoringutils/reference/as_forecast_quantile.html" class="external-link">scoringutils::as_forecast_quantile()</a></code> which can be used to
+evaluate the results:</p>
 <div class="sourceCode" id="cb55"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">hai_backtest</span></span>
-<span><span class="co">#&gt; ── A <span style="color: #0000BB;">&lt;nowcast_backtest&gt;</span> ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────</span></span>
-<span><span class="co">#&gt; • methods: <span style="color: #0000BB;">"diseasenowcasting"</span> and <span style="color: #0000BB;">"baselinenowcast"</span></span></span>
-<span><span class="co">#&gt; • now dates: <span style="color: #0000BB;">"2022-04-24"</span>, <span style="color: #0000BB;">"2022-05-22"</span>, and <span style="color: #0000BB;">"2022-06-19"</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 2 × 4</span></span></span>
-<span><span class="co">#&gt;   .method           mean_wis mean_ae_median coverage_90</span></span>
-<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> diseasenowcasting   0.038<span style="text-decoration: underline;">0</span>         0.047<span style="text-decoration: underline;">9</span>       0.982</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> baselinenowcast     0.045<span style="text-decoration: underline;">4</span>         0.057<span style="text-decoration: underline;">1</span>       0.973</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://doi.org/10.48550/arXiv.2205.07090" class="external-link">scoringutils</a></span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">hai_backtest</span> <span class="op">|&gt;</span> </span>
+<span>  <span class="fu"><a href="https://epiforecasts.io/scoringutils/reference/as_forecast_quantile.html" class="external-link">as_forecast_quantile</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
+<span>  <span class="fu"><a href="https://epiforecasts.io/scoringutils/reference/score.html" class="external-link">score</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
+<span>  <span class="fu"><a href="https://epiforecasts.io/scoringutils/reference/summarise_scores.html" class="external-link">summarise_scores</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co">#&gt;                model        wis overprediction underprediction  dispersion        bias interval_coverage_50 interval_coverage_90  ae_median</span></span>
+<span><span class="co">#&gt;               &lt;char&gt;      &lt;num&gt;          &lt;num&gt;           &lt;num&gt;       &lt;num&gt;       &lt;num&gt;                &lt;num&gt;                &lt;num&gt;      &lt;num&gt;</span></span>
+<span><span class="co">#&gt; 1: diseasenowcasting 0.03721747   0.0002536783      0.02891933 0.008044457 -0.03732877            0.9589041            0.9817352 0.04794521</span></span>
+<span><span class="co">#&gt; 2:   baselinenowcast 0.04543506   0.0012683917      0.03500761 0.009159056 -0.03470320            0.9566210            0.9726027 0.05707763</span></span></code></pre></div>
 <p>In this scenario, <code>diseasenowcasting</code> scores better on
 both accuracy measures and <strong>both</strong> methods cover far more
 than the nominal 90. We caution however that we cannot conclude anything
@@ -932,7 +935,7 @@ fact that no model is perfect hence combining the predictions of each
 might lead to a more robust nowcast. You can think of an ensemble as an
 average of the models.</p>
 <p>To create an ensemble model one needs to pass the model
-specifications (with a name) as well as the backtest:</p>
+specifications as well as the backtest:</p>
 <div class="sourceCode" id="cb58"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">hai_ensemble</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/nowcast_ensemble.html">nowcast_ensemble</a></span><span class="op">(</span></span>
 <span>  <span class="va">hai_fit_weekly</span>,</span>
@@ -975,23 +978,26 @@ a nowcast.</p></li>
 <li><p>How to backtest a nowcast with <code><a href="../reference/nowcast_backtest.html">nowcast_backtest()</a></code>
 and create an ensemble with <code><a href="../reference/nowcast_ensemble.html">nowcast_ensemble()</a></code>.</p></li>
 </ol>
-<div class="alert alert-info">
-<p>If you have any questions regarding this article or comments please
-<a href="https://github.com/RodrigoZepeda/tbl.now/issues/new" class="external-link">open an
-issue</a></p>
+<!-- Single source for "Learning more"; pulled in as a knitr child by README.Rmd and every article. Edit on `learning.more.Rmd`.--><div class="alert alert-info">
+<p>If you have any questions or comments regarding the contents of this
+article please <a href="https://github.com/RodrigoZepeda/tbl.now/issues/new" class="external-link">open an issue
+on Github</a>.</p>
 </div>
-<!-- Single source for "Learning more"; pulled in as a knitr child by README.Rmd and every article. Edit on `learning.more.Rmd`.-->
 </div>
 <div class="section level2">
 <h2 id="learning-more">Learning more<a class="anchor" aria-label="anchor" href="#learning-more"></a>
 </h2>
 <ul>
+<li>End-to-end tutorial on real life surveillance data. Takes you from
+cleaning to diagnosing errors in the data to nowcasting: <a href="https://rodrigozepeda.github.io/tbl.now/articles/example.html">https://rodrigozepeda.github.io/tbl.now/articles/example.html</a>
+</li>
+<li>The same tutorial with a <strong>revision process</strong> — the
+optional third date, where a reported case is later confirmed, retracted
+or left pending: <a href="https://rodrigozepeda.github.io/tbl.now/articles/example_revisions.html">https://rodrigozepeda.github.io/tbl.now/articles/example_revisions.html</a>
+</li>
 <li>Introduction vignette: <a href="https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.html">https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.html</a>
 for the full anatomy of a <code>tbl_now</code>, data types, and temporal
 effects.</li>
-<li>End-to-end tutorial on real, messy surveillance data — cleaning,
-diagnostics and nowcasting: <a href="https://rodrigozepeda.github.io/tbl.now/articles/example.html">https://rodrigozepeda.github.io/tbl.now/articles/example.html</a>
-</li>
 <li>Tutorial on diagnosing your dataset — what is in it, what is
 structurally wrong with it, and detecting batches and other
 reporting-delay artifacts: <a href="https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html">https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html</a>

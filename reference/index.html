@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.35.4</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -21,8 +21,9 @@
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/custom-nowcast-models.html">Adding your own nowcasting model</a></li>
     <li><a class="dropdown-item" href="../articles/diagnosing-a-tbl-now.html">Diagnosing a tbl_now</a></li>
-    <li><a class="dropdown-item" href="../articles/ensemble-nowcasting.html">One call, many models: run_nowcast(), custom backends and ensembles</a></li>
-    <li><a class="dropdown-item" href="../articles/example.html">The nowcasting workflow: hospital-acquired infections in Bucaramanga, Colombia</a></li>
+    <li><a class="dropdown-item" href="../articles/ensemble-nowcasting.html">Fitting models from different nowcasting frameworks, backtesting and building an ensemble</a></li>
+    <li><a class="dropdown-item" href="../articles/example_revisions.html">The nowcasting workflow 2: COVID-19 case surveillance with revisions in the United States</a></li>
+    <li><a class="dropdown-item" href="../articles/example.html">The nowcasting workflow 1: hospital-acquired infections in Bucaramanga, Colombia</a></li>
     <li><a class="dropdown-item" href="../articles/nowcasting-models.html">Using tbl.now with different modelling packages</a></li>
     <li><a class="dropdown-item" href="../articles/tbl.now.html">tbl.now</a></li>
   </ul></li>
@@ -60,21 +61,21 @@
       <dl><dt>
 
           <code><a href="tbl_now.html">tbl_now()</a></code>
-          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+          <span class="badge lifecycle lifecycle-stable">stable</span>
         </dt>
         <dd>Create a <code>tbl_now</code> object</dd>
 
         <dt>
 
           <code><a href="as_tbl_now.html">as_tbl_now()</a></code>
-          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+          <span class="badge lifecycle lifecycle-stable">stable</span>
         </dt>
         <dd>Transform an object into a <code>tbl_now</code></dd>
 
         <dt>
 
           <code><a href="validate_tbl_now.html">validate_tbl_now()</a></code> <code><a href="validate_tbl_now.html">is_tbl_now()</a></code>
-          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+          <span class="badge lifecycle lifecycle-stable">stable</span>
         </dt>
         <dd>Check that an object is a valid <code>tbl_now</code></dd>
 
@@ -104,7 +105,7 @@
       <dl><dt>
 
           <code><a href="nowcast_data_getters.html">get_event_date()</a></code> <code><a href="nowcast_data_getters.html">get_report_date()</a></code> <code><a href="nowcast_data_getters.html">get_strata()</a></code> <code><a href="nowcast_data_getters.html">get_num_strata()</a></code> <code><a href="nowcast_data_getters.html">get_covariates()</a></code> <code><a href="nowcast_data_getters.html">get_num_covariates()</a></code> <code><a href="nowcast_data_getters.html">get_now()</a></code> <code><a href="nowcast_data_getters.html">get_report_units()</a></code> <code><a href="nowcast_data_getters.html">get_event_units()</a></code> <code><a href="nowcast_data_getters.html">get_data_type()</a></code> <code><a href="nowcast_data_getters.html">get_temporal_effects()</a></code> <code><a href="nowcast_data_getters.html">get_temporal_effect_cols()</a></code> <code><a href="nowcast_data_getters.html">get_is_censored_report()</a></code> <code><a href="nowcast_data_getters.html">get_case_count()</a></code> <code><a href="nowcast_data_getters.html">get_revision_date()</a></code> <code><a href="nowcast_data_getters.html">get_revision_type()</a></code> <code><a href="nowcast_data_getters.html">get_revision_units()</a></code> <code><a href="nowcast_data_getters.html">get_is_censored_revision()</a></code> <code><a href="nowcast_data_getters.html">get_revision_levels()</a></code> <code><a href="nowcast_data_getters.html">has_revision()</a></code>
-          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+          <span class="badge lifecycle lifecycle-stable">stable</span>
         </dt>
         <dd>Read what a <code>tbl_now</code> was told about itself</dd>
 
@@ -141,28 +142,28 @@
       <dl><dt>
 
           <code><a href="aggregate_time_units.html">aggregate_time_units()</a></code>
-          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+          <span class="badge lifecycle lifecycle-stable">stable</span>
         </dt>
         <dd>Coarsen a <code>tbl_now</code> onto a bigger time unit</dd>
 
         <dt>
 
           <code><a href="align_weeks.html">align_weeks()</a></code> <code><a href="align_weeks.html">week_2_date()</a></code>
-          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+          <span class="badge lifecycle lifecycle-stable">stable</span>
         </dt>
         <dd>Put weekly data on a common weekday</dd>
 
         <dt>
 
           <code><a href="complete_zeroes.html">complete_zeroes()</a></code>
-          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+          <span class="badge lifecycle lifecycle-stable">stable</span>
         </dt>
         <dd>Fill in the days when nothing was reported</dd>
 
         <dt>
 
           <code><a href="censoring.html">censor_reporting_delays_above()</a></code> <code><a href="censoring.html">censor_reports()</a></code> <code><a href="censoring.html">censor_reporting_delays()</a></code> <code><a href="censoring.html">censor_revisions()</a></code> <code><a href="censoring.html">censor_revision_delays()</a></code> <code><a href="censoring.html">censor_revision_delays_above()</a></code>
-          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+          <span class="badge lifecycle lifecycle-stable">stable</span>
         </dt>
         <dd>Record a report or a delay as a bound rather than a fact</dd>
 
@@ -208,14 +209,14 @@
       <dl><dt>
 
           <code><a href="revised_cases.html">get_latest_revised_cases()</a></code> <code><a href="revised_cases.html">get_initial_revised_cases()</a></code> <code><a href="revised_cases.html">get_nth_revised_cases()</a></code>
-          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+          <span class="badge lifecycle lifecycle-stable">stable</span>
         </dt>
         <dd>Cases at a chosen point in the revision process</dd>
 
         <dt>
 
-          <code><a href="revision_delay.html">diagnose_revision_delay()</a></code> <code><a href="revision_delay.html">plot_revision_delay()</a></code>
-          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+          <code><a href="revision_delay.html">diagnose_revision_delay()</a></code>
+          <span class="badge lifecycle lifecycle-stable">stable</span>
         </dt>
         <dd>Compare revision delays between confirmed and retracted cases</dd>
       </dl></div><div class="section level2">
@@ -238,14 +239,14 @@
         <dt>
 
           <code><a href="nowcast_summary_components.html">cases_per_date()</a></code> <code><a href="nowcast_summary_components.html">delay_summary()</a></code> <code><a href="nowcast_summary_components.html">zero_run_summary()</a></code> <code><a href="nowcast_summary_components.html">prop_censored()</a></code> <code><a href="nowcast_summary_components.html">prop_revision_type()</a></code> <code><a href="nowcast_summary_components.html">prop_strata()</a></code> <code><a href="nowcast_summary_components.html">prop_covariate_levels()</a></code> <code><a href="nowcast_summary_components.html">case_autocorrelation()</a></code> <code><a href="nowcast_summary_components.html">date_ranges()</a></code> <code><a href="nowcast_summary_components.html">triangle_occupancy()</a></code> <code><a href="nowcast_summary_components.html">reporting_completeness()</a></code> <code><a href="nowcast_summary_components.html">cumulative_growth()</a></code>
-          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+          <span class="badge lifecycle lifecycle-stable">stable</span>
         </dt>
         <dd>Individual blocks of a <code>tbl_now</code> summary</dd>
 
         <dt>
 
           <code><a href="print.tbl_now_summary_table.html">print(<i>&lt;tbl_now_summary_table&gt;</i>)</a></code>
-          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+          <span class="badge lifecycle lifecycle-stable">stable</span>
         </dt>
         <dd>Print a <code>tbl_now</code> summary</dd>
       </dl></div><div class="section level2">
@@ -268,28 +269,28 @@
         <dt>
 
           <code><a href="nowcast_diagnose_components.html">diagnose_declarations()</a></code> <code><a href="nowcast_diagnose_components.html">diagnose_ordering()</a></code> <code><a href="nowcast_diagnose_components.html">diagnose_missing()</a></code> <code><a href="nowcast_diagnose_components.html">diagnose_duplicates()</a></code> <code><a href="nowcast_diagnose_components.html">diagnose_units()</a></code> <code><a href="nowcast_diagnose_components.html">diagnose_negatives()</a></code> <code><a href="nowcast_diagnose_components.html">diagnose_now()</a></code> <code><a href="nowcast_diagnose_components.html">diagnose_truncation()</a></code> <code><a href="nowcast_diagnose_components.html">diagnose_strata()</a></code>
-          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+          <span class="badge lifecycle lifecycle-stable">stable</span>
         </dt>
         <dd>Individual blocks of a <code>tbl_now</code> diagnosis</dd>
 
         <dt>
 
           <code><a href="print.tbl_now_diagnosis.html">print(<i>&lt;tbl_now_diagnosis&gt;</i>)</a></code>
-          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+          <span class="badge lifecycle lifecycle-stable">stable</span>
         </dt>
         <dd>Print a <code>tbl_now</code> diagnosis</dd>
 
         <dt>
 
           <code><a href="diagnose_drift.html">diagnose_drift()</a></code>
-          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+          <span class="badge lifecycle lifecycle-stable">stable</span>
         </dt>
         <dd>Test whether the reporting-delay distribution drifts over time</dd>
 
         <dt>
 
           <code><a href="diagnose_changepoint.html">diagnose_changepoint()</a></code>
-          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+          <span class="badge lifecycle lifecycle-stable">stable</span>
         </dt>
         <dd>Detect an abrupt change point in the reporting-delay distribution</dd>
 
@@ -347,91 +348,84 @@
         <dt>
 
           <code><a href="diagnostic_plot.html">diagnostic_plot()</a></code>
-          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+          <span class="badge lifecycle lifecycle-stable">stable</span>
         </dt>
         <dd>Diagnostic plots of the reporting process</dd>
 
         <dt>
 
           <code><a href="calendar_effect_plots.html">plot_day_of_week_effects()</a></code> <code><a href="calendar_effect_plots.html">plot_week_of_year_effects()</a></code> <code><a href="calendar_effect_plots.html">plot_month_of_year_effects()</a></code> <code><a href="calendar_effect_plots.html">plot_holiday_effects()</a></code> <code><a href="calendar_effect_plots.html">plot_weekend_effects()</a></code> <code><a href="calendar_effect_plots.html">plot_holiday_lag_effects()</a></code>
-          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+          <span class="badge lifecycle lifecycle-stable">stable</span>
         </dt>
         <dd>Calendar effects on the case counts or on the reporting delay</dd>
 
         <dt>
 
           <code><a href="plot_revision_status.html">plot_revision_status()</a></code>
-          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+          <span class="badge lifecycle lifecycle-stable">stable</span>
         </dt>
         <dd>How much of each day has been resolved</dd>
 
         <dt>
 
           <code><a href="plot_cycles.html">plot_cycles()</a></code>
-          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+          <span class="badge lifecycle lifecycle-stable">stable</span>
         </dt>
         <dd>Periodogram of the case counts or of the reporting delay</dd>
 
         <dt>
 
           <code><a href="plot_delay_distribution.html">plot_delay_distribution()</a></code>
-          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+          <span class="badge lifecycle lifecycle-stable">stable</span>
         </dt>
-        <dd>Empirical distribution of the reporting delay</dd>
+        <dd>Empirical distribution of the reporting or revision delay</dd>
 
         <dt>
 
           <code><a href="plot_delay_drift.html">plot_delay_drift()</a></code>
-          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+          <span class="badge lifecycle lifecycle-stable">stable</span>
         </dt>
         <dd>Visualise whether the reporting-delay distribution drifts over time</dd>
 
         <dt>
 
           <code><a href="plot_delay_profiles.html">plot_delay_profiles()</a></code>
-          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+          <span class="badge lifecycle lifecycle-stable">stable</span>
         </dt>
         <dd>Plot the per-date delay profiles</dd>
 
         <dt>
 
           <code><a href="plot_epidemic_process.html">plot_reporting_process()</a></code> <code><a href="plot_epidemic_process.html">plot_epidemic_process()</a></code>
-          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+          <span class="badge lifecycle lifecycle-stable">stable</span>
         </dt>
         <dd>The epidemic process and the reporting process</dd>
 
         <dt>
 
           <code><a href="plot_observed_cases.html">plot_observed_cases()</a></code>
-          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+          <span class="badge lifecycle lifecycle-stable">stable</span>
         </dt>
         <dd>Observed epidemic process with the incompleteness line</dd>
 
         <dt>
 
           <code><a href="plot_reporting_hexamap.html">plot_reporting_hexamap()</a></code>
-          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+          <span class="badge lifecycle lifecycle-stable">stable</span>
         </dt>
         <dd>Plot the reporting triangle as an age-period-cohort hexamap</dd>
 
         <dt>
 
           <code><a href="plot_reporting_triangle.html">plot_reporting_triangle()</a></code>
-          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+          <span class="badge lifecycle lifecycle-stable">stable</span>
         </dt>
         <dd>Plot the reporting triangle</dd>
 
         <dt>
 
-          <code><a href="plot_scalogram.html">plot_scalogram()</a></code>
-          <span class="badge lifecycle lifecycle-experimental">experimental</span>
-        </dt>
-        <dd>Plot the reporting or epidemic scalogram</dd>
-
-        <dt>
-
           <code><a href="plot_transport_discriminant.html">plot_transport_discriminant()</a></code>
-          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+          <span class="badge lifecycle lifecycle-stable">stable</span>
         </dt>
         <dd>Plot the transport-discriminant plane</dd>
       </dl></div><div class="section level2">
@@ -447,77 +441,77 @@
       <dl><dt>
 
           <code><a href="run_nowcast.html">run_nowcast()</a></code>
-          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+          <span class="badge lifecycle lifecycle-stable">stable</span>
         </dt>
         <dd>Nowcast a <code>tbl_now</code> with any supported modelling package</dd>
 
         <dt>
 
           <code><a href="engine.html">engine()</a></code>
-          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+          <span class="badge lifecycle lifecycle-stable">stable</span>
         </dt>
         <dd>Specify a nowcasting model and its arguments</dd>
 
         <dt>
 
           <code><a href="nowcast_engines.html">engine_diseasenowcasting()</a></code> <code><a href="nowcast_engines.html">engine_baselinenowcast()</a></code> <code><a href="nowcast_engines.html">engine_epinowcast()</a></code> <code><a href="nowcast_engines.html">engine_nobbs()</a></code> <code><a href="nowcast_engines.html">engine_surveillance()</a></code> <code><a href="nowcast_engines.html">engine_epinow2()</a></code>
-          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+          <span class="badge lifecycle lifecycle-stable">stable</span>
         </dt>
         <dd>Engines for the built-in nowcasting packages</dd>
 
         <dt>
 
           <code><a href="example_engine.html">example_engine()</a></code> <code><a href="example_engine.html">nowcast_fit(<i>&lt;example&gt;</i>)</a></code> <code><a href="example_engine.html">nowcast_tidy(<i>&lt;example&gt;</i>)</a></code>
-          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+          <span class="badge lifecycle lifecycle-stable">stable</span>
         </dt>
         <dd>A toy engine for examples</dd>
 
         <dt>
 
           <code><a href="is_nowcast_engine.html">is_nowcast_engine()</a></code>
-          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+          <span class="badge lifecycle lifecycle-stable">stable</span>
         </dt>
         <dd>Is this an engine?</dd>
 
         <dt>
 
           <code><a href="list_nowcast_methods.html">list_nowcast_methods()</a></code>
-          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+          <span class="badge lifecycle lifecycle-stable">stable</span>
         </dt>
         <dd>List the available nowcasting methods</dd>
 
         <dt>
 
           <code><a href="nowcast_fit.html">nowcast_fit()</a></code>
-          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+          <span class="badge lifecycle lifecycle-stable">stable</span>
         </dt>
         <dd>Fit a nowcast with one modelling package</dd>
 
         <dt>
 
           <code><a href="nowcast_tidy.html">nowcast_tidy()</a></code>
-          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+          <span class="badge lifecycle lifecycle-stable">stable</span>
         </dt>
         <dd>Standardise a fitted nowcast</dd>
 
         <dt>
 
           <code><a href="tbl_nowcast.html">tbl_nowcast()</a></code>
-          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+          <span class="badge lifecycle lifecycle-stable">stable</span>
         </dt>
         <dd>A nowcast produced by <code><a href="../reference/run_nowcast.html">run_nowcast()</a></code></dd>
 
         <dt>
 
           <code><a href="is_tbl_nowcast.html">is_tbl_nowcast()</a></code>
-          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+          <span class="badge lifecycle lifecycle-stable">stable</span>
         </dt>
         <dd>Is this object a <code>tbl_nowcast</code>?</dd>
 
         <dt>
 
           <code><a href="nowcast_quantile_levels.html">nowcast_quantile_levels()</a></code>
-          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+          <span class="badge lifecycle lifecycle-stable">stable</span>
         </dt>
         <dd>Default quantile levels for a nowcast</dd>
 
@@ -531,7 +525,7 @@
         <dt>
 
           <code><a href="as_tibble.tbl_nowcast.html">as_tibble.tbl_nowcast</a></code> <code><a href="as_tibble.tbl_nowcast.html">as_tibble_tbl_nowcast</a></code>
-          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+          <span class="badge lifecycle lifecycle-stable">stable</span>
         </dt>
         <dd>Coerce a <code>tbl_nowcast</code> into a <code>tibble</code></dd>
       </dl></div><div class="section level2">
@@ -547,28 +541,28 @@
       <dl><dt>
 
           <code><a href="nowcast_ensemble.html">nowcast_ensemble()</a></code>
-          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+          <span class="badge lifecycle lifecycle-stable">stable</span>
         </dt>
         <dd>Combine several nowcasts into an ensemble</dd>
 
         <dt>
 
           <code><a href="nowcast_weights.html">nowcast_weights()</a></code>
-          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+          <span class="badge lifecycle lifecycle-stable">stable</span>
         </dt>
         <dd>Ensemble weights from a backtest</dd>
 
         <dt>
 
           <code><a href="nowcast_backtest.html">nowcast_backtest()</a></code>
-          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+          <span class="badge lifecycle lifecycle-stable">stable</span>
         </dt>
         <dd>Refit several methods at past <code>now</code> dates and score them</dd>
 
         <dt>
 
-          <code><a href="score_nowcast.html">score_nowcast()</a></code> <code><a href="score_nowcast.html">as_forecast_point()</a></code> <code><a href="score_nowcast.html">as_forecast_quantile(<i>&lt;nowcast_backtest&gt;</i>)</a></code> <code><a href="score_nowcast.html">as_forecast_sample(<i>&lt;nowcast_backtest&gt;</i>)</a></code>
-          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+          <code><a href="score_nowcast.html">score_nowcast()</a></code> <code><a href="score_nowcast.html">as_forecast_quantile(<i>&lt;nowcast_backtest&gt;</i>)</a></code> <code><a href="score_nowcast.html">as_forecast_point(<i>&lt;nowcast_backtest&gt;</i>)</a></code> <code><a href="score_nowcast.html">as_forecast_sample(<i>&lt;nowcast_backtest&gt;</i>)</a></code>
+          <span class="badge lifecycle lifecycle-stable">stable</span>
         </dt>
         <dd>Score a nowcast against observed data</dd>
       </dl></div><div class="section level2">
@@ -591,14 +585,14 @@
         <dt>
 
           <code><a href="tbl_now_baselinenowcast.html">tbl_now_from_baselinenowcast()</a></code> <code><a href="tbl_now_baselinenowcast.html">tbl_now_to_baselinenowcast()</a></code>
-          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+          <span class="badge lifecycle lifecycle-stable">stable</span>
         </dt>
         <dd>Convert between <code>tbl_now</code> and <span class="pkg">baselinenowcast</span></dd>
 
         <dt>
 
           <code><a href="tbl_now_data_table.html">tbl_now_from_data_table()</a></code> <code><a href="tbl_now_data_table.html">tbl_now_to_data_table()</a></code>
-          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+          <span class="badge lifecycle lifecycle-stable">stable</span>
         </dt>
         <dd>Convert between <code>tbl_now</code> and <span class="pkg">data.table</span></dd>
 
@@ -612,63 +606,63 @@
         <dt>
 
           <code><a href="tbl_now_epinowcast.html">tbl_now_from_epinowcast()</a></code> <code><a href="tbl_now_epinowcast.html">tbl_now_to_epinowcast()</a></code>
-          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+          <span class="badge lifecycle lifecycle-stable">stable</span>
         </dt>
         <dd>Convert between <code>tbl_now</code> and <span class="pkg">epinowcast</span></dd>
 
         <dt>
 
           <code><a href="tbl_now_nobbs.html">tbl_now_to_nobbs()</a></code>
-          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+          <span class="badge lifecycle lifecycle-stable">stable</span>
         </dt>
         <dd>Convert a <code>tbl_now</code> into the line list <span class="pkg">NobBS</span> nowcasts from</dd>
 
         <dt>
 
           <code><a href="tbl_now_surveillance.html">tbl_now_to_surveillance()</a></code>
-          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+          <span class="badge lifecycle lifecycle-stable">stable</span>
         </dt>
         <dd>Convert a <code>tbl_now</code> into the line list <span class="pkg">surveillance</span> nowcasts from</dd>
 
         <dt>
 
           <code><a href="tbl_now_tsibble.html">tbl_now_from_tsibble()</a></code> <code><a href="tbl_now_tsibble.html">tbl_now_to_tsibble()</a></code>
-          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+          <span class="badge lifecycle lifecycle-stable">stable</span>
         </dt>
         <dd>Convert between <code>tbl_now</code> and <span class="pkg">tsibble</span></dd>
 
         <dt>
 
           <code><a href="tbl_now_coercion_methods.html">as_epidist_linelist_data(<i>&lt;tbl_now&gt;</i>)</a></code> <code><a href="tbl_now_coercion_methods.html">as_epidist_aggregate_data(<i>&lt;tbl_now&gt;</i>)</a></code> <code><a href="tbl_now_coercion_methods.html">as_reporting_triangle(<i>&lt;tbl_now&gt;</i>)</a></code> <code><a href="tbl_now_coercion_methods.html">as_tsibble(<i>&lt;tbl_now&gt;</i>)</a></code> <code><a href="tbl_now_coercion_methods.html">as.data.table(<i>&lt;tbl_now&gt;</i>)</a></code>
-          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+          <span class="badge lifecycle lifecycle-stable">stable</span>
         </dt>
         <dd>Coerce a <code>tbl_now</code> with another package's generic</dd>
 
         <dt>
 
           <code><a href="tbl_now_epinow2_snapshots.html">print(<i>&lt;tbl_now_epinow2_snapshots&gt;</i>)</a></code>
-          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+          <span class="badge lifecycle lifecycle-stable">stable</span>
         </dt>
         <dd>Snapshots of one series, as <span class="pkg">EpiNow2</span> estimates truncation from</dd>
 
         <dt>
 
           <code><a href="tbl_now_triangle_list.html">print(<i>&lt;tbl_now_triangle_list&gt;</i>)</a></code>
-          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+          <span class="badge lifecycle lifecycle-stable">stable</span>
         </dt>
         <dd>One reporting triangle per stratum</dd>
 
         <dt>
 
           <code><a href="tbl_now_surveillance_list.html">print(<i>&lt;tbl_now_surveillance_list&gt;</i>)</a></code>
-          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+          <span class="badge lifecycle lifecycle-stable">stable</span>
         </dt>
         <dd>One <span class="pkg">surveillance</span> line list per stratum</dd>
 
         <dt>
 
           <code><a href="surveillance_grids.html">get_surveillance_when()</a></code> <code><a href="surveillance_grids.html">get_surveillance_range()</a></code>
-          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+          <span class="badge lifecycle lifecycle-stable">stable</span>
         </dt>
         <dd>The date grids <code><a href="https://rdrr.io/pkg/surveillance/man/nowcast.html" class="external-link">surveillance::nowcast()</a></code> needs</dd>
       </dl></div><div class="section level2">
@@ -684,28 +678,28 @@
       <dl><dt>
 
           <code><a href="tidy.nowcast.html">tidy()</a></code>
-          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+          <span class="badge lifecycle lifecycle-stable">stable</span>
         </dt>
         <dd>Tidy a fitted nowcast into one standard table</dd>
 
         <dt>
 
           <code><a href="tidy.tbl_nowcast.html">tidy.tbl_nowcast</a></code> <code><a href="tidy.tbl_nowcast.html">tidy_tbl_nowcast</a></code>
-          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+          <span class="badge lifecycle lifecycle-stable">stable</span>
         </dt>
         <dd>Tidy a nowcast produced by <code><a href="../reference/run_nowcast.html">run_nowcast()</a></code> or <code><a href="../reference/nowcast_ensemble.html">nowcast_ensemble()</a></code></dd>
 
         <dt>
 
           <code><a href="tidy.nowcast_backtest.html">tidy(<i>&lt;nowcast_backtest&gt;</i>)</a></code>
-          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+          <span class="badge lifecycle lifecycle-stable">stable</span>
         </dt>
         <dd>Tidy the predictions and scores of a <code><a href="../reference/nowcast_backtest.html">nowcast_backtest()</a></code></dd>
 
         <dt>
 
           <code><a href="tidy.delay_distribution.html">tidy(<i>&lt;estimate_dist&gt;</i>)</a></code> <code><a href="tidy.delay_distribution.html">tidy(<i>&lt;epidist_fit&gt;</i>)</a></code>
-          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+          <span class="badge lifecycle lifecycle-stable">stable</span>
         </dt>
         <dd>Tidy a fitted delay distribution</dd>
       </dl></div><div class="section level2">
@@ -721,7 +715,7 @@
       <dl><dt>
 
           <code><a href="as_tibble.tbl_now.html">as_tibble(<i>&lt;tbl_now&gt;</i>)</a></code> <code><a href="as_tibble.tbl_now.html">as_tibble(<i>&lt;grouped_tbl_now&gt;</i>)</a></code> <code><a href="as_tibble.tbl_now.html">as.data.frame(<i>&lt;tbl_now&gt;</i>)</a></code> <code><a href="as_tibble.tbl_now.html">as.data.frame(<i>&lt;grouped_tbl_now&gt;</i>)</a></code>
-          <span class="badge lifecycle lifecycle-experimental">experimental</span>
+          <span class="badge lifecycle lifecycle-stable">stable</span>
         </dt>
         <dd>Coerce a <code>tbl_now</code> to a tibble or a data frame</dd>
 

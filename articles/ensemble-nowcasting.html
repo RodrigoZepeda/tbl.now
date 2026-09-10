@@ -5,7 +5,7 @@
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<title>One call, many models: run_nowcast(), custom backends and ensembles • tbl.now</title>
+<title>Fitting models from different nowcasting frameworks, backtesting and building an ensemble • tbl.now</title>
 <!-- favicons --><link rel="icon" type="image/png" sizes="96x96" href="../favicon-96x96.png">
 <link rel="icon" type="”image/svg+xml”" href="../favicon.svg">
 <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
@@ -17,7 +17,7 @@
 <script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><link href="../extra.css" rel="stylesheet">
-<meta property="og:title" content="One call, many models: run_nowcast(), custom backends and ensembles">
+<meta property="og:title" content="Fitting models from different nowcasting frameworks, backtesting and building an ensemble">
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -27,7 +27,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.35.4</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -43,8 +43,9 @@
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="../articles/custom-nowcast-models.html">Adding your own nowcasting model</a></li>
     <li><a class="dropdown-item" href="../articles/diagnosing-a-tbl-now.html">Diagnosing a tbl_now</a></li>
-    <li><a class="dropdown-item" href="../articles/ensemble-nowcasting.html">One call, many models: run_nowcast(), custom backends and ensembles</a></li>
-    <li><a class="dropdown-item" href="../articles/example.html">The nowcasting workflow: hospital-acquired infections in Bucaramanga, Colombia</a></li>
+    <li><a class="dropdown-item" href="../articles/ensemble-nowcasting.html">Fitting models from different nowcasting frameworks, backtesting and building an ensemble</a></li>
+    <li><a class="dropdown-item" href="../articles/example_revisions.html">The nowcasting workflow 2: COVID-19 case surveillance with revisions in the United States</a></li>
+    <li><a class="dropdown-item" href="../articles/example.html">The nowcasting workflow 1: hospital-acquired infections in Bucaramanga, Colombia</a></li>
     <li><a class="dropdown-item" href="../articles/nowcasting-models.html">Using tbl.now with different modelling packages</a></li>
     <li><a class="dropdown-item" href="../articles/tbl.now.html">tbl.now</a></li>
   </ul>
@@ -77,7 +78,7 @@
 
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
-      <img src="../logo.png" class="logo" alt=""><h1>One call, many models: run_nowcast(), custom backends and ensembles</h1>
+      <img src="../logo.png" class="logo" alt=""><h1>Fitting models from different nowcasting frameworks, backtesting and building an ensemble</h1>
             
       
       <small class="dont-index">Source: <a href="https://github.com/RodrigoZepeda/tbl.now/blob/main/vignettes/articles/ensemble-nowcasting.Rmd" class="external-link"><code>vignettes/articles/ensemble-nowcasting.Rmd</code></a></small>
@@ -86,57 +87,39 @@
 
     
     
-<div class="alert alert-warning">
-<p><strong>Everything on this page is experimental.</strong>
-<code><a href="../reference/run_nowcast.html">run_nowcast()</a></code>, <code><a href="../reference/nowcast_ensemble.html">nowcast_ensemble()</a></code>,
-<code><a href="../reference/nowcast_backtest.html">nowcast_backtest()</a></code>, <code><a href="../reference/nowcast_weights.html">nowcast_weights()</a></code>,
-<code><a href="../reference/score_nowcast.html">score_nowcast()</a></code> and the <code>tbl_nowcast</code> class are
-all marked <a href="https://lifecycle.r-lib.org/articles/stages.html#experimental" class="external-link">experimental</a>:
-they work, they are tested, and their <strong>interfaces may still
-change</strong> — argument names, defaults and the shape of what comes
-back. The extension (<code><a href="../reference/nowcast_fit.html">nowcast_fit()</a></code> /
-<code><a href="../reference/nowcast_tidy.html">nowcast_tidy()</a></code>) is the part most likely to move, because it
-is the most recent.</p>
-</div>
 <div class="section level2">
 <h2 id="why-this-vignette">Why this vignette?<a class="anchor" aria-label="anchor" href="#why-this-vignette"></a>
 </h2>
 <p>This vignette is about how to run nowcasts from different
 <code>R</code> packages all within the same <code>tbl_now</code>
 framework as well as on how to backtest and do ensembles.</p>
-<p>Here we describe how:</p>
+<p>Here we describe how to:</p>
 <ul>
-<li>
-<strong><code>engine_*()</code></strong> says which model to fit and
-with what arguments,</li>
-<li>
-<strong><code>run_nowcast(x, engine)</code></strong> fits
-<em>any</em> supported package and always returns the same kind of
-object,</li>
-<li>
-<strong><code><a href="../reference/nowcast_ensemble.html">nowcast_ensemble()</a></code></strong> combines several of
-those objects into an ensemble,</li>
-<li>
-<strong><code><a href="../reference/nowcast_backtest.html">nowcast_backtest()</a></code></strong> and
-<strong><code><a href="../reference/nowcast_weights.html">nowcast_weights()</a></code></strong> decide, from data, how
-much each member should count,</li>
-<li>and <strong><code><a href="../reference/nowcast_fit.html">nowcast_fit()</a></code> /
-<code><a href="../reference/nowcast_tidy.html">nowcast_tidy()</a></code></strong> let you add a nowcasting framework
-that has not been built into <code>tbl.now</code>.</li>
+<li>Use <strong><code>engine_*()</code></strong> to setup the model and
+its arguments,</li>
+<li>Fit any model with
+<strong><code>run_nowcast(x, engine)</code></strong>.</li>
+<li>Build backtest with <strong><code><a href="../reference/nowcast_backtest.html">nowcast_backtest()</a></code></strong>
+to evaluate your models.</li>
+<li>Use <strong><code><a href="../reference/nowcast_ensemble.html">nowcast_ensemble()</a></code></strong> to combines
+several models into an ensemble model.</li>
 </ul>
 <div class="alert alert-info">
-<p><strong>Two ways to do the same.</strong> You can either use
-<code>run_nowcast(x, engine_epinowcast())</code> as explained in this
-vignette or step by step:</p>
-<pre><code><span><span class="fu"><a href="../reference/tbl_now_epinowcast.html">tbl_now_to_epinowcast</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu">epinowcast</span><span class="fu">::</span><span class="fu"><a href="https://package.epinowcast.org/reference/epinowcast.html" class="external-link">epinowcast</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="../reference/tidy.nowcast.html">tidy</a></span><span class="op">(</span><span class="op">)</span></span></code></pre>
+<p><strong>There are two ways to do the same.</strong> You can either
+use <code>run_nowcast(x, engine_epinowcast())</code> to use the same
+call for any nowcast (this is what this vignette explains).
+Alternatively you can use the converters to use the original method from
+the specific package:</p>
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/tbl_now_epinowcast.html">tbl_now_to_epinowcast</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu">epinowcast</span><span class="fu">::</span><span class="fu"><a href="https://package.epinowcast.org/reference/epinowcast.html" class="external-link">epinowcast</a></span><span class="op">(</span><span class="op">)</span> </span></code></pre></div>
 <p>Ideally you should:</p>
 <ol style="list-style-type: decimal">
-<li><p>Use the converter when you want to pass that package’s own
-arguments, inspect what it was handed, or do something the
-<code>tbl.now</code> backend does not.</p></li>
+<li><p>Use the converter (<code>tbl_now_to_*</code>) when you want to
+pass that package’s own arguments, inspect what it was handed, or do
+something the <code>tbl.now</code> backend does not.</p></li>
 <li><p>Use <code><a href="../reference/run_nowcast.html">run_nowcast()</a></code> when you want several models that
-can be compared via <code><a href="../reference/nowcast_ensemble.html">nowcast_ensemble()</a></code> and
-<code><a href="../reference/score_nowcast.html">score_nowcast()</a></code>.</p></li>
+can be compared via <code><a href="../reference/nowcast_backtest.html">nowcast_backtest()</a></code> and
+<code><a href="../reference/nowcast_ensemble.html">nowcast_ensemble()</a></code>.</p></li>
 </ol>
 </div>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
@@ -144,963 +127,280 @@ can be compared via <code><a href="../reference/nowcast_ensemble.html">nowcast_e
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://rodrigozepeda.github.io/tbl.now/">tbl.now</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">denguedat</span><span class="op">)</span></span></code></pre></div>
-<p>The examples below use dengue in Puerto Rico: a <strong>weekly line
-list</strong>: one row per case, with an onset and a report week.</p>
+<p>The examples below use <code>denguedat</code>: a <strong>weekly line
+list</strong> of dengue cases in Puerto Rico:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">dengue</span> <span class="op">&lt;-</span> <span class="va">denguedat</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/tbl_now.html">tbl_now</a></span><span class="op">(</span></span>
-<span>    event_date  <span class="op">=</span> <span class="va">onset_week</span>,</span>
-<span>    report_date <span class="op">=</span> <span class="va">report_week</span>,</span>
+<span>    event_date  <span class="op">=</span> <span class="va">onset_week</span>,  <span class="co">#symptom onset</span></span>
+<span>    report_date <span class="op">=</span> <span class="va">report_week</span>, <span class="co">#when it was reported</span></span>
 <span>    verbose     <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span>  <span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Nowcast as of a date in the past, so that later reports exist to score against</span></span>
-<span><span class="va">now</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2010-10-04"</span><span class="op">)</span>   <span class="co"># a Monday: these weeks start on Mondays</span></span>
-<span></span>
-<span><span class="va">snapshot</span> <span class="op">&lt;-</span> <span class="va">dengue</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">report_week</span> <span class="op">&lt;=</span> <span class="va">now</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="../reference/add.html">change_now</a></span><span class="op">(</span>now <span class="op">=</span> <span class="va">now</span><span class="op">)</span></span>
-<span></span>
-<span><span class="fu"><a href="../reference/nowcast_data_getters.html">get_now</a></span><span class="op">(</span><span class="va">snapshot</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "2010-10-04"</span></span></code></pre></div>
+<span><span class="va">dengue</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble:  52,987 × 6</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Data type: </span><span style="color: #0000BB;">"linelist"</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># Frequency: Event: `weeks` | Report: `weeks`</span></span></span>
+<span><span class="co">#&gt;   onset_week   report_week   gender .event_num .report_num .delay</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
+<span><span class="co">#&gt;   <span style="color: #949494;">[event_date]</span> <span style="color: #949494;">[report_date]</span> <span style="color: #949494;">[...]</span>       <span style="color: #949494;">[...]</span>       <span style="color: #949494;">[...]</span>  <span style="color: #949494;">[...]</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> 1990-01-01   1990-01-01    Male            0           0      0</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> 1990-01-01   1990-01-01    Female          0           0      0</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> 1990-01-01   1990-01-01    Female          0           0      0</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> 1990-01-01   1990-01-08    Female          0           1      1</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> 1990-01-01   1990-01-08    Male            0           1      1</span></span>
+<span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────</span></span>
+<span><span class="co">#&gt; # Now: <span style="color: #0000BB;">2010-12-20</span> | Event date: <span style="color: #0000BB;">"onset_week"</span> | Report date: <span style="color: #0000BB;">"report_week"</span></span></span>
+<span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 52,982 more rows</span></span></span></code></pre></div>
+<div class="alert alert-info">
+<p>This tutorial requires installation of baselinenowcast, NobBS and
+surveillance. You can do it as:</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"baselinenowcast"</span>,<span class="st">"surveillance"</span>,<span class="st">"NobBS"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+</div>
 </div>
 <div class="section level2">
-<h2 id="one-call-per-model">1. One call per model<a class="anchor" aria-label="anchor" href="#one-call-per-model"></a>
+<h2 id="fitting-a-nowcast">1. Fitting a nowcast<a class="anchor" aria-label="anchor" href="#fitting-a-nowcast"></a>
 </h2>
-<p><code><a href="../reference/run_nowcast.html">run_nowcast()</a></code> takes two things: the
-<code>tbl_now</code>, and an <strong>engine</strong>.</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">baseline</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/run_nowcast.html">run_nowcast</a></span><span class="op">(</span></span>
-<span>  <span class="va">snapshot</span>,</span>
-<span>  <span class="fu"><a href="../reference/nowcast_engines.html">engine_baselinenowcast</a></span><span class="op">(</span>draws <span class="op">=</span> <span class="fl">1000</span><span class="op">)</span>,</span>
-<span>  verbose <span class="op">=</span> <span class="cn">FALSE</span></span>
-<span><span class="op">)</span></span>
+<p>The <code><a href="../reference/run_nowcast.html">run_nowcast()</a></code> function takes two arguments: the
+<code>tbl_now</code>, and an <code><a href="../reference/engine.html">engine()</a></code>:</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co">#Here we run a baselinenowcast as an example with very few draws</span></span>
+<span><span class="co">#because its a tutorial</span></span>
+<span><span class="va">baseline</span> <span class="op">&lt;-</span> <span class="va">dengue</span> <span class="op">|&gt;</span> </span>
+<span>  <span class="fu"><a href="../reference/run_nowcast.html">run_nowcast</a></span><span class="op">(</span><span class="fu"><a href="../reference/nowcast_engines.html">engine_baselinenowcast</a></span><span class="op">(</span>draws <span class="op">=</span> <span class="fl">100</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">baseline</span></span></code></pre></div>
-<pre><code><span><span class="co">#&gt; ── A &lt;tbl_nowcast&gt; from method "baselinenowcast" ─────────────────────────────────────────────────────────────────────────────</span></span>
-<span><span class="co">#&gt; • now: "2010-10-04"</span></span>
-<span><span class="co">#&gt; • event dates: 1084</span></span>
-<span><span class="co">#&gt; • quantile levels: 0.025, 0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95, and 0.975</span></span>
-<span><span class="co">#&gt; • draws: 1000</span></span>
+<span><span class="va">baseline</span></span>
+<span><span class="co">#&gt; ── A <span style="color: #0000BB;">&lt;tbl_nowcast&gt;</span> from method <span style="color: #0000BB;">"baselinenowcast"</span> ───────────────────────────────────────────────────────────────────────────────────────────────────────────────</span></span>
+<span><span class="co">#&gt; • now: <span style="color: #0000BB;">"2010-12-20"</span></span></span>
+<span><span class="co">#&gt; • event dates: <span style="color: #0000BB;">1095</span></span></span>
+<span><span class="co">#&gt; • quantile levels: <span style="color: #0000BB;">0.025</span>, <span style="color: #0000BB;">0.05</span>, <span style="color: #0000BB;">0.1</span>, <span style="color: #0000BB;">0.25</span>, <span style="color: #0000BB;">0.5</span>, <span style="color: #0000BB;">0.75</span>, <span style="color: #0000BB;">0.9</span>, <span style="color: #0000BB;">0.95</span>, and <span style="color: #0000BB;">0.975</span></span></span>
+<span><span class="co">#&gt; • draws: <span style="color: #0000BB;">100</span></span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Nowcast at "2010-10-04" (q50, 2.5-97.5% interval):</span></span>
-<span><span class="co">#&gt; • 502 [80.9, 1,619]</span></span>
+<span><span class="co">#&gt; Nowcast at <span style="color: #0000BB;">"2010-12-20"</span> (q50, 2.5-97.5% interval):</span></span>
+<span><span class="co">#&gt; • 45.5 [5, 202.4]</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; # A tibble: 6 × 3</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 6 × 3</span></span></span>
 <span><span class="co">#&gt;   onset_week .quantile_level .value</span></span>
-<span><span class="co">#&gt;   &lt;date&gt;               &lt;dbl&gt;  &lt;dbl&gt;</span></span>
-<span><span class="co">#&gt; 1 1990-01-01           0.025     61</span></span>
-<span><span class="co">#&gt; 2 1990-01-01           0.05      61</span></span>
-<span><span class="co">#&gt; 3 1990-01-01           0.1       61</span></span>
-<span><span class="co">#&gt; 4 1990-01-01           0.25      61</span></span>
-<span><span class="co">#&gt; 5 1990-01-01           0.5       61</span></span>
-<span><span class="co">#&gt; 6 1990-01-01           0.75      61</span></span>
-<span><span class="co">#&gt; ℹ 9750 more rows. Use `as_tibble()` for all of them.</span></span></code></pre>
-<p>An engine is <em>the model and everything it needs</em>:
-<code><a href="../reference/nowcast_engines.html">engine_baselinenowcast()</a></code> names
-<code>baselinenowcast</code>’s own arguments, and there is one such
-constructor per supported package. The data and <code>verbose</code> are
-the only things that sit outside it.</p>
-<p>That is not decoration. Before engines, arguments travelled in a
-<code>...</code> on <code><a href="../reference/run_nowcast.html">run_nowcast()</a></code> and in a
-<code>method_args</code> list of lists on
-<code><a href="../reference/nowcast_backtest.html">nowcast_backtest()</a></code>, and both failed the same silent way: an
-argument that missed its backend simply vanished, and you got a fitted
-model at its default with nothing to say so. A named formal turns that
-into an error at the call, where you can see it.</p>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>               <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> 1990-01-01           0.025     61</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> 1990-01-01           0.05      61</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> 1990-01-01           0.1       61</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> 1990-01-01           0.25      61</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> 1990-01-01           0.5       61</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 1 more row</span></span></span>
+<span><span class="co">#&gt; ℹ 9849 more rows. Use `as_tibble()` for all of them.</span></span></code></pre></div>
+<p>An engine includes <em>the model and all of its arguments</em>. For
+example, <code><a href="../reference/nowcast_engines.html">engine_baselinenowcast()</a></code> names
+<code><a href="https://baselinenowcast.epinowcast.org/reference/baselinenowcast.html" class="external-link">baselinenowcast::baselinenowcast()</a></code>’s own arguments. For
+example in the previous case we modified the number of draws which is an
+argument from <code><a href="https://baselinenowcast.epinowcast.org/reference/baselinenowcast.html" class="external-link">baselinenowcast::baselinenowcast()</a></code>:</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/nowcast_engines.html">engine_baselinenowcast</a></span><span class="op">(</span>draws <span class="op">=</span> <span class="fl">1000</span><span class="op">)</span></span>
-<span><span class="co">#&gt; ── &lt;nowcast_engine: <span style="color: #0000BB;">"baselinenowcast"</span>&gt; ─────────────────────────────────────────</span></span>
+<span><span class="co">#&gt; ── &lt;nowcast_engine: <span style="color: #0000BB;">"baselinenowcast"</span>&gt; ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; • quantile levels: <span style="color: #0000BB;">0.025</span>, <span style="color: #0000BB;">0.05</span>, <span style="color: #0000BB;">0.1</span>, <span style="color: #0000BB;">0.25</span>, <span style="color: #0000BB;">0.5</span>, <span style="color: #0000BB;">0.75</span>, <span style="color: #0000BB;">0.9</span>, <span style="color: #0000BB;">0.95</span>, and <span style="color: #0000BB;">0.975</span></span></span>
 <span><span class="co">#&gt; • arguments: <span style="color: #00BB00;">draws</span> and <span style="color: #00BB00;">strata_sharing</span></span></span></code></pre></div>
-<p><code><a href="../reference/list_nowcast_methods.html">list_nowcast_methods()</a></code> tells you what is available in
-your session:</p>
+<p>You can call <code><a href="../reference/list_nowcast_methods.html">list_nowcast_methods()</a></code> to see all the
+methods available in this package</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/list_nowcast_methods.html">list_nowcast_methods</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "baselinenowcast"   "diseasenowcasting" "EpiNow2"          </span></span>
-<span><span class="co">#&gt; [4] "epinowcast"        "example"           "NobBS"            </span></span>
-<span><span class="co">#&gt; [7] "surveillance"</span></span></code></pre></div>
-<div class="section level3">
-<h3 id="one-card-per-engine">One card per engine<a class="anchor" aria-label="anchor" href="#one-card-per-engine"></a>
-</h3>
-<p>Each of these routes through the <code>tbl_now_to_*()</code>
-converter documented in <code>vignette("nowcasting-models")</code>,
-which is where you go to learn a package’s own API. What follows is the
-other half: the call through <code><a href="../reference/run_nowcast.html">run_nowcast()</a></code>, and the
-<strong>one thing about that engine most likely to catch you
-out</strong>.</p>
-<div class="section level4">
-<h4 id="baselinenowcast">baselinenowcast<a class="anchor" aria-label="anchor" href="#baselinenowcast"></a>
-</h4>
-<p>Fast, assumption-light, and the only engine here that needs no
-external toolchain. It works from a reporting triangle, so the delay
-axis is a modelling choice you make.</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">baseline</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/run_nowcast.html">run_nowcast</a></span><span class="op">(</span><span class="va">snapshot</span>, <span class="fu"><a href="../reference/nowcast_engines.html">engine_baselinenowcast</a></span><span class="op">(</span>draws <span class="op">=</span> <span class="fl">1000</span><span class="op">)</span><span class="op">)</span>  <span class="co"># fitted above</span></span></code></pre></div>
-<p><strong>Watch for:</strong> <code>max_delay</code> caps the
-triangle’s <em>width</em>. Left unset it is inferred from the longest
-delay present, so a single straggler can give the triangle hundreds of
-near-empty columns and turn a fast fit into a slow one. It keeps draws,
-so it can join a <code>type = "linear_pool"</code> ensemble.</p>
-</div>
-<div class="section level4">
-<h4 id="diseasenowcasting">diseasenowcasting<a class="anchor" aria-label="anchor" href="#diseasenowcasting"></a>
-</h4>
-<p>The one engine that takes the <code>tbl_now</code>
-<strong>directly</strong>: it reads the strata and the temporal-effect
-columns off the object, so there is nothing to pass.</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">dnc</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/run_nowcast.html">run_nowcast</a></span><span class="op">(</span><span class="va">snapshot</span>, <span class="fu"><a href="../reference/nowcast_engines.html">engine_diseasenowcasting</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">dnc</span></span></code></pre></div>
-<pre><code><span><span class="co">#&gt; ── A &lt;tbl_nowcast&gt; from method "diseasenowcasting" ───────────────────────────────────────────────────────────────────────────</span></span>
-<span><span class="co">#&gt; • now: "2010-10-04"</span></span>
-<span><span class="co">#&gt; • event dates: 1084</span></span>
-<span><span class="co">#&gt; • quantile levels: 0.025, 0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95, and 0.975</span></span>
-<span><span class="co">#&gt; • draws: 2000</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Nowcast at "2010-10-04" (q50, 2.5-97.5% interval):</span></span>
-<span><span class="co">#&gt; • 264 [127.0, 484.1]</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; # A tibble: 6 × 3</span></span>
-<span><span class="co">#&gt;   onset_week .quantile_level .value</span></span>
-<span><span class="co">#&gt;   &lt;date&gt;               &lt;dbl&gt;  &lt;dbl&gt;</span></span>
-<span><span class="co">#&gt; 1 1990-01-01           0.025     61</span></span>
-<span><span class="co">#&gt; 2 1990-01-01           0.05      61</span></span>
-<span><span class="co">#&gt; 3 1990-01-01           0.1       61</span></span>
-<span><span class="co">#&gt; 4 1990-01-01           0.25      61</span></span>
-<span><span class="co">#&gt; 5 1990-01-01           0.5       61</span></span>
-<span><span class="co">#&gt; 6 1990-01-01           0.75      61</span></span>
-<span><span class="co">#&gt; ℹ 9750 more rows. Use `as_tibble()` for all of them.</span></span></code></pre>
-<p><strong>Watch for:</strong> it is also the one engine whose
-<em>model</em> you can swap without changing packages — see the ensemble
-below, which uses two of them. On <code>count-cumulative</code> data,
-diseasenowcasting selects its cumulative model automatically unless you
-pass an explicit
-<code>model(cumulative = cumulative_process())</code>.</p>
-</div>
-<div class="section level4">
-<h4 id="epinowcast">epinowcast<a class="anchor" aria-label="anchor" href="#epinowcast"></a>
-</h4>
-<p>A flexible Bayesian model with separate modules for the reporting
-delay and the reference process. Preprocessing arguments go through
-<code>preprocess_args</code>; everything else goes to
-<code><a href="https://package.epinowcast.org/reference/epinowcast.html" class="external-link">epinowcast()</a></code> itself.</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">enw</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/run_nowcast.html">run_nowcast</a></span><span class="op">(</span><span class="va">snapshot</span>, <span class="fu"><a href="../reference/nowcast_engines.html">engine_epinowcast</a></span><span class="op">(</span></span>
-<span>  preprocess_args <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>max_delay <span class="op">=</span> <span class="fl">10</span><span class="op">)</span>,</span>
-<span>  fit <span class="op">=</span> <span class="fu">epinowcast</span><span class="fu">::</span><span class="fu"><a href="https://package.epinowcast.org/reference/enw_fit_opts.html" class="external-link">enw_fit_opts</a></span><span class="op">(</span></span>
-<span>    sampler <span class="op">=</span> <span class="fu">epinowcast</span><span class="fu">::</span><span class="va"><a href="https://package.epinowcast.org/reference/enw_pathfinder.html" class="external-link">enw_pathfinder</a></span>, draws <span class="op">=</span> <span class="fl">1000</span>, seed <span class="op">=</span> <span class="fl">20260824</span></span>
-<span>  <span class="op">)</span>,</span>
-<span>  <span class="co"># The slowest engine here, and it scales with the number of REFERENCE dates,</span></span>
-<span>  <span class="co"># so it gets a window where the others get the whole series. See below.</span></span>
-<span>  min_date <span class="op">=</span> <span class="fl">96</span></span>
-<span><span class="op">)</span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">enw</span></span></code></pre></div>
-<pre><code><span><span class="co">#&gt; ── A &lt;tbl_nowcast&gt; from method "epinowcast" ──────────────────────────────────────────────────────────────────────────────────</span></span>
-<span><span class="co">#&gt; • now: "2010-10-04"</span></span>
-<span><span class="co">#&gt; • event dates: 10</span></span>
-<span><span class="co">#&gt; • quantile levels: 0.025, 0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95, and 0.975</span></span>
-<span><span class="co">#&gt; • draws: 1000</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Nowcast at "2010-10-04" (q50, 2.5-97.5% interval):</span></span>
-<span><span class="co">#&gt; • 349 [172, 450]</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; # A tibble: 6 × 3</span></span>
-<span><span class="co">#&gt;   onset_week .quantile_level .value</span></span>
-<span><span class="co">#&gt;   &lt;date&gt;               &lt;dbl&gt;  &lt;dbl&gt;</span></span>
-<span><span class="co">#&gt; 1 2010-08-02           0.025    328</span></span>
-<span><span class="co">#&gt; 2 2010-08-02           0.05     328</span></span>
-<span><span class="co">#&gt; 3 2010-08-02           0.1      328</span></span>
-<span><span class="co">#&gt; 4 2010-08-02           0.25     328</span></span>
-<span><span class="co">#&gt; 5 2010-08-02           0.5      328</span></span>
-<span><span class="co">#&gt; 6 2010-08-02           0.75     328</span></span>
-<span><span class="co">#&gt; ℹ 84 more rows. Use `as_tibble()` for all of them.</span></span></code></pre>
-<p><strong>Watch for:</strong> it is <strong>unseeded</strong> unless
-you say otherwise. <code><a href="https://package.epinowcast.org/reference/enw_fit_opts.html" class="external-link">enw_fit_opts()</a></code> passes <code>...</code>
-to the sampler, so <code>seed =</code> reaches Stan — without it, the
-same fit can take forty minutes on one run and six hours on the next,
-and neither reproduces. It handles a weekly object natively
-(<code>timestep = "week"</code>), so its reference dates line up with
-the object’s grid.</p>
-</div>
-<div class="section level4">
-<h4 id="nobbs">NobBS<a class="anchor" aria-label="anchor" href="#nobbs"></a>
-</h4>
-<p>Nowcasting by Bayesian Smoothing. Needs <strong>JAGS</strong>
-installed as a separate program.</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">nobbs</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/run_nowcast.html">run_nowcast</a></span><span class="op">(</span><span class="va">snapshot</span>, <span class="fu"><a href="../reference/nowcast_engines.html">engine_nobbs</a></span><span class="op">(</span>max_D <span class="op">=</span> <span class="fl">10</span>, moving_window <span class="op">=</span> <span class="fl">64</span><span class="op">)</span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">nobbs</span></span></code></pre></div>
-<pre><code><span><span class="co">#&gt; ── A &lt;tbl_nowcast&gt; from method "NobBS" ───────────────────────────────────────────────────────────────────────────────────────</span></span>
-<span><span class="co">#&gt; • now: "2010-10-04"</span></span>
-<span><span class="co">#&gt; • event dates: 64</span></span>
-<span><span class="co">#&gt; • quantile levels: 0.025, 0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95, and 0.975</span></span>
-<span><span class="co">#&gt; • draws: none (quantiles only)</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Nowcast at "2010-10-04" (q50, 2.5-97.5% interval):</span></span>
-<span><span class="co">#&gt; • 360 [255, 521.0]</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; # A tibble: 6 × 3</span></span>
-<span><span class="co">#&gt;   onset_week .quantile_level .value</span></span>
-<span><span class="co">#&gt;   &lt;date&gt;               &lt;dbl&gt;  &lt;dbl&gt;</span></span>
-<span><span class="co">#&gt; 1 2009-07-20           0.025     28</span></span>
-<span><span class="co">#&gt; 2 2009-07-20           0.05      28</span></span>
-<span><span class="co">#&gt; 3 2009-07-20           0.1       28</span></span>
-<span><span class="co">#&gt; 4 2009-07-20           0.25      28</span></span>
-<span><span class="co">#&gt; 5 2009-07-20           0.5       28</span></span>
-<span><span class="co">#&gt; 6 2009-07-20           0.75      28</span></span>
-<span><span class="co">#&gt; ℹ 570 more rows. Use `as_tibble()` for all of them.</span></span></code></pre>
-<p><strong>Watch for:</strong> it keeps <strong>no draws per event
-date</strong>, so it cannot join a <code>type = "linear_pool"</code>
-ensemble, and it can only report quantiles it was asked for <em>at fit
-time</em>: pass <code>specs = list(quantiles = ...)</code> and
-<code>tidy(fit, probs =)</code> will return them, but a level it never
-computed is an error rather than an approximation. It also counts
-<strong>rows</strong>, so the converter expands your counts to one row
-per case — trim before fitting on a long series.</p>
-</div>
-<div class="section level4">
-<h4 id="surveillance">surveillance<a class="anchor" aria-label="anchor" href="#surveillance"></a>
-</h4>
-<p>The classic Höhle &amp; an der Heiden nowcast. No external toolchain
-for the method used here.</p>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">sur</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/run_nowcast.html">run_nowcast</a></span><span class="op">(</span><span class="va">snapshot</span>, <span class="fu"><a href="../reference/nowcast_engines.html">engine_surveillance</a></span><span class="op">(</span>D <span class="op">=</span> <span class="fl">10</span><span class="op">)</span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">sur</span></span></code></pre></div>
-<pre><code><span><span class="co">#&gt; ── A &lt;tbl_nowcast&gt; from method "surveillance" ────────────────────────────────────────────────────────────────────────────────</span></span>
-<span><span class="co">#&gt; • now: "2010-10-04"</span></span>
-<span><span class="co">#&gt; • event dates: 11</span></span>
-<span><span class="co">#&gt; • quantile levels: 0.025, 0.5, and 0.975</span></span>
-<span><span class="co">#&gt; • draws: none (quantiles only)</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Nowcast at "2010-10-04" (q50, 2.5-97.5% interval):</span></span>
-<span><span class="co">#&gt; • 216 [105, 391]</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; # A tibble: 6 × 3</span></span>
-<span><span class="co">#&gt;   onset_week .quantile_level .value</span></span>
-<span><span class="co">#&gt;   &lt;date&gt;               &lt;dbl&gt;  &lt;dbl&gt;</span></span>
-<span><span class="co">#&gt; 1 2010-07-26           0.025    302</span></span>
-<span><span class="co">#&gt; 2 2010-07-26           0.5      302</span></span>
-<span><span class="co">#&gt; 3 2010-07-26           0.975    302</span></span>
-<span><span class="co">#&gt; 4 2010-08-02           0.025    328</span></span>
-<span><span class="co">#&gt; 5 2010-08-02           0.5      329</span></span>
-<span><span class="co">#&gt; 6 2010-08-02           0.975    332</span></span>
-<span><span class="co">#&gt; ℹ 27 more rows. Use `as_tibble()` for all of them.</span></span></code></pre>
-<p><strong>Watch for:</strong> <code><a href="https://rdrr.io/pkg/surveillance/man/nowcast.html" class="external-link">surveillance::nowcast()</a></code> has
-<strong>no strata argument at all</strong>, so
-<code><a href="../reference/run_nowcast.html">run_nowcast()</a></code> fits one model per stratum and labels the
-blocks for you. Both date grids it needs come from the object via
-<code><a href="../reference/surveillance_grids.html">get_surveillance_when()</a></code> and
-<code><a href="../reference/surveillance_grids.html">get_surveillance_range()</a></code> — the second matters because a
-line list cannot express a zero, so the quiet days at the
-<code>now</code> edge would otherwise fall off the grid entirely.</p>
-</div>
-<div class="section level4">
-<h4 id="epinow2">EpiNow2<a class="anchor" aria-label="anchor" href="#epinow2"></a>
-</h4>
-<p>A renewal-equation model of the <em>infection</em> process, with the
-reporting correction supplied separately.</p>
-<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">en2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/run_nowcast.html">run_nowcast</a></span><span class="op">(</span><span class="va">snapshot</span>, <span class="fu"><a href="../reference/nowcast_engines.html">engine_epinow2</a></span><span class="op">(</span></span>
-<span>  generation_time <span class="op">=</span> <span class="fu">EpiNow2</span><span class="fu">::</span><span class="fu"><a href="https://epiforecasts.io/EpiNow2/reference/generation_time_opts.html" class="external-link">gt_opts</a></span><span class="op">(</span><span class="fu">EpiNow2</span><span class="fu">::</span><span class="va"><a href="https://epiforecasts.io/EpiNow2/reference/example_generation_time.html" class="external-link">example_generation_time</a></span><span class="op">)</span>,</span>
-<span>  delays          <span class="op">=</span> <span class="fu">EpiNow2</span><span class="fu">::</span><span class="fu"><a href="https://epiforecasts.io/EpiNow2/reference/delay_opts.html" class="external-link">delay_opts</a></span><span class="op">(</span><span class="fu">EpiNow2</span><span class="fu">::</span><span class="va"><a href="https://epiforecasts.io/EpiNow2/reference/example_incubation_period.html" class="external-link">example_incubation_period</a></span><span class="op">)</span>,</span>
-<span>  stan            <span class="op">=</span> <span class="fu">EpiNow2</span><span class="fu">::</span><span class="fu"><a href="https://epiforecasts.io/EpiNow2/reference/stan_opts.html" class="external-link">stan_opts</a></span><span class="op">(</span></span>
-<span>    method <span class="op">=</span> <span class="st">"pathfinder"</span>, backend <span class="op">=</span> <span class="st">"cmdstanr"</span>, samples <span class="op">=</span> <span class="fl">500</span></span>
-<span>  <span class="op">)</span>,</span>
-<span>  min_date        <span class="op">=</span> <span class="fl">96</span></span>
-<span><span class="op">)</span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">en2</span></span></code></pre></div>
-<pre><code><span><span class="co">#&gt; ── A &lt;tbl_nowcast&gt; from method "EpiNow2" ─────────────────────────────────────────────────────────────────────────────────────</span></span>
-<span><span class="co">#&gt; • now: "2010-10-04"</span></span>
-<span><span class="co">#&gt; • event dates: 96</span></span>
-<span><span class="co">#&gt; • quantile levels: 0.025, 0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95, and 0.975</span></span>
-<span><span class="co">#&gt; • draws: 500</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Nowcast at "2010-10-04" (q50, 2.5-97.5% interval):</span></span>
-<span><span class="co">#&gt; • 90 [90, 90]</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; # A tibble: 6 × 3</span></span>
-<span><span class="co">#&gt;   onset_week .quantile_level .value</span></span>
-<span><span class="co">#&gt;   &lt;date&gt;               &lt;dbl&gt;  &lt;dbl&gt;</span></span>
-<span><span class="co">#&gt; 1 2008-12-08           0.025     19</span></span>
-<span><span class="co">#&gt; 2 2008-12-08           0.05      19</span></span>
-<span><span class="co">#&gt; 3 2008-12-08           0.1       19</span></span>
-<span><span class="co">#&gt; 4 2008-12-08           0.25      19</span></span>
-<span><span class="co">#&gt; 5 2008-12-08           0.5       19</span></span>
-<span><span class="co">#&gt; 6 2008-12-08           0.75      28</span></span>
-<span><span class="co">#&gt; ℹ 858 more rows. Use `as_tibble()` for all of them.</span></span></code></pre>
-<p><strong>Watch for:</strong> EpiNow2 has no <code>timestep</code> — it
-always models a <em>daily</em> process. The converter therefore lays a
-weekly object onto EpiNow2’s daily grid, putting each week’s count on
-the week-ending day and marking the rest <code>accumulate = TRUE</code>.
-EpiNow2 honours that on the way out as well as in the likelihood, so
-predictions come back on <strong>your</strong> grid at
-<strong>your</strong> scale; you do not have to undo anything. It is
-also the one engine here that <em>forecasts</em> — it returns one period
-past the end of the data — and <code><a href="../reference/run_nowcast.html">run_nowcast()</a></code> drops that,
-because a nowcast estimates what has already happened.</p>
-<div class="alert alert-info">
-<p><strong>Its priors are not fitted from your data unless you say
-so.</strong> The generation time and incubation period default to
-EpiNow2’s shipped examples. Those are properties of transmission rather
-than of reporting, and no amount of reporting data identifies them — but
-they are still an assumption you are making, not a detail. See
-<code>vignette("nowcasting-models")</code> for fitting the truncation
-from the report dimension, which <em>is</em> what a <code>tbl_now</code>
-measures.</p>
-</div>
-</div>
-</div>
+<span><span class="co">#&gt; [1] "baselinenowcast"   "diseasenowcasting" "EpiNow2"           "epinowcast"        "example"           "NobBS"             "surveillance"</span></span></code></pre></div>
+<p>In general each of the methods for the <code><a href="../reference/engine.html">engine()</a></code> requires
+you to install the corresponding package. You can only use those you
+have installed.</p>
 <div class="section level3">
 <h3 id="how-much-history-to-fit-on-min_date">How much history to fit on: <code>min_date</code><a class="anchor" aria-label="anchor" href="#how-much-history-to-fit-on-min_date"></a>
 </h3>
-<p>The engines above are not shown the same data, and that is
-deliberate.</p>
-<p><code>baselinenowcast</code> and <code>diseasenowcasting</code> take
-the <strong>whole series</strong> in their stride: one estimates a delay
-distribution from the reporting triangle, the other fits a state-space
-model whose cost grows gently with the number of periods. More history
-is more information about the delay, and there is no reason to throw it
-away.</p>
-<p><code>epinowcast</code> and <code>EpiNow2</code> are different. Both
-scale with the number of <strong>reference dates</strong> they are given
-– <code>epinowcast</code> carries a parameter block per reference date,
-<code>EpiNow2</code> models a latent infection curve over every day of
-it – so a series that costs <code>baselinenowcast</code> a second costs
-them an afternoon. Trimming them is not a workaround; it is a modelling
-decision about how much history the reporting process is assumed to be
-stable over.</p>
-<p><code>min_date</code> puts that decision <strong>on the
-engine</strong>, so each model gets the window it needs and no global
-<code><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter()</a></code> has to be applied to all of them at once:</p>
-<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/run_nowcast.html">run_nowcast</a></span><span class="op">(</span><span class="va">snapshot</span>, <span class="fu"><a href="../reference/nowcast_engines.html">engine_epinowcast</a></span><span class="op">(</span>min_date <span class="op">=</span> <span class="fl">96</span><span class="op">)</span><span class="op">)</span>          <span class="co"># last 96 weeks</span></span>
-<span><span class="fu"><a href="../reference/run_nowcast.html">run_nowcast</a></span><span class="op">(</span><span class="va">snapshot</span>, <span class="fu"><a href="../reference/nowcast_engines.html">engine_epinowcast</a></span><span class="op">(</span>min_date <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2009-01-05"</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/run_nowcast.html">run_nowcast</a></span><span class="op">(</span><span class="va">snapshot</span>, <span class="fu"><a href="../reference/nowcast_engines.html">engine_baselinenowcast</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span>                  <span class="co"># whole series</span></span></code></pre></div>
-<p>It takes either shape:</p>
-<table class="table">
-<colgroup>
-<col width="50%">
-<col width="50%">
-</colgroup>
-<thead><tr class="header">
-<th><code>min_date</code></th>
-<th>means</th>
-</tr></thead>
-<tbody>
-<tr class="odd">
-<td>
-<code>NULL</code> (default)</td>
-<td>the whole series</td>
-</tr>
-<tr class="even">
-<td>a <code>Date</code>
-</td>
-<td>keep event dates on or after it</td>
-</tr>
-<tr class="odd">
-<td>a number</td>
-<td>keep the last <em>n</em> periods before <code>now</code>, in the
-object’s <strong>own units</strong>
-</td>
-</tr>
-</tbody>
-</table>
-<p>The number is usually what you want, and in a
-<code><a href="../reference/nowcast_backtest.html">nowcast_backtest()</a></code> it is the only one that behaves:
-<code>now</code> moves between fits, so a fixed calendar cut makes the
-fitted window <strong>grow</strong> as the backtest walks forward, and
-the last fit is trained on more data than the first.
-<code>min_date = 96</code> on this weekly object is ninety-six weeks at
-every retrospective date.</p>
+<p>In general not all nowcasts can fit all of the same data fast enough
+to be useful. As a rule of thumb:</p>
+<ol style="list-style-type: decimal">
+<li>
+<code>diseasenowcasting</code> can take the <strong>whole
+series</strong> and produce a nowcast in less than a minute.</li>
+<li>
+<code>baselinenowcast</code> can take all of the event dates however
+one usually has to truncate the number of delays in the delay
+distribution.</li>
+<li>
+<code>epinowcast</code>, <code>EpiNow2</code>,
+<code>surveillance</code> and <code>NobBS</code> all require an
+event-window so that for a long time series not all event dates are
+passed. You can use the <code>min_date</code> argument to select the
+size of the window for the engine.</li>
+</ol>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/run_nowcast.html">run_nowcast</a></span><span class="op">(</span><span class="va">dengue</span>, <span class="fu"><a href="../reference/nowcast_engines.html">engine_epinowcast</a></span><span class="op">(</span>min_date <span class="op">=</span> <span class="fl">20</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <div class="alert alert-info">
-<p><strong><code>min_date</code> trims the event axis, not
-<code>now</code>.</strong> The nowcast is still made as of the same
-date, and the trimmed object is what the result carries – so
-<code><a href="../reference/score_nowcast.html">score_nowcast()</a></code> and <code><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot()</a></code>’s reported
-counts describe the series the model was actually shown.</p>
+<p>For backtesting and ensembles it is important to utilize the
+<code>min_date</code> in the engine so that the backtest knows to
+truncate the data to the last <code>min_date</code> periods for every
+single test.</p>
 </div>
-</div>
-<div class="section level3">
-<h3 id="what-you-get-back">What you get back<a class="anchor" aria-label="anchor" href="#what-you-get-back"></a>
-</h3>
-<p>Every method returns a <code>tbl_nowcast</code>. Whatever the package
-produced — a Stan fit, a matrix of samples, a data frame of quantiles —
-the predictions are always in the same tidy shape:</p>
-<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://tibble.tidyverse.org/reference/as_tibble.html" class="external-link">as_tibble</a></span><span class="op">(</span><span class="va">baseline</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 9,756 × 3</span></span></span>
-<span><span class="co">#&gt;    onset_week .quantile_level .value</span></span>
-<span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>               <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> 1990-01-01           0.025     61</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> 1990-01-01           0.05      61</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> 1990-01-01           0.1       61</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> 1990-01-01           0.25      61</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> 1990-01-01           0.5       61</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> 1990-01-01           0.75      61</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> 1990-01-01           0.9       61</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> 1990-01-01           0.95      61</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> 1990-01-01           0.975     61</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> 1990-01-08           0.025     50</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 9,746 more rows</span></span></span></code></pre>
-<p>and, when the backend is sample-based, the draws are there too:</p>
-<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://tibble.tidyverse.org/reference/as_tibble.html" class="external-link">as_tibble</a></span><span class="op">(</span><span class="va">baseline</span>, type <span class="op">=</span> <span class="st">"draws"</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1,084,000 × 3</span></span></span>
-<span><span class="co">#&gt;    onset_week .draw .value</span></span>
-<span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> 1990-01-01     1     61</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> 1990-01-01     2     61</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> 1990-01-01     3     61</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> 1990-01-01     4     61</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> 1990-01-01     5     61</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> 1990-01-01     6     61</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> 1990-01-01     7     61</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> 1990-01-01     8     61</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> 1990-01-01     9     61</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> 1990-01-01    10     61</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 1,083,990 more rows</span></span></span></code></pre>
-</div>
-<div class="section level3">
-<h3 id="tidy-works-here-too">
-<code>tidy()</code> works here too<a class="anchor" aria-label="anchor" href="#tidy-works-here-too"></a>
-</h3>
-<p><code><a href="https://tibble.tidyverse.org/reference/as_tibble.html" class="external-link">as_tibble()</a></code> gives you the quantiles in full.
-<code><a href="../reference/tidy.nowcast.html">tidy()</a></code> gives you the <strong>same summary table every other
-engine in this package produces</strong> — the one documented at
-<code><a href="../reference/tidy.nowcast.html">?tidy.nowcast</a></code> — so a nowcast fitted through
-<code><a href="../reference/run_nowcast.html">run_nowcast()</a></code> and one fitted by calling a package by hand
-are read the same way:</p>
-<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/tidy.nowcast.html">tidy</a></span><span class="op">(</span><span class="va">baseline</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1,084 × 7</span></span></span>
-<span><span class="co">#&gt;    event_date stratum estimate conf.low conf.high level engine         </span></span>
-<span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>          </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> 1990-01-01 all           61       61        61  0.95 baselinenowcast</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> 1990-01-08 all           50       50        50  0.95 baselinenowcast</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> 1990-01-15 all           44       44        44  0.95 baselinenowcast</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> 1990-01-22 all           46       46        46  0.95 baselinenowcast</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> 1990-01-29 all           39       39        39  0.95 baselinenowcast</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> 1990-02-05 all           34       34        34  0.95 baselinenowcast</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> 1990-02-12 all           24       24        24  0.95 baselinenowcast</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> 1990-02-19 all           17       17        17  0.95 baselinenowcast</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> 1990-02-26 all           17       17        17  0.95 baselinenowcast</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> 1990-03-05 all           16       16        16  0.95 baselinenowcast</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 1,074 more rows</span></span></span></code></pre>
-<p>Those first weeks look odd until you notice what they are:
-<code>estimate</code>, <code>conf.low</code> and <code>conf.high</code>
-are identical because early 2008 was <strong>settled</strong> long
-before this <code>now</code>. Every case had been reported, so there is
-nothing left to nowcast and no uncertainty to report. The interesting
-rows are at the <code>now</code> end.</p>
-<p>Two columns there are read off the object rather than assumed.
-<code>engine</code> is the method that produced it. <code>level</code>
-is the width of the <strong>widest symmetric pair of quantiles the
-nowcast actually carries</strong> — <code>0.95</code> for the default
-<code><a href="../reference/nowcast_quantile_levels.html">nowcast_quantile_levels()</a></code>, <code>0.8</code> for a nowcast
-summarised at <code>c(0.1, 0.5, 0.9)</code>, and <code>NA</code> when no
-symmetric pair exists at all. A guessed width would defeat the point of
-the column, which is to stop a 90% band being compared with a 95% one as
-though they were the same thing.</p>
-<p>Nothing is thrown away. The <code>fit</code> property still holds the
-backend’s own object, so you can keep using that package’s
-diagnostics:</p>
-<div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/class.html" class="external-link">class</a></span><span class="op">(</span><span class="va">baseline</span><span class="op">@</span><span class="va">fit</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "baselinenowcast_df" "data.frame"</span></span></code></pre></div>
-<p>And there is an <code><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot()</a></code> method for a quick look. It
-is drawn in <strong>green</strong>, the colour this package reserves for
-the epidemic process — a nowcast is an estimate of <em>what
-happened</em>, not of <em>when we found out</em>:</p>
-<div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">baseline</span><span class="op">)</span></span></code></pre></div>
-<p><img src="ensemble-nowcasting_files/figure-html/bln-plot-1.png" class="r-plt" alt="A green fan chart of the dengue nowcast: nested prediction intervals around a median line, with the counts reported so far as points." width="672"></p>
-</div>
-<div class="section level3">
-<h3 id="strata-are-handled-for-you">Strata are handled for you<a class="anchor" aria-label="anchor" href="#strata-are-handled-for-you"></a>
-</h3>
-<p>When the <code>tbl_now</code> declares strata,
-<code><a href="../reference/run_nowcast.html">run_nowcast()</a></code> does whatever that backend needs to honour
-them — one reporting triangle per stratum for
-<code>baselinenowcast</code>, <code>NobBS.strat()</code> instead of
-<code>NobBS()</code>, one fit per stratum for <code>surveillance</code>,
-<code>regional_epinow()</code> instead of
-<code>estimate_infections()</code> — and the stratum ends up as an
-ordinary column of the output:</p>
-<div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">dengue_by_sex</span> <span class="op">&lt;-</span> <span class="va">denguedat</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">onset_week</span> <span class="op">&gt;=</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2008-01-01"</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/count.html" class="external-link">count</a></span><span class="op">(</span><span class="va">onset_week</span>, <span class="va">report_week</span>, <span class="va">gender</span>, name <span class="op">=</span> <span class="st">"n"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="../reference/tbl_now.html">tbl_now</a></span><span class="op">(</span></span>
-<span>    event_date <span class="op">=</span> <span class="va">onset_week</span>, report_date <span class="op">=</span> <span class="va">report_week</span>, case_count <span class="op">=</span> <span class="va">n</span>,</span>
-<span>    strata <span class="op">=</span> <span class="va">gender</span>, data_type <span class="op">=</span> <span class="st">"count-incidence"</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span></span>
-<span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">report_week</span> <span class="op">&lt;=</span> <span class="va">now</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="../reference/add.html">change_now</a></span><span class="op">(</span>now <span class="op">=</span> <span class="va">now</span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">by_sex</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/run_nowcast.html">run_nowcast</a></span><span class="op">(</span><span class="va">dengue_by_sex</span>, engine <span class="op">=</span> <span class="fu"><a href="../reference/nowcast_engines.html">engine_baselinenowcast</a></span><span class="op">(</span>draws <span class="op">=</span> <span class="fl">1000</span><span class="op">)</span><span class="op">)</span></span>
-<span></span>
-<span><span class="fu"><a href="https://tibble.tidyverse.org/reference/as_tibble.html" class="external-link">as_tibble</a></span><span class="op">(</span><span class="va">by_sex</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 2,556 × 4</span></span></span>
-<span><span class="co">#&gt;    onset_week gender .quantile_level .value</span></span>
-<span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>            <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> 2008-01-07 Female           0.025      9</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> 2008-01-07 Female           0.05       9</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> 2008-01-07 Female           0.1        9</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> 2008-01-07 Female           0.25       9</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> 2008-01-07 Female           0.5        9</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> 2008-01-07 Female           0.75       9</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> 2008-01-07 Female           0.9        9</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> 2008-01-07 Female           0.95       9</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> 2008-01-07 Female           0.975      9</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> 2008-01-07 Male             0.025     13</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 2,546 more rows</span></span></span></code></pre>
-<p><code><a href="../reference/tidy.nowcast.html">tidy()</a></code> labels each block with its stratum, so
-<code>(stratum, event_date)</code> is a unique key and the two series
-can never be confused for one another:</p>
-<div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/tidy.nowcast.html">tidy</a></span><span class="op">(</span><span class="va">by_sex</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 284 × 7</span></span></span>
-<span><span class="co">#&gt;    event_date stratum estimate conf.low conf.high level engine         </span></span>
-<span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>          </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> 2008-01-07 Female         9        9         9  0.95 baselinenowcast</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> 2008-01-14 Female         9        9         9  0.95 baselinenowcast</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> 2008-01-21 Female         3        3         3  0.95 baselinenowcast</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> 2008-01-28 Female         4        4         4  0.95 baselinenowcast</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> 2008-02-04 Female         3        3         3  0.95 baselinenowcast</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> 2008-02-11 Female         2        2         2  0.95 baselinenowcast</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> 2008-02-18 Female         3        3         3  0.95 baselinenowcast</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> 2008-02-25 Female         5        5         5  0.95 baselinenowcast</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> 2008-03-10 Female         1        1         1  0.95 baselinenowcast</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> 2008-03-17 Female         1        1         1  0.95 baselinenowcast</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 274 more rows</span></span></span></code></pre>
-<p>If a backend genuinely cannot stratify, it warns and pools rather
-than pretending.</p>
 </div>
 </div>
 <div class="section level2">
-<h2 id="scoring-a-nowcast">2. Scoring a nowcast<a class="anchor" aria-label="anchor" href="#scoring-a-nowcast"></a>
+<h2 id="cleaning-and-evaluating-the-nowcast">2. Cleaning and evaluating the nowcast<a class="anchor" aria-label="anchor" href="#cleaning-and-evaluating-the-nowcast"></a>
 </h2>
-<p><code><a href="../reference/score_nowcast.html">score_nowcast()</a></code> compares the predictive quantiles with a
-resolved truth table, using the weighted interval score (WIS) of <span class="citation">Bracher et al. (<a href="#ref-bracher2021">2021</a>)</span>, plus the absolute error of the
-median and the 50% and 90% interval coverage. By default that truth is
-the total eventually reported on the report axis; revision-aware series
-can instead be scored with <code>truth_axis = "revision"</code> and the
-matching <code>truth_type</code>.</p>
-<p>Scoring only makes sense against data the model had not seen, which
-is why <code>snapshot</code> was truncated at <code>now</code> and the
-truth comes from the full series:</p>
-<div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/score_nowcast.html">score_nowcast</a></span><span class="op">(</span><span class="va">baseline</span>, truth <span class="op">=</span> <span class="va">dengue</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 8 × 7</span></span></span>
-<span><span class="co">#&gt;   .method         onset_week .observed     wis ae_median coverage_50 coverage_90</span></span>
-<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;lgl&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;lgl&gt;</span>      </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> baselinenowcast 2010-08-16       355 2.22<span style="color: #949494;">e</span><span style="color: #BB0000;">-2</span>         0 TRUE        TRUE       </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> baselinenowcast 2010-08-23       258 4.44<span style="color: #949494;">e</span><span style="color: #BB0000;">-2</span>         0 TRUE        TRUE       </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> baselinenowcast 2010-08-30       287 2.67<span style="color: #949494;">e</span><span style="color: #BB0000;">-1</span>         1 TRUE        TRUE       </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> baselinenowcast 2010-09-06       298 4.22<span style="color: #949494;">e</span><span style="color: #BB0000;">-1</span>         1 TRUE        TRUE       </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> baselinenowcast 2010-09-13       275 1.08<span style="color: #949494;">e</span>+0         2 TRUE        TRUE       </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> baselinenowcast 2010-09-20       250 9.45<span style="color: #949494;">e</span>+0        21 FALSE       FALSE      </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">7</span> baselinenowcast 2010-09-27       201 3.59<span style="color: #949494;">e</span>+1        70 FALSE       TRUE       </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">8</span> baselinenowcast 2010-10-04       147 1.49<span style="color: #949494;">e</span>+2       355 FALSE       TRUE</span></span></code></pre>
-<p>Lower WIS is better; <code>coverage_90</code> should be
-<code>TRUE</code> about nine times in ten if the intervals are
-honest.</p>
-<p>If you would rather use the full score suite, its coercion generic
-accepts the nowcast directly. Supply the later, full
-<code>tbl_now</code> as <code>truth</code>:</p>
-<div class="sourceCode" id="cb34"><pre class="downlit sourceCode r">
+<p>Every method called by <code>run_engine</code> returns a
+<code>tbl_nowcast</code> which can be cleaned with
+<code>tidy</code>:</p>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/tidy.nowcast.html">tidy</a></span><span class="op">(</span><span class="va">baseline</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1,095 × 7</span></span></span>
+<span><span class="co">#&gt;   event_date stratum estimate conf.low conf.high level engine         </span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>          </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> 1990-01-01 all           61       61        61  0.95 baselinenowcast</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> 1990-01-08 all           50       50        50  0.95 baselinenowcast</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> 1990-01-15 all           44       44        44  0.95 baselinenowcast</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> 1990-01-22 all           46       46        46  0.95 baselinenowcast</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> 1990-01-29 all           39       39        39  0.95 baselinenowcast</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 1,090 more rows</span></span></span></code></pre></div>
+<p>or visualized with <code><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot()</a></code>:</p>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">baseline</span><span class="op">)</span></span></code></pre></div>
+<p><img src="ensemble-nowcasting_files/figure-html/unnamed-chunk-3-1.png" class="r-plt" alt="" width="864"></p>
+<p>If enough cases have been observed so that the “truth” is settled,
+one can use the <code><a href="../reference/score_nowcast.html">score_nowcast()</a></code> function which compares the
+predictive quantiles with a resolved truth table using the weighted
+interval score (WIS) of <span class="citation">Bracher et al. (<a href="#ref-bracher2021">2021</a>)</span>, plus the absolute error of the
+median and the 50% and 90% interval coverage:</p>
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/score_nowcast.html">score_nowcast</a></span><span class="op">(</span><span class="va">baseline</span>, truth <span class="op">=</span> <span class="va">dengue</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1,095 × 7</span></span></span>
+<span><span class="co">#&gt;   .method         onset_week .observed   wis ae_median coverage_50 coverage_90</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;lgl&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;lgl&gt;</span>      </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> baselinenowcast 1990-01-01        61     0         0 TRUE        TRUE       </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> baselinenowcast 1990-01-08        50     0         0 TRUE        TRUE       </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> baselinenowcast 1990-01-15        44     0         0 TRUE        TRUE       </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> baselinenowcast 1990-01-22        46     0         0 TRUE        TRUE       </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> baselinenowcast 1990-01-29        39     0         0 TRUE        TRUE       </span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 1,090 more rows</span></span></span></code></pre></div>
+<p>or more directly one can use the package:</p>
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">baseline</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">scoringutils</span><span class="fu">::</span><span class="fu"><a href="https://epiforecasts.io/scoringutils/reference/as_forecast_quantile.html" class="external-link">as_forecast_quantile</a></span><span class="op">(</span>truth <span class="op">=</span> <span class="va">dengue</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu">scoringutils</span><span class="fu">::</span><span class="fu"><a href="https://epiforecasts.io/scoringutils/reference/score.html" class="external-link">score</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-<p>For point-score workflows,
-<code>as_forecast_point(baseline, truth = dengue)</code> keeps the
-median prediction and hands that to .</p>
-<p>When the nowcast retains posterior draws, it can instead become a
-sample forecast. This follows the same adapter pattern used by :</p>
-<div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">baseline</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu">scoringutils</span><span class="fu">::</span><span class="fu"><a href="https://epiforecasts.io/scoringutils/reference/as_forecast_sample.html" class="external-link">as_forecast_sample</a></span><span class="op">(</span>truth <span class="op">=</span> <span class="va">dengue</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu">scoringutils</span><span class="fu">::</span><span class="fu"><a href="https://epiforecasts.io/scoringutils/reference/score.html" class="external-link">score</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-<p>Sample conversion is deliberately unavailable for a quantile-only
-nowcast: samples cannot be reconstructed from a handful of
-quantiles.</p>
-<p><code>tbl.now</code>’s own <code>wis</code> and the one computes
-agree to machine precision — the package’s test suite checks exactly
-that, on the same numbers, rather than trusting either implementation on
-its own.</p>
+<span>  <span class="fu">scoringutils</span><span class="fu">::</span><span class="fu"><a href="https://epiforecasts.io/scoringutils/reference/score.html" class="external-link">score</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co">#&gt;       onset_week           model         wis overprediction underprediction dispersion  bias interval_coverage_50 interval_coverage_90 ae_median</span></span>
+<span><span class="co">#&gt;           &lt;Date&gt;          &lt;char&gt;       &lt;num&gt;          &lt;num&gt;           &lt;num&gt;      &lt;num&gt; &lt;num&gt;               &lt;lgcl&gt;               &lt;lgcl&gt;     &lt;num&gt;</span></span>
+<span><span class="co">#&gt;    1: 1990-01-01 baselinenowcast  0.00000000        0.00000               0 0.00000000     0                 TRUE                 TRUE       0.0</span></span>
+<span><span class="co">#&gt;    2: 1990-01-08 baselinenowcast  0.00000000        0.00000               0 0.00000000     0                 TRUE                 TRUE       0.0</span></span>
+<span><span class="co">#&gt;    3: 1990-01-15 baselinenowcast  0.00000000        0.00000               0 0.00000000     0                 TRUE                 TRUE       0.0</span></span>
+<span><span class="co">#&gt;    4: 1990-01-22 baselinenowcast  0.00000000        0.00000               0 0.00000000     0                 TRUE                 TRUE       0.0</span></span>
+<span><span class="co">#&gt;    5: 1990-01-29 baselinenowcast  0.00000000        0.00000               0 0.00000000     0                 TRUE                 TRUE       0.0</span></span>
+<span><span class="co">#&gt;   ---                                                                                                                                           </span></span>
+<span><span class="co">#&gt; 1091: 2010-11-22 baselinenowcast  0.05555556        0.00000               0 0.05555556     0                 TRUE                 TRUE       0.0</span></span>
+<span><span class="co">#&gt; 1092: 2010-11-29 baselinenowcast  0.13625000        0.00000               0 0.13625000     0                 TRUE                 TRUE       0.0</span></span>
+<span><span class="co">#&gt; 1093: 2010-12-06 baselinenowcast  0.00000000        0.00000               0 0.00000000     0                 TRUE                 TRUE       0.0</span></span>
+<span><span class="co">#&gt; 1094: 2010-12-13 baselinenowcast  0.11111111        0.00000               0 0.11111111     0                 TRUE                 TRUE       0.0</span></span>
+<span><span class="co">#&gt; 1095: 2010-12-20 baselinenowcast 24.06319444       15.86667               0 8.19652778     1                FALSE                FALSE      45.5</span></span></code></pre></div>
+<div class="alert alert-warning">
+<p>Because the dataset ends at <code>r</code>get_now(dengue)` and we
+nowcasted for that date the scores are not very useful here (we don’t
+know how many cases <em>arrived</em> eventually). A better option is to
+perform a backtest to evaluate historical performance as the dataset
+knows how many cases have already settled from dates in the past.</p>
+</div>
 </div>
 <div class="section level2">
-<h2 id="ensembles">3. Ensembles<a class="anchor" aria-label="anchor" href="#ensembles"></a>
+<h2 id="backtests-and-ensembles">3. Backtests and ensembles<a class="anchor" aria-label="anchor" href="#backtests-and-ensembles"></a>
 </h2>
-<p>Models fail in different directions, and combining them cancels part
-of that: an ensemble is rarely the single best model, but it is also
-rarely the worst, which is worth a great deal when you have to commit to
-something before you know which epidemic you are facing. <em>How</em>
-you combine them matters more than most write-ups admit, and the two
-rules below behave differently enough that the choice is worth making
-deliberately. Because every <code><a href="../reference/run_nowcast.html">run_nowcast()</a></code> result has the
-same shape, combining them is one call.</p>
-<p>The members below are the fits from the cards above, so nothing is
-refitted:</p>
-<div class="sourceCode" id="cb36"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">members</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
-<span>  baselinenowcast   <span class="op">=</span> <span class="va">baseline</span>,</span>
-<span>  diseasenowcasting <span class="op">=</span> <span class="va">dnc</span>,</span>
-<span>  <span class="co"># The SAME package, a different epidemic process. An ensemble is not only a</span></span>
-<span>  <span class="co"># hedge across packages -- two structurally different models from one package</span></span>
-<span>  <span class="co"># disagree in their own way, and that disagreement is worth combining too.</span></span>
-<span>  dnc_ar1           <span class="op">=</span> <span class="fu"><a href="../reference/run_nowcast.html">run_nowcast</a></span><span class="op">(</span></span>
-<span>    <span class="va">snapshot</span>,</span>
-<span>    <span class="fu"><a href="../reference/nowcast_engines.html">engine_diseasenowcasting</a></span><span class="op">(</span></span>
-<span>      model <span class="op">=</span> <span class="fu">diseasenowcasting</span><span class="fu">::</span><span class="fu"><a href="https://rodrigozepeda.github.io/diseasenowcasting/reference/model.html" class="external-link">model</a></span><span class="op">(</span></span>
-<span>        epidemic <span class="op">=</span> <span class="fu">diseasenowcasting</span><span class="fu">::</span><span class="fu"><a href="https://rodrigozepeda.github.io/diseasenowcasting/reference/epidemic_process.html" class="external-link">ar1_epidemic</a></span><span class="op">(</span><span class="op">)</span></span>
-<span>      <span class="op">)</span>,</span>
-<span>      label <span class="op">=</span> <span class="st">"dnc_ar1"</span></span>
-<span>    <span class="op">)</span></span>
-<span>  <span class="op">)</span>,</span>
-<span>  epinowcast        <span class="op">=</span> <span class="va">enw</span>,</span>
-<span>  NobBS             <span class="op">=</span> <span class="va">nobbs</span>,</span>
-<span>  EpiNow2           <span class="op">=</span> <span class="va">en2</span></span>
-<span><span class="op">)</span></span>
+<p>Models fail in different directions and combining them cancels part
+of that. An ensemble combines multiple nowcasting for robustness. To
+build an ensemble one has to specify different engines, backtest them
+and then build the ensemble.</p>
+<p>Here for example we will create an ensemble from <code>NobBS</code>,
+and two <code>baselinenowcast</code> options. It is important to utilize
+the <code>label</code> argument when using the same engine with
+different parameters:</p>
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co">#NobBS</span></span>
+<span><span class="va">model1</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/nowcast_engines.html">engine_nobbs</a></span><span class="op">(</span>min_date <span class="op">=</span> <span class="fl">52</span>, max_D <span class="op">=</span> <span class="fl">15</span>, label <span class="op">=</span> <span class="st">"NobBS"</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">ensemble</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/nowcast_ensemble.html">nowcast_ensemble</a></span><span class="op">(</span><span class="va">members</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">#&gt; ── A &lt;tbl_nowcast&gt; from method "ensemble" ────────────────────────────────────────────────────────────────────────────────────</span></span>
-<span><span class="co">#&gt; • now: "2010-10-04"</span></span>
-<span><span class="co">#&gt; • event dates: 10</span></span>
-<span><span class="co">#&gt; • quantile levels: 0.025, 0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95, and 0.975</span></span>
-<span><span class="co">#&gt; • draws: none (quantiles only)</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Nowcast at "2010-10-04" (q50, 2.5-97.5% interval):</span></span>
-<span><span class="co">#&gt; • 290.7 [135.2, 574.7]</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; # A tibble: 6 × 3</span></span>
-<span><span class="co">#&gt;   onset_week .quantile_level .value</span></span>
-<span><span class="co">#&gt;   &lt;date&gt;               &lt;dbl&gt;  &lt;dbl&gt;</span></span>
-<span><span class="co">#&gt; 1 2010-08-02           0.025   308 </span></span>
-<span><span class="co">#&gt; 2 2010-08-02           0.05    308 </span></span>
-<span><span class="co">#&gt; 3 2010-08-02           0.1     308 </span></span>
-<span><span class="co">#&gt; 4 2010-08-02           0.25    308 </span></span>
-<span><span class="co">#&gt; 5 2010-08-02           0.5     320.</span></span>
-<span><span class="co">#&gt; 6 2010-08-02           0.75    320.</span></span>
-<span><span class="co">#&gt; ℹ 84 more rows. Use `as_tibble()` for all of them.</span></span></code></pre>
-<div class="section level3">
-<h3 id="the-ensemble-against-its-parts">The ensemble against its parts<a class="anchor" aria-label="anchor" href="#the-ensemble-against-its-parts"></a>
-</h3>
-<p>The reason to build one is easier to see than to describe. Each thin
-line below is one member’s median, the green fan is the ensemble, and
-the dashed line is what those weeks eventually reached. The window is
-the ensemble’s own: it keeps only the dates <strong>every</strong>
-member covers, and <code>epinowcast</code> reports just the reference
-dates it is nowcasting.</p>
-<div class="figure">
-<img src="ensemble-nowcasting_files/figure-html/ensemble-vs-members-1.png" class="r-plt" alt="Coloured lines, one per member, fan out over the final weeks; the ensemble's shaded band sits among them and its median tracks the eventual truth more closely than most single members." width="100%"><p class="caption">
-The quantile ensemble against each of its members over the last weeks
-before <code>now</code>.
-</p>
-</div>
-<p>Three things are worth reading off it.</p>
-<p>Most members <strong>fan out at the <code>now</code> edge</strong>
-and lie on top of each other before it. That is the shape of the
-problem: the settled weeks have nothing left to nowcast, so any sane
-model reproduces them, and the disagreement concentrates exactly where
-the answer is not yet known. The spread at the right is what an ensemble
-exists to absorb.</p>
-<p><code>EpiNow2</code> is the exception, and it disagrees
-<strong>everywhere</strong>. It is not estimating the same thing as the
-others: it fits a latent <em>infection</em> curve and reports the smooth
-implied by it, rather than correcting each week’s reported count for its
-outstanding delay. A member that is off by a constant factor on settled
-weeks is usually a sign of that kind of mismatch rather than of a bad
-fit.</p>
-<p>And the ensemble’s median sits <strong>inside</strong> the spread
-rather than at either edge of it. That is the entire trade: it is rarely
-the best line on any given week, and it is rarely the worst either —
-which is worth a great deal when you have to commit before knowing which
-member was right.</p>
-<div class="alert alert-warning">
-<p><strong>An ensemble reports only what every member can.</strong> The
-fan above has as many bands as the levels its members share, and here
-that is all nine of <code><a href="../reference/nowcast_quantile_levels.html">nowcast_quantile_levels()</a></code> — every
-member either keeps draws or was asked for those levels at fit time. Add
-<code>surveillance</code>, which keeps none and reports a fixed
-<code>{0.025, 0.5, 0.975}</code>, and the fan collapses to a single 95%
-band. That is why it is a card above but not a member here — see the
-note below.</p>
-</div>
-<div class="alert alert-warning">
-<p><strong>These fits use approximate inference.</strong>
-<code>epinowcast</code> runs through <code><a href="https://package.epinowcast.org/reference/enw_pathfinder.html" class="external-link">enw_pathfinder()</a></code> and
-<code>EpiNow2</code> through
-<code>stan_opts(method = "pathfinder")</code> so this article rebuilds
-in minutes rather than overnight. That is fine for showing how the
-ensemble <em>machinery</em> behaves and is <strong>not</strong> a tuned
-posterior for either model — do not read any single member’s band as
-that package’s considered answer.</p>
-</div>
-<p>An ensemble is a <code>tbl_nowcast</code> like any other, so it
-scores, plots and tidies the same way. Its <code>engine</code> is the
-ensemble’s name rather than a package:</p>
-<div class="sourceCode" id="cb38"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/tidy.nowcast.html">tidy</a></span><span class="op">(</span><span class="va">ensemble</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 10 × 7</span></span></span>
-<span><span class="co">#&gt;    event_date stratum estimate conf.low conf.high level engine  </span></span>
-<span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> 2010-08-02 all         320.     308       320.  0.95 ensemble</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> 2010-08-09 all         371.     349.      371.  0.95 ensemble</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> 2010-08-16 all         346      346       353.  0.95 ensemble</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> 2010-08-23 all         264.     262.      265.  0.95 ensemble</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> 2010-08-30 all         286      275.      288.  0.95 ensemble</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> 2010-09-06 all         304.     293.      308.  0.95 ensemble</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> 2010-09-13 all         277      261.      287   0.95 ensemble</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> 2010-09-20 all         263.     244.      298.  0.95 ensemble</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> 2010-09-27 all         264.     196.      414.  0.95 ensemble</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> 2010-10-04 all         291.     135.      575.  0.95 ensemble</span></span></code></pre>
-<p>It can also be a member of another ensemble. This makes it possible,
-for example, to combine a <code>diseasenowcasting</code> HSGP/AR
-ensemble with an <code>epinowcast</code> random walk and a baseline.
-Quantile ensembles can always be nested; a nested member of a
-<code>linear_pool</code> must itself have draws, so its inner ensemble
-must also use <code>type = "linear_pool"</code>.</p>
-</div>
-<div class="section level3">
-<h3 id="two-ways-of-combining">Two ways of combining<a class="anchor" aria-label="anchor" href="#two-ways-of-combining"></a>
-</h3>
-<p><code>type = "quantile"</code> (the default) averages the members’
-quantiles level by level — <em>vincentization</em>. It is the workhorse
-of the forecast hubs, it always applies because every backend produces
-quantiles, and it tends to produce <strong>narrower</strong> intervals
-than the members.</p>
-<p><code>type = "linear_pool"</code> instead pools the members’ draws
-into a mixture distribution and re-summarises it. It needs draws from
-every member and generally produces <strong>wider</strong> intervals,
-because disagreement between models becomes extra spread rather than
-being averaged away.</p>
-<div class="sourceCode" id="cb40"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">sharp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/nowcast_ensemble.html">nowcast_ensemble</a></span><span class="op">(</span><span class="va">members</span>, type <span class="op">=</span> <span class="st">"quantile"</span><span class="op">)</span></span>
+<span><span class="co">#baselinenowcast</span></span>
+<span><span class="va">model2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/nowcast_engines.html">engine_baselinenowcast</a></span><span class="op">(</span>max_delay <span class="op">=</span> <span class="fl">15</span>, label <span class="op">=</span> <span class="st">"baselinenowcast"</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># The pool needs draws, so it takes the members that have them.</span></span>
-<span><span class="va">with_draws</span> <span class="op">&lt;-</span> <span class="va">members</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"baselinenowcast"</span>, <span class="st">"diseasenowcasting"</span>,</span>
-<span>                        <span class="st">"dnc_ar1"</span>, <span class="st">"epinowcast"</span><span class="op">)</span><span class="op">]</span></span>
-<span><span class="va">wide</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/nowcast_ensemble.html">nowcast_ensemble</a></span><span class="op">(</span><span class="va">with_draws</span>, type <span class="op">=</span> <span class="st">"linear_pool"</span>, n_draws <span class="op">=</span> <span class="fl">4000</span><span class="op">)</span></span></code></pre></div>
-<p>Which one you want depends on whether you read between-model
-disagreement as noise to be averaged out (quantile) or as genuine
-uncertainty to be propagated (linear pool).</p>
-<div class="alert alert-warning">
-<p><strong>The linear pool needs draws, and not every backend has
-them.</strong> Of the six engines above, <code>baselinenowcast</code>,
-<code>diseasenowcasting</code>, <code>epinowcast</code> and
-<code>EpiNow2</code> keep per-event-date draws; <code>NobBS</code> and
-<code>surveillance</code> report summaries only. (<code>NobBS</code>’s
-<code>nowcast.post.samps</code> cover the <code>now</code> date rather
-than every event date, which is not the same thing.)
-<code>type = "linear_pool"</code> <strong>refuses</strong> a set of
-members that includes one of the two, rather than silently dropping it
-and returning a differently-composed ensemble under the same name —
-which is why the call above selects its members explicitly.</p>
-</div>
-<div class="alert alert-info">
-<p><strong>Members must agree on what they are predicting.</strong> An
-ensemble combines members target by target, so a date one member covers
-and another does not cannot be combined: averaging over whoever happens
-to be present would report a single member’s own value as the
-ensemble’s. Those targets are dropped, with a warning saying how many.
-This is not hypothetical — <code>EpiNow2</code> forecasts one period
-past the end of the data, and before <code><a href="../reference/run_nowcast.html">run_nowcast()</a></code> trimmed
-it that lone extra week landed exactly at the <code>now</code> edge,
-which is the part of the picture people read.</p>
-<p>That agreement is semantic as well as tabular.
-<code><a href="../reference/nowcast_ensemble.html">nowcast_ensemble()</a></code> checks the date grid, strata and
-quantile levels it can see, but it assumes the members target the same
-reporting or revision quantity. Combine models that answer the same
-question, then score the result with the matching
-<code>truth_axis</code> and <code>truth_type</code> in
-<code><a href="../reference/score_nowcast.html">score_nowcast()</a></code>.</p>
-</div>
-<div class="alert alert-info">
-<p><strong>Why <code>surveillance</code> is not a member here.</strong>
-There <em>is</em> a principled reason, and it is arithmetic.
-<code>surveillance</code> keeps no per-date draws and reports a
-<strong>fixed</strong> <code>{0.025, 0.5, 0.975}</code>, so it cannot be
-asked for any other level after the fit. An ensemble reports only the
-levels <strong>every</strong> member carries, so adding it drops the
-ensemble from the nine hub levels to those three — one 95% band instead
-of a fan — and every other member’s extra resolution is thrown away to
-accommodate one that has none.</p>
-<p><code><a href="../reference/nowcast_ensemble.html">nowcast_ensemble()</a></code> warns when this happens rather than
-pretending. The fix is at fit time: leave it out, or widen what it
-reports where the package lets you (<code>surveillance</code>’s
-<code>control$alpha</code>). Nothing in <code><a href="../reference/nowcast_ensemble.html">nowcast_ensemble()</a></code>
-treats it specially.</p>
-</div>
-</div>
-<div class="section level3">
-<h3 id="weights">Weights<a class="anchor" aria-label="anchor" href="#weights"></a>
-</h3>
-<p>By default every member counts the same. You can also give weights
-directly:</p>
-<div class="sourceCode" id="cb41"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/nowcast_ensemble.html">nowcast_ensemble</a></span><span class="op">(</span><span class="va">members</span>, weights <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
-<span>  baselinenowcast <span class="op">=</span> <span class="fl">0.3</span>, diseasenowcasting <span class="op">=</span> <span class="fl">0.2</span>, dnc_ar1 <span class="op">=</span> <span class="fl">0.1</span>,</span>
-<span>  epinowcast <span class="op">=</span> <span class="fl">0.2</span>, NobBS <span class="op">=</span> <span class="fl">0.1</span>, EpiNow2 <span class="op">=</span> <span class="fl">0.1</span></span>
-<span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<p>or <em>learn</em> them from how the members actually performed.
-<code><a href="../reference/nowcast_backtest.html">nowcast_backtest()</a></code> walks back through time: at each
-retrospective date it truncates the data to the reports available then,
-refits every method, and scores the result against the resolved truth
-defined by <code>truth_axis</code> and <code>truth_type</code> (reported
-totals by default).</p>
-<p>It takes the <strong>same engines</strong> you fitted with, so there
-is no second place to keep the arguments in step. An engine’s
-<code>label</code> becomes its name in the result — which is how one
-package appears twice, so the two <code>diseasenowcasting</code> models
-above can be weighted separately rather than sharing one weight:</p>
-<div class="sourceCode" id="cb42"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">backtest</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/nowcast_backtest.html">nowcast_backtest</a></span><span class="op">(</span></span>
-<span>  <span class="va">dengue</span>,</span>
-<span>  <span class="fu"><a href="../reference/nowcast_engines.html">engine_baselinenowcast</a></span><span class="op">(</span>draws <span class="op">=</span> <span class="fl">1000</span><span class="op">)</span>,</span>
-<span>  <span class="fu"><a href="../reference/nowcast_engines.html">engine_diseasenowcasting</a></span><span class="op">(</span><span class="op">)</span>,</span>
-<span>  <span class="fu"><a href="../reference/nowcast_engines.html">engine_diseasenowcasting</a></span><span class="op">(</span></span>
-<span>    model <span class="op">=</span> <span class="fu">diseasenowcasting</span><span class="fu">::</span><span class="fu"><a href="https://rodrigozepeda.github.io/diseasenowcasting/reference/model.html" class="external-link">model</a></span><span class="op">(</span></span>
-<span>      epidemic <span class="op">=</span> <span class="fu">diseasenowcasting</span><span class="fu">::</span><span class="fu"><a href="https://rodrigozepeda.github.io/diseasenowcasting/reference/epidemic_process.html" class="external-link">ar1_epidemic</a></span><span class="op">(</span><span class="op">)</span></span>
-<span>    <span class="op">)</span>,</span>
-<span>    label <span class="op">=</span> <span class="st">"dnc_ar1"</span></span>
-<span>  <span class="op">)</span>,</span>
-<span>  <span class="fu"><a href="../reference/nowcast_engines.html">engine_nobbs</a></span><span class="op">(</span>max_D <span class="op">=</span> <span class="fl">10</span>, moving_window <span class="op">=</span> <span class="fl">64</span><span class="op">)</span>,</span>
-<span>  now_dates <span class="op">=</span> <span class="va">now</span> <span class="op">-</span> <span class="fl">7</span> <span class="op">*</span> <span class="fl">8</span> <span class="op">*</span> <span class="op">(</span><span class="fl">3</span><span class="op">:</span><span class="fl">1</span><span class="op">)</span>,</span>
-<span>  seed      <span class="op">=</span> <span class="fl">20260824</span></span>
-<span><span class="op">)</span></span>
+<span><span class="co">#a baselinenowcast model with a different specification</span></span>
+<span><span class="va">model3</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/nowcast_engines.html">engine_baselinenowcast</a></span><span class="op">(</span>max_delay <span class="op">=</span> <span class="fl">10</span>, prop_delay <span class="op">=</span> <span class="fl">0.75</span>, label <span class="op">=</span> <span class="st">"baselinenowcast 2"</span><span class="op">)</span></span></code></pre></div>
+<p>Once the models are specified we can backtest through several past
+dates:</p>
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co">#We evaluate the performance of our models in 2 past dates</span></span>
+<span><span class="co">#in real life change n_dates to a bigger number (we use 2 for the tutorial)</span></span>
+<span><span class="va">models_backtest</span> <span class="op">&lt;-</span> <span class="va">dengue</span> <span class="op">|&gt;</span> </span>
+<span>  <span class="fu"><a href="../reference/nowcast_backtest.html">nowcast_backtest</a></span><span class="op">(</span><span class="va">model1</span>, <span class="va">model2</span>, <span class="va">model3</span>, n_dates <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Backtesting <span style="color: #0000BB;">"NobBS"</span> at <span style="color: #0000BB;">2010-11-15</span>.</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Backtesting <span style="color: #0000BB;">"baselinenowcast"</span> at <span style="color: #0000BB;">2010-11-15</span>.</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Backtesting <span style="color: #0000BB;">"baselinenowcast 2"</span> at <span style="color: #0000BB;">2010-11-15</span>.</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Backtesting <span style="color: #0000BB;">"NobBS"</span> at <span style="color: #0000BB;">2010-11-22</span>.</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Backtesting <span style="color: #0000BB;">"baselinenowcast"</span> at <span style="color: #0000BB;">2010-11-22</span>.</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Backtesting <span style="color: #0000BB;">"baselinenowcast 2"</span> at <span style="color: #0000BB;">2010-11-22</span>.</span></span></code></pre></div>
+<p>The backtest now gives us enough information to evaluate each of the
+models:</p>
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">models_backtest</span> <span class="op">|&gt;</span> </span>
+<span>  <span class="fu">scoringutils</span><span class="fu">::</span><span class="fu"><a href="https://epiforecasts.io/scoringutils/reference/as_forecast_quantile.html" class="external-link">as_forecast_quantile</a></span><span class="op">(</span>truth <span class="op">=</span> <span class="va">dengue</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">scoringutils</span><span class="fu">::</span><span class="fu"><a href="https://epiforecasts.io/scoringutils/reference/score.html" class="external-link">score</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
+<span>  <span class="fu">scoringutils</span><span class="fu">::</span><span class="fu"><a href="https://epiforecasts.io/scoringutils/reference/summarise_scores.html" class="external-link">summarise_scores</a></span><span class="op">(</span><span class="op">)</span> </span>
+<span><span class="co">#&gt;                model        wis overprediction underprediction dispersion         bias interval_coverage_50 interval_coverage_90  ae_median</span></span>
+<span><span class="co">#&gt;               &lt;char&gt;      &lt;num&gt;          &lt;num&gt;           &lt;num&gt;      &lt;num&gt;        &lt;num&gt;                &lt;num&gt;                &lt;num&gt;      &lt;num&gt;</span></span>
+<span><span class="co">#&gt; 1:             NobBS 0.66998397    0.501068376      0.03418803 0.13472756  0.033653846            0.9326923            0.9711538 1.08653846</span></span>
+<span><span class="co">#&gt; 2:   baselinenowcast 0.02820801    0.001528351      0.01426461 0.01241505 -0.006373223            0.9926639            0.9940394 0.04332875</span></span>
+<span><span class="co">#&gt; 3: baselinenowcast 2 0.18177964    0.001477406      0.16862805 0.01167418 -0.131957818            0.8670335            0.8674920 0.19669876</span></span></code></pre></div>
+<p>Once the historical evaluation is performed one needs to fit each of
+the models individually and then can put them together into a
+<code>nowcast_ensemble</code> along its backtest. The ensemble will then
+average all the models in a way that optimizes the WIS (if
+<code>weights = "optim"</code> or proportional to the WIS if
+<code>weights = "inverse_score"</code>).</p>
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co">#We fit each of the individual models</span></span>
+<span><span class="va">nowcast1</span> <span class="op">&lt;-</span> <span class="va">dengue</span> <span class="op">|&gt;</span> <span class="fu"><a href="../reference/run_nowcast.html">run_nowcast</a></span><span class="op">(</span><span class="va">model1</span><span class="op">)</span></span>
+<span><span class="co">#&gt; NOTE: Stopping adaptation</span></span>
+<span><span class="va">nowcast2</span> <span class="op">&lt;-</span> <span class="va">dengue</span> <span class="op">|&gt;</span> <span class="fu"><a href="../reference/run_nowcast.html">run_nowcast</a></span><span class="op">(</span><span class="va">model2</span><span class="op">)</span></span>
+<span><span class="va">nowcast3</span> <span class="op">&lt;-</span> <span class="va">dengue</span> <span class="op">|&gt;</span> <span class="fu"><a href="../reference/run_nowcast.html">run_nowcast</a></span><span class="op">(</span><span class="va">model3</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="../reference/tidy.nowcast.html">tidy</a></span><span class="op">(</span><span class="va">backtest</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 6 × 13</span></span></span>
-<span><span class="co">#&gt;   method now        event_date stratum observed estimate conf.low conf.high</span></span>
-<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> NobBS  2010-04-19 2009-02-02 all           48       48       48        48</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> NobBS  2010-04-19 2009-02-09 all           47       47       47        47</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> NobBS  2010-04-19 2009-02-16 all           43       43       43        43</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> NobBS  2010-04-19 2009-02-23 all           42       42       42        42</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> NobBS  2010-04-19 2009-03-02 all           24       24       24        24</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> NobBS  2010-04-19 2009-03-09 all           27       27       27        27</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 5 more variables: level &lt;dbl&gt;, wis &lt;dbl&gt;, ae_median &lt;dbl&gt;,</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;">#   coverage_50 &lt;lgl&gt;, coverage_90 &lt;lgl&gt;</span></span></span></code></pre>
-<div class="alert alert-info">
-<p><strong>Why not every ensemble member is backtested here.</strong> A
-backtest is <code>length(methods) × length(now_dates)</code> model fits.
-<code>epinowcast</code> and <code>EpiNow2</code> are both Stan models
-and each would add three more, so they are left out of <em>this</em>
-backtest to keep the article buildable — not because anything stops
-them. If you weight an ensemble from a backtest that does not cover
-every member, give the uncovered ones weights yourself;
-<code><a href="../reference/nowcast_ensemble.html">nowcast_ensemble()</a></code> will not invent them.</p>
-</div>
-<p><code><a href="../reference/tidy.nowcast.html">tidy()</a></code> on a backtest gives one row per (method,
-<code>now</code> date, target), carrying the retrospective prediction
-(<code>estimate</code>, <code>conf.low</code>, <code>conf.high</code>)
-next to what was eventually <code>observed</code> and the scores that
-comparison earned. It goes straight into <code>dplyr</code> or
-<code>ggplot2</code>:</p>
-<pre><code><span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 12 × 4</span></span></span>
-<span><span class="co">#&gt;    method            now        mean_wis coverage_90</span></span>
-<span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>             <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> baselinenowcast   2010-04-19      0          1   </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> diseasenowcasting 2010-04-19      0          1   </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> dnc_ar1           2010-04-19      0          1   </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> NobBS             2010-04-19      0.2        0.94</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> baselinenowcast   2010-06-14      0.1        1   </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> diseasenowcasting 2010-06-14      0.1        1   </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> dnc_ar1           2010-06-14      0.2        1   </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> NobBS             2010-06-14      1.7        0.91</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> diseasenowcasting 2010-08-09      0.1        1   </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> dnc_ar1           2010-08-09      0.1        1   </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">11</span> baselinenowcast   2010-08-09      0.2        1   </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">12</span> NobBS             2010-08-09      4          0.89</span></span></code></pre>
-<p>The backtest also converts directly to ; it already stores the truth,
-and <code>now</code> remains a forecast unit so repeated retrospective
-predictions of one target stay distinct:</p>
-<div class="sourceCode" id="cb45"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">backtest</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu">scoringutils</span><span class="fu">::</span><span class="fu"><a href="https://epiforecasts.io/scoringutils/reference/as_forecast_quantile.html" class="external-link">as_forecast_quantile</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu">scoringutils</span><span class="fu">::</span><span class="fu"><a href="https://epiforecasts.io/scoringutils/reference/score.html" class="external-link">score</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu">scoringutils</span><span class="fu">::</span><span class="fu"><a href="https://epiforecasts.io/scoringutils/reference/add_relative_skill.html" class="external-link">add_relative_skill</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-<p>Quantile conversion above needs no extra storage. To use
-<code>as_forecast_sample()</code> instead, build the backtest with
-<code>keep_draws = TRUE</code>. This can make the object much larger,
-and every included engine must return draws; a mixed backtest containing
-a quantile-only engine is refused rather than scored on only a subset of
-its methods.</p>
-<p>This is the expensive part of the workflow — it is
-<code>length(methods) × length(now_dates)</code> model fits — so keep
-<code>now_dates</code> short when the members are Bayesian. Pass
-<code>seed</code> so the backtest is reproducible: one
-<code><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed()</a></code> before the whole thing only pins anything if
-every method draws the same random numbers in the same order, which
-stops being true the moment you drop a method.</p>
-<p>From the backtest, <code><a href="../reference/nowcast_weights.html">nowcast_weights()</a></code> offers two
-rules:</p>
-<div class="sourceCode" id="cb46"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">fitted_weights</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/nowcast_weights.html">nowcast_weights</a></span><span class="op">(</span><span class="va">backtest</span>, type <span class="op">=</span> <span class="st">"inverse_score"</span><span class="op">)</span></span>
-<span><span class="va">fitted_weights</span>                                    <span class="co"># w proportional to 1 / mean WIS</span></span>
-<span></span>
-<span><span class="fu"><a href="../reference/nowcast_weights.html">nowcast_weights</a></span><span class="op">(</span><span class="va">backtest</span>, type <span class="op">=</span> <span class="st">"optim"</span><span class="op">)</span>         <span class="co"># w minimising the ensemble's WIS</span></span></code></pre></div>
-<pre><code><span><span class="co">#&gt;             NobBS   baselinenowcast diseasenowcasting           dnc_ar1 </span></span>
-<span><span class="co">#&gt;             0.013             0.284             0.493             0.211</span></span></code></pre>
-<p><code>"inverse_score"</code> is the safe default: it is monotone in
-performance, never collapses onto a single model, and cannot overfit.
-<code>"optim"</code> searches the simplex for the weights that would
-have minimised the ensemble’s WIS over the training window; it is better
-in principle, but with only a handful of retrospective dates it happily
-overfits, so prefer it when the training window is long.</p>
-<p>Either rule plugs straight into the ensemble:</p>
-<div class="sourceCode" id="cb48"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/nowcast_ensemble.html">nowcast_ensemble</a></span><span class="op">(</span><span class="va">members</span>, weights <span class="op">=</span> <span class="st">"inverse_score"</span>, backtest <span class="op">=</span> <span class="va">backtest</span><span class="op">)</span></span></code></pre></div>
-</div>
+<span><span class="co">#And then ensemble to optimize for the best WIS</span></span>
+<span><span class="va">ensemble_nowcast</span> <span class="op">&lt;-</span>  </span>
+<span>  <span class="fu"><a href="../reference/nowcast_ensemble.html">nowcast_ensemble</a></span><span class="op">(</span><span class="va">nowcast1</span>, <span class="va">nowcast2</span>, <span class="va">nowcast3</span>, </span>
+<span>                   weights <span class="op">=</span> <span class="st">"optim"</span>, backtest <span class="op">=</span> <span class="va">models_backtest</span><span class="op">)</span></span></code></pre></div>
+<p>One can visualize the ensemble with <code><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot()</a></code> or get
+its results with <code><a href="../reference/tidy.nowcast.html">tidy()</a></code> as in the case of a regular
+nowcast.</p>
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">ensemble_nowcast</span>, date_lim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2010/10/01"</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2010/12/20"</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<p><img src="ensemble-nowcasting_files/figure-html/unnamed-chunk-7-1.png" class="r-plt" alt="" width="864"></p>
 </div>
 <div class="section level2">
 <h2 id="adding-your-own-model">4. Adding your own model<a class="anchor" aria-label="anchor" href="#adding-your-own-model"></a>
 </h2>
-<p>This is the part that makes the whole thing worth building. A
-back-end is <strong>two S3 methods</strong>, and they can live in your
-own package, your analysis script, or a one-off chunk. Nothing inside
-<code>tbl.now</code> needs to change.</p>
-<p><code>run_nowcast(x, engine = engine("mymodel"))</code> builds a
-little object of class <code>c("mymodel", "nowcast_method")</code> and
-calls</p>
-<ul>
-<li>
-<code>nowcast_fit(method, x, ...)</code> — run the model, return
-whatever it returns;</li>
-<li>
-<code>nowcast_tidy(method, fit, x, ..., quantile_levels)</code> —
-describe the result as <code>predictions</code> (one row per event date,
-stratum and quantile level) or <code>draws</code> (one row per event
-date, stratum and draw). Either may be <code>NULL</code>, not both.</li>
-</ul>
-<p><code>vignette("custom-nowcast-models")</code> is the full account:
-what your method may assume about the <code>tbl_now</code> it is handed,
-how to reuse the converters instead of reshaping by hand, a complete
-worked back-end that needs no modelling package, and what shipping one
-in a package involves.</p>
-</div>
-<div class="section level2">
-<h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>
-</h2>
+<p>You can add any model built by yourself or from any other package to
+the fitting so that it has its own engine, its own tidy to clean and can
+be used in conjunction with <code><a href="../reference/tidy.nowcast.html">tidy()</a></code>, <code><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot()</a></code>
+as well as the backtesting and ensemble methods. You can read more about
+it in <a href="https://rodrigozepeda.github.io/tbl.now/articles/custom-nowcast-models.html">the
+corresponding article</a>.</p>
 <!-- Single source for "Learning more"; pulled in as a knitr child by README.Rmd and every article. Edit on `learning.more.Rmd`.-->
+<div class="alert alert-info">
+<p>If you have any questions or comments regarding the contents of this
+article please <a href="https://github.com/RodrigoZepeda/tbl.now/issues/new" class="external-link">open an issue
+on Github</a>.</p>
+</div>
 </div>
 <div class="section level2">
 <h2 id="learning-more">Learning more<a class="anchor" aria-label="anchor" href="#learning-more"></a>
 </h2>
 <ul>
+<li>End-to-end tutorial on real life surveillance data. Takes you from
+cleaning to diagnosing errors in the data to nowcasting: <a href="https://rodrigozepeda.github.io/tbl.now/articles/example.html">https://rodrigozepeda.github.io/tbl.now/articles/example.html</a>
+</li>
+<li>The same tutorial with a <strong>revision process</strong> — the
+optional third date, where a reported case is later confirmed, retracted
+or left pending: <a href="https://rodrigozepeda.github.io/tbl.now/articles/example_revisions.html">https://rodrigozepeda.github.io/tbl.now/articles/example_revisions.html</a>
+</li>
 <li>Introduction vignette: <a href="https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.html">https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.html</a>
 for the full anatomy of a <code>tbl_now</code>, data types, and temporal
 effects.</li>
-<li>End-to-end tutorial on real, messy surveillance data — cleaning,
-diagnostics and nowcasting: <a href="https://rodrigozepeda.github.io/tbl.now/articles/example.html">https://rodrigozepeda.github.io/tbl.now/articles/example.html</a>
-</li>
 <li>Tutorial on diagnosing your dataset — what is in it, what is
 structurally wrong with it, and detecting batches and other
 reporting-delay artifacts: <a href="https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html">https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html</a>
@@ -1114,6 +414,10 @@ reporting-delay artifacts: <a href="https://rodrigozepeda.github.io/tbl.now/arti
 <li>Package reference: <a href="https://rodrigozepeda.github.io/tbl.now/reference/">https://rodrigozepeda.github.io/tbl.now/reference/</a>
 </li>
 </ul>
+</div>
+<div class="section level2 unnumbered">
+<h2 class="unnumbered" id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>
+</h2>
 <div id="refs" class="references csl-bib-body hanging-indent">
 <div id="ref-bracher2021" class="csl-entry">
 Bracher, Johannes, Evan L. Ray, Tilmann Gneiting, and Nicholas G. Reich.

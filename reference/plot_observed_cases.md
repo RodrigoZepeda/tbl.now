@@ -1,6 +1,6 @@
 # Observed epidemic process with the incompleteness line
 
-**\[experimental\]**
+**\[stable\]**
 
 The `"epidemic"` panel of
 [`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html),

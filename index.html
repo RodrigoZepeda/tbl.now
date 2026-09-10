@@ -32,7 +32,7 @@
 
     <a class="navbar-brand me-2" href="index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.35.4</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -48,8 +48,9 @@
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="articles/custom-nowcast-models.html">Adding your own nowcasting model</a></li>
     <li><a class="dropdown-item" href="articles/diagnosing-a-tbl-now.html">Diagnosing a tbl_now</a></li>
-    <li><a class="dropdown-item" href="articles/ensemble-nowcasting.html">One call, many models: run_nowcast(), custom backends and ensembles</a></li>
-    <li><a class="dropdown-item" href="articles/example.html">The nowcasting workflow: hospital-acquired infections in Bucaramanga, Colombia</a></li>
+    <li><a class="dropdown-item" href="articles/ensemble-nowcasting.html">Fitting models from different nowcasting frameworks, backtesting and building an ensemble</a></li>
+    <li><a class="dropdown-item" href="articles/example_revisions.html">The nowcasting workflow 2: COVID-19 case surveillance with revisions in the United States</a></li>
+    <li><a class="dropdown-item" href="articles/example.html">The nowcasting workflow 1: hospital-acquired infections in Bucaramanga, Colombia</a></li>
     <li><a class="dropdown-item" href="articles/nowcasting-models.html">Using tbl.now with different modelling packages</a></li>
     <li><a class="dropdown-item" href="articles/tbl.now.html">tbl.now</a></li>
   </ul>
@@ -85,7 +86,7 @@
 </div>
 <!-- badges: start -->
 
-<p><a href="https://rodrigozepeda.github.io/tbl.now/"><code>tbl.now</code></a> extends <a href="https://tibble.tidyverse.org/" class="external-link"><code>tibble()</code></a> for storing, validating, and manipulating epidemiological nowcasting data. It standardizes event dates, report dates, strata, temporal covariates, and related metadata in a shape compatible with many frameworks, including <a href="https://rodrigozepeda.github.io/diseasenowcasting/" class="external-link">diseasenowcasting</a>, <a href="https://package.epinowcast.org/" class="external-link">epinowcast</a>, <a href="https://cran.r-project.org/web/packages/NobBS/index.html" class="external-link">NobBS</a>, <a href="https://cran.r-project.org/web/packages/surveillance/index.html" class="external-link">surveillance</a>, <a href="https://epiforecasts.io/EpiNow2/" class="external-link">EpiNow2</a>, and more.</p>
+<p><a href="https://rodrigozepeda.github.io/tbl.now/"><code>tbl.now</code></a> extends <a href="https://tibble.tidyverse.org/" class="external-link"><code>tibble()</code></a> for storing, validating, and manipulating epidemiological nowcasting data. It standardizes event dates, report dates, strata, temporal covariates, and related metadata in a shape compatible with many frameworks, including <a href="https://rodrigozepeda.github.io/diseasenowcasting/" class="external-link">diseasenowcasting</a>, <a href="https://package.epinowcast.org/" class="external-link">epinowcast</a>, <a href="https://CRAN.R-project.org/package=NobBS" class="external-link">NobBS</a>, <a href="https://CRAN.R-project.org/package=surveillance" class="external-link">surveillance</a>, <a href="https://epiforecasts.io/EpiNow2/" class="external-link">EpiNow2</a>, and more. Finally, it also standardizes the prediction engines and their results for plotting, scoring, comparing, and ensembling models.</p>
 <p>A <code>tbl_now</code> keeps track of the attributes needed for a nowcasting exercise, so <code>dplyr</code> transformations preserve the relevant nowcasting variables:</p>
 <table class="table">
 <thead><tr>
@@ -138,21 +139,10 @@ An optional third date indicating when the report was resolved (see <code>revisi
 <img src="reference/figures/revision_type.svg" height="80" style="height:80px;width:auto;max-width:80px;" alt="revision">
 </td>
 <td align="left">
-<code>revision_type</code>
+<code>revision_type</code>, <code>revision_levels</code>
 </td>
 <td align="left">
-What the revision date resolved to. Only <code>confirmed</code>, <code>retracted</code>, <code>pending</code> or <code>NA</code> are ever stored; use <code>revision_levels</code> for data recorded in other words. <em>Optional</em>.
-</td>
-</tr>
-<tr>
-<td align="center">
-<img src="reference/figures/revision_type.svg" height="80" style="height:80px;width:auto;max-width:80px;" alt="revision_levels">
-</td>
-<td align="left">
-<code>revision_levels</code>
-</td>
-<td align="left">
-A named dictionary translating the labels in <code>revision_type</code> into those four, e.g. <code>c(positive = “confirmed”)</code>. <em>Optional</em>.
+What the revision date resolved to. Only <code>confirmed</code>, <code>retracted</code>, <code>pending</code> or <code>NA</code> are ever stored; set <code>revision_levels</code> as a named dictionary mapping the data’s labels into those four ( e.g. <code>c(positive = “confirmed”)</code>). <em>Optional</em>.
 </td>
 </tr>
 <tr>
@@ -226,21 +216,10 @@ The time grid each date lives on: <code>days</code>, <code>weeks</code>, <code>m
 <img src="reference/figures/censoring.svg" height="80" style="height:80px;width:auto;max-width:80px;" alt="is_censored_report">
 </td>
 <td align="left">
-<code>is_censored_report</code>
+<code>is_censored_report</code>,<code>is_censored_revision</code>
 </td>
 <td align="left">
-Flags report dates that are only an upper bound, e.g. a batch or back-fill dump. <em>Optional</em>.
-</td>
-</tr>
-<tr>
-<td align="center">
-<img src="reference/figures/censoring.svg" height="80" style="height:80px;width:auto;max-width:80px;" alt="is_censored_revision">
-</td>
-<td align="left">
-<code>is_censored_revision</code>
-</td>
-<td align="left">
-The same on the revision axis: flags rows whose <em>revision</em> delay is a bound rather than a measurement. <em>Optional</em>.
+Flags dates from either the report or the revision axis that are only an upper bound, i.e. the true report happened <i>before</i> the date given in the database. <em>Optional</em>.
 </td>
 </tr>
 <tr>
@@ -273,12 +252,31 @@ Columns holding temporal effects (day of week, holidays, …) that some models c
 <span>    report_date <span class="op">=</span> <span class="va">report_week</span>,</span>
 <span>    event_date <span class="op">=</span> <span class="va">onset_week</span>,</span>
 <span>    strata <span class="op">=</span> <span class="va">gender</span></span>
-<span>  <span class="op">)</span> </span></code></pre></div>
+<span>  <span class="op">)</span> </span>
+<span></span>
+<span><span class="co">#Which is just a tibble with extra attributes</span></span>
+<span><span class="va">denguedat</span></span>
+<span><span class="co">#&gt; # A tibble:  1,652 × 6</span></span>
+<span><span class="co">#&gt; # Data type: "linelist"</span></span>
+<span><span class="co">#&gt; # Frequency: Event: `weeks` | Report: `weeks`</span></span>
+<span><span class="co">#&gt;   onset_week   report_week   gender   .event_num .report_num .delay</span></span>
+<span><span class="co">#&gt;   &lt;date&gt;       &lt;date&gt;        &lt;chr&gt;         &lt;dbl&gt;       &lt;dbl&gt;  &lt;dbl&gt;</span></span>
+<span><span class="co">#&gt;   [event_date] [report_date] [strata]      [...]       [...]  [...]</span></span>
+<span><span class="co">#&gt; 1 2005-01-03   2005-01-17    Male              0           2      2</span></span>
+<span><span class="co">#&gt; 2 2005-01-03   2005-01-10    Female            0           1      1</span></span>
+<span><span class="co">#&gt; 3 2005-01-03   2005-01-10    Female            0           1      1</span></span>
+<span><span class="co">#&gt; 4 2005-01-03   2005-01-10    Male              0           1      1</span></span>
+<span><span class="co">#&gt; 5 2005-01-03   2005-01-10    Male              0           1      1</span></span>
+<span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────</span></span>
+<span><span class="co">#&gt; # Now: 2005-09-26 | Event date: "onset_week" | Report date: "report_week"</span></span>
+<span><span class="co">#&gt; # Strata: "gender"</span></span>
+<span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────</span></span>
+<span><span class="co">#&gt; # ℹ 1,647 more rows</span></span></code></pre></div>
 <p>Once transformed, it can help you diagnose data problems (see <a href="https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html">this article</a>) or modeling requirements with your database:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">denguedat</span><span class="op">)</span></span></code></pre></div>
 <p><img src="reference/figures/README-unnamed-chunk-3-1.png" alt="" width="100%" class="r-plt"></p>
-<p>And it can be used to run any of multiple nowcast libraries through the <code><a href="reference/engine.html">engine()</a></code> and <code>run_nowcast</code> specifications (see <a href="https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html">this article</a>. For example, <a href="https://baselinenowcast.epinowcast.org/" class="external-link">baselinenowcast</a>:</p>
+<p>And it can be used to run any of multiple nowcast libraries through the <code><a href="reference/engine.html">engine()</a></code> and <code>run_nowcast</code> specifications (see <a href="https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html">this article</a>). For example, <a href="https://baselinenowcast.epinowcast.org/" class="external-link">baselinenowcast</a>:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">dengue_nowcast_1</span> <span class="op">&lt;-</span> <span class="va">denguedat</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="reference/run_nowcast.html">run_nowcast</a></span><span class="op">(</span>engine <span class="op">=</span> <span class="fu"><a href="reference/nowcast_engines.html">engine_baselinenowcast</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
@@ -295,25 +293,29 @@ Columns holding temporal effects (day of week, holidays, …) that some models c
 <p>It can also generate ensemble nowcasts combining multiple engines or multiple realizations from the same engine as you can see <a href="https://rodrigozepeda.github.io/tbl.now/articles/ensemble-nowcasting.html">in this article</a>:</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">dengue_ensemble</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/nowcast_ensemble.html">nowcast_ensemble</a></span><span class="op">(</span></span>
-<span>  baselinenowcast  <span class="op">=</span> <span class="va">dengue_nowcast_1</span>,</span>
+<span>  baselinenowcast   <span class="op">=</span> <span class="va">dengue_nowcast_1</span>,</span>
 <span>  diseasenowcasting <span class="op">=</span> <span class="va">dengue_nowcast_2</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">dengue_ensemble</span><span class="op">)</span></span></code></pre></div>
 <p><img src="reference/figures/README-unnamed-chunk-9-1.png" alt="" width="100%" class="r-plt"></p>
-<p>If this seems as exciting to you as it is to us, install the development version from <a href="https://github.com/" class="external-link">GitHub</a>:</p>
+<p>If this seems as exciting to you as it is to us, install the development version from <a href="https://rodrigozepeda.r-universe.dev/tbl.now" class="external-link">R universe</a>:</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"tbl.now"</span>, repos <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"https://rodrigozepeda.r-universe.dev"</span>,</span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">getOption</a></span><span class="op">(</span><span class="st">"repos"</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"tbl.now"</span>, repos <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"https://rodrigozepeda.r-universe.dev"</span>, <span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">getOption</a></span><span class="op">(</span><span class="st">"repos"</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p>and checkout our articles starting with the <a href="https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.html">Introduction</a>:</p>
 <!-- Single source for "Learning more"; pulled in as a knitr child by README.Rmd and every article. Edit on `learning.more.Rmd`.-->
+<div class="alert alert-info">
+<p>If you have any questions or comments regarding the contents of this article please <a href="https://github.com/RodrigoZepeda/tbl.now/issues/new" class="external-link">open an issue on Github</a>.</p>
+</div>
 <div class="section level2">
 <h2 id="learning-more">Learning more<a class="anchor" aria-label="anchor" href="#learning-more"></a>
 </h2>
 <ul>
-<li>Introduction vignette: <a href="https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.html" class="uri">https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.html</a> for the full anatomy of a <code>tbl_now</code>, data types, and temporal effects.</li>
-<li>End-to-end tutorial on real, messy surveillance data — cleaning, diagnostics and nowcasting: <a href="https://rodrigozepeda.github.io/tbl.now/articles/example.html" class="uri">https://rodrigozepeda.github.io/tbl.now/articles/example.html</a>
+<li>End-to-end tutorial on real life surveillance data. Takes you from cleaning to diagnosing errors in the data to nowcasting: <a href="https://rodrigozepeda.github.io/tbl.now/articles/example.html" class="uri">https://rodrigozepeda.github.io/tbl.now/articles/example.html</a>
 </li>
+<li>The same tutorial with a <strong>revision process</strong> — the optional third date, where a reported case is later confirmed, retracted or left pending: <a href="https://rodrigozepeda.github.io/tbl.now/articles/example_revisions.html" class="uri">https://rodrigozepeda.github.io/tbl.now/articles/example_revisions.html</a>
+</li>
+<li>Introduction vignette: <a href="https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.html" class="uri">https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.html</a> for the full anatomy of a <code>tbl_now</code>, data types, and temporal effects.</li>
 <li>Tutorial on diagnosing your dataset — what is in it, what is structurally wrong with it, and detecting batches and other reporting-delay artifacts: <a href="https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html" class="uri">https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html</a>
 </li>
 <li>Using different nowcasting engines for the same dataset: <a href="https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html" class="uri">https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html</a>

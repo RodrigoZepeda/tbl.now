@@ -2,6 +2,320 @@
 
 ## tbl.now (development version)
 
+### `autoplot()` is now one column per process
+
+The gallery used to flow left to right in two columns, so which process
+a panel belonged to was something you read off its colour. It is now a
+**matrix**: the epidemic process is the first column, the reporting
+process the second, and the revision process – on an object that
+declares one – the third, with each row asking the same question of
+every process. A two-date object is therefore two columns wide and a
+three-date object three, and a row a process cannot answer (weekly data
+has no day-of-week panel) leaves that cell empty rather than sliding the
+next panel into the wrong column.
+
+The number of columns follows the selection, because the columns *are*
+the processes: `panels = "calendar"` or `panels = "delay_calendar"` now
+comes back as a single column rather than a two-wide flow.
+
+### `plot_revision_delay()` is removed, and the revision delay joins the gallery
+
+(breaking)
+
+`plot_revision_delay()` drew the report-to-resolution delay as boxplots
+split by outcome, and was the one delay picture that was not a panel of
+[`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html).
+
+- **Breaking**: `plot_revision_delay()` is gone. Use
+  `plot_delay_distribution(x, axis = "revision")`, which draws the same
+  delays, split the same way, as the histogram the reporting delay
+  already got.
+  [`diagnose_revision_delay()`](https://rodrigozepeda.github.io/tbl.now/reference/revision_delay.md),
+  the Wilcoxon test behind the picture, is unchanged.
+- [`plot_delay_distribution()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_delay_distribution.md)
+  gains `axis`, matching
+  [`plot_reporting_process()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_epidemic_process.md)
+  and
+  [`plot_epidemic_process()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_epidemic_process.md):
+  `"report"` (default) is the reporting delay, `"revision"` the
+  report-to-resolution delay, drawn in the revision process’s ochre.
+- New
+  [`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html)
+  panel `"revision_distribution"`, which is that panel inside the
+  gallery, and fills the revision column’s first row.
+
+### Delays and arrivals can be split by revision outcome
+
+[`plot_delay_distribution()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_delay_distribution.md)
+and
+[`plot_reporting_process()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_epidemic_process.md)
+gain `by_revision_type` (default `TRUE`). It splits the panel by how
+each case eventually resolved – `confirmed`, `pending`, `retracted` and
+`unknown` – so “do negative results come back faster than positive
+ones?” and “was that spike a day of retractions?” are visible rather
+than inferred.
+
+- [`tbl_now_palette()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_palette.md)
+  gains a `retracted` role, the counterpart of `revision`, so the four
+  outcomes draw as ochre / white / blue / grey and re-theme as a unit.
+- It is ignored on an object with no revision axis, and when
+  `by_strata = TRUE`, which already spends the fill on the strata.
+  `count-cumulative` data records running totals rather than cases and
+  cannot carry an outcome, so
+  [`plot_reporting_process()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_epidemic_process.md)
+  says so and draws the unsplit bars.
+- [`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html)
+  also takes `by_revision_type`, but defaults it to `FALSE`: the gallery
+  is read as a grid of shapes, and
+  [`diagnostic_plot()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnostic_plot.md)
+  keeps its reporting panel in the reporting colour for the same reason.
+
+### `as_forecast_point()` is no longer exported (breaking)
+
+[`as_forecast_point()`](https://epiforecasts.io/scoringutils/reference/as_forecast_point.html)
+is a generic, and this package supplied both a method for it *and* an
+exported function of the same name. The exported copy masked the
+generic: after
+[`library(scoringutils); library(tbl.now)`](https://doi.org/10.48550/arXiv.2205.07090)
+a bare
+[`as_forecast_point()`](https://epiforecasts.io/scoringutils/reference/as_forecast_point.html)
+reached tbl.now’s version, which is not a generic and aborts on anything
+that is not a `tbl_nowcast` or a
+[`nowcast_backtest()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_backtest.md).
+[`as_forecast_quantile()`](https://epiforecasts.io/scoringutils/reference/as_forecast_quantile.html)
+and
+[`as_forecast_sample()`](https://epiforecasts.io/scoringutils/reference/as_forecast_sample.html)
+were never exported this way, so the three were also inconsistent with
+each other.
+
+- **Fixed**: the exported
+  [`as_forecast_point()`](https://epiforecasts.io/scoringutils/reference/as_forecast_point.html)
+  is gone. Call `scoringutils::as_forecast_point(x, truth = truth)`,
+  exactly as you already call
+  [`scoringutils::as_forecast_quantile()`](https://epiforecasts.io/scoringutils/reference/as_forecast_quantile.html)
+  and
+  [`scoringutils::as_forecast_sample()`](https://epiforecasts.io/scoringutils/reference/as_forecast_sample.html).
+  The methods for `tbl_nowcast`, ensembles and
+  [`nowcast_backtest()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_backtest.md)
+  are unchanged, so the only edit a caller needs is the `scoringutils::`
+  prefix (or attaching first).
+
+### `diagnose()` stops reporting the revision axis as a defect
+
+Declaring a revision axis made
+[`diagnose()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose.md)
+complain about the two things that axis exists to record. A pending case
+has no revision date *yet*, and that `NA` was read as a value.
+
+- **Fixed**: rows carrying an `NA` anywhere in the uniqueness key are no
+  longer compared against each other. Two pending cases in one
+  `(event, report)` cell are byte-identical apart from a resolution
+  neither has, yet they may still resolve on different days – calling
+  them an “exact duplicate” and advising
+  [`dplyr::distinct()`](https://dplyr.tidyverse.org/reference/distinct.html)
+  would have deleted a real case. Rows with a complete key are checked
+  exactly as before, so a genuine repeat still warns.
+- **Fixed**: the `duplicates/key` message now names the key it actually
+  checked. It always included the revision columns, the strata, the
+  covariates and the censoring flags, but it read `"(event, report)"`
+  whatever else was declared.
+- **Fixed**: `missing/<revision date>` no longer counts the missing
+  resolution of a case the object says is `"pending"` – that is the
+  definition of pending, not a defect. A revision date missing from a
+  case recorded as `"confirmed"` or `"retracted"` is still reported.
+- **Fixed**: the pooled `strata/pending` note said “% of the stratum”
+  when it was reporting every stratum at once; it now says “% of all
+  cases”.
+- **Fixed**: `infer_units()` drops `NA` before reading the spacing of a
+  date column. A column holding one real date plus missings slipped past
+  the “fewer than two dates” guard, and
+  [`min()`](https://rdrr.io/r/base/Extremes.html) warned about its own
+  empty arguments before the abort that followed blamed the spacing.
+
+### The delay-distribution converters return one row per observed delay
+
+[`tbl_now_to_epidist()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_epidist.md)
+and `tbl_now_to_EpiNow2(target = "estimate_dist")` are the two
+converters that keep the `is_censored_report` flag, and they were also
+the two that never pooled. Neither carries an undeclared column or the
+revision axis onto its result, so rows separated only by those arrived
+as duplicates that nothing downstream could tell apart: `covid_colombia`
+(which carries an undeclared `sex`) came back from
+[`tbl_now_to_epidist()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_epidist.md)
+as 3456 rows covering 1898 distinct delays.
+
+- **Fixed**: both converters now pool over undeclared columns, exactly
+  as
+  [`tbl_now_to_baselinenowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_baselinenowcast.md)
+  and
+  [`tbl_now_to_tsibble()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_tsibble.md)
+  do, and report what they pooled under `verbose = TRUE`. Case totals
+  are unchanged.
+- **Fixed**: the revision axis is now removed *before* that pooling. It
+  was already dropped from the result (with a warning), but its columns
+  stayed in the cell key, so the rows they separated stayed split.
+  Pooling over it gives the `"total"` case count – every case has
+  exactly one outcome, so no case is counted twice.
+- **Fixed**: on the aggregate/count shape, rows describing the same
+  delay observation are summed. This closes the last collision: a
+  censored report inside its own event period is widened to the window
+  an uncensored report in that period already has.
+- Declared strata, covariates and materialised temporal-effect columns
+  are untouched – they reach the target package, so they still keep rows
+  apart. Line lists are untouched too: one row is already one case.
+- **Fixed**:
+  [`remove_revision_date()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
+  no longer loses the object’s `now`. It rebuilt without passing it, so
+  the constructor re-inferred `now` from the dates that were left – and
+  the revision axis is the one that usually holds the latest of them.
+  This reached
+  [`tbl_now_to_epidist()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_epidist.md)
+  as a wrong `obs_date`, epidist’s right-truncation clock.
+
+### `plot_scalogram()` is removed
+
+The wavelet scalogram was shipped as **very experimental** and never
+earned its keep: it was never confirmed to identify batches reliably,
+and the two packages it needed to do so – and – were carried in
+`Suggests` for that one plot alone.
+
+- **Breaking**: `plot_scalogram()` is gone, with no deprecation. Its
+  section in the *Diagnosing a `tbl_now`* article and its row in that
+  article’s summary table have been removed with it.
+- [`plot_reporting_process()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_epidemic_process.md),
+  [`plot_epidemic_process()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_epidemic_process.md),
+  [`plot_cycles()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_cycles.md),
+  [`plot_reporting_hexamap()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_reporting_hexamap.md)
+  and the transport diagnostics
+  ([`transport_discriminant()`](https://rodrigozepeda.github.io/tbl.now/reference/transport_discriminant.md),
+  [`diagnose_batches()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_batches.md),
+  [`diagnose_batches2()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_batches2.md))
+  are untouched; the transport plane, not the scalogram, is the batch
+  tool this package stands behind.
+- **Dependencies**: and are dropped from `Suggests`. Nothing else used
+  either of them – was in fact already unreferenced anywhere in the
+  sources.
+
+### Most of the package is now `stable`
+
+The lifecycle badges have been promoted: every exported topic now reads
+`stable`, except the surfaces still being worked on —
+[`update()`](https://rdrr.io/r/stats/update.html), `summary(<tbl_now>)`,
+[`diagnose()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose.md),
+[`diagnose_batches()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_batches.md),
+[`diagnose_batches2()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_batches2.md),
+[`simulate_batch()`](https://rodrigozepeda.github.io/tbl.now/reference/simulate_batch.md),
+[`transport_discriminant()`](https://rodrigozepeda.github.io/tbl.now/reference/transport_discriminant.md),
+[`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html)
+(both methods),
+[`tbl_now_to_EpiNow2()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_EpiNow2.md)
+and
+[`tbl_now_to_epidist()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_epidist.md),
+which keep `experimental`.
+
+No behaviour changed; this is a statement about which signatures are now
+expected to hold still.
+
+### `autoplot(<tbl_nowcast>)` gains `date_lim` and `ylim`
+
+A nowcast covers the whole series but only *corrects* its final periods,
+so almost every call was followed by a
+[`coord_cartesian()`](https://ggplot2.tidyverse.org/reference/coord_cartesian.html)
+to zoom on to them.
+
+- **New**: `autoplot(fit, date_lim = c(from, to))` and
+  `autoplot(fit, ylim = c(lo, hi))`. `NA` in either position leaves that
+  end free; `NULL` (the default) leaves the axis alone.
+- Both are applied with
+  [`ggplot2::coord_cartesian()`](https://ggplot2.tidyverse.org/reference/coord_cartesian.html),
+  so they **crop** the drawn plot instead of filtering the data. That is
+  the point: a scale limit drops the out-of-range rows before the ribbon
+  is built, which cuts the fan off at the boundary rather than letting
+  it run to the edge of the panel.
+
+### Two fixes the revisions article turned up
+
+- **Fix
+  ([`run_nowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/run_nowcast.md)
+  lost the engine’s `label`)**: the fit recorded the backend’s package
+  name as its `@method` while
+  [`nowcast_backtest()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_backtest.md)
+  scored the same engines under their **labels**. Two configurations of
+  one backend – exactly what `label` exists for – were therefore
+  indistinguishable once fitted, and
+  `nowcast_ensemble(weights = "inverse_score", backtest = )` aborted
+  with *“the backtest has no scores for method "diseasenowcasting"”*.
+  [`run_nowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/run_nowcast.md)
+  now records the label. An unlabelled engine is unaffected: its label
+  defaults to its package name. A backend that returns a `tbl_nowcast`
+  directly ( does) keeps its own name unless the caller supplied a
+  label. `run_nowcast(verbose = TRUE)` now names the label as well, so
+  two configurations no longer print the same line.
+- **Fix
+  ([`diagnose()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose.md)’s
+  pending note printed an R object)**: the `strata/pending` note built
+  its “how overdue are they” clause as a deferred `.diagnose_text()` and
+  then interpolated it into the outer template as `{against}`. cli
+  deparsed the object, and the note read *“… 3.4% of the stratum;
+  list(list(args = list(…), envir = )).”* The two fragments are now
+  joined rather than nested, and the note reads as prose in both of its
+  branches.
+
+### A revisions walk-through
+
+- **New article**: *Nowcasting with revisions*, which picks up where the
+  `hai_bucaramanga` walk-through leaves off and adds the third date,
+  running
+  [`run_nowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/run_nowcast.md),
+  [`nowcast_backtest()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_backtest.md)
+  and
+  [`nowcast_ensemble()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_ensemble.md)
+  on a `tbl_now` that carries a revision process.
+
+### Site
+
+- The package version in the pkgdown navbar was the only item there that
+  changed colour with the light switch: pkgdown renders it inside
+  `.text-muted`, whose Bootstrap 5.3 definition follows the theme. It is
+  now pinned to the same white as the package name in both modes.
+
+### `complete_zeroes()` keeps temporal effects computed
+
+[`complete_zeroes()`](https://rodrigozepeda.github.io/tbl.now/reference/complete_zeroes.md)
+adds rows, and materialised
+\[[`temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/temporal_effects.md)\]
+columns are a per-row property, so the new cells joined in as `NA` while
+`computed_temporal_effect_cols` went on claiming the columns were
+computed. The function announced this with a `cli_alert_warning()` and
+left the caller to repair it.
+
+- **Fix (stale columns)**: the effect columns are now **recomputed on
+  the completed grid** before the result is returned, so every added row
+  carries its own calendar effects. The alert is gone – there is nothing
+  left to warn about. A lazy specification that was never computed stays
+  lazy. The one case that cannot be repaired – computed columns with the
+  specification stripped by hand – still warns, and now says so
+  accurately.
+- **Fix (the advice did not work)**: the alert told callers to run
+  [`compute_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/add_temporal_effects.md)
+  afterwards, which **errored**, because the columns were already
+  present; `overwrite = TRUE` was needed and unmentioned.
+- **Fix (`overwrite = TRUE` was inert for seasonal effects)**: the guard
+  in
+  [`add_temporal_effects.data.frame()`](https://rodrigozepeda.github.io/tbl.now/reference/add_temporal_effects.md)
+  read `cos_exists || (sin_exists && !overwrite)` – `&&` binds tighter
+  than `||` – so an existing `_cos` column aborted the call whatever
+  `overwrite` was set to. A computed seasonal effect could therefore
+  never be refreshed, by
+  [`complete_zeroes()`](https://rodrigozepeda.github.io/tbl.now/reference/complete_zeroes.md)
+  or by anyone else.
+
+Reported downstream in
+[diseasenowcasting#126](https://github.com/RodrigoZepeda/diseasenowcasting/issues/126),
+where every count-cumulative fit calls
+[`complete_zeroes()`](https://rodrigozepeda.github.io/tbl.now/reference/complete_zeroes.md)
+and so emitted the alert.
+
 ### `rowwise()` demotes cleanly
 
 [`rowwise()`](https://dplyr.tidyverse.org/reference/rowwise.html) stays
@@ -257,7 +571,7 @@ header before that final fragment.
 
 ### `as_forecast_point()` exposes scoringutils point forecasts
 
-[`as_forecast_point()`](https://rodrigozepeda.github.io/tbl.now/reference/score_nowcast.md)
+[`as_forecast_point()`](https://epiforecasts.io/scoringutils/reference/as_forecast_point.html)
 now converts a `tbl_nowcast`, ensemble or
 [`nowcast_backtest()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_backtest.md)
 to a `scoringutils` point forecast using the median prediction. The old
@@ -630,8 +944,7 @@ which these plots switch off – that grid has its own absolute argument:
   `linewidth`, `grid_linewidth`
 - [`plot_delay_profiles()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_delay_profiles.md):
   `linewidth`
-- [`plot_revision_delay()`](https://rodrigozepeda.github.io/tbl.now/reference/revision_delay.md):
-  `linewidth`
+- `plot_revision_delay()`: `linewidth`
 - [`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html)
   and the `plot_*_effects()` panels: `size`, `linewidth`
 - [`diagnostic_plot()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnostic_plot.md):
@@ -642,15 +955,13 @@ which these plots switch off – that grid has its own absolute argument:
 
 [`plot_reporting_process()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_epidemic_process.md),
 [`plot_epidemic_process()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_epidemic_process.md),
-[`plot_scalogram()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_scalogram.md)
-and
+`plot_scalogram()` and
 [`plot_revision_status()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_revision_status.md)
 draw only bars, tiles or areas, so they take neither, and say so in
 their documentation rather than offering an argument that would do
 nothing.
 
-[`plot_revision_delay()`](https://rodrigozepeda.github.io/tbl.now/reference/revision_delay.md)
-and
+`plot_revision_delay()` and
 [`plot_revision_status()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_revision_status.md)
 also gained the `palette` argument they had been missing – they used to
 call the default palette internally – and now use the shared package
@@ -1402,7 +1713,7 @@ deprecated – it had not shipped.
 | `get_confirmation_date()`, `get_confirmation_type()`, `get_confirmation_units()`, `has_confirmation()` | [`get_revision_date()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md), [`get_revision_type()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md), [`get_revision_units()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md), [`has_revision()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md) |
 | `confirmation_counts`, `confirmation_delay` | `revision_counts`, `revision_delay` |
 | `censor_confirmation_delays_above()`, `diagnose_confirmation_delay()` | [`censor_revision_delays_above()`](https://rodrigozepeda.github.io/tbl.now/reference/censoring.md), [`diagnose_revision_delay()`](https://rodrigozepeda.github.io/tbl.now/reference/revision_delay.md) |
-| `plot_confirmation_delay()`, `plot_confirmation_status()`, `prop_confirmation_type()` | [`plot_revision_delay()`](https://rodrigozepeda.github.io/tbl.now/reference/revision_delay.md), [`plot_revision_status()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_revision_status.md), [`prop_revision_type()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md) |
+| `plot_confirmation_delay()`, `plot_confirmation_status()`, `prop_confirmation_type()` | `plot_revision_delay()`, [`plot_revision_status()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_revision_status.md), [`prop_revision_type()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md) |
 | `confirmation_date`, `confirmation_type`, `confirmation_units` arguments | `revision_date`, `revision_type`, `revision_units` |
 | `.confirmation_num`, `.confirmation_delay` columns | `.revision_num`, `.revision_delay` |
 | `axis = "confirmation"` | `axis = "revision"` |
@@ -2405,7 +2716,7 @@ an `axis = c("report", "confirmation")` argument: `batch_test()`,
 [`plot_reporting_triangle()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_reporting_triangle.md),
 [`plot_delay_profiles()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_delay_profiles.md),
 [`plot_reporting_hexamap()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_reporting_hexamap.md),
-[`plot_scalogram()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_scalogram.md),
+`plot_scalogram()`,
 [`plot_delay_drift()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_delay_drift.md),
 `test_delay_drift()`, `test_delay_changepoint()` and
 [`diagnostic_plot()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnostic_plot.md).
@@ -2527,9 +2838,9 @@ above 3x.
 
 ### New tests
 
-All [`skip_on_cran()`](https://testthat.r-lib.org/reference/skip.html),
-all on **synthetic fixtures** built by `tests/testthat/helper-engines.R`
-rather than on shipped data, so one axis can be varied at a time:
+All `skip_on_cran()`, all on **synthetic fixtures** built by
+`tests/testthat/helper-engines.R` rather than on shipped data, so one
+axis can be varied at a time:
 
 - `test-engines-matrix.R` – 24 real fits per fast engine ({0,2
   covariates} x {0,2 strata} x {days, weeks} x the three data types),
@@ -3695,8 +4006,8 @@ The remaining findings were addressed too:
   ([`plot_reporting_process()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_epidemic_process.md)
   /
   [`plot_epidemic_process()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_epidemic_process.md),
-  [`plot_scalogram()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_scalogram.md),
-  …) already used, so a panel and its standalone twin read the same.
+  `plot_scalogram()`, …) already used, so a panel and its standalone
+  twin read the same.
 - Every
   [`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html)
   panel now says **which process it describes** in its subtitle — either
@@ -3928,8 +4239,7 @@ The remaining findings were addressed too:
   [`plot_delay_profiles()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_delay_profiles.md),
   [`plot_delay_drift()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_delay_drift.md),
   [`plot_transport_discriminant()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_transport_discriminant.md),
-  `plot_reporting_v()`,
-  [`plot_scalogram()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_scalogram.md),
+  `plot_reporting_v()`, `plot_scalogram()`,
   [`diagnostic_plot()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnostic_plot.md)
   and
   [`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html).
@@ -3956,14 +4266,13 @@ The remaining findings were addressed too:
   computed from observed data only, with **no border padding**, so
   nothing is fabricated at the recent (“now”) edge that matters for
   nowcasting. Reporting views are drawn in red, epidemic views in green.
-  [`plot_scalogram()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_scalogram.md)
-  defaults to the PAUL wavelet (`wname`), which localises a batch more
-  sharply; takes a `format` argument for the x-axis date labels (default
-  `"%d/%b/%y"`); and paints the region outside the cone of influence
-  dark grey. The series is analysed on its own integer time grid, so
-  weekly (or monthly) data is handled correctly, and the heat map tiles
-  a uniform index relabelled with dates so it stays gapless even for
-  long series.
+  `plot_scalogram()` defaults to the PAUL wavelet (`wname`), which
+  localises a batch more sharply; takes a `format` argument for the
+  x-axis date labels (default `"%d/%b/%y"`); and paints the region
+  outside the cone of influence dark grey. The series is analysed on its
+  own integer time grid, so weekly (or monthly) data is handled
+  correctly, and the heat map tiles a uniform index relabelled with
+  dates so it stays gapless even for long series.
 
 - The conservation monitors — `plot_creation_transport()` (the two
   window scores as stacked panels) together with the cumulative-backlog,

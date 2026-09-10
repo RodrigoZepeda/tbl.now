@@ -784,43 +784,6 @@ plot_reporting_hexamap(tn, max_delay = 60)
 
 ![](diagnosing-a-tbl-now_files/figure-html/hex-covid-1.png)
 
-### Scalograms
-
-The scalogram functions are **very experimental**. We have yet to
-confirm they work for all batch cases. Feel free to skip to the section
-on
-[transport](https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html#sec-transport)
-
-Scalograms show reductions of cases. For this example, consider the
-following simulated reporting process:
-
-![](diagnosing-a-tbl-now_files/figure-html/unnamed-chunk-10-1.png)
-
-Its scalogram shows the decreases in the reporting cases as vertical
-streaks aligned with the minimal date of this decrease:
-
-![](diagnosing-a-tbl-now_files/figure-html/unnamed-chunk-11-1.png)
-
-One can see the same vertical streaks in the previous reporting process
-we had been working on corresponding to the dip before the batch:
-
-``` r
-
-plot_scalogram(ideal)
-```
-
-![](diagnosing-a-tbl-now_files/figure-html/unnamed-chunk-13-1.png)
-
-and again the same release dates being the most identified, with
-additional dates having less of a clear pattern:
-
-``` r
-
-plot_scalogram(tn)
-```
-
-![](diagnosing-a-tbl-now_files/figure-html/unnamed-chunk-15-1.png)
-
 ### Transport vs creation
 
 This is the main tool for detecting batches and surges. Before the plot,
@@ -1057,7 +1020,6 @@ then released together.
 | **Reporting process** | Shows how reports were registered. |
 | **Reporting triangle** | Diagonals show cases with the same report date. |
 | **The reporting V** | Horizontal slices show cases with the same report date. |
-| **Wavelet scalogram** | Bright short-period ridges in the reporting series show *holds* on the reporting. |
 | **Transport discriminant** | A red dot up-and-left, in the “potential batch region” might indicate a batch. |
 | **[`diagnose_batches()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_batches.md)** | Shows the flagged reports in the discriminant as a `data.frame` |
 | **Delay profiles** | Show the delay distribution for each event date. |
@@ -1087,14 +1049,22 @@ Another practical notes from other data we have analyzed:
   [`?diagnostic_plot`](https://rodrigozepeda.github.io/tbl.now/reference/diagnostic_plot.md)
   — the tests and figures of Part 3.
 
+If you have any questions or comments regarding the contents of this
+article please [open an issue on
+Github](https://github.com/RodrigoZepeda/tbl.now/issues/new).
+
 ### Learning more
 
+- End-to-end tutorial on real life surveillance data. Takes you from
+  cleaning to diagnosing errors in the data to nowcasting:
+  <https://rodrigozepeda.github.io/tbl.now/articles/example.html>
+- The same tutorial with a **revision process** — the optional third
+  date, where a reported case is later confirmed, retracted or left
+  pending:
+  <https://rodrigozepeda.github.io/tbl.now/articles/example_revisions.html>
 - Introduction vignette:
   <https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.html> for
   the full anatomy of a `tbl_now`, data types, and temporal effects.
-- End-to-end tutorial on real, messy surveillance data — cleaning,
-  diagnostics and nowcasting:
-  <https://rodrigozepeda.github.io/tbl.now/articles/example.html>
 - Tutorial on diagnosing your dataset — what is in it, what is
   structurally wrong with it, and detecting batches and other
   reporting-delay artifacts:

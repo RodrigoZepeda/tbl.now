@@ -31,37 +31,18 @@ This article shows you to to use each package individually. The
 `tbl.now` package contains the
 [`run_nowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/run_nowcast.md)
 function which allows you run nowcast models without requiring knowledge
-of each of the package’s frameworks. We recommend reading that article
+of each of the package’s frameworks. We recommend reading the article
 [**One call, many
 models**](https://rodrigozepeda.github.io/tbl.now/articles/ensemble-nowcasting.md)
 first if your priority is to do nowcasts. Read this one if your
 prioirity is understanding how to use `tbl.now` for a **specific**
-package. And in that case, read the description on [The data](#the-data)
-and then go to your favourite package’s section.
+package. In that case, read the description on [The data](#the-data) and
+then go to your favourite package’s section.
 
 This article solely aims to show how to use `tbl.now` within each
 package’s own framework. We are purposefully not using or searching for
 the most optimal models from each package. Please **DO NOT CONCLUDE
 WHICH PACKAGE IS BEST BASED ON THE RESULTS FROM THIS TUTORIAL**.
-
-Each of these is a separate package, and `tbl.now` does not install any
-of them. It only knows how to *talk* to them. Install whichever you
-actually want to use. Note that some also need software outside R (the
-*Additional requirements* column above) like **Stan** or **JAGS**.
-
-``` r
-
-# CRAN packges
-install.packages(c("baselinenowcast", "EpiNow2", "NobBS", "surveillance"))
-
-# Not on CRAN:
-install.packages("epidist", repos = c('https://epinowcast.r-universe.dev', getOption("repos")))
-install.packages("epinowcast", repos = c("https://epinowcast.r-universe.dev", getOption("repos")))
-install.packages("diseasenowcasting", repos = c("https://rodrigozepeda.r-universe.dev", getOption("repos")))
-
-# Additional installation for epidist/epinowcast:
-install.packages("cmdstanr", repos = c('https://stan-dev.r-universe.dev', getOption("repos")))
-```
 
 ## The data
 
@@ -106,11 +87,10 @@ date, with only the information available until then
 
 ``` r
 
-cutoff <- as.Date("2021-04-01")
-
 #Filter to simulate being back on April 2021
 covid <- covid_colombia |>
-  filter(notification_date < cutoff & diagnosis_date < cutoff)
+  filter(notification_date < as.Date("2021-04-01") & 
+           diagnosis_date < as.Date("2021-04-01"))
 
 #Create the tbl_now object
 covid_now <- covid |>
@@ -120,7 +100,7 @@ covid_now <- covid |>
     case_count  = n,
     data_type   = "count-incidence"
   )
-#> Warning: *Non-unique*: 8066 rows share an (notification_date, diagnosis_date) combination.
+#> Warning: *Non-unique*: 8066 rows share a (notification_date, diagnosis_date) combination.
 #> ℹ 1 column "sex" is not declared, so it splits each cell into several rows. Declare it with `strata = ` to model it separately, or `to_count()` to pool it
 #>   away. The `tbl_now_to_()` converters pool undeclared columns for you, so this is a warning rather than an error.
 
@@ -146,7 +126,8 @@ covid_now
 **About the warning.** `sex` is in the data but was not declared as a
 covariate or strata, so each `(notification_date, diagnosis_date)` cell
 has two rows (one per sex). One can correct it by summing the
-`(notification_date, diagnosis_date)` combinations by sex with to count:
+`(notification_date, diagnosis_date)` combinations by sex with
+[`to_count()`](https://rodrigozepeda.github.io/tbl.now/reference/to_count.md):
 
 ``` r
 
@@ -188,14 +169,22 @@ And not all packages will be able to handle that amount of data.
 Specifically we will see that:
 
 - `diseasenowcasting` can take the **whole** series.
-- `baselinenowcast` can keeps every day, but the **delays** will be
+- `baselinenowcast` can keep every event day, but the **delays** will be
   capped with `max_delay = 30` (the real maximum delay in the data
   corresponds to 185 days).
 - The remaining packages (`NobBS`, `surveillance`, `epinowcast` and
   `epidist`) will be trimmed both in the number of events and delays as
-  the time they take to run the models is prohibitively expensive.
+  the time it takes  
+  to run those models is prohibitively expensive.
 
 ## diseasenowcasting
+
+Install with:
+
+``` r
+
+install.packages("diseasenowcasting", repos = c("https://rodrigozepeda.r-universe.dev", getOption("repos")))
+```
 
 [`diseasenowcasting`](https://rodrigozepeda.github.io/diseasenowcasting/)
 is designed hand-in-hand with `tbl.now`, so it takes a `tbl_now`
@@ -211,12 +200,25 @@ dnc_fit <- nowcast(covid_now)
 dnc_fit
 ```
 
-    #> -- diseasenowcasting --------------------------------------- as of 2021-03-31 --
-    #> Model: NegBin / HSGP / LogNormal
-    #> two_stage (395 event-times; 25 fits, rung 'multi')
-    #> Use `predict()` / `autoplot()` for the nowcast, `coef()` / `summary()` for
-    #> estimates.
-    #> Call `print(nc@model)` for the full model spec (including priors).
+    #> ── A <tbl_nowcast> from method "diseasenowcasting" ─────────────────────────────────────────────────────────────────────────────────────────────
+    #> • now: "2021-03-31"
+    #> • event dates: 395
+    #> • quantile levels: 0.025, 0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95, and 0.975
+    #> • draws: 2000
+    #> 
+    #> Nowcast at "2021-03-31" (q50, 2.5-97.5% interval):
+    #> • 11,561 [8,126.4, 18,426.7]
+    #> 
+    #> # A tibble: 6 × 3
+    #>   notification_date .quantile_level .value
+    #>   <date>                      <dbl>  <dbl>
+    #> 1 2020-03-02                  0.025      1
+    #> 2 2020-03-02                  0.05       1
+    #> 3 2020-03-02                  0.1        1
+    #> 4 2020-03-02                  0.25       1
+    #> 5 2020-03-02                  0.5        1
+    #> # ℹ 1 more row
+    #> ℹ 3549 more rows. Use `as_tibble()` for all of them.
 
 Predictions can be obtained via `tidy`:
 
@@ -228,11 +230,11 @@ tidy(dnc_fit)
     #> # A tibble: 5 × 7
     #>   event_date stratum estimate conf.low conf.high level engine           
     #>   <date>     <chr>      <dbl>    <dbl>     <dbl> <dbl> <chr>            
-    #> 1 2021-03-27 all        7776.    6622.    10227   0.95 diseasenowcasting
-    #> 2 2021-03-28 all        6063     4559.     9235.  0.95 diseasenowcasting
-    #> 3 2021-03-29 all       11174     9264     15192.  0.95 diseasenowcasting
-    #> 4 2021-03-30 all       11379     8825.    16477.  0.95 diseasenowcasting
-    #> 5 2021-03-31 all       11588.    8158.    18478.  0.95 diseasenowcasting
+    #> 1 2021-03-27 all        7929     6690.    10604.  0.95 diseasenowcasting
+    #> 2 2021-03-28 all        5761     4435.     8763.  0.95 diseasenowcasting
+    #> 3 2021-03-29 all       11040     9230.    14911.  0.95 diseasenowcasting
+    #> 4 2021-03-30 all       11328.    8748.    16218.  0.95 diseasenowcasting
+    #> 5 2021-03-31 all       11561     8126.    18427.  0.95 diseasenowcasting
 
 ### With strata and effects.
 
@@ -245,12 +247,27 @@ day-of-week / seasonal effect columns automatically.
 dnc_seasonal <- nowcast(covid_seasonal)   # strata and effects used automatically
 ```
 
-    #> -- diseasenowcasting --------------------------------------- as of 2021-03-31 --
-    #> Model: NegBin / HSGP / LogNormal
-    #> two_stage (395 event-times, 2 strata; 25 fits, rung 'multi')
-    #> Use `predict()` / `autoplot()` for the nowcast, `coef()` / `summary()` for
-    #> estimates.
-    #> Call `print(nc@model)` for the full model spec (including priors).
+    #> ── A <tbl_nowcast> from method "diseasenowcasting" ─────────────────────────────────────────────────────────────────────────────────────────────
+    #> • now: "2021-03-31"
+    #> • event dates: 395
+    #> • strata: "sex"
+    #> • quantile levels: 0.025, 0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95, and 0.975
+    #> • draws: 2000
+    #> 
+    #> Nowcast at "2021-03-31" (q50, 2.5-97.5% interval):
+    #> • Female: 6,442.5 [4,551.9, 9,868.1]
+    #> • Male: 5,738.5 [3,962.9, 8,822.3]
+    #> 
+    #> # A tibble: 6 × 4
+    #>   notification_date sex    .quantile_level .value
+    #>   <date>            <chr>            <dbl>  <dbl>
+    #> 1 2020-03-02        Female           0.025      1
+    #> 2 2020-03-02        Female           0.05       1
+    #> 3 2020-03-02        Female           0.1        1
+    #> 4 2020-03-02        Female           0.25       1
+    #> 5 2020-03-02        Female           0.5        1
+    #> # ℹ 1 more row
+    #> ℹ 7104 more rows. Use `as_tibble()` for all of them.
 
 [`tidy()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast.md)
 can also be used in stratified cases:
@@ -263,11 +280,11 @@ tidy(dnc_seasonal)
     #> # A tibble: 5 × 7
     #>   event_date stratum estimate conf.low conf.high level engine           
     #>   <date>     <chr>      <dbl>    <dbl>     <dbl> <dbl> <chr>            
-    #> 1 2021-03-27 Male       3594     2992.     4556.  0.95 diseasenowcasting
-    #> 2 2021-03-28 Male       2926     2159.     4218.  0.95 diseasenowcasting
-    #> 3 2021-03-29 Male       5424.    4392.     6998.  0.95 diseasenowcasting
-    #> 4 2021-03-30 Male       5460.    4150.     7394.  0.95 diseasenowcasting
-    #> 5 2021-03-31 Male       5720.    3748.     8310.  0.95 diseasenowcasting
+    #> 1 2021-03-27 Male       3724     3079.     4867.  0.95 diseasenowcasting
+    #> 2 2021-03-28 Male       2848.    2152      4266.  0.95 diseasenowcasting
+    #> 3 2021-03-29 Male       5347     4416.     7116.  0.95 diseasenowcasting
+    #> 4 2021-03-30 Male       5476.    4215.     7736.  0.95 diseasenowcasting
+    #> 5 2021-03-31 Male       5738.    3963.     8822.  0.95 diseasenowcasting
 
 ![Three panels (Total, Female, Male) comparing the diseasenowcasting
 nowcast against the counts reported by now and the counts those dates
@@ -278,16 +295,24 @@ Nowcast both stratified and total using the diseasenowcasting package
 
 ## baselinenowcast
 
+Install with:
+
+``` r
+
+install.packages("baselinenowcast")
+```
+
 [`baselinenowcast`](https://baselinenowcast.epinowcast.org/) is a
 simple, fast baseline. It works from a **reporting triangle**, a matrix
 with one row per event (reference) date and one column per reporting
 delay. The lower-right corner of the matrix corresponds to the
 not-yet-observed part the nowcast will fill in.
 
+### Simple nowcast
+
+For unstratified data,
 [`tbl_now_to_baselinenowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_baselinenowcast.md)
 builds that triangle directly from the count-incidence data:
-
-### Simple nowcast
 
 ``` r
 
@@ -310,8 +335,8 @@ covid_triangle[1:5, 1:6]
 
 **Why cap the delays?** The reporting triangle keeps every one of the
 393 event dates. Because the maximum delay in our data is 185 days it
-would mean a matrix of 393 \times 185 = 7.2705^{4} entries. This makes
-the fit extremely slow.
+would mean a matrix of 393 \times 185 = 72,705 entries. This makes the
+fit extremely slow.
 
 From here you can follow `baselinenowcast`’s own workflow. For example
 calling
@@ -331,8 +356,8 @@ nowcast_samples <- baselinenowcast(
 
 ### With strata and effects.
 
-`baselinenowcast` (\>= 0.2.1) takes a long tidy `data.frame` and
-nowcasts every stratum in one call, via its `strata_cols` argument. Use
+`baselinenowcast` can also take a long tidy `data.frame` and nowcass
+every stratum in one call, via its `strata_cols` argument. Use
 `format = "auto"` (the default) or `format = "long"` on
 [`tbl_now_to_baselinenowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_baselinenowcast.md)
 to get that shape from a stratified `tbl_now`:
@@ -374,11 +399,6 @@ nowcasts_by_stratum <- baselinenowcast(
 )
 ```
 
-If you want to inspect each stratum’s reporting triangle on its own,
-`format = "triangle_list"` still returns one triangle per stratum – but
-the strata-aware fit above is what
-`run_nowcast(engine_baselinenowcast())` does under the hood.
-
 In both stratified and unstratified cases the predictions can be
 recovered with `tidy`:
 
@@ -390,11 +410,11 @@ tidy(nowcast_samples)
     #> # A tibble: 5 × 7
     #>   event_date stratum estimate conf.low conf.high level engine         
     #>   <date>     <chr>      <dbl>    <dbl>     <dbl> <dbl> <chr>          
-    #> 1 2021-03-27 all        8354.    5832.    14026.  0.95 baselinenowcast
-    #> 2 2021-03-28 all        4828.    3293.     8462.  0.95 baselinenowcast
-    #> 3 2021-03-29 all       13206.    8620.    22098.  0.95 baselinenowcast
-    #> 4 2021-03-30 all       13457     8732.    22262.  0.95 baselinenowcast
-    #> 5 2021-03-31 all       15340.    9399     25179.  0.95 baselinenowcast
+    #> 1 2021-03-27 all        8439     5833.    15105.  0.95 baselinenowcast
+    #> 2 2021-03-28 all        4854     3315.     8645.  0.95 baselinenowcast
+    #> 3 2021-03-29 all       12912     8586.    23755.  0.95 baselinenowcast
+    #> 4 2021-03-30 all       13386     8821.    22869.  0.95 baselinenowcast
+    #> 5 2021-03-31 all       15678.    9488.    24488.  0.95 baselinenowcast
 
 ![Three panels (Total, Female, Male) comparing the baselinenowcast
 nowcast against the counts reported by now and the counts those dates
@@ -405,6 +425,16 @@ Nowcast both stratified and total using the baselinenowcast package
 
 ## epinowcast
 
+Install with:
+
+``` r
+
+install.packages("epinowcast", repos = c("https://epinowcast.r-universe.dev", getOption("repos")))
+
+# Also requires installation of STAN:
+install.packages("cmdstanr", repos = c('https://stan-dev.r-universe.dev', getOption("repos")))
+```
+
 [`epinowcast`](https://package.epinowcast.org/) fits a flexible Bayesian
 model with separate modules for the reporting delay and the reference
 (epidemic) process. It expects a preprocessed object built by
@@ -414,24 +444,20 @@ model with separate modules for the reporting delay and the reference
 handles the preprocessing, returning an object you can pass straight to
 [`epinowcast::epinowcast()`](https://package.epinowcast.org/reference/epinowcast.html):
 
-**Warning: requires Stan.** This package fits its model with **Stan**,
-so it needs a working `cmdstanr` (or `rstan`) toolchain installed before
-any of the code below will run.
-
 ### Simple nowcast
 
 `epinowcast` becomes very slow with the 2.3M cases reporting triangle.
-So we need to filter earlier, on the *observations* before applying
+So we need to filter earlier, on the *observations* keeping only the
+most recent 90 days before applying
 [`tbl_now_to_epinowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_epinowcast.md).
 
 ``` r
 
 library(epinowcast)
 
-# Trim, then convert. 90 days, not two years: this fit scales with the number of
-# REFERENCE dates, and it is the slowest engine on the page.
+# Trim, then convert. 90 days otherwise the model is too slow
 covid_enw_recent <- covid_now |>
-  filter(notification_date >= cutoff - 90) |>
+  filter(notification_date >= as.Date("2021-04-01") - 90) |>
   tbl_now_to_epinowcast(max_delay = 30, verbose = FALSE, quiet = TRUE)
 
 covid_enw_recent
@@ -460,16 +486,16 @@ This can then be passed to
 enw_fit <- epinowcast(
   covid_enw_recent,
   fit = enw_fit_opts(
-    pp = TRUE, chains = 2, iter_sampling = 250, iter_warmup = 250,
+    pp = TRUE, chains = 1, iter_sampling = 250, iter_warmup = 250,
     seed = 20260824
   )
 )
 ```
 
 Again, the `max_delay` is a **modelling choice, not a detail**: left
-unset, the converter infers it from the longest delay present (330 days
-here), and the nowcast then carries one reference date per delay. This
-also becomes extremely slow.
+unset, the converter infers it from the longest delay present, and the
+nowcast then carries one reference date per delay becoming extremely
+slow.
 
 ### With strata and effects.
 
@@ -484,55 +510,28 @@ and the temporal-effect columns land in the `metareference` /
 
 # Same trim, from the enriched object.
 enw_seasonal <- covid_seasonal |>
-  filter(notification_date >= cutoff - 90) |>
+  filter(notification_date >= as.Date("2021-04-01") - 90) |>
   tbl_now_to_epinowcast(max_delay = 30, verbose = FALSE, quiet = TRUE)
 
-# Drop a temporal effect into a reference-module formula and fit as usual: the
-# covariate now enters the reference model. The columns carry the same names as
-# in `covid_seasonal` after `compute_temporal_effects()`.
-#
-# DAY OF WEEK, not the annual Fourier pair. `covid_seasonal` declares both, but
-# a 365-day cycle observed over a 90-day window is a quarter of one period and
-# is barely identified -- and a weakly identified parameter is what makes a
-# sampler crawl. Measured on this data: the Fourier version took 1,424s, and at
-# a 60-day window it finished faster but with 250 divergent transitions. Day of
-# week is fully identified here, fits in 219s, and diverges not at all.
+# The temporal columns carry the same names as  in `covid_seasonal` after 
+# `compute_temporal_effects()`. It can be used in any parametric model
 enw_seasonal_fit <- epinowcast(
   enw_seasonal,
   reference = enw_reference(
-    parametric   = ~ 1 + .event_day_of_week,
+    parametric   = ~ 1 + .event_day_of_week, 
     distribution = "lognormal",
     data         = enw_seasonal
   ),
   fit = enw_fit_opts(
-    pp = TRUE, chains = 2, iter_sampling = 250, iter_warmup = 250,
+    pp = TRUE, chains = 1, iter_sampling = 250, iter_warmup = 250,
     seed = 20260824
   )
 )
 ```
 
-**Pick an effect the window can actually identify.** The point of this
-section is *how* a temporal effect reaches the reference module, not
-what it says about COVID-19 in Colombia — but the choice of effect is
-not free. `covid_seasonal` carries both a day-of-week effect and an
-annual Fourier pair, and only the first is estimable from ninety days of
-data: one period of the second has not even finished. Asking for the
-Fourier terms anyway does not error, it just samples badly — 1,424s
-here, and 250 divergent transitions when the window was shortened
-further. Day of week costs 219s and diverges not at all.
-
 **These fits are deliberately small.** Two chains, 250 warmup and 250
-sampling iterations on a short window, because this page is about **how
-to drive the engine** and rebuilds on every change. Raise them when the
-numbers matter.
-
-[`enw_pathfinder()`](https://package.epinowcast.org/reference/enw_pathfinder.html)
-looks like the obvious speed-up and is **not** an option here: on this
-data its optimiser cannot start
-(`Line search failed to achieve a sufficient decrease`), every iteration
-fails, and the fit returns no draws at all. It works for other models –
-`EpiNow2` uses it in `vignette("ensemble-nowcasting")` – but not for
-this one.
+sampling iterations on a short window, because this page is a tutorial
+and not a final nowcast.
 
 In both stratified and unstratified cases the predictions can be
 recovered with `tidy`:
@@ -545,11 +544,11 @@ tidy(enw_fit)
     #> # A tibble: 5 × 7
     #>   event_date stratum estimate conf.low conf.high level engine    
     #>   <date>     <chr>      <dbl>    <dbl>     <dbl> <dbl> <chr>     
-    #> 1 2021-03-27 all        8265     6252.    15765.   0.9 epinowcast
-    #> 2 2021-03-28 all        8253     4391.    22588.   0.9 epinowcast
-    #> 3 2021-03-29 all       16610.    9451.    41504.   0.9 epinowcast
-    #> 4 2021-03-30 all       21104.    9522.    60072.   0.9 epinowcast
-    #> 5 2021-03-31 all       24920.    9987.    85524.   0.9 epinowcast
+    #> 1 2021-03-27 all        8350.    6269.    16325.   0.9 epinowcast
+    #> 2 2021-03-28 all        8322     4173.    20692.   0.9 epinowcast
+    #> 3 2021-03-29 all       16225     9415.    39159.   0.9 epinowcast
+    #> 4 2021-03-30 all       21883    10270.    59333.   0.9 epinowcast
+    #> 5 2021-03-31 all       25545     9765     75139.   0.9 epinowcast
 
 ![Three panels (Total, Female, Male) comparing the epinowcast nowcast
 against the counts reported by now and the counts those dates eventually
@@ -559,6 +558,13 @@ Nowcast both stratified and total using the epinowcast package
 
 ## NobBS
 
+Install with:
+
+``` r
+
+install.packages("NobBS")
+```
+
 [`NobBS`](https://cran.r-project.org/package=NobBS) works from a
 **linelist** with an onset-date column and a report-date column, and it
 counts **rows**. Each row is one case. Our data are counts, so they have
@@ -567,29 +573,20 @@ to be expanded first.
 does that and names the columns what
 [`NobBS()`](https://rdrr.io/pkg/NobBS/man/NobBS.html) expects:
 
-**Warning: requires JAGS.** This package fits its model with **JAGS**,
-which is a separate program: install JAGS itself, not just the R
-package, before running the code below.
-
 ### Simple nowcast
 
 ``` r
 
-# Trim BEFORE converting: the expansion is one row per case, and `moving_window`
-# below limits only what NobBS fits, not what it is handed.
+# Trim, then convert. 90 days otherwise the model is too slow
 covid_linelist <- covid_now |>
-  filter(notification_date >= cutoff - 60) |>
+  filter(notification_date >= as.Date("2021-04-01") - 90) |>
   tbl_now_to_nobbs(verbose = FALSE)
-#> Warning: `tbl_now_to_nobbs()` needs a line list; expanding "count-incidence" counts in "n" to one row per case.
 
 nrow(covid_linelist)   # one row per case
-#> [1] 271888
+#> [1] 651051
 ```
 
-**Do not hand [`NobBS()`](https://rdrr.io/pkg/NobBS/man/NobBS.html)
-count data directly.** It counts rows, so a table of 1,174 rows carrying
-50,160 cases is nowcast as **1,174 cases**!. The converter exists to
-make that impossible.
+We can then nowcast with the built data frame:
 
 ``` r
 
@@ -601,8 +598,8 @@ nobbs_fit <- NobBS(
   units         = "1 day",
   onset_date    = "onset_date",
   report_date   = "report_date",
-  max_D         = 30,   # delays beyond 30 days are negligible here
-  moving_window = 60    # ...and fit the last 60 days, which is all we handed it
+  max_D         = 15,   # delays beyond 15 days are negligible here
+  moving_window = 30 
 )
 ```
 
@@ -618,11 +615,11 @@ tidy(nobbs_fit)
     #> # A tibble: 5 × 7
     #>   event_date stratum estimate conf.low conf.high level engine
     #>   <date>     <chr>      <dbl>    <dbl>     <dbl> <dbl> <chr> 
-    #> 1 2021-03-27 all         8149     8018     8286     NA NobBS 
-    #> 2 2021-03-28 all         4684     4578     4794     NA NobBS 
-    #> 3 2021-03-29 all        12668    12465    12878     NA NobBS 
-    #> 4 2021-03-30 all        13150    12901    13407     NA NobBS 
-    #> 5 2021-03-31 all        15376    14959    15794.    NA NobBS
+    #> 1 2021-03-27 all         9248    9070       9420    NA NobBS 
+    #> 2 2021-03-28 all         5332    5203.      5471    NA NobBS 
+    #> 3 2021-03-29 all        14458   14199      14727    NA NobBS 
+    #> 4 2021-03-30 all        14780   14478      15081    NA NobBS 
+    #> 5 2021-03-31 all        16610   16165      17077    NA NobBS
 
 Notice that even the arguments come from the `tbl_now`:
 [`get_now()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md),
@@ -643,8 +640,8 @@ together under the name `strata`. Use `"strata"` as the name for
 ``` r
 
 covid_linelist_sex <- covid_seasonal |>
-  filter(notification_date >= cutoff - 60) |>
-  tbl_now_to_nobbs(verbose = FALSE)   # `sex` rides along, plus a `strata` column
+  filter(notification_date >= as.Date("2021-04-01") - 60) |>
+  tbl_now_to_nobbs(verbose = FALSE) 
 
 stratified_nobbs <- NobBS.strat(covid_linelist_sex,
                                 strata        = "strata",
@@ -652,10 +649,14 @@ stratified_nobbs <- NobBS.strat(covid_linelist_sex,
                                 units         = "1 day",
                                 onset_date    = "onset_date",
                                 report_date   = "report_date",
-                                max_D         = 30,
-                                moving_window = 60
+                                max_D         = 15,
+                                moving_window = 30
                                 )
 ```
+
+**These fits are deliberately small.** A moving window of 30 and a
+maximum delay of 15 is probably too short for this data. This is done
+for speed as this page is a tutorial and not a final nowcast.
 
 In both stratified and unstratified cases the predictions can be
 recovered with `tidy`:
@@ -666,25 +667,14 @@ reached.](nowcasting-models_files/figure-html/nobbs-panels-1.png)
 
 Nowcast both stratified and total using the NobBS package
 
-**There is a credible interval in that figure — it is just too narrow to
-see.** Every panel in this article draws the engine’s interval as a
-shaded band, and `NobBS` does return one. The
-[`tidy()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast.md)
-table above gives **15,376 \[14,959, 15,794\]** for 2021-03-31 — a band
-5.4% of the estimate wide, and that is its *widest* day. Across the
-thirty days plotted the median width is **0.6%**, which is thinner than
-the line drawn on top of it.
-
-Nothing was lost in translation — the model is simply that confident. At
-roughly ten thousand cases a day a Poisson-like posterior puts its
-interval near \pm\sqrt{n}, and `NobBS` estimates the delay distribution
-from a great deal of data. **Read these bounds off
-[`tidy()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast.md),
-not off the figure**, and compare them with `epinowcast` above and
-`EpiNow2` below, whose delay carries far more uncertainty and whose
-bands show it.
-
 ## surveillance
+
+Install with:
+
+``` r
+
+install.packages("surveillance")
+```
 
 [`surveillance`](https://cran.r-project.org/package=surveillance) is the
 long-standing R package for outbreak detection and nowcasting, and
@@ -704,12 +694,11 @@ defaults:
 
 library(surveillance)
 
-# Trim before converting: the converter expands counts to one row per case.
+# Trim, then convert. 90 days otherwise the model is too slow
 covid_sur_now <- covid_now |>
-  filter(notification_date >= cutoff - 60)
+  filter(notification_date >= as.Date("2021-04-01") - 60)
 
 covid_sur <- tbl_now_to_surveillance(covid_sur_now, verbose = FALSE)
-#> Warning: `tbl_now_to_surveillance()` needs a line list; expanding "count-incidence" counts in "n" to one row per case.
 
 head(covid_sur)
 #>    dHospital    dReport
@@ -733,8 +722,7 @@ All of it can come from the `tbl_now`:
 ``` r
 
 #Note that in the call we use our get_now(), get_surveillance_when()
-#and get_surveillance_range() functions to get those variables from the 
-#tbl.now
+#and get_surveillance_range() functions:
 sur_fit <- nowcast(
   now          = get_now(covid_sur_now),
   when         = get_surveillance_when(covid_sur_now, length = 30),
@@ -742,7 +730,7 @@ sur_fit <- nowcast(
   dEventCol    = "dHospital",
   dReportCol   = "dReport",
   aggregate.by = "1 day",
-  D            = 30,
+  D            = 15,
   method       = "bayes.notrunc.bnb",
   control      = list(dRange = get_surveillance_range(covid_sur_now), 
                       N.tInf.max = 100000, nSamples = 1000)
@@ -772,17 +760,15 @@ tidy(sur_fit)
 [`surveillance::nowcast()`](https://rdrr.io/pkg/surveillance/man/nowcast.html)
 has **no strata argument** as it only models one series, so a stratified
 analysis means one fit per stratum. Ask the converter for
-`format = "linelist_list"` and it does the splitting, exactly as
-`format = "triangle_list"` does for `baselinenowcast`: one line list per
-stratum, in a plain list you can
+`format = "linelist_list"` and it does the splitting: one line list per
+stratum, in a plain list you can use
 [`lapply()`](https://rdrr.io/r/base/lapply.html) over.
 
 ``` r
 
-# Trim first, exactly as above: the whole window is 2.3M cases and the converter
-# expands every one of them to a row.
+# Trim first, as it can't handle the 2.3M cases of the whole window.
 covid_sur_seasonal <- covid_seasonal |>
-  filter(notification_date >= cutoff - 60)
+  filter(notification_date >= as.Date("2021-04-01") - 90)
 
 covid_sur_eff <- tbl_now_to_surveillance(
   covid_sur_seasonal,
@@ -797,7 +783,7 @@ covid_sur_eff
 #> ── 2 surveillance line lists from a <tbl_now> ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 #> • One per stratum ("sex"): "Female" and "Male"
 #> • Date columns: "dHospital" (event), "dReport" (report)
-#> • Rows each: 144514 and 127374
+#> • Rows each: 348346 and 302705
 #> • Now: "2021-03-31"
 #> ℹ `lapply()` over this, passing `control$dRange = get_surveillance_range(x)` from the WHOLE object so every stratum shares one time axis.
 ```
@@ -818,16 +804,10 @@ sur_by_stratum <- covid_sur_eff |>
     dEventCol    = "dHospital",
     dReportCol   = "dReport",
     aggregate.by = "1 day",
-    D            = 30,
+    D            = 15,
     method       = "bayes.notrunc.bnb",
     control      = list(
-      # The grid comes from the object, not from the piece: every stratum has to
-      # be laid on the SAME axis, or a stratum whose first case arrived late
-      # starts its own time at a different day.
       dRange     = get_surveillance_range(covid_sur_seasonal),
-      # `N.tInf.max` caps the support of the nowcast distribution, so it has to
-      # sit comfortably above the largest daily count in the stratum -- here
-      # about 4,000. Too low and the posterior is silently truncated.
       N.tInf.max = 100000,
       nSamples   = 1000
     )
@@ -848,30 +828,22 @@ reached.](nowcasting-models_files/figure-html/sur-panels-1.png)
 
 Nowcast both stratified and total using the surveillance package
 
-**As with `NobBS`, the prediction interval is drawn but invisible.**
-[`tidy()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast.md)
-reads it from the `stsNC` object’s `pi` slot at the width
-`control$alpha` sets (95% by default), and for 2021-03-31 it is **13,236
-\[12,905, 13,575\]** — 5.1% of the estimate, against a median of 0.3%
-over the thirty days plotted. You do **not** need the JAGS-backed
-`bayes.trunc` methods to get uncertainty out of `surveillance`;
-`bayes.notrunc.bnb` above reports it. (The `lawless` and `unif` methods
-may leave the slot empty, and then the bounds come back `NA`.)
-
 ## EpiNow2
 
-EpiNow2’s interface from `tbl.now` is still experimental we haven’t
-checked it yet
+Install with:
 
-[`EpiNow2`](https://epiforecasts.io/EpiNow2/) is the odd one out here:
-it is not a single nowcast model but **four entry points**, each taking
-a different shape of data.
+``` r
+
+install.packages("EpiNow2")
+```
+
+[`EpiNow2`](https://epiforecasts.io/EpiNow2/) is not a single nowcasting
+framework but a more general tool that allows you to estimate different
+distributions related to your epidemic process. The
 [`tbl_now_to_EpiNow2()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_EpiNow2.md)
-therefore takes a `target` argument, named for the function the result
-is passed to, so whatever it gives you can be handed over unchanged.
-
-**Warning: requires Stan.** These models fit through `cmdstanr`, so a
-working CmdStan installation is needed before running the code below.
+function therefore takes a `target` argument, named for the function the
+result is passed to, so whatever it gives you can be handed over
+unchanged.
 
 | `target` | you get | for |
 |----|----|----|
@@ -880,12 +852,9 @@ working CmdStan installation is needed before running the code below.
 | `"estimate_truncation"` | a list of snapshots | [`estimate_truncation()`](https://epiforecasts.io/EpiNow2/reference/estimate_truncation.html) |
 | `"estimate_dist"` | interval-censored date columns | [`estimate_dist()`](https://epiforecasts.io/EpiNow2/reference/estimate_dist.html) |
 
-**EpiNow2 models a *daily* process and has no `timestep`.** Handing it a
-weekly series as one row per week is read as one row per **day** — no
-error, just an epidemic seven times too fast. The converter lays
-non-daily data on EpiNow2’s own daily grid using its `accumulate`
-column, so you do not have to. Units coarser than a week are refused
-rather than approximated.
+**EpiNow2 models a *daily* process and has no `timestep`.** To pass
+weekly data we utilize the `accumulate` column. Units coarser than a
+week are refused rather than approximated.
 
 ### Simple nowcast
 
@@ -896,7 +865,7 @@ filler days marked:
 ``` r
 
 covid_en2 <- covid_now |>
-  filter(notification_date >= cutoff - 60) |>
+  filter(notification_date >= as.Date("2021-04-01") - 60) |>
   tbl_now_to_EpiNow2(verbose = FALSE, quiet = TRUE)
 
 head(covid_en2)
@@ -909,26 +878,14 @@ head(covid_en2)
 #> 6 2021-02-05    4800
 ```
 
-EpiNow2 needs **two** things fitted before it can nowcast, and they are
-not the same thing:
+EpiNow2 needs **two** things fitted before it can nowcast:
 
-- **`delays`** convolves infections into reports. The infection-to-onset
-  part of it is not in our data at all, so the incubation period stays
-  EpiNow2’s shipped example.
-- **`truncation`** is the right-truncation correction — *the nowcast
-  itself*. That **is** what the report dimension of a `tbl_now`
-  measures, and
-  [`estimate_truncation()`](https://epiforecasts.io/EpiNow2/reference/estimate_truncation.html)
-  fits it from snapshots of the series as it looked at successive report
-  dates. This is the one EpiNow2 model that uses the report axis, which
-  is why
-  [`tbl_now_to_EpiNow2()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_EpiNow2.md)
-  has a target for it.
+- **`delays`** The infection-to-onset delay which we take from EpiNow2’s
+  shipped example.
+- **`truncation`** is *the nowcast itself*. That **is** what the report
+  dimension of a `tbl_now` measures.
 
-Its default is
-[`trunc_opts()`](https://epiforecasts.io/EpiNow2/reference/trunc_opts.html)
-= `Fixed(0)`: **no truncation, so no nowcast**. So this is a two-step
-fit.
+This is a two-step fit.
 
 ``` r
 
@@ -936,18 +893,14 @@ library(EpiNow2)
 
 # STEP 1 --- fit the truncation from the report dimension.
 covid_snaps <- covid_now |>
-  filter(notification_date >= cutoff - 60) |>
+  filter(notification_date >= as.Date("2021-04-01") - 90) |>
   tbl_now_to_EpiNow2(
     target = "estimate_truncation", snapshots = 5, verbose = FALSE, quiet = TRUE
   )
 
 truncation_fit <- estimate_truncation(
   covid_snaps,
-  # `stan_opts()` picks a RANDOM seed by default
-  # (`seed = as.integer(runif(1, 1e8))`), so an unseeded EpiNow2 fit cannot be
-  # reproduced -- and a pathological sample cannot be told apart from a bad
-  # model afterwards. Pin it, as the epinowcast section above does.
-  stan = stan_opts(samples = 500, warmup = 500, chains = 2, seed = 20260824)
+  stan = stan_opts(samples = 250, warmup = 250, chains = 1, seed = 20260824)
 )
 
 # `$dist` is defunct; the accessor is `get_parameters()`.
@@ -959,52 +912,12 @@ epinow2_fit <- estimate_infections(
   generation_time = gt_opts(example_generation_time),
   delays          = delay_opts(example_incubation_period),
   truncation      = trunc_opts(fitted_truncation),
-  # A WEEKLY RANDOM WALK, and no Gaussian process. EpiNow2's default models
-  # R_t with a GP, which on this data is both slower and unstable: at the
-  # package defaults one stratum or the other came back nowcasting FEWER cases
-  # than had already been reported (a ratio of 0.42, where it must be at least
-  # 1). The random walk is EpiNow2's own documented alternative when speed
-  # matters, and here it is also the one that converges.
   rt              = rt_opts(prior = LogNormal(mean = 2, sd = 0.1), rw = 7),
   gp              = NULL,
-  stan            = stan_opts(samples = 1000, warmup = 250, chains = 2,
+  stan            = stan_opts(samples = 250, warmup = 250, chains = 1, 
                               seed = 20260824)
 )
 ```
-
-**Without step 1, EpiNow2 does not nowcast at all.** Given only a
-reporting delay — whether EpiNow2’s shipped UK one or one fitted from
-these data with
-[`estimate_dist()`](https://epiforecasts.io/EpiNow2/reference/estimate_dist.html)
-— its median stayed roughly flat over the last two weeks and sat *below*
-what had already been reported. `delays` tells the model how infections
-turn into reports; it does not tell it that the newest days are
-**incomplete**. Only `truncation` does.
-
-With it, over the last seven days — where these data are about **50%
-complete** — the fit sits below the already-reported count on 4 of 21
-stratum-days instead of most of them, and the last day is nowcast at
-8,090 against 4,261 reported and 12,521 eventual.
-
-It still dips below the observed value on about half of the *older*
-days, and that is not a nowcasting failure: those days are ~92%
-complete, and a model that fits a smooth infection curve will fall below
-a noisy daily count roughly half the time. That is EpiNow2 doing what it
-is for.
-
-**The generation time and incubation period are still EpiNow2’s shipped
-examples**, and deliberately so: both are properties of transmission
-rather than of reporting, and no amount of reporting data identifies
-them. What the report dimension *does* identify is the truncation, and
-that is what step 1 fits. **Sampling is also lighter than the default**
-(1,000 draws, 250 warmup, 2 chains), and follows a **weekly random
-walk** rather than EpiNow2’s default Gaussian process. That is not only
-for speed. At the defaults this fit is unstable on these data: one
-stratum or the other comes back nowcasting fewer cases than had *already
-been reported*, which no nowcast can legitimately do. The random walk is
-EpiNow2’s own documented alternative when speed matters, and here it is
-also the one that converges — it was faster (229s against 381s) and both
-strata came out above their reported counts.
 
 The predictions come out with
 [`tidy()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast.md),
@@ -1018,119 +931,11 @@ tidy(epinow2_fit)
     #> # A tibble: 5 × 7
     #>   event_date stratum estimate conf.low conf.high level engine 
     #>   <date>     <chr>      <dbl>    <dbl>     <dbl> <dbl> <chr>  
-    #> 1 2021-04-03 all        8676     3813.    21892.   0.9 EpiNow2
-    #> 2 2021-04-04 all        7296.    2811.    19838.   0.9 EpiNow2
-    #> 3 2021-04-05 all       12712     4700.    41552.   0.9 EpiNow2
-    #> 4 2021-04-06 all       13124.    4676.    43810.   0.9 EpiNow2
-    #> 5 2021-04-07 all       12500     3796.    50596.   0.9 EpiNow2
-
-[`tidy()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast.md)
-reads the interval width off the fit rather than assuming it: EpiNow2’s
-`CrIs` is a user argument, so a model fitted with `CrIs = c(0.5, 0.95)`
-reports `level = 0.95` and one fitted with the defaults reports
-`level = 0.9`.
-
-### The report dimension: `estimate_truncation()`
-
-This is step 1 above, looked at on its own — the one EpiNow2 model that
-uses the **report** dimension a `tbl_now` exists to carry. It takes a
-list of snapshots — the series as it looked at each of several report
-dates — which is exactly what the object already knows:
-
-``` r
-
-covid_snapshots <- covid_now |>
-  filter(notification_date >= cutoff - 60) |>
-  tbl_now_to_EpiNow2(
-    target = "estimate_truncation", snapshots = 5,
-    verbose = FALSE, quiet = TRUE
-  )
-
-covid_snapshots
-#> ── 5 reporting snapshots from a <tbl_now> ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-#> • One per report date: "2021-03-27", "2021-03-28", "2021-03-29", "2021-03-30", and "2021-03-31"
-#> • Rows each: 56, 57, 58, 59, and 60
-#> • Now: "2021-03-31"
-#> ℹ Pass this to `EpiNow2::estimate_truncation()`. `EpiNow2::estimate_secondary()` wants a single data frame of linked series instead -- not this.
-```
-
-Because the snapshots carry their report dates, this is the one EpiNow2
-shape that can be turned **back** into a `tbl_now` — differencing
-consecutive snapshots recovers the incidence:
-
-``` r
-
-as_tbl_now(covid_snapshots)
-#> # A tibble:  169 × 6
-#> # Data type: "count-incidence"
-#> # Frequency: Event: `days` | Report: `days`
-#>   notification_date diagnosis_date   count .event_num .report_num .delay
-#>   <date>            <date>           <dbl>      <dbl>       <dbl>  <dbl>
-#>   [event_date]      [report_date]  [cases]      [...]       [...]  [...]
-#> 1 2021-01-31        2021-03-27        3854          0          55     55
-#> 2 2021-02-01        2021-03-27        6643          1          55     54
-#> 3 2021-02-02        2021-03-27        5358          2          55     53
-#> 4 2021-02-03        2021-03-27        5071          3          55     52
-#> 5 2021-02-04        2021-03-27        4742          4          55     51
-#> # ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-#> # Now: 2021-03-31 | Event date: "notification_date" | Report date: "diagnosis_date"
-#> # ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-#> # ℹ 164 more rows
-```
-
-### The delay distribution: `estimate_dist()`
-
-[`estimate_dist()`](https://epiforecasts.io/EpiNow2/reference/estimate_dist.html)
-(new in EpiNow2 1.9.0) estimates a reporting-delay distribution,
-accounting for double interval censoring and right truncation. It takes
-the same schema as , so the two are directly comparable on the same
-object:
-
-``` r
-
-covid_dist <- covid_now |>
-  filter(notification_date >= cutoff - 60) |>
-  tbl_now_to_EpiNow2(target = "estimate_dist", verbose = FALSE, quiet = TRUE)
-
-head(covid_dist)
-#>    pdate_lwr  pdate_upr  sdate_lwr  sdate_upr   obs_date   n
-#> 1 2021-01-31 2021-02-01 2021-01-31 2021-02-01 2021-04-01 317
-#> 2 2021-01-31 2021-02-01 2021-01-31 2021-02-01 2021-04-01 264
-#> 3 2021-01-31 2021-02-01 2021-02-01 2021-02-02 2021-04-01 617
-#> 4 2021-01-31 2021-02-01 2021-02-01 2021-02-02 2021-04-01 534
-#> 5 2021-01-31 2021-02-01 2021-02-02 2021-02-03 2021-04-01 231
-#> 6 2021-01-31 2021-02-01 2021-02-02 2021-02-03 2021-04-01 208
-```
-
-Unlike the other targets, this one is **not** a nowcast and it is
-**not** what corrects the recent days —
-[`estimate_truncation()`](https://epiforecasts.io/EpiNow2/reference/estimate_truncation.html)
-above does that. It answers a different question: how long reporting
-takes. Like
-[`tidy.epidist_fit()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.delay_distribution.md),
-it returns a **delay-shaped** table — one row per parameter, plus the
-distribution’s `mean` and `sd`:
-
-``` r
-
-dist_fit <- estimate_dist(
-  covid_dist,
-  stan = stan_opts(samples = 500, warmup = 500, chains = 2, seed = 20260824)
-)
-```
-
-``` r
-
-tidy(dist_fit)
-```
-
-    #> # A tibble: 4 × 6
-    #>   term    estimate conf.low conf.high level engine 
-    #>   <chr>      <dbl>    <dbl>     <dbl> <dbl> <chr>  
-    #> 1 meanlog     1.08     1.06      1.11  0.95 EpiNow2
-    #> 2 sdlog       2.54     2.52      2.57  0.95 EpiNow2
-    #> 3 mean        4.65     4.62      4.67  0.95 EpiNow2
-    #> 4 sd          6.53     6.51      6.55  0.95 EpiNow2
+    #> 1 2021-04-03 all        8424     4035.    20402    0.9 EpiNow2
+    #> 2 2021-04-04 all        6785     2670.    16625.   0.9 EpiNow2
+    #> 3 2021-04-05 all       10925     5184.    36040.   0.9 EpiNow2
+    #> 4 2021-04-06 all       12094.    4036.    40879.   0.9 EpiNow2
+    #> 5 2021-04-07 all       10040     3957.    45165.   0.9 EpiNow2
 
 ### With strata and effects.
 
@@ -1141,21 +946,17 @@ one label:
 ``` r
 
 covid_regional <- covid_seasonal |>
-  filter(notification_date >= cutoff - 60) |>
+  filter(notification_date >= as.Date("2021-04-01") - 90) |>
   tbl_now_to_EpiNow2(target = "regional_epinow", verbose = FALSE, quiet = TRUE)
-#> Warning: `tbl_now_to_EpiNow2()`: declared temporal effects are not carried into this format.
-#> ℹ They are stored lazily, so there are no columns to keep or name yet.
-#> ℹ When called through `engine_epinow2()`, supported report-date weekly effects are added through `EpiNow2::obs_opts()` instead.
-#> ℹ The model will not see them from the converted data.
 
 head(covid_regional)
 #>         date confirm region
-#> 1 2021-01-31    2042 Female
-#> 2 2021-01-31    1812   Male
-#> 3 2021-02-01    3545 Female
-#> 4 2021-02-01    3098   Male
-#> 5 2021-02-02    2864 Female
-#> 6 2021-02-02    2494   Male
+#> 1 2021-01-01    2653 Female
+#> 2 2021-01-01    2379   Male
+#> 3 2021-01-02    6129 Female
+#> 4 2021-01-02    5305   Male
+#> 5 2021-01-03    5482 Female
+#> 6 2021-01-03    4906   Male
 ```
 
 ``` r
@@ -1164,23 +965,17 @@ regional_fit <- regional_epinow(
   covid_regional,
   generation_time = gt_opts(example_generation_time),
   delays          = delay_opts(example_incubation_period),
-  # The same two-step logic as the pooled fit: without `truncation` this is not
-  # a nowcast, just a smooth through the incomplete recent days. The truncation
-  # fitted in step 1 above is reused here.
   truncation      = trunc_opts(fitted_truncation),
-  # Same weekly random walk as the pooled fit above, and for the same reason:
-  # with the default Gaussian process one region came back below its own input.
   rt              = rt_opts(prior = LogNormal(mean = 2, sd = 0.1), rw = 7),
   gp              = NULL,
-  stan            = stan_opts(samples = 1000, warmup = 250, chains = 2,
+  stan            = stan_opts(samples = 250, warmup = 250, chains = 1,
                               seed = 20260824)
 )
 ```
 
-[`tidy()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast.md)
-on the result gives one block per region, so `stratum` stays a unique
-key alongside `event_date`, and the pooled and stratified fits plot
-together exactly as every other engine’s do:
+**These fits are deliberately small.** Two chains, 250 warmup and 250
+sampling iterations on a short window, because this page is a tutorial
+and not a final nowcast.
 
 ![Three panels (Total, Female, Male) comparing the EpiNow2 nowcast
 against the counts reported by now and the counts those dates eventually
@@ -1188,49 +983,28 @@ reached.](nowcasting-models_files/figure-html/epinow2-panels-1.png)
 
 Nowcast both stratified and total using the EpiNow2 package
 
-**EpiNow2’s interval is much the widest here**, and that is the model
-rather than the data:
-[`estimate_infections()`](https://epiforecasts.io/EpiNow2/reference/estimate_infections.html)
-fits a latent infection curve and propagates the generation time, the
-incubation period *and* the fitted truncation into every day, where the
-other engines model the reporting delay alone. Read the width as the
-price of the extra structure.
-
-**One EpiNow2 shape `tbl.now` does not convert for, and one it
-repurposes.**
-[`estimate_delay()`](https://epiforecasts.io/EpiNow2/reference/estimate_delay.html)
-takes a bare vector of delays; EpiNow2’s own help now points at
-[`estimate_dist()`](https://epiforecasts.io/EpiNow2/reference/estimate_dist.html)
-instead, and it discards the censoring a `tbl_now` carries. If you want
-it anyway it is `x$.delay`.
-
-`tbl_now_to_EpiNow2(target = "estimate_secondary")` **is** implemented,
-but the mapping is a **repurposing** of the model: `primary` is reports
-by `report_date` and `secondary` is revisions of those reports by
-`revision_date`, so the fitted delay is the *report-to-revision* delay
-rather than the epidemiological convolution
-[`?estimate_secondary`](https://epiforecasts.io/EpiNow2/reference/estimate_secondary.html)
-describes (cases and deaths, say). The converter warns about this at
-call time.
-
 ## epidist
 
+Install with:
+
+``` r
+
+install.packages("epidist", repos = c('https://epinowcast.r-universe.dev', getOption("repos")))
+```
+
 Sometimes the quantity you actually want is the **delay distribution**
-itself — how long, on average, between onset and report, and how
-variable is it? [`epidist`](https://epidist.epinowcast.org/) estimates
-exactly that, treating each case as an interval-censored onset/report
-pair.
+itself. [`epidist`](https://epidist.epinowcast.org/) estimates exactly
+that, treating each case as an interval-censored onset/report pair.
 
 [`tbl_now_to_epidist()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_epidist.md)
 converts the `tbl_now` into the censored form `epidist` expects. Our
 data are daily counts, so the converter produces
-`epidist_aggregate_data` — one row per distinct
-`(delay, observation time)` combination with a weight — rather than one
-row per case:
-
-**Warning: requires Stan.** This package fits its model with **Stan**,
-so it needs a working `cmdstanr` (or `rstan`) toolchain installed before
-any of the code below will run.
+`epidist_aggregate_data` with one row per distinct
+`(delay, observation time)` combination, and `n` as that row’s weight.
+`sex` is still undeclared on `covid_now`, and `epidist` never sees it,
+so the two rows it splits each cell into are pooled back together here –
+declaring it (as `covid_seasonal` does just below) is how you ask for it
+to reach the model instead.
 
 ### Simple delay fit
 
@@ -1238,27 +1012,15 @@ any of the code below will run.
 
 library(epidist)
 
-covid_epidist <- tbl_now_to_epidist(covid_now, verbose = FALSE)
-```
-
-`epidist` offers several model types, and on **count** data the choice
-matters more than it looks. The **marginal** model is the one built for
-aggregated counts: it works from the `(delay, observation time)` cells
-the converter produces, so a month of cases costs a few hundred
-*weights* rather than a few thousand rows.
-
-``` r
-
 # Fit the delay distribution (see the epidist documentation for model choices)
 delay_model <- covid_now |>
-  filter(notification_date >= cutoff - 30) |>
+  filter(notification_date >= as.Date("2021-04-01") - 90) |>
   tbl_now_to_epidist(verbose = FALSE) |>
   as_epidist_marginal_model() |>
-  epidist()
+  epidist(chains = 1, iter = 250, warmup = 250, backend = "cmdstanr")
 ```
 
-The fitted delay distribution can then feed back into a nowcast for
-example as a data-informed prior in `epinowcast`.
+The fitted delay distribution can then feed back into a nowcast.
 
 ### With strata and effects.
 
@@ -1268,42 +1030,28 @@ the model’s formula. For example:
 
 ``` r
 
-covid_epidist_eff <- tbl_now_to_epidist(covid_seasonal, verbose = FALSE)
-```
-
-``` r
-
 # A sex-varying mean delay.
 delay_by_sex <- covid_seasonal |>
-  filter(notification_date >= cutoff - 30) |>
+  filter(notification_date >= as.Date("2021-04-01") - 90) |>
   tbl_now_to_epidist(verbose = FALSE) |>
   as_epidist_marginal_model() |>
-  epidist(formula = mu ~ 1 + sex + .event_season_365_sin + .event_season_365_cos)
+  epidist(formula = mu ~ 1 + sex + .event_season_365_sin + .event_season_365_cos,
+          chains = 1, iter = 250, warmup = 250, backend = "cmdstanr")
 ```
 
+**These fits are deliberately small.** Two chains, 250 warmup and 250
+sampling iterations on a short window, because this page is a tutorial
+and not a final nowcast.
+
 [`tidy()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast.md)
-works here too, but it returns a **different table**, because `epidist`
-estimates a different thing. There are no per-date case estimates to
-report, so instead of one row per event date you get one row per
+works here too, but it returns a slightly **different table** because
+`epidist` estimates a different thing. In this case you get one row per
 parameter of the fitted delay distribution:
 
 ``` r
 
 tidy(delay_model)
 ```
-
-    #> # A tibble: 4 × 6
-    #>   term  estimate conf.low conf.high level engine 
-    #>   <chr>    <dbl>    <dbl>     <dbl> <dbl> <chr>  
-    #> 1 mu     1.73e 1  1.63e 1   1.84e 1  0.95 epidist
-    #> 2 sigma  7.33e 0  7.13e 0   7.55e 0  0.95 epidist
-    #> 3 mean   1.48e19  1.29e18   2.33e20  0.95 epidist
-    #> 4 sd     6.80e30  1.41e29   5.59e32  0.95 epidist
-
-The current model does not converge. Again this lies on how we specified
-the model and in the amount of zero-day-delays we have (~34%). Read this
-as a demonstration of *how* to call the model from `tbl.now` rather than
-a demonstration of the model’s effectiveness.
 
 ## The `tidy()` function
 
@@ -1323,11 +1071,11 @@ tidy(nowcast_samples)
     #> # A tibble: 5 × 7
     #>   event_date stratum estimate conf.low conf.high level engine         
     #>   <date>     <chr>      <dbl>    <dbl>     <dbl> <dbl> <chr>          
-    #> 1 2021-03-27 all        8354.    5832.    14026.  0.95 baselinenowcast
-    #> 2 2021-03-28 all        4828.    3293.     8462.  0.95 baselinenowcast
-    #> 3 2021-03-29 all       13206.    8620.    22098.  0.95 baselinenowcast
-    #> 4 2021-03-30 all       13457     8732.    22262.  0.95 baselinenowcast
-    #> 5 2021-03-31 all       15340.    9399     25179.  0.95 baselinenowcast
+    #> 1 2021-03-27 all        8439     5833.    15105.  0.95 baselinenowcast
+    #> 2 2021-03-28 all        4854     3315.     8645.  0.95 baselinenowcast
+    #> 3 2021-03-29 all       12912     8586.    23755.  0.95 baselinenowcast
+    #> 4 2021-03-30 all       13386     8821.    22869.  0.95 baselinenowcast
+    #> 5 2021-03-31 all       15678.    9488.    24488.  0.95 baselinenowcast
 
 The columns are the same regardless of the package that produced the
 fit:
@@ -1350,21 +1098,20 @@ tidy(nowcast_samples, probs = c(0.05, 0.5, 0.95))
 ```
 
     #> # A tibble: 5 × 10
-    #>   event_date stratum estimate conf.low conf.high level engine             q5    q50    q95
-    #>   <date>     <chr>      <dbl>    <dbl>     <dbl> <dbl> <chr>           <dbl>  <dbl>  <dbl>
-    #> 1 2021-03-27 all        8354.    5832.    14026.  0.95 baselinenowcast 5982.  8354. 13072.
-    #> 2 2021-03-28 all        4828.    3293.     8462.  0.95 baselinenowcast 3403.  4828.  7642.
-    #> 3 2021-03-29 all       13206.    8620.    22098.  0.95 baselinenowcast 8986. 13206. 20257.
-    #> 4 2021-03-30 all       13457     8732.    22262.  0.95 baselinenowcast 9216. 13457  20373.
-    #> 5 2021-03-31 all       15340.    9399     25179.  0.95 baselinenowcast 9944. 15340. 23587.
+    #>   event_date stratum estimate conf.low conf.high level engine              q5    q50    q95
+    #>   <date>     <chr>      <dbl>    <dbl>     <dbl> <dbl> <chr>            <dbl>  <dbl>  <dbl>
+    #> 1 2021-03-27 all        8439     5833.    15105.  0.95 baselinenowcast  6026.  8439  13567.
+    #> 2 2021-03-28 all        4854     3315.     8645.  0.95 baselinenowcast  3450.  4854   7898.
+    #> 3 2021-03-29 all       12912     8586.    23755.  0.95 baselinenowcast  8935. 12912  21308.
+    #> 4 2021-03-30 all       13386     8821.    22869.  0.95 baselinenowcast  9305. 13386  21197.
+    #> 5 2021-03-31 all       15678.    9488.    24488.  0.95 baselinenowcast 10327. 15678. 22740.
 
 **Only engines that keep draws can answer an arbitrary `probs`.** That
 is `diseasenowcasting`, `baselinenowcast` and `epinowcast`. `NobBS` and
 `surveillance` report a fixed set of summaries, so asking them for a
-quantile they never computed is an **error** rather than a silent
-approximation. To be able to do so you need to specify at **fit time**
-the quantiles you want. For example with `NobBS` you can use the `specs`
-to set `quantiles`:
+quantile they never computed is an **error** . To be able to do so you
+need to specify at **fit time** the quantiles you want. For example with
+`NobBS` you can use the `specs` to set `quantiles`:
 
 ``` r
 
@@ -1393,8 +1140,8 @@ tidy(nobbs_quantiles, probs = c(0.1, 0.5, 0.9))
     #> 1 2021-03-27 all            0        0         0    NA NobBS 
     #> 2 2021-03-28 all            0        0         0    NA NobBS 
     #> 3 2021-03-29 all            0        0         0    NA NobBS 
-    #> 4 2021-03-30 all            0        0         0    NA NobBS 
-    #> 5 2021-03-31 all            0        0         0    NA NobBS
+    #> 4 2021-03-30 all            0        0         1    NA NobBS 
+    #> 5 2021-03-31 all            0        0         1    NA NobBS
 
 ## Summary
 
@@ -1403,9 +1150,9 @@ by now, a dark line the counts those dates eventually reached, and one
 coloured line per package its
 nowcast.](nowcasting-models_files/figure-html/comparison-all-1.png)
 
-We described the dengue data once as a `tbl_now`, and then a single
-converter call (or, for `diseasenowcasting`, no call at all) handed it
-to each package in the shape it needed:
+We described the data once as a `tbl_now`, and then a single converter
+call (or, for `diseasenowcasting`, no call at all) handed it to each
+package in the shape it needed:
 
 ``` r
 
@@ -1427,19 +1174,24 @@ as.data.frame(covid_now)               # others
 
 Attaching **strata** and **temporal effects** once (`covid_seasonal`)
 uses the same converters: each package receives them in whatever way it
-can use a grouping in `epinowcast`, covariate columns in `epidist` and
-the `baselinenowcast` long format, one triangle/series per stratum where
-the model takes a single series, and automatically in
-`diseasenowcasting`.
+can use.
+
+If you have any questions or comments regarding the contents of this
+article please [open an issue on
+Github](https://github.com/RodrigoZepeda/tbl.now/issues/new).
 
 ## Learning more
 
+- End-to-end tutorial on real life surveillance data. Takes you from
+  cleaning to diagnosing errors in the data to nowcasting:
+  <https://rodrigozepeda.github.io/tbl.now/articles/example.html>
+- The same tutorial with a **revision process** — the optional third
+  date, where a reported case is later confirmed, retracted or left
+  pending:
+  <https://rodrigozepeda.github.io/tbl.now/articles/example_revisions.html>
 - Introduction vignette:
   <https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.html> for
   the full anatomy of a `tbl_now`, data types, and temporal effects.
-- End-to-end tutorial on real, messy surveillance data — cleaning,
-  diagnostics and nowcasting:
-  <https://rodrigozepeda.github.io/tbl.now/articles/example.html>
 - Tutorial on diagnosing your dataset — what is in it, what is
   structurally wrong with it, and detecting batches and other
   reporting-delay artifacts:

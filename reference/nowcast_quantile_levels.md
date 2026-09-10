@@ -1,6 +1,6 @@
 # Default quantile levels for a nowcast
 
-**\[experimental\]**
+**\[stable\]**
 
 The quantile levels
 [`run_nowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/run_nowcast.md)
@@ -49,7 +49,7 @@ and
 which report at these levels;
 [`score_nowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/score_nowcast.md)
 and
-[`as_forecast_point()`](https://rodrigozepeda.github.io/tbl.now/reference/score_nowcast.md),
+[`scoringutils::as_forecast_point()`](https://epiforecasts.io/scoringutils/reference/as_forecast_point.html),
 which score them.
 
 ## Examples

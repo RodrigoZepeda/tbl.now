@@ -1,6 +1,6 @@
 # Fill in the days when nothing was reported
 
-**\[experimental\]**
+**\[stable\]**
 
 Surveillance data records what happened, not what didn't. If no dengue
 case with onset on 3 January was reported on 5 January, there is simply
@@ -46,12 +46,22 @@ complete_zeroes(x, max_delay = NULL, until = NULL)
   the `now`: an event date later than the `now` cannot carry any report
   on or before it, so no row would survive for it.
 
+  ### Temporal effects
+
+  If `x` arrived with materialised
+  [`temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/temporal_effects.md)
+  columns, they are **recomputed on the completed grid** before the
+  result is returned, so the rows this function adds carry their own
+  calendar effects rather than `NA`. A lazy specification that has not
+  been computed yet stays lazy.
+
 ## Value
 
 A `tbl_now` object with the same columns as `x`, plus the rows that were
 implicitly zero, carrying `0` in the `case_count` column. Explicit
 missing counts in the input remain `NA`; only cells created by
-`complete_zeroes()` are filled. The data type is preserved.
+`complete_zeroes()` are filled. The data type is preserved, as are any
+computed temporal-effect columns (recomputed over the new rows).
 
 ## Details
 

@@ -1,6 +1,6 @@
 # Combine several nowcasts into an ensemble
 
-**\[experimental\]**
+**\[stable\]**
 
 Takes the nowcasts produced by different modelling packages on the
 *same* `tbl_now` and combines them into a single

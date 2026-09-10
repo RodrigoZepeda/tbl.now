@@ -7,6 +7,11 @@ returns a
 [tbl_nowcast](https://rodrigozepeda.github.io/tbl.now/reference/tbl_nowcast.md),
 the downstream workflow is shared.
 
+## Value
+
+`NULL`, invisibly. This page documents workflow choices rather than a
+callable object.
+
 ## Use a modelling package's native entry point when
 
 Use a package such as diseasenowcasting directly when you need its model
@@ -48,18 +53,31 @@ metrics, summaries, pairwise comparisons, and relative skill.
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
-fit <- run_nowcast(data, engine_diseasenowcasting())
+data(denguedat)
+recent <- subset(denguedat, onset_week >= as.Date("2010-06-01"))
+dengue <- tbl_now(recent,
+  event_date = onset_week, report_date = report_week, verbose = FALSE
+)
+fit <- run_nowcast(dengue, example_engine())
+#> ℹ Nowcasting with "example" as of 2010-12-20.
 autoplot(fit)
 
+
 bt <- nowcast_backtest(
-  data,
-  engine_diseasenowcasting(label = "structural"),
-  engine_epinowcast(label = "renewal")
+  dengue,
+  example_engine(label = "carry forward"),
+  now_dates = as.Date(c("2010-10-04", "2010-11-15")),
+  verbose = FALSE
 )
-relative <- bt |>
-  scoringutils::as_forecast_quantile() |>
-  scoringutils::score() |>
-  scoringutils::add_relative_skill(metric = "wis")
-} # }
+head(bt$scores)
+#> # A tibble: 6 × 8
+#>   .method       .now       onset_week .observed   wis ae_median coverage_50
+#>   <chr>         <date>     <date>         <dbl> <dbl>     <dbl> <lgl>      
+#> 1 carry forward 2010-10-04 2010-06-07       157  3.84         0 TRUE       
+#> 2 carry forward 2010-10-04 2010-06-14       210  5.13         0 TRUE       
+#> 3 carry forward 2010-10-04 2010-06-21       193  4.68         0 TRUE       
+#> 4 carry forward 2010-10-04 2010-06-28       193  4.68         0 TRUE       
+#> 5 carry forward 2010-10-04 2010-07-05       258  6.28         0 TRUE       
+#> 6 carry forward 2010-10-04 2010-07-12       315  7.6          0 TRUE       
+#> # ℹ 1 more variable: coverage_90 <lgl>
 ```

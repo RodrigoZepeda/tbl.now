@@ -1,6 +1,6 @@
 # Coarsen a `tbl_now` onto a bigger time unit
 
-**\[experimental\]**
+**\[stable\]**
 
 Daily surveillance data is often too sparse to nowcast: most (event
 date, report date) cells hold a zero or a one, and the delay

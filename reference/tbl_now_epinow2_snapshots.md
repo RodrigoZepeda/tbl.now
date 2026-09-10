@@ -1,6 +1,6 @@
 # Snapshots of one series, as EpiNow2 estimates truncation from
 
-**\[experimental\]**
+**\[stable\]**
 
 The object returned by
 `tbl_now_to_EpiNow2(x, target = "estimate_truncation")`: a list of

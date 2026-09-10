@@ -1,6 +1,6 @@
 # Coerce a `tbl_now` with another package's generic
 
-**\[experimental\]**
+**\[stable\]**
 
 These S3 methods make each supported package's own coercion verb accept
 a `tbl_now`. They are thin wrappers around the matching `tbl_now_to_*()`

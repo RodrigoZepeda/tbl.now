@@ -1,6 +1,6 @@
 # Diagnostic plots of the reporting process
 
-**\[experimental\]**
+**\[stable\]**
 
 Lays out a gallery of complementary views of a `tbl_now`'s reporting
 process, all aimed at spotting reporting artefacts – especially *batch
@@ -108,8 +108,7 @@ and
 (each date's delay curve),
 [`plot_delay_drift()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_delay_drift.md)
 (whether delays are getting longer),
-[`plot_transport_discriminant()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_transport_discriminant.md),
-[`plot_scalogram()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_scalogram.md).
+[`plot_transport_discriminant()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_transport_discriminant.md).
 
 ## Examples
 

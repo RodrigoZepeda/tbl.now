@@ -1,6 +1,6 @@
 # Refit several methods at past `now` dates and score them
 
-**\[experimental\]**
+**\[stable\]**
 
 Walks back through time: for every date in `now_dates`, the `tbl_now` is
 truncated to the reports that were available then, each method is

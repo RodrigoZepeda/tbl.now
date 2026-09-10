@@ -8,6 +8,7 @@
 <url><loc>https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/articles/ensemble-nowcasting.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/articles/example.html</loc></url>
+<url><loc>https://rodrigozepeda.github.io/tbl.now/articles/example_revisions.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/articles/index.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.html</loc></url>
@@ -66,7 +67,6 @@
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/plot_reporting_hexamap.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/plot_reporting_triangle.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/plot_revision_status.html</loc></url>
-<url><loc>https://rodrigozepeda.github.io/tbl.now/reference/plot_scalogram.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/plot_transport_discriminant.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/print.tbl_now_diagnosis.html</loc></url>
 <url><loc>https://rodrigozepeda.github.io/tbl.now/reference/print.tbl_now_palette.html</loc></url>

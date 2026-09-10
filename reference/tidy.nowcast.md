@@ -1,6 +1,6 @@
 # Tidy a fitted nowcast into one standard table
 
-**\[experimental\]**
+**\[stable\]**
 
 Every nowcasting package returns its answer in its own shape – a matrix
 of posterior draws, an `stsNC` object, a Stan fit, an INLA summary, a

@@ -1,6 +1,6 @@
 # One reporting triangle per stratum
 
-**\[experimental\]**
+**\[stable\]**
 
 The object returned by
 `tbl_now_to_baselinenowcast(x, format = "triangle_list")`: a list of

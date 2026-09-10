@@ -1,6 +1,6 @@
 # Calendar effects on the case counts or on the reporting delay
 
-**\[experimental\]**
+**\[stable\]**
 
 One panel of
 [`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html),

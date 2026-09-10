@@ -1,6 +1,6 @@
 # Detect an abrupt change point in the reporting-delay distribution
 
-**\[experimental\]**
+**\[stable\]**
 
 Complements
 [`diagnose_drift()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_drift.md).

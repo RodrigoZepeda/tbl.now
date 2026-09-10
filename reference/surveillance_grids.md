@@ -1,6 +1,6 @@
 # The date grids [`surveillance::nowcast()`](https://rdrr.io/pkg/surveillance/man/nowcast.html) needs
 
-**\[experimental\]**
+**\[stable\]**
 
 [`surveillance::nowcast()`](https://rdrr.io/pkg/surveillance/man/nowcast.html)
 takes three dates and two date *grids*, and none of them have defaults

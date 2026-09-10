@@ -27,7 +27,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.35.4</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -43,8 +43,9 @@
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="../articles/custom-nowcast-models.html">Adding your own nowcasting model</a></li>
     <li><a class="dropdown-item" href="../articles/diagnosing-a-tbl-now.html">Diagnosing a tbl_now</a></li>
-    <li><a class="dropdown-item" href="../articles/ensemble-nowcasting.html">One call, many models: run_nowcast(), custom backends and ensembles</a></li>
-    <li><a class="dropdown-item" href="../articles/example.html">The nowcasting workflow: hospital-acquired infections in Bucaramanga, Colombia</a></li>
+    <li><a class="dropdown-item" href="../articles/ensemble-nowcasting.html">Fitting models from different nowcasting frameworks, backtesting and building an ensemble</a></li>
+    <li><a class="dropdown-item" href="../articles/example_revisions.html">The nowcasting workflow 2: COVID-19 case surveillance with revisions in the United States</a></li>
+    <li><a class="dropdown-item" href="../articles/example.html">The nowcasting workflow 1: hospital-acquired infections in Bucaramanga, Colombia</a></li>
     <li><a class="dropdown-item" href="../articles/nowcasting-models.html">Using tbl.now with different modelling packages</a></li>
     <li><a class="dropdown-item" href="../articles/tbl.now.html">tbl.now</a></li>
   </ul>
@@ -1324,8 +1325,9 @@ can ask whether they take equally long – a laboratory that rules cases
 out faster than it confirms them will bias any nowcast that treats the
 two alike. <code><a href="../reference/revision_delay.html">diagnose_revision_delay()</a></code> tests exactly that (a
 Wilcoxon rank-sum test on the two delay distributions) and
-<code><a href="../reference/revision_delay.html">plot_revision_delay()</a></code> draws it. <code>covid_us</code>
-records no retractions, so there is nothing to compare here.</p>
+<code>plot_delay_distribution(axis = "revision")</code> draws it, one
+colour per outcome. <code>covid_us</code> records no retractions, so
+there is nothing to compare here.</p>
 </div>
 </div>
 <div class="section level3">
@@ -1418,7 +1420,7 @@ and any computed columns:</p>
 <code class="sourceCode R"><span><span class="va">df_now</span> <span class="op">&lt;-</span> <span class="va">df_now</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/add.html">remove_temporal_effects</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/add.html">remove_all_strata</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning: *Non-unique*: 832 rows share an (dx_date, dx_report_date) combination.</span></span>
+<span><span class="co">#&gt; Warning: *Non-unique*: 832 rows share a (dx_date, dx_report_date) combination.</span></span>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> 2 columns "race" and "RACE_UPPER" are not declared, so they split each cell</span></span>
 <span><span class="co">#&gt;   into several rows. Declare them with `strata = ` to model them separately, or</span></span>
 <span><span class="co">#&gt;   `to_count()` to pool them away. The `tbl_now_to_()` converters pool</span></span>
@@ -2351,23 +2353,28 @@ strata, and conversion format. For example, here we can convert to
 <span><span class="co">#&gt; <span style="color: #949494;"># ℹ 8,255 more rows</span></span></span></code></pre></div>
 <p>See the <a href="https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html">vignette
 on using different models</a> to see all conversion formats.</p>
-</div>
-</div>
-<div class="section level2">
-<h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>
-</h2>
 <!-- Single source for "Learning more"; pulled in as a knitr child by README.Rmd and every article. Edit on `learning.more.Rmd`.-->
+<div class="alert alert-info">
+<p>If you have any questions or comments regarding the contents of this
+article please <a href="https://github.com/RodrigoZepeda/tbl.now/issues/new" class="external-link">open an issue
+on Github</a>.</p>
+</div>
+</div>
 </div>
 <div class="section level2">
 <h2 id="learning-more">Learning more<a class="anchor" aria-label="anchor" href="#learning-more"></a>
 </h2>
 <ul>
+<li>End-to-end tutorial on real life surveillance data. Takes you from
+cleaning to diagnosing errors in the data to nowcasting: <a href="https://rodrigozepeda.github.io/tbl.now/articles/example.html">https://rodrigozepeda.github.io/tbl.now/articles/example.html</a>
+</li>
+<li>The same tutorial with a <strong>revision process</strong> — the
+optional third date, where a reported case is later confirmed, retracted
+or left pending: <a href="https://rodrigozepeda.github.io/tbl.now/articles/example_revisions.html">https://rodrigozepeda.github.io/tbl.now/articles/example_revisions.html</a>
+</li>
 <li>Introduction vignette: <a href="https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.html">https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.html</a>
 for the full anatomy of a <code>tbl_now</code>, data types, and temporal
 effects.</li>
-<li>End-to-end tutorial on real, messy surveillance data — cleaning,
-diagnostics and nowcasting: <a href="https://rodrigozepeda.github.io/tbl.now/articles/example.html">https://rodrigozepeda.github.io/tbl.now/articles/example.html</a>
-</li>
 <li>Tutorial on diagnosing your dataset — what is in it, what is
 structurally wrong with it, and detecting batches and other
 reporting-delay artifacts: <a href="https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html">https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html</a>
@@ -2381,6 +2388,10 @@ reporting-delay artifacts: <a href="https://rodrigozepeda.github.io/tbl.now/arti
 <li>Package reference: <a href="https://rodrigozepeda.github.io/tbl.now/reference/">https://rodrigozepeda.github.io/tbl.now/reference/</a>
 </li>
 </ul>
+</div>
+<div class="section level2 unnumbered">
+<h2 class="unnumbered" id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>
+</h2>
 <div id="refs" class="references csl-bib-body hanging-indent">
 <div id="ref-timetk" class="csl-entry">
 Dancho, Matt, and Davis Vaughan. 2023. <em>Timetk: A Tool Kit for

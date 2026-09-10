@@ -1,6 +1,6 @@
 # Tidy the predictions and scores of a `nowcast_backtest()`
 
-**\[experimental\]**
+**\[stable\]**
 
 One row per (method, `now` date, target) carrying both halves of the
 comparison – what the model said and what happened – with the

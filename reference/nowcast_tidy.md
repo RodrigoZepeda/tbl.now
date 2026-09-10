@@ -1,6 +1,6 @@
 # Standardise a fitted nowcast
 
-**\[experimental\]**
+**\[stable\]**
 
 The second extension point of the nowcasting framework (see
 [`nowcast_fit()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_fit.md)).

@@ -1,6 +1,6 @@
 # Plot the reporting triangle
 
-**\[experimental\]**
+**\[stable\]**
 
 Tiles over (event date, delay), filled by the reported count. Cells that
 are **observable but empty** (a genuine reported zero) are drawn in a

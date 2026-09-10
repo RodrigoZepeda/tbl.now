@@ -37,7 +37,11 @@ EpiNow2 1.9.0). Count data rides along as the n weight column.
 estimate_dist() vendors likelihood functions from
 primarycensored, and its
 help asks that you cite primarycensored alongside EpiNow2
-when using it (citation(&quot;primarycensored&quot;)).
+when using it (citation(&quot;primarycensored&quot;)).  Like
+tbl_now_to_epidist(), this target returns one row per observed delay:
+the revision axis is dropped and undeclared columns are pooled, because
+neither reaches estimate_dist() and so neither can keep two rows
+apart.
 
 
 
@@ -84,7 +88,11 @@ EpiNow2 1.9.0). Count data rides along as the n weight column.
 estimate_dist() vendors likelihood functions from
 primarycensored, and its
 help asks that you cite primarycensored alongside EpiNow2
-when using it (citation(&quot;primarycensored&quot;)).
+when using it (citation(&quot;primarycensored&quot;)).  Like
+tbl_now_to_epidist(), this target returns one row per observed delay:
+the revision axis is dropped and undeclared columns are pooled, because
+neither reaches estimate_dist() and so neither can keep two rows
+apart.
 
 
 
@@ -101,7 +109,7 @@ stream is already aggregated, and a delay distribution is not case data."><meta 
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.35.4</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -115,8 +123,9 @@ stream is already aggregated, and a delay distribution is not case data."><meta 
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/custom-nowcast-models.html">Adding your own nowcasting model</a></li>
     <li><a class="dropdown-item" href="../articles/diagnosing-a-tbl-now.html">Diagnosing a tbl_now</a></li>
-    <li><a class="dropdown-item" href="../articles/ensemble-nowcasting.html">One call, many models: run_nowcast(), custom backends and ensembles</a></li>
-    <li><a class="dropdown-item" href="../articles/example.html">The nowcasting workflow: hospital-acquired infections in Bucaramanga, Colombia</a></li>
+    <li><a class="dropdown-item" href="../articles/ensemble-nowcasting.html">Fitting models from different nowcasting frameworks, backtesting and building an ensemble</a></li>
+    <li><a class="dropdown-item" href="../articles/example_revisions.html">The nowcasting workflow 2: COVID-19 case surveillance with revisions in the United States</a></li>
+    <li><a class="dropdown-item" href="../articles/example.html">The nowcasting workflow 1: hospital-acquired infections in Bucaramanga, Colombia</a></li>
     <li><a class="dropdown-item" href="../articles/nowcasting-models.html">Using tbl.now with different modelling packages</a></li>
     <li><a class="dropdown-item" href="../articles/tbl.now.html">tbl.now</a></li>
   </ul></li>
@@ -181,7 +190,11 @@ when it runs.</p></dd>
 <code>estimate_dist()</code> vendors likelihood functions from
 <a href="https://primarycensored.epinowcast.org/" class="external-link">primarycensored</a>, and its
 help asks that you cite <span class="pkg">primarycensored</span> alongside <span class="pkg">EpiNow2</span>
-when using it (<code>citation("primarycensored")</code>).</p></dd>
+when using it (<code>citation("primarycensored")</code>).  Like
+<code><a href="tbl_now_epidist.html">tbl_now_to_epidist()</a></code>, this target returns one row per observed delay:
+the revision axis is dropped and undeclared columns are pooled, because
+neither reaches <code>estimate_dist()</code> and so neither can keep two rows
+apart.</p></dd>
 
 
 </dl><p><code>tbl_now_from_EpiNow2()</code> inverts the snapshot form: snapshot <em>k</em> is the series

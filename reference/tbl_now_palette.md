@@ -27,6 +27,7 @@ tbl_now_palette(
   epidemic_dark = "#334335",
   revision = "#C79800",
   revision_light = "#E6CE80",
+  retracted = "#3E6F9E",
   ink = "#262626",
   ink_muted = "#607060",
   ink_inverse = "#FFFFFF",
@@ -74,11 +75,17 @@ tbl_now_palette(
 
 - revision:
 
-  Strong colour of the revision process.
+  Strong colour of the revision process, and of a `confirmed` outcome on
+  it.
 
 - revision_light:
 
   Attenuated revision colour (box fills).
+
+- retracted:
+
+  A report the revision process took back. The counterpart of
+  `revision`, so that the two resolutions can be told apart at a glance.
 
 - ink:
 
@@ -102,8 +109,7 @@ tbl_now_palette(
 
 - surface_dark:
 
-  Deep surface for a region with no estimate (the scalogram's cone of
-  influence).
+  Deep surface for a region with no estimate.
 
 - grid_major:
 
@@ -170,6 +176,18 @@ The remaining roles are furniture — text, gridlines, reference lines and
 the three data states that are not a process (`zero`, `pending`,
 `observed`).
 
+## Revision outcomes
+
+A panel that splits the revision axis by outcome (see the
+`by_revision_type` argument of
+[`plot_delay_distribution()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_delay_distribution.md)
+and
+[`plot_reporting_process()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_epidemic_process.md))
+draws `confirmed` in the `revision` colour, `pending` in `surface`,
+`retracted` in `retracted` and an unrecorded outcome in `neutral`. Ochre
+and blue are the two resolutions, white is the case that has not
+resolved, grey the one whose outcome was never written down.
+
 ## See also
 
 [autoplot()](https://rodrigozepeda.github.io/tbl.now/reference/autoplot.tbl_now.md),
@@ -191,6 +209,7 @@ tbl_now_palette()
 #> epidemic_dark    #334335
 #> revision         #C79800
 #> revision_light   #E6CE80
+#> retracted        #3E6F9E
 #> ink              #262626
 #> ink_muted        #607060
 #> ink_inverse      #FFFFFF
@@ -218,6 +237,7 @@ tbl_now_palette(reporting = "#5B4B8A")
 #> epidemic_dark    #334335
 #> revision         #C79800
 #> revision_light   #E6CE80
+#> retracted        #3E6F9E
 #> ink              #262626
 #> ink_muted        #607060
 #> ink_inverse      #FFFFFF

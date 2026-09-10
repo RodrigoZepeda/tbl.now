@@ -106,10 +106,9 @@ when you want the third date on the result.
   happened, and it is what you score a nowcast against.
 
 - `get_nth_reported_cases()` – the count accumulated **within a given
-  delay**. **\[experimental\]** `delay = 0` gives the cases reported on
-  the event date itself, `delay = 1` adds those reported one period
-  later, and so on. `delay = Inf` is the same as
-  `get_latest_reported_cases()`.
+  delay**. **\[stable\]** `delay = 0` gives the cases reported on the
+  event date itself, `delay = 1` adds those reported one period later,
+  and so on. `delay = Inf` is the same as `get_latest_reported_cases()`.
 
 The gap between the first and the latest count *is* the reporting delay
 problem that nowcasting exists to solve.

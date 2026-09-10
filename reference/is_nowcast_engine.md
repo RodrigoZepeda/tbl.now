@@ -1,6 +1,6 @@
 # Is this an engine?
 
-**\[experimental\]**
+**\[stable\]**
 
 Tests whether an object is a nowcasting engine – the specification built
 by

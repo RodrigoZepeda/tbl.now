@@ -1,6 +1,6 @@
 # Fit a nowcast with one modelling package
 
-**\[experimental\]**
+**\[stable\]**
 
 `nowcast_fit()` and
 [`nowcast_tidy()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_tidy.md)

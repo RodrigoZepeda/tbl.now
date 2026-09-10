@@ -1,1638 +1,301 @@
-# tbl.now — development guide
+# Develop tbl.now
 
-This file teaches an LLM how to **develop** the `tbl.now` package. It is
-not a user manual: `SKILL.md` explains how to *use* the package, and the
-vignettes explain how to *apply* it. Read this before changing code.
+Read `SKILL.md` first for the user-facing contract. This guide contains
+the non-obvious invariants needed when changing the package.
 
-## 1. What the package is
+`tbl.now` owns:
 
-`tbl.now` is an R package that extends `tibble` into a class for
-nowcasting epidemiological phenomena. It also helps set up a pipeline
-for describing datasets for nowcasting, connecting with other nowcasting
-packages to perform nowcasts and standardizing their results for
-analyzing them. Finally it also helps perform ensemble nowcasts.
+- declaration, validation, manipulation, and diagnostics of `tbl_now`
+  data;
+- conversion to and from other nowcasting packages;
+- the common `tbl_nowcast` result, cross-engine fitting, retrospective
+  evaluation, scoring, and ensembling.
 
-The main class of the package is a `tbl_now`. A `tbl_now` is a tibble
-plus attributes. It is deliberately *not* an S4/R6 object as it must
-keep working inside a `dplyr` pipeline.
+It does not own an engine’s statistical model or native fit diagnostics.
+`diseasenowcasting`, for example, owns its model components and RTMB fit
+while returning the shared `tbl_nowcast` result.
 
-A `tbl_now` stores at least two dates: when the event happened
-(`event_date`) and when it was reported (`report_date`). Optionally it
-can have a (`revision_date`). The assumption is that something happens
-at the event date, gets reported at the report date and the report gets
-revised at the revision date.
+## Start from the repository
 
-The difference between the event and the report dates is the reporting
-delay. The difference between the report and the revision dates is the
-revision delay. All nowcasts attempt to predict the total number of
-cases that happened at `event_date` and will eventually be reported
-(and/or revised) at the `report_date` or the `revision_date`
-respectively.
+Before adding an exported function, search the current namespace and
+source by both verb and noun. Prefer extending an existing function when
+the new behavior is the same concept with another argument.
 
-When dates are not measured exactly but represent an upper bound
-(i.e. they are left-censored) we utilize the `is_censored_*` columns to
-indicate them. As an example if we know a case was repoted before April
-1st 2020 we would mark that as `is_censored_report = 1`. If a case was
-reported **exactly** on April 1st 2020 then `is_censored_report = 0`. If
-no `is_censored_*` column is present we assume all columns are exact.
+``` sh
+rg '^export' NAMESPACE
+rg '^[A-Za-z.][A-Za-z0-9._]*\s*<-\s*function' R
+rg -n 'concept|synonym' R tests/testthat vignettes
+```
 
-The package does **not** fit nowcast models itself. It prepares data for
-the packages that do (`diseasenowcasting`, `baselinenowcast`,
-`epinowcast`, `NobBS`, `surveillance`, `nowcaster`, `epidist`) and
-normalises what they return.
+Inspect the implementation, tests, roxygen, `NEWS.md`, and
+`_pkgdown.yml` for the affected surface before editing. Do not treat
+this guide as a substitute for the code.
 
-## 2. The three data types
+## Preserve the `tbl_now` contract
 
-Every `tbl_now` has exactly one `data_type`. Check with
-`get_data_type(x)` and make sure your methods work (or error!) for each
-of the data types.
+A `tbl_now` is a tibble with declared roles and derived columns. It must
+remain usable in dplyr pipelines.
 
-The
-[`to_count()`](https://rodrigozepeda.github.io/tbl.now/reference/to_count.md)
-function helps convert between them as the following table suggests:
+The three data types are:
 
-| `data_type` | one row is | case column | can convert to |
-|----|----|----|----|
-| `"linelist"` | **one case** | none ([`get_case_count()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md) is `NULL`) | both count types |
-| `"count-incidence"` | cases *newly reported* for an (event, report) or (event, report, validate) pair | required | `count-cumulative` |
-| `"count-cumulative"` | cases reported **so far** for that event as of that report | required | `count-incidence` |
+- `linelist`: one case per row, no count column;
+- `count-incidence`: newly reported count per cell;
+- `count-cumulative`: cumulative level as of each report date.
 
-Rules that follow from this:
+Required behavior:
 
-- **A line list cannot represent a zero.** An event date with no reports
-  has no rows at all. Any code that builds a time grid from the rows it
-  was handed will silently stop short of the `now`. The
-  [`complete_zeroes()`](https://rodrigozepeda.github.io/tbl.now/reference/complete_zeroes.md)
-  function can fix this for count data. For the line-list engines the
-  grid is the **caller’s** job:
-  [`tbl_now_to_surveillance()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_surveillance.md)
-  deliberately does *not* bake it in — it returns a line list and leaves
-  `now` and `control$dRange` to you, because the object already carries
-  them
-  ([`get_now()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md),
-  [`get_event_units()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md))
-  and the converter cannot know which window you mean to fit. Pass them
-  at the call site, as the `surveillance` section of
-  `vignettes/articles/nowcasting-models.Rmd` does.
-- **`count-cumulative` is not additive.** Never
-  [`sum()`](https://rdrr.io/r/base/sum.html) it across delays. To get
-  increments use `to_count(x, to = "count-incidence")`, which
-  de-accumulates — and can produce **negative** values when a total was
-  revised downward. Downstream code must handle negatives or refuse them
-  explicitly, never assume they cannot happen.
-- **[`to_count()`](https://rodrigozepeda.github.io/tbl.now/reference/to_count.md)
-  cannot rebuild a line list.** Aggregation is one-way.
-- **[`to_count()`](https://rodrigozepeda.github.io/tbl.now/reference/to_count.md)
-  sums over undeclared columns.** A column that is neither declared
-  (strata/covariates) nor protected is silently pooled away. If a test
-  shows “impossible” spread in a boxplot, look for an undeclared column
-  before suspecting the plot.
+- A line list cannot encode a zero period.
+- Cumulative data are not additive. De-accumulation may produce negative
+  increments after downward revisions.
+- [`to_count()`](https://rodrigozepeda.github.io/tbl.now/reference/to_count.md)
+  cannot reconstruct a line list and pools undeclared columns.
+- Preserve `NA` as unobserved and `0` as observed zero.
+- Time grids used for summaries or modelling extend to `now`, not merely
+  the latest row, and should be global across strata unless the API says
+  otherwise.
 
-## 3. Attributes and getters
+Use getters inside package code; do not read public metadata with raw
+[`attr()`](https://rdrr.io/r/base/attr.html). Getters for roles return
+column names, not vectors.
 
-### The attributes a `tbl_now` carries
+When adding an attribute:
 
-| attribute | holds | getter |
-|----|----|----|
-| `event_date` | column name of the event date | [`get_event_date()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md) |
-| `report_date` | column name of the report date | [`get_report_date()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md) |
-| `data_type` | one of the three above | [`get_data_type()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md) |
-| `case_count` | column name of the count (count types only) | [`get_case_count()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md) |
-| `strata` | character vector of stratifying columns | [`get_strata()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md), [`get_num_strata()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md) |
-| `covariates` | character vector of covariate columns | [`get_covariates()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md), [`get_num_covariates()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md) |
-| `is_censored_report` | column name of the report-axis censoring flag, or `NULL` | [`get_is_censored_report()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md) |
-| `is_censored_revision` | the same on the revision axis, or `NULL` | [`get_is_censored_revision()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md) |
-| `now` | the “as of” date | [`get_now()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md) |
-| `event_units` | `"days"`, `"weeks"`, `"months"`, `"years"`, `"numeric"` | [`get_event_units()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md) |
-| `report_units` | same | [`get_report_units()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md) |
-| `temporal_effects` | **lazy** effect specs | [`get_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md) |
-| `computed_temporal_effect_cols` | materialised effect column names | [`get_temporal_effect_cols()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md) |
-| `revision_date` | column name of the revision date, or `NULL` | [`get_revision_date()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md), [`has_revision()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md) |
-| `revision_type` | column name of the outcome, or `NULL` | [`get_revision_type()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md) |
-| `revision_units` | same set as `report_units` | [`get_revision_units()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md) |
-| `revision_levels` | dictionary of non-canonical outcome labels, or `NULL` | [`get_revision_levels()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md) |
-
-Required new attributes should be added to
-`.TBL_NOW_REQUIRED_ATTRIBUTES`. When adding new attributes associated to
-columns, consider whether they should be protected columns and added to
-`get_protected_cols()`.
-
-### The rules
-
-1.  **Always use the getter. Never `attr(x, "...")`.** This applies to
-    your own code inside the package just as much as to user code.
-2.  **If you add an attribute, you add a getter in the same commit.** No
-    exceptions. Export it, document it under the `nowcast_data_getters`
-    topic, and test it.
-3.  **A getter should return the smallest useful thing.** Prefer the
-    value a caller passes straight to the next function than something
-    the user has to sift through.
-4.  **Getters return column *names*, not data.** For example,
-    `get_event_date(x)` is a string. Get the values with
-    `x |> pull(get_event_date(x))`.
-5.  **Temporal effects are lazy.**
-    [`get_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
-    returns *specs*; the columns do not exist until
-    [`compute_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/add_temporal_effects.md)
-    runs. Converters call `.materialize_temporal_effects()` for this.
-    Calling
-    [`compute_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/add_temporal_effects.md)
-    before
-    [`add_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/add_temporal_effects.md)
-    is a no-op.
-
-### The revision process (the optional third date)
-
-`event <= report <= revision <= now`. It is **optional**: most objects
-have no revision, so every code path must work when `has_revision(x)` is
-`FALSE`, and `.revision_group_cols(x)` returns `character(0)`.
-
-1.  **Every rebuild must carry it.**
-    `do.call(tbl_now, c(list(...), .revision_rebuild_args(x, data)))`.
-    This is the same silent-drop hazard as strata: `summarise()`,
-    `group_by()`, `ungroup()`,
-    [`update()`](https://rdrr.io/r/stats/update.html) and
-    [`align_weeks()`](https://rodrigozepeda.github.io/tbl.now/reference/align_weeks.md)
-    each rebuild by hand, and each one dropped the revision until it was
-    spliced in. **Grep for `do.call(tbl_now` before adding an
-    attribute** and fix every site.
-
-2.  **`"pending"` can mean no date, not a missing date.** A pending case
-    is reported and still waiting to have a revision result. Anything
-    that counts arrivals on the revision axis must drop pending rows.
-
-3.  **Two different delays.** `.revision_delay` is the laboratory’s
-    turnaround, measured **from the report**.
-
-4.  **`now` is revision-aware, in both directions.** `infer_now()` takes
-    the max over both. Setting `now` *before* a revision is not an
-    error, it should be used for a backtest:
-    [`change_now()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
-    calls `.mask_revisions_after()`, which returns every revision dated
-    after the new `now` to `"pending"` and masks its date,
-    `.revision_num`, `.revision_delay` and censoring flag.
-
-5.  **`revision_type` holds four values and no others**, and
-    `revision_levels` is the only way in for anything else. The
-    dictionary is applied by `.resolve_revision_type()` BEFORE the
-    check, and it must be idempotent: it runs again on every rebuild, so
-    `.check_revision_levels()` refuses a mapping that would move a
-    canonical value.
-
-6.  **Censoring has two axes.** `is_censored_report` is a bound on the
-    reporting delay, `is_censored_revision` on the revision delay. Both
-    are protected, both are grouping keys, and
-    `.tbl_now_collapse_censoring()` collapses both. Neither ever deletes
-    a case or rewrites an outcome – that is what makes it *censoring*
-    rather than deletion.
-
-7.  **A censored date is a bound, so no *test* of arrival times may
-    count it as an arrival – and nothing else may drop it.** The batch
-    family
-    ([`diagnose_batches()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_batches.md),
-    [`diagnose_batches2()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_batches2.md),
-    [`transport_discriminant()`](https://rodrigozepeda.github.io/tbl.now/reference/transport_discriminant.md))
-    defaults to `drop_censored = TRUE` and passes it to
-    `.batch_report_increments()`, which drops the rows flagged on the
-    axis being scanned via `.batch_drop_censored()`. Censoring is
-    applied *because* something was known about those dates – often that
-    they were batched – and the censored rows all carry the same bound,
-    so left in they pile up on one date and the detector rediscovers, as
-    a finding, the artefact it was already told about.
-
-    **The helper’s own default is `FALSE`, and it must stay `FALSE`.**
-    This was shipped as `TRUE` for one version and it was wrong:
-    `.batch_report_increments()` is shared by every reporting-process
-    plot, so
-    [`plot_epidemic_process()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_epidemic_process.md)
-    quietly deleted 58 real cases from an epidemic curve because their
-    *report* date had been censored. The flag says nothing about the
-    event date. A row censored on the report axis is still a case that
-    happened, so anything answering *what happened, and when* keeps it;
-    only a test of *when records arrived* may drop it. Ask which axis
-    the question is about before reaching for the argument.
-
-### Checking for valid tbl_now s
-
-There are two functions used to validate an object:
-
-- [`is_tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/validate_tbl_now.md)
-  Checks the class, the attributes in `.TBL_NOW_REQUIRED_ATTRIBUTES`,
-  and the columns those attributes name. Should remain cheap and silent.
-  It is what `.assert_tbl_now()` calls, which is to say nearly every
-  exported function calls it. Never put data checks here.
-- [`validate_tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/validate_tbl_now.md)
-  Checks the class and the data. This is the findings engine. Called by
-  [`tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.md)
-  when the object is built.
-
-An object can be a `tbl_now` and still have data
-[`validate_tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/validate_tbl_now.md)
-warns about. When developing, however, one should aim to pass the
-[`validate_tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/validate_tbl_now.md)
-unless there is a good reason.
-
-### Protected columns
-
-`get_protected_cols()` returns user-given columns (event/report/revision
-dates, revision type, censoring flags, case count) plus generated
-numeric columns (`.event_num`, `.report_num`, `.delay`, and, when
-revision exists, `.revision_num`, `.revision_delay`). Removing or
-renaming any generated protected column must demote with
-`.demote_to_tibble()`, so all `tbl_now` attributes are removed and only
-user metadata survives.
-
-When reshaping inside the package, operate on `.strip_tbl_now(x)` and
-rebuild with `.tbl_now_rebuild()` or
-`do.call(tbl_now, c(list(...), .revision_rebuild_args(x, data)))`.
-
-## 4. Functions
-
-When writing data-manipulation code **inside this package**, prefer in
-this order:
-
-1.  **`tbl.now`’s own functions** —
-    [`to_count()`](https://rodrigozepeda.github.io/tbl.now/reference/to_count.md),
-    [`complete_zeroes()`](https://rodrigozepeda.github.io/tbl.now/reference/complete_zeroes.md),
+1.  Add it to the required/rebuild machinery where appropriate.
+2.  Add an exported, documented, tested getter.
+3.  Decide whether its named column is protected.
+4.  Audit every manual rebuild, including `do.call(tbl_now, ...)`, dplyr
+    methods, [`update()`](https://rdrr.io/r/stats/update.html),
     [`align_weeks()`](https://rodrigozepeda.github.io/tbl.now/reference/align_weeks.md),
-    `get_*()`, `add_*()` / `change_*()` / `remove_*()`, etcetera. They
-    know about the attributes and keep the object valid.
-2.  **`dplyr` / `tidyr` / `tibble`** — for anything the package does not
-    already express. `dplyr` verbs have `tbl_now` methods and mostly
-    preserve the class.
-3.  **base R** — last resort, for things the tidyverse genuinely does
-    not cover ([`switch()`](https://rdrr.io/r/base/switch.html),
-    [`vapply()`](https://rdrr.io/r/base/lapply.html),
-    [`seq()`](https://rdrr.io/r/base/seq.html), matrix work, S3
-    plumbing).
+    and converters.
+5.  Test objects with no strata, multiple strata, lazy effects,
+    censoring, and no revision axis as applicable.
 
-Avoid rewriting a `tbl.now` helper’s logic by hand as much as possible.
-Justify whenever you do this and check it works for all data types,
-nows, and combinations of attributes (i.e. what if it doesn’t have
-strata, what if it has two and a revision date?).
+Protected user columns include declared dates, case count, revision
+type, and censoring flags. Generated protected columns include
+`.event_num`, `.report_num`, `.delay`, and the optional `.revision_num`
+and `.revision_delay`. Removing or renaming a generated protected column
+must demote with `.demote_to_tibble()` and remove all `tbl_now`
+attributes while preserving unrelated user metadata.
 
-### Duplicate function check (mandatory)
+For internal reshaping, strip the class and rebuild with the established
+helpers such as `.strip_tbl_now()`, `.tbl_now_rebuild()`, and
+`.revision_rebuild_args()` rather than reproducing constructor logic.
 
-You must not rely on training memory to know what functions exist in
-`tbl.now`. Before writing a new function, you must systematically verify
-it does not already exist.
+## dplyr and grouping
 
-#### Rule 1: If you have terminal/shell access
+Every exported function accepting a `tbl_now` must deliberately handle a
+`grouped_tbl_now`. Add a grouped test that checks:
 
-You MUST execute the following pre-flight searches using your shell tool
-and read the output before proposing code. State in your response
-exactly what you searched for.
+- the call does not abort;
+- grouping is preserved or deliberately removed;
+- the result agrees with the ungrouped calculation.
 
-```` R
-Getters: 
-```bash
-grep -n "^get_" R/getters.R
-```
+`summarise()` and `reframe()` may return a plain tibble when the result
+no longer satisfies the `tbl_now` contract. `rowwise()` deliberately
+demotes. Locale can affect row ordering: use dplyr ordering or
+`order(..., method = "radix")` where the C-locale behavior matters. Day
+and month names also vary with `LC_TIME`: do not hardcode localized
+names or compare calendar values through
+[`weekdays()`](https://rdrr.io/r/base/weekday.POSIXt.html),
+[`months()`](https://rdrr.io/r/base/weekday.POSIXt.html), or labelled
+factors in tests and internal logic. Use numeric calendar fields such as
+[`lubridate::wday()`](https://lubridate.tidyverse.org/reference/day.html)
+and
+[`lubridate::month()`](https://lubridate.tidyverse.org/reference/month.html).
+Fixed-language labels are appropriate only when they are an intentional,
+documented part of the public or backend contract; test their calendar
+mapping with numeric positions rather than the session locale’s
+translated names.
 
-Helpers: Search the VERB, not your name for it.
-```
-grep -rn "split\|paste.*sep\|pool\|aggregate" R/ | grep "<- function"
-```
+## Revisions and censoring
 
-Exports: Search the NOUN.
-```
-grep -n "^export" NAMESPACE | grep -i "<the noun you are about to use and synonyms>"
-```
-````
+The optional third axis has the chronology event \<= report \<= revision
+\<= `now`. `.revision_delay` is report-to-revision time. Code must work
+when `has_revision(x)` is false.
 
-#### Rule 2: If you do not have terminal access
+Canonical revision outcomes are `"confirmed"`, `"retracted"`,
+`"pending"`, and `NA`. `revision_levels` is the only recoding route and
+must remain idempotent because rebuilds reapply it. Moving `now`
+backward masks future revisions back to pending; it must not reveal
+future information in a backtest.
 
-You must STOP. Do not generate the function. Output the exact grep
-commands you need to verify the namespace, and instruct the human user
-to run them and paste the results back to you.
+There are two independent censoring flags. Each says an axis date is a
+bound, not an exact arrival. Preserve the case and outcome. Only
+analyses of arrival timing, such as batch detection on that axis, should
+drop censored rows. Keep `.batch_report_increments()` conservative by
+default; its callers choose whether to exclude censored arrivals.
 
-#### Rule 3: Evaluation
-
-1.  Could an existing function answer this with different arguments?
-    (e.g., adding an argument to an existing verb rather than writing a
-    new wrapper).
-
-2.  Is the new thing just a reshaping of an existing thing? If so, it is
-    internal (@noRd) and its documentation must name what it wraps.
-
-If two functions do the same thing, one must call the other.
-
-## 5. Style
-
-- **Pipe:** native `|>`. Not `%>%`. The package does not depend on
-  `magrittr`.
-- **Style guide:** the [tidyverse style
-  guide](https://style.tidyverse.org). Snake case, `<-` for assignment,
-  spaces around infix operators. Aim for 80 characters, but this is a
-  target rather than a rule the codebase already meets — do not reflow
-  unrelated lines to chase it.
-- **Anonymous functions:** package code uses `function(x) ...`. match
-  that in `R/`. The shorthand `\(x)` is used in the **vignettes**,
-  inside pipes, where it reads better.
-- **Avoid `x[]` calls for tibbles, tbl_nows, and data frames**. Always
-  prefer **dplyr** even if its more verbose. For example
-  `x |> pull(get_event_date(x))` is the correct call instead of
-  `x[[get_event_date(x)]]`.
-- **Documentation:** Use `roxygen2` for everything. Regenerate with
-  `devtools::document()`. Never hand-edit `man/*.Rd` or `NAMESPACE`.
-- **Internal helpers** are `.`-prefixed and utilize `@noRd`. They should
-  all be documented.
-- **Messages** use `cli`. Anything a
-  [`print()`](https://rdrr.io/r/base/print.html) method emits must use
-  [`cli::cat_line()`](https://cli.r-lib.org/reference/cat_line.html) /
-  [`cli::cat_rule()`](https://cli.r-lib.org/reference/cat_line.html) /
-  [`cli::cat_bullet()`](https://cli.r-lib.org/reference/cat_line.html).
-- **Comments explain *why*, not *what*.**
-- **No emoji in R code or console output.** (`SKILL.md`’s capability
-  tables do use `✅`/`❌` as status markers; that is a deliberate local
-  convention for those tables, not a licence to use emoji elsewhere.)
-
-## 6. Colours and sizes
-
-### The palette names ROLES, never hues
-
-The default palette is the exported
-**[`tbl_now_palette()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_palette.md)**.
-Do not introduce new hex codes in plotting code; take them from the
-palette. `R/palette.R` is the only file in `R/` that may contain one.
-
-Every element is named for the **role** it plays, never for the colour
-it happens to be. This is the whole reason the names changed in 0.33.0:
-a palette whose slot is called `primary_green` cannot be re-themed,
-because a user with a blue-and-orange palette has to call their orange
-`primary_green` for the plots to find it. A role name survives a
-re-theme; a hue name does not.
-
-The package has one visual grammar, and every plot must obey it:
-
-- **`reporting`, `reporting_light`** = the **reporting** process —
-  report dates, delays, anything about *when we found out*. Red by
-  default.
-- **`epidemic`, `epidemic_light`, `epidemic_mid`, `epidemic_dark`** =
-  the **epidemic** process — event dates, case counts, anything about
-  *what happened*. Green by default.
-
-A new panel that draws delays with an `epidemic*` role is wrong even if
-it looks nice, and it stays wrong when somebody swaps the two hues. The
-remaining roles are furniture (`ink`, `ink_muted`, `ink_inverse`,
-`surface*`, `grid_major`, `grid_minor`, `guide`, `guide_strong`,
-`annotation`, `neutral`) plus the three data states that are not a
-process (`zero`, `pending`, `observed`).
-
-Rules that follow:
-
-1.  **Add a role, add it to the constructor.**
-    `.tbl_now_palette_roles()` reads `formals(tbl_now_palette)`, so the
-    constructor is the single source of the contract and cannot drift
-    from the checker.
-2.  **Every exported plot calls `.tbl_now_check_palette()`** in its
-    prologue. A missing role is an error naming what is missing, never a
-    silent fall back to the default — falling back draws a plot in a
-    colour the caller did not choose and cannot see they did not choose.
-3.  **Do not name a role after what it looks like.** `guide_strong` is
-    right; `dark_grey` would put us back where we started.
-
-The website CSS (`pkgdown/extra.css`) follows the same palette, which is
-why `.alert-info` is green (event-date process) and `.alert-warning` is
-the attenuated red used for intervals.
-
-### Sizes are multipliers; grids are absolute
-
-Every plot exposes the sizes it draws, because a figure rendered large
-had marks sized for a small one and no way to change them.
-
-- **`size` and `linewidth` are MULTIPLIERS, default `1`.** They scale
-  the values the panel already uses. This is not a stylistic choice:
-  most panels draw several layers whose *relative* sizes carry meaning —
-  the transport plane’s flagged points are `2.6` against the unflagged
-  `1.1` — and a single absolute size would erase that distinction at
-  exactly the moment the user was trying to make the flagged ones stand
-  out. A multiplier scales the hierarchy instead of flattening it, and
-  leaves every existing figure identical at the default.
-- **A grid the package draws itself gets its own ABSOLUTE argument**
-  (`grid_linewidth`, or `grid_linewidth_major` / `grid_linewidth_minor`
-  where there are two families). These are not ’s panel grid — the plots
-  that have them switch that off — and there is exactly one value per
-  family, so an absolute width is what the name promises.
-- **[`plot_reporting_hexamap()`](https://rodrigozepeda.github.io/tbl.now/reference/plot_reporting_hexamap.md)
-  is the one exception**: its `size` is an absolute point size in
-  millimetres, because the marks are millimetres and the lattice is data
-  units, so no default can be right for every cell count and figure
-  size. That mismatch is the argument’s reason for existing, and it is
-  written in the `@details`.
-- **A plot that draws only bars, tiles or areas takes neither**, and
-  says so in its `@param palette`. An argument that does nothing is
-  worse than no argument.
-- **Validate with `.tbl_now_check_size()`.** One message for every one
-  of them.
-
-------------------------------------------------------------------------
-
-## 7. Writing a converter
-
-Converters are the package’s main external surface, and they have the
-most rules. `R/converters.R` holds all of them.
-
-### The full round trip is the deliverable
-
-A converter is not finished when `tbl_now -> other package` works. You
-must do:
-
-    tbl_now  ->  other package  ->  tbl_now
-
-Concretely, that means **all** of:
-
-1.  **`tbl_now_to_<pkg>()`** — the outbound converter.
-2.  **`tbl_now_from_<pkg>()`** — the inbound one, *where the package has
-    an object that can carry the information back*. Some packages only
-    consume data (`nowcaster`, `surveillance` take a plain line list),
-    and then there is nothing to convert back from; say so in the docs
-    rather than inventing a half-faithful inverse.
-3.  **An
-    [`as_tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/as_tbl_now.md)
-    method** for the foreign class, so the generic works. Register it as
-    `S3method(as_tbl_now, <foreign_class>)`.
-4.  **A round-trip test** asserting that converting out and back
-    preserves the data. Where the round trip is lossy, test *what*
-    survives and document what does not.
-
-### The package’s own coercion verb is part of the job
-
-Someone fluent in `baselinenowcast` will reach for
-`as_reporting_triangle()`, not for
-[`tbl_now_to_baselinenowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_baselinenowcast.md).
-Where the target package exposes a coercion **generic**, register a
-`tbl_now` method on it, as a thin wrapper around your converter:
-
-``` r
-
-#' @rdname tbl_now_coercion_methods
-#' @exportS3Method baselinenowcast::as_reporting_triangle
-as_reporting_triangle.tbl_now <- function(data, ..., verbose = FALSE) {
-  tbl_now_to_baselinenowcast(data, format = "matrix", ..., verbose = verbose)
-}
-```
-
-A wrapper, never a second implementation, and quiet by default
-(`verbose = FALSE`) because coercion is an idiom rather than a
-conversion you are watching.
-
-Some packages have no such generic – `epinowcast`, `EpiNow2` and `NobBS`
-export none at all, and `surveillance`’s `as.epidata()` is a different
-concept. That is fine, but it has to be *recorded*:
-`tests/testthat/test-coercion-methods.R` holds a registry of every
-`tbl_now_to_*()` with either its generic or a written reason there is
-none, and it **fails when a converter is missing from it**. It also
-re-checks the “no generic” claims against the installed package, so if
-one of them gains a coercion verb we find out.
-
-### `tidy()` is part of the job
-
-If the package **returns a nowcast**, you must also write a
-[`tidy()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast.md)
-method producing the standard frame: `event_date`, `stratum`,
-`estimate`, `conf.low`, `conf.high`, `level`, `engine` (plus `q*`
-columns when the engine keeps draws). Users must not have to learn six
-output formats.
-
-The single exception is a package that returns **only a delay
-distribution**, not per-date case estimates. `epidist` is the example:
-[`tidy.epidist_fit()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.delay_distribution.md)
-returns a *delay-shaped* table (`term`, `estimate`, `conf.low`,
-`conf.high`, `level`, `engine`) instead, and that is correct — do not
-force a delay fit into the nowcast schema.
-
-Notes:
-
-- Register with `@exportS3Method generics::tidy`. The generic comes from
-  `generics`, so `tbl.now` composes with `broom` rather than masking it.
-- If the foreign class name contains `::` (S7 classes do), an S3 method
-  name cannot express it. Register it manually in `.onLoad()` — see
-  `tidy_nowcast_prediction` in `R/zzz.R`.
-- Check the **class order** of the foreign object. `epidist()` returns
-  `c("brmsfit", "epidist_fit")`, so `broom.mixed`’s `tidy.brmsfit()`
-  wins dispatch when loaded. Document that rather than pretending it
-  cannot happen.
-- Engines that keep draws can honour `probs`; those that do not must
-  **error** via `.reject_probs()`, never silently approximate. Where the
-  engine can compute quantiles at fit time (NobBS’s `specs$quantiles`),
-  document how.
-
-### Censored delays
-
-**Be careful with the censoring indicator.** A flag that is a property
-of the *case* rather than of the delay puts a censored and an uncensored
-row in the same `(event_date, report_date)` cell. A reporting triangle
-has one slot per cell, so the extra dimension breaks the conversion
-outright.
-
-Every converter that ends in a triangle or a keyed table must call
-`.tbl_now_collapse_censoring(x, "<fn name>")` in its prologue, right
-after `.assert_tbl_now()`. That helper:
-
-- **count data** — sums the counts over the flag (totals unchanged), and
-  warns;
-- **line lists** — drops the column (one row per case, unchanged), and
-  warns.
-
+If an external format cannot represent per-case censoring within a cell,
+call `.tbl_now_collapse_censoring()` and warn. Count data are summed
+over the flag; line lists drop the flag without dropping cases.
 [`tbl_now_to_epidist()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_epidist.md)
-is the deliberate exception: estimating a delay distribution is the one
-job that can *use* censoring, so it keeps the flag.
+is the intentional exception because a delay model can consume
+censoring.
 
-Note the two kinds of flag, because they behave differently and only one
-causes trouble: one derived from the delay
-([`censor_reporting_delays_above()`](https://rodrigozepeda.github.io/tbl.now/reference/censoring.md))
-is constant within a cell and harmless; a per-case administrative flag
-varies within a cell and breaks things. Test with the second kind or
-your test proves nothing.
+## Temporal effects
 
-### Other converter rules
+Temporal effects are lazy specifications.
+[`add_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/add_temporal_effects.md)
+records them;
+[`compute_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/add_temporal_effects.md)
+materializes columns. Dplyr methods preserve the spec without computing
+it. Converters materialize only when required.
 
-- **Warn about lossy conversions** with `.warn_lossy_conversion()`.
+When time units are aggregated, coarsen compatible specs, rescale
+Fourier periods, drop incompatible effects, and remove stale
+materialized columns. Holiday calendars are optional `almanac` inputs
+and must not become a hidden hard dependency.
 
-- **Check the package is installed** with `.need_pkg()`, and give the
-  real install command (`nowcaster` is GitHub-only).
+## Converters and engines
 
-- **Accept line lists.** At minimum a converter must work with
-  `linelist` and `count-incidence` input. If the target needs incidence
-  counts completed to the `now`, do it *inside* the converter
-  (`complete = "auto"`), so the user does not have to remember
-  `to_count() |> complete_zeroes()`.
+A converter is complete only when the target format’s capabilities have
+been handled explicitly:
 
-  **To the `now`, not to the last row**, and the rule binds the **fit
-  method** as much as the converter. A line list cannot record a period
-  in which nothing was reported – the rows are simply absent – so any
-  grid built from the rows you were handed stops at the last period that
-  HAS a report, which is precisely the period a nowcast is not about.
-  This has now shipped twice:
-  [`nowcast_fit.baselinenowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_fit.md)
-  built its per-stratum triangles from `format = "long"`, which has no
-  grid and so is deliberately never completed (#67), and
-  `.epinow2_series_data()` handed its daily series straight on. Both
-  looked right on every fixture whose last event period happens to carry
-  a report, which is every shipped dataset.
-
-  Two things follow. Test with a fixture whose **last event periods are
-  silent**, so `now` is past the last event date present;
-  `linelist_gap_pair()` in
-  `tests/testthat/test-engines-linelist-equivalence.R` is that fixture,
-  and that file asserts every engine returns the same nowcast, under one
-  seed, from a line list and from the equivalent
-  `to_count() |> complete_zeroes()` object. And never let a
-  [`complete_zeroes()`](https://rodrigozepeda.github.io/tbl.now/reference/complete_zeroes.md)
-  failure pass silently: it **refuses a line list**, so a
-  [`tryCatch()`](https://rdrr.io/r/base/conditions.html) around it that
-  returns the input unchanged turns “I could not complete this” into a
-  short grid with no message at all – which is what
-  `.epinow2_snapshots()` did.
-
-- **Respect `NA` vs `0`.** In a reporting triangle an `NA` cell means
-  *not yet observed*; a `0` means *observed, and it was zero*.
-  Completing count data that the user did not ask to complete destroys
-  that distinction. This is why `complete` defaults to `"auto"` (line
-  lists only) rather than `TRUE`.
-
-- **Resolve units from the attribute**, never assume days. A weekly
-  triangle whose `delays_unit` you ignore will read its delays as days
-  and abort.
-
-- **Ask how the target stratifies, not whether it can.** Three shapes
-  exist and they need different things:
-
-  - *many columns* (`epinowcast`’s `by`, a `tsibble` key, an `epidist`
-    formula): hand over the columns themselves. Pasting them would be
-    the bug.
-  - *one column* (`NobBS::NobBS.strat(strata=)`,
-    `EpiNow2::regional_epinow(region)`): the converter must **build**
-    that column — `.add_strata_column()` — with a user-settable
-    `strata_col` / `strata_sep`. Carrying the originals along is not
-    enough: without the pasted column there is no argument the user can
-    write, and a multiply-stratified object simply cannot be fitted.
-  - *none at all*
-    ([`surveillance::nowcast()`](https://rdrr.io/pkg/surveillance/man/nowcast.html)):
-    still build the column, because the answer is
-    [`split()`](https://rdrr.io/r/base/split.html) and that needs
-    something to split on.
-
-  Whenever you paste, refuse the paste if a stratum **value** contains
-  the separator (`.paste_strata_labels()` does this):
+- outbound `tbl_now_to_<package>()`;
+- inbound `tbl_now_from_<package>()` when a meaningful inverse exists;
+- an
+  [`as_tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/as_tbl_now.md)
+  method for the foreign class;
+- the target package’s own coercion generic as a thin wrapper, or a
+  recorded reason it has none in the converter registry test;
+- round-trip tests, including documented losses;
+- grouped, stratified, censored, and relevant data-type tests;
+- a
   [`tidy()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast.md)
-  splits the label back into columns, and an ambiguous split attaches a
-  nowcast to the wrong stratum with no error. Refuse to overwrite an
-  existing column too.
+  method when the package returns nowcasts.
 
-  A test that only asserts “the strata columns are present in the
-  output” does **not** cover this — that test existed and the bug
-  shipped anyway. Assert that the target’s own stratified entry point
-  can be *called*, and that splitting on the result reproduces each
-  stratum’s total.
+Use `.need_pkg()` for optional packages, `.warn_lossy_conversion()` for
+lost semantics, `.pool_undeclared()` where the target cannot carry extra
+dimensions, and `.tbl_now_collapse_censoring()` where needed.
 
-### Document it in the vignette
+Converters and engine adapters must:
 
-Every converter gets **its own section** in
-`vignettes/articles/nowcasting-models.Rmd`, and that section must show
-**both**:
+- accept line lists and incidence counts at minimum, unless the target
+  truly cannot;
+- complete count grids to `now` internally when required;
+- test a fixture whose final event periods have no reports;
+- keep strata shapes and names intact;
+- preserve integer delay units and state any lossy change;
+- exercise the destination package’s actual entry point, not only
+  inspect the converted object.
 
-1.  the **plain** conversion and fit (`dengue_now`), and
-2.  the **stratified** one, with temporal effects (`dengue_seasonal`) —
-    including how that package expresses strata, or an honest statement
-    that it cannot and what to do instead (`surveillance` needs one fit
-    per stratum).
+Do not suppress backend warnings wholesale. Suppress routine messages
+only; fit failures and convergence warnings are part of the result’s
+credibility. Seed stochastic fits per `(engine label, now date)`,
+immediately before each fit, so results do not depend on execution
+order.
 
-Follow the section pattern already in the file:
+The common result schema is:
 
-- a **visible**
-  [`tidy()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast.md)
-  call, `eval=FALSE`, copy-pasteable, with no
-  [`head()`](https://rdrr.io/r/utils/head.html) or
-  [`tail()`](https://rdrr.io/r/utils/head.html) wrapper;
-- a **hidden** `echo=FALSE` chunk rendering the cached result, so the
-  output appears to come from the visible call.
+- predictions: event date, strata, `.quantile_level`, `.value`;
+- draws when available: event date, strata, `.draw`, `.value`;
+- method, fit, `now`, source data, call, and metadata.
 
-**The precompute runs the article, it does not restate it.**
-`data-raw/nowcast_models_precompute.R`
-[`knitr::purl()`](https://rdrr.io/pkg/knitr/man/knit.html)s
-`nowcasting-models.Rmd`, sources the extracted chunks with
-`TBL_NOW_RUN_MODELS=true`, and reads the fits back out **by name** into
-`vignettes/articles/nowcast-comparison.rds`. `run_models` is `FALSE`
-during a normal build, so the article never fits anything and shows the
-cached results instead.
+Backend-specific operations use the untouched native fit. Generic
+[`tidy()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast.md),
+plotting, scoring, forecast coercion, and ensembling use the common
+result. Never fabricate arbitrary quantiles for a backend without draws.
 
-This replaced a script that kept its own copy of every fit next to a
-comment asking whoever edited one to remember the other. They drifted,
-silently, because the article never ran what it printed. Do not
-reintroduce that: **add your engine to the article**, then add its
-object name to `DISPLAYED` / `PANELS` in the precompute and re-run it.
+S7 class names can contain `::`, which S3 method names cannot represent.
+Use the existing `.onLoad()` registration pattern where required.
+Re-export
+[`generics::tidy`](https://generics.r-lib.org/reference/tidy.html); do
+not create a competing generic.
 
-Consequences to respect when you edit the article:
+## Summaries and diagnostics
 
-- a chunk that only *displays* a cached result (`show_fit()`,
-  `show_tidy()`, `nowcast_panels()`, the figures) must be marked
-  `purl = FALSE`, or the precompute will try to run it before the file
-  it reads exists;
-- every object the precompute names must actually be **assigned** in a
-  chunk. An `eval = FALSE` chunk still gets purled and run, so
-  illustrative code that cannot run needs `purl = FALSE` too;
-- every package that appears in `nowcasts` needs an entry in
-  `engine_colours`. The Summary figure turns `package` into a factor
-  with those levels, so a missing one becomes a grey unnamed `NA` line
-  with no error;
-- chunk labels must be unique — a duplicate stops `knit()` and `purl()`
-  alike.
-
-Also add a row to the package table at the top of the article, and to
-the converter matrix in `data-raw/converter_matrix.R`, which runs every
-converter against every shipped dataset.
-
-------------------------------------------------------------------------
-
-## 8. Testing
-
-### The test log stays quiet
-
-**A test that lets its call print into the log is broken, even when it
-passes.** A noisy log is a broken log: the failures the reader needs are
-buried under dozens of `i No primary event upper bound provided...`,
-`Building reporting triangle...`,
-`* This delay is now an upper bound (is_censored_report).` lines, and
-the reader stops reading before they reach the failure.
-
-The rules, in order of preference:
-
-1.  **Use the function’s own `verbose = FALSE`.** Every user-facing
-    function that emits chatter takes it;
-    `censor_reporting_delays_above(x, k)` prints “Marked N reports …
-    This delay is now an upper bound.” on every call and
-    `censor_reporting_delays_above(x, k, verbose = FALSE)` does not.
-    This is the argument’s whole point.
-
-2.  **Add `quiet = TRUE` on converters where it exists.** `verbose` and
-    `quiet` are *different channels*: `verbose = FALSE` silences
-    tbl.now’s own summary, `quiet = TRUE` silences the target package’s
-    chatter (e.g. epidist’s “No primary event upper bound provided…”
-    bullets). A test that only sets `verbose = FALSE` on
-    [`tbl_now_to_epidist()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_epidist.md)
-    still leaks epidist’s own lines.
-
-3.  **Wrap with `quiet_messages()` from `helper-nowcast.R`.** It is the
-    right hammer for calls that have no verbose knob, or emit through
-    [`cat()`](https://rdrr.io/r/base/cat.html) (surveillance, JAGS via
-    NobBS). [`suppressMessages()`](https://rdrr.io/r/base/message.html)
-    alone does NOT catch [`cat()`](https://rdrr.io/r/base/cat.html);
-    `quiet_messages()` wraps both stdout and messages, which is why it
-    exists.
-
-4.  **[`expect_error()`](https://testthat.r-lib.org/reference/expect_error.html)
-    does NOT suppress the noise the failing call emitted before it
-    errored.** A validator that prints a status message *and then*
-    aborts still prints. Wrap the call itself in
-    [`suppressMessages()`](https://rdrr.io/r/base/message.html) (or
-    `quiet_messages()`) inside the
-    [`expect_error()`](https://testthat.r-lib.org/reference/expect_error.html):
-
-    ``` r
-
-    expect_error(
-      suppressMessages(diagnose_batches(x, baseline_window = 8L)),
-      "must be odd"
-    )
-    ```
-
-5.  **Raw calls to a foreign constructor need their own
-    [`suppressMessages()`](https://rdrr.io/r/base/message.html).**
-    `epidist::as_epidist_aggregate_data(df, ...)` fires the same bullets
-    whether tbl.now called it or a test did. When a test hand-builds
-    epidist data as a fixture, wrap the constructor.
-
-For the package side of the bargain:
-
-- **`.quietly_if()` in `R/nowcast_methods.R` suppresses
-  [`cat()`](https://rdrr.io/r/base/cat.html) and messages, not
-  warnings.** Surveillance reports progress with
-  [`cat()`](https://rdrr.io/r/base/cat.html) (“Building reporting
-  triangle…”, “No. cases: …”), NobBS’s JAGS backend uses
-  [`cat()`](https://rdrr.io/r/base/cat.html) for “NOTE: Stopping
-  adaptation…” and several other packages write to stdout. Wrapping only
-  in [`suppressMessages()`](https://rdrr.io/r/base/message.html) leaves
-  those in the log. The two nested
-  [`capture.output()`](https://rdrr.io/r/utils/capture.output.html)
-  calls in `.quietly_if()` are load-bearing; do not drop them.
-
-- **[`tbl_now_to_epidist()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_epidist.md)
-  respects `quiet` by wrapping the epidist constructor in
-  `.epidist_quietly_if()`.** The helper is a two-liner kept next to the
-  converter because it is the only place that needs it; leave it there
-  rather than reaching into `nowcast_methods.R`.
-
-- **[`baselinenowcast::preprocess_negative_values()`](https://baselinenowcast.epinowcast.org/reference/preprocess_negative_values.html)
-  prints on every call.** `.tbl_now_one_triangle()` honours `quiet`
-  around it too. If you add a wrapped call to another external function
-  that emits on every call, add the same guard.
-
-The verification is one grep and one run:
-
-``` bash
-Rscript -e "Sys.setenv(NOT_CRAN='true'); devtools::load_all('.', quiet = TRUE); \
-    testthat::test_file('tests/testthat/test-<file>.R', reporter = 'silent')" \
-  2>&1 | wc -l
-```
-
-Zero lines is the expected outcome for every file. A new test that
-prints anything is a regression, whether or not it also passes.
-
-### Running the suite
-
-- Run with `NOT_CRAN=true`, or 424 tests silently skip:
-
-  ``` r
-  NOT_CRAN=true Rscript -e 'devtools::load_all("."); testthat::test_local()'
-  ```
-
-- **You cannot measure the CRAN path with
-  [`test_local()`](https://testthat.r-lib.org/reference/test_package.html),
-  and the mistake is invisible.**
-  [`testthat::test_local()`](https://testthat.r-lib.org/reference/test_package.html)
-  calls `local_assume_not_on_cran()`, which sets `NOT_CRAN = "true"`
-  whenever the variable is empty; `devtools::check()` sets it too
-  (`formals(devtools::check)$env_vars`). So
-  `env -u NOT_CRAN Rscript -e 'testthat::test_local()'` runs **every**
-  [`skip_on_cran()`](https://testthat.r-lib.org/reference/skip.html)
-  test anyway. Use
-  [`test_check()`](https://testthat.r-lib.org/reference/test_package.html)
-  – what `tests/testthat.R` runs under `R CMD check` – and assert you
-  are on the path you think you are:
-
-  ``` r
-
-  library(testthat); library(tbl.now)
-  stopifnot(testthat:::on_cran())
-  setwd("tests"); test_check("tbl.now")
-  ```
-
-  The two paths are not close: at 0.27.0 the CRAN path was **6.1 min**
-  (1334 tests, 424 skipped) and the full path **30.8 min**. Optimising
-  the wrong one wastes a day. See `devel/TEST_SPEEDUP_BRIEF.md`.
-
-- Guard optional packages with
-  [`skip_if_not_installed()`](https://testthat.r-lib.org/reference/skip.html),
-  and heavy work with
-  [`skip_on_cran()`](https://testthat.r-lib.org/reference/skip.html).
-
-- **Test the failure you actually fixed.** A test that exercises the
-  harmless variant of a bug (delay-derived censoring instead of
-  per-case) passes both before and after the fix and proves nothing.
-
-- Prefer mocking to fitting. A
-  [`tidy()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast.md)
-  method can be tested against
-  [`local_mocked_bindings()`](https://testthat.r-lib.org/reference/local_mocked_bindings.html)
-  instead of compiling a Stan model; verify against a real fit once, by
-  hand, and keep the suite fast and deterministic.
-
-- When behaviour changes deliberately, **update the tests that asserted
-  the old behaviour** and say so in `NEWS.md`. Do not leave a stale
-  assertion for someone else to trip over — that is how
-  `test-autoplot.R` ended up asserting a default that had been changed
-  weeks earlier.
-
-### Why the suite was slow, and what actually fixed it
-
-The suite’s profile is **flat** — no file is more than 8% of the CRAN
-path — so there was no one test to fix. The cost was spread over roughly
-780
-[`tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.md)
-constructions, and it was not in the data handling. It was in
-[`validate_tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/validate_tbl_now.md),
-which runs on every `dplyr` verb, and inside that in **formatting
-messages nobody reads**:
-
-- [`cli::format_inline()`](https://cli.r-lib.org/reference/format_inline.html)
-  is not cheap: about 0.5 ms for a static string, 3.5 ms once
-  `{.val {x}}` is involved, and **15 ms** for a hint that interpolates a
-  vector of row numbers. It calls
-  [`isatty()`](https://rdrr.io/r/base/showConnections.html) every time,
-  which alone was 28% of a
-  [`tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.md)
-  call.
-- A findings block builds the “you have a problem” message *and* the
-  “all clear” message whether or not the check found anything.
-  Validating a clean object formatted **eleven messages and reported
-  one** — the other ten were dropped by the status floor before anyone
-  could read them.
-- A
-  [`dplyr::tibble()`](https://tibble.tidyverse.org/reference/tibble.html)
-  costs about 2 ms to construct. One per finding, ten findings, on every
-  verb.
-  [`dplyr::arrange()`](https://dplyr.tidyverse.org/reference/arrange.html)
-  on a ten-row tibble costs 6 ms; `order(..., method = "radix")` does
-  the same job in 0.11 ms.
-
-So `.diagnose_text()` no longer returns a string: it returns a
-**template**, and `.diagnose_finalise()` filters by the floor first and
-formats only the survivors. Findings are plain lists
-(`.diagnose_row()`), assembled into the one tibble the caller sees at
-the very end. Together:
-[`tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.md)
-−68%,
 [`validate_tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/validate_tbl_now.md)
-−76%, and the CRAN test path from 311.6 s to 152.4 s — **half** — with
-no test removed and coverage slightly up. See
-`devel/TEST_SPEEDUP_BRIEF.md` for the full before/after and for the
-`diseasenowcasting` levers that turned out to make things worse.
-
-Two things to know before touching that code again:
-
-- **Deferring changes *when* a template is read.** Most of these are
-  built in a `for` loop over columns, axes or strata, so a template that
-  read the live frame would report the loop variable’s LAST value in
-  every row. `.diagnose_text()` therefore
-  [`rlang::env_clone()`](https://rlang.r-lib.org/reference/env_clone.html)s
-  its `.envir`; the clone costs 0.01 ms and does not force promises. If
-  you write a new finding, you get this for free — but do not “optimise”
-  the clone away.
-- **[`paste()`](https://rdrr.io/r/base/paste.html) on a
-  `.diagnose_text()` forces it**, which is the cost the whole design
-  avoids. Use `.diagnose_join()`.
-
-### Every new function gets a grouped test
-
-A `tbl_now` can be grouped, and a `grouped_tbl_now` is a **different
-class**. Most of the package never notices, which is exactly the
-problem: a function written and tested on an ungrouped object can abort,
-silently drop the grouping, or quietly compute a different answer the
-first time a user pipes it after `group_by()`.
-
-This has now happened six times in the same shape, and each time the
-function was fully tested – ungrouped:
-
-- [`censor_reporting_delays_above()`](https://rodrigozepeda.github.io/tbl.now/reference/censoring.md)
-  aborted inside
-  [`add_is_censored_report()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md),
-  which refuses a `grouped_tbl_now` outright.
-- [`censor_revision_delays_above()`](https://rodrigozepeda.github.io/tbl.now/reference/censoring.md)
-  had the identical bug on the other axis, and shipped in a release
-  whose whole subject was that axis.
-- [`aggregate_time_units()`](https://rodrigozepeda.github.io/tbl.now/reference/aggregate_time_units.md)
-  would have returned an ungrouped object, because
-  [`to_count()`](https://rodrigozepeda.github.io/tbl.now/reference/to_count.md)
-  and every
-  [`tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.md)
-  rebuild ungroup on the way through.
-- [`align_weeks()`](https://rodrigozepeda.github.io/tbl.now/reference/align_weeks.md)
-  read ten attributes off its own input *after* demoting it, which only
-  worked because
-  [`as_tibble()`](https://tibble.tidyverse.org/reference/as_tibble.html)
-  happens to leave attributes on an ungrouped tibble and not on a
-  grouped one.
-- [`complete_zeroes()`](https://rodrigozepeda.github.io/tbl.now/reference/complete_zeroes.md)
-  computed every bound of its date grid with
-  [`filter()`](https://rdrr.io/r/stats/filter.html)/`distinct()`/`pull()`,
-  which a grouping turns into one value **per group** – so the grid was
-  built from a length-2 vector.
-- [`tbl_now_to_epidist()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_epidist.md)
-  aborted inside an internal `mutate()`, with an error naming the
-  mutate’s own argument rather than the grouping.
-
-So: **when you write a function that takes a `tbl_now`, write a grouped
-test for it in the same commit.** Three assertions, and they are nearly
-always the same three:
-
-``` r
-test_that("<fn> works on a grouped tbl_now", {
-  x <- <fixture>()
-
-  out <- <fn>(x |> dplyr::group_by(sex))
-
-  expect_true(is_tbl_now(out))                  # 1. it did not abort
-  expect_equal(dplyr::group_vars(out), "sex")   # 2. groups came back
-  expect_equal(                                 # 3. same answer as ungrouped
-    dplyr::as_tibble(ungroup(out)),
-    dplyr::as_tibble(ungroup(<fn>(x)))
-  )
-})
-```
-
-**The `ungroup()` in assertion 3 is load-bearing.**
-[`as_tibble()`](https://tibble.tidyverse.org/reference/as_tibble.html)
-on a `tbl_now` keeps the class’s attributes, and a grouped object
-carries an extra `groups` attribute among them, so comparing the two
-directly fails on every function – including the correct ones. Strip the
-grouping from both sides and you are comparing the data, which is what
-the assertion is about.
-
-The third is the one that finds real bugs, and it is worth grouping by a
-column the function does **not** care about as well as one it does:
-grouping is the caller’s business, and almost nothing in this package
-should compute a different answer because of it. Where a function
-legitimately *should* respect groups, say so in a test asserting the
-difference, rather than leaving it ambiguous.
-
-Two verbs legitimately do (#61), and the line between them is *select
-versus reshape*:
-
-- the **reported- and revised-cases getters** SELECT a point in the
-  process, so one row in is still one cell out. A grouping is one more
-  key, it is answered by, and it comes back. That is the only way to ask
-  for a count by a **covariate** – a column that matters without being
-  something you nowcast by – so dropping it silently was losing a real
-  question.
-- **[`to_count()`](https://rodrigozepeda.github.io/tbl.now/reference/to_count.md)**
-  RESHAPES. After aggregating, one row is an (event, report) cell rather
-  than one of the rows that were grouped, so the grouping describes
-  nothing that is left. It drops the grouping and **warns** that it did.
-  It is the only verb in the package that does not put a grouping back.
-
-If you write a verb that aggregates, follow
-[`to_count()`](https://rodrigozepeda.github.io/tbl.now/reference/to_count.md):
-drop and say so. If it selects or annotates, follow the getters:
-`.tbl_now_regroup()`.
-
-One consequence to watch:
-[`to_count()`](https://rodrigozepeda.github.io/tbl.now/reference/to_count.md)
-recurses into itself for the linelist and de-accumulation paths, on an
-object it grouped by the cell key a few lines earlier. Ungroup before
-each recursive call, or the verb warns about a grouping it set itself.
-
-The fix is nearly always the same too – take the grouping off, do the
-work, put it back:
-
-``` r
-
-group_columns <- dplyr::group_vars(x)
-x <- ungroup(x)
-# ... rebuild, aggregate, set a flag ...
-.tbl_now_regroup(x, group_columns)
-```
-
-`.tbl_now_regroup()` (in `R/utils.R`) is that last step; it intersects
-with the columns that still exist, so a verb that drops a grouping
-column does not error.
-
-`devel/audit_grouped_verbs.R` sweeps every exported function for this
-and reports `ABORTS` / `GROUPS LOST` / `DIFFERENT ANSWER`. Run it after
-adding a verb; it is what found the last two of the five.
-
-The same argument applies to the other shapes a `tbl_now` comes in, and
-a new function should say in its tests which of them it was actually
-tried against: the three `data_type`s, an object with and without a
-revision process, and one with `NULL` strata. Grouping is singled out
-here only because it is invisible in the object’s printout and so is the
-one people forget.
-
-### Engine tests: assert the CALL, not the fit
-
-`test-engines-matrix.R` used to fit a real model in every cell of a
-24-shape grid, per engine, and `diseasenowcasting` alone took 956 s of
-it — 52% of the whole suite — for assertions that only ever checked
-plumbing: no error, the right strata, the right combinations, monotone
-quantiles. None of that needs a good fit, or any fit.
-
-So the grid is now a **dry-run tier** (`engine_dry_args()` in
-`helper-engines.R`): `diseasenowcasting` simulates from the prior
-(`prior_only = TRUE`), `baselinenowcast` draws 10 samples, `NobBS` runs
-a short JAGS chain, and `epinowcast` and `EpiNow2` drop their likelihood
-(`enw_fit_opts(likelihood = FALSE)`, `obs_opts(likelihood = FALSE)`).
-The file went 798 s -\> 432 s while going from **three engines to all
-six** — the other three had only ever been excluded for being slow to
-fit. Reach for a dry run before tuning a sampler: every “make the fit
-smaller” knob on `diseasenowcasting` made it **slower** (see
-`devel/TEST_SPEEDUP_BRIEF.md`), because fewer basis functions break
-convergence and the fitter retries.
-
-**Measure before concluding a package is too slow to test.** An earlier
-pass here ruled `epinowcast` out at “~100 s per shape”. It is really ~90
-s of Stan compilation **once per R process** plus 1.5 s per fit, so its
-full 24 shapes cost 153 s and dropping half of them would have saved 50.
-Never read the first fit in a session as the cost of a fit.
-
-Two rules if you add to that file:
-
-- **A dry run must still be a model, not an absent one.**
-  `prior_only = TRUE` returns all-`NA` draws for `count-cumulative` —
-  silently, with the shape still correct — so every shape assertion
-  would pass on nothing. Assert non-NA values, and where a package
-  genuinely cannot produce them, assert the NA-ness explicitly so an
-  upstream fix shows up as a failure rather than passing unnoticed.
-- **Keep one real fit per data type.**
-  `"each data type is either modelled or refused with a reason"` is that
-  tier, and it deliberately pays ~24 s for the `count-cumulative` fit:
-  that is the shape needing `confirmation_process()`, without which the
-  fit reports “Joint fit failed to converge for all init attempts”.
-
-And one trap, now fixed but worth knowing: `engine_for()` used to
-combine overrides with `engine_args()` through
-[`utils::modifyList()`](https://rdrr.io/r/utils/modifyList.html), which
-**recurses into list-valued arguments**. Overriding one merged it with
-the default rather than replacing it, so
-`fit = enw_fit_opts(sampler = enw_pathfinder)` kept `epinowcast`’s
-default `chains`/`iter_sampling` and the pathfinder then refused them as
-unused arguments — a failure that reads as “the sampler is broken”
-rather than “the override did not take”. `engine_for()` now assigns
-overrides directly. Exported
-[`engine()`](https://rodrigozepeda.github.io/tbl.now/reference/engine.md)
-stores `list(...)` unmerged and never had the problem.
-
-------------------------------------------------------------------------
-
-## Documenting
-
-### Datasets are documented in `R/data.R`, and nowhere else
-
-Every exported dataset’s roxygen block lives in **`R/data.R`**. There is
-one file, not one file per dataset: no `R/data-hai_bucaramanga.R`, no
-`R/data-covid.R`. When you add a dataset, append its block to the end of
-`R/data.R` (before the commented-out `vectordat` stub), ending with the
-bare `"name"` string that roxygen attaches the block to, and add the
-dataset to the `@seealso` list of the other datasets’ blocks so the
-cross-references stay complete. The raw-data script that *builds* it
-still lives in `data-raw/<name>.R`, and the `@source` should say so.
-
-### Figures, and the installed size
-
-`man/figures/` is installed verbatim into `help/figures/`, so anything
-left there counts against the 5 Mb `R CMD check` size limit. Two rules
-follow. Re-knitting `README.Rmd` writes fresh `man/figures/README-*.png`
-at full size and leaves the old ones behind: delete the files
-`README.md` no longer references, and re-quantise the ones it does
-(`magick f.png -strip -colors 128 PNG8:f.png`). And a vignette’s figures
-are base64-embedded in its HTML, which lands in `doc/`: `html_vignette`
-shows at most 700 px, so render at `dpi = 72` rather than paying for
-pixels the CSS throws away.
-
-### Examples
-
-No example should use `dontrun` or `donttest`. Nor should they use an
-`if(FALSE)` conditional to avoid running. When creating a new example
-time it so that it passes on CRAN.
-
-### Ending articles and vignettes
-
-Add the following at the end of every article or vignette:
-
-`{r learning-more, echo=FALSE, results="asis"} cat( knitr::knit_child( system.file("fragments", "learning-more.Rmd", package = "tbl.now"), quiet = TRUE ), sep = "\n" )`
-
-Note that the fragment is looked up by ABSOLUTE path via system.file(),
-never by a relative one. pkgdown/rmarkdown render into an intermediates
-directory under tempdir() and copy relative resources alongside; a path
-containing “../..” escapes that directory (“cannot create file
-‘/tmp/RtmpXXX/../../man/…’”), which fails wherever tempdir() sits near
-the filesystem root – as it does on CI.
-[`system.file()`](https://rdrr.io/r/base/system.file.html) also works
-under pkgload::load_all(), which shims it to find inst/ in the source
-tree.
-
-Every new article or vignette should be referenced in the
-`learning-more.Rmd` that is linked above.
-
-## 9. Pitfalls that have already bitten
-
-- **`\\` line continuations render literally** inside
-  [`cli::format_inline()`](https://cli.r-lib.org/reference/format_inline.html).
-  Use [`paste0()`](https://rdrr.io/r/base/paste.html).
-
-- **[`local_mocked_s3_method()`](https://testthat.r-lib.org/reference/local_mocked_s3_method.html)
-  DELETES the real method when the owning package is not attached.** It
-  restores whatever it found in the S3 methods table on exit; with the
-  package merely loaded it finds nothing, and faithfully restores
-  nothing — unregistering the real method for the rest of the R session.
-  `test-converter-epinow2.R` did this to
-  [`EpiNow2::get_predictions.estimate_infections`](https://epiforecasts.io/EpiNow2/reference/get_predictions.html),
-  and nothing noticed until the engine matrix began fitting EpiNow2 for
-  real: all 24 of its shapes died with “no applicable method for
-  ‘get_predictions’”, in a file that passed on its own.
-  `withr::local_package("EpiNow2")` before the mock fixes it — attached,
-  the method is visible, so it is found and put back. Only bites
-  generics OWNED by the package: mocking a base generic like
-  [`summary()`](https://rdrr.io/r/base/summary.html) is safe, because
-  the mock goes in base’s table and the package’s own entry is never
-  touched.
-
-- **A test file that passes alone is not isolated.** That leak was
-  invisible for as long as nothing downstream used the thing it broke.
-  `devel/audit_test_isolation.R` now checks the whole suite for it: it
-  runs every file in one process, as testthat does, and diffs the
-  namespace and S3 tables of all fifteen watched packages between files.
-  Audited 2026-08-28 — **zero removals across 58 files**; the two
-  changes it does report are benign and documented in the script.
-
-- **Validate a leak audit against a known leak before believing a clean
-  run.** An audit that cannot see the bug reports “all clear” exactly as
-  cheerfully as one that can. Three sensitivity checks of that script
-  came back empty for three different wrong reasons — comparing only the
-  S3 table when the symptom was elsewhere, reverting the fix in a way
-  that stopped the mock installing at all, and taking `git show HEAD:`
-  for the pre-fix file after the fix had been committed. The clean
-  result only meant something once restoring
-  `435efad:tests/testthat/test-converter-epinow2.R` made it fail.
-
-- **[`identical()`](https://rdrr.io/r/base/identical.html) and
-  [`body()`](https://rdrr.io/r/base/body.html) disagree with “same
-  function” over `srcref`.** Two copies of one function read from source
-  twice compare unequal under both, and it means nothing. Compare
-  [`deparse()`](https://rdrr.io/r/base/deparse.html) (and
-  [`formals()`](https://rdrr.io/r/base/formals.html)) instead — that is
-  what separates a re-sourced closure from a genuine replacement.
-
-- **A findings message is a template, not a string.** `.diagnose_text()`
-  returns a deferred object so that a finding below the reporting floor
-  is never formatted. [`paste()`](https://rdrr.io/r/base/paste.html) on
-  one forces it (and returns something useless); `.diagnose_join()` is
-  the concatenation that stays lazy. See §8.
-
-- **[`dplyr::arrange()`](https://dplyr.tidyverse.org/reference/arrange.html)
-  sorts in the C locale, [`order()`](https://rdrr.io/r/base/order.html)
-  in the session’s.** Swapping one for the other to save time silently
-  changes row order for anybody outside an ASCII locale.
-  `order(..., method = "radix")` is the match.
-
-- **S7 classes break S3 method naming.**
-  [`class()`](https://rdrr.io/r/base/class.html) is `"pkg::thing"`, and
-  `::` cannot appear in a method name. Register in `.onLoad()`.
-
-- **A [`print()`](https://rdrr.io/r/base/print.html) method needs
-  `@exportS3Method base::print`, never a plain `@export`.** The package
-  namespace defines an S7 `print` generic
-  (`S7::method(print, tbl_nowcast)`,
-  `S7::method(print, temporal_effects)`), which **shadows
-  [`base::print`](https://rdrr.io/r/base/print.html) for an attached
-  session**. A plainly-exported method is written to NAMESPACE as
-  `S3method(print, <cls>)` – the package’s own table – so auto-print
-  never finds it and the object falls through to the default. There is
-  no error and no warning: the object simply comes back as a bare
-  tibble, which is easy to read as “that class has no print method yet”.
-  `print.diagnose_batches` and `print.transport_discriminant` shipped
-  this way and nobody noticed, because the only symptom is output that
-  looks plausible.
-
-  Two things follow. First, **test auto-print, not `print(x)`**:
-  `capture.output(x)` auto-prints its argument and reproduces the
-  failure; `tbl.now:::print.<cls>(x)` calls the method directly and
-  passes either way, so it proves nothing. Second, **check NAMESPACE
-  after `document()`** – every entry should read
-  `S3method(base::print, ...)`, and a bare `S3method(print, ...)` is the
-  bug.
-
-- **`fileEncoding = "UTF-8"`** truncates a
-  [`read.csv()`](https://rdrr.io/r/utils/read.table.html) at the first
-  non-ASCII byte on some platforms. Use `encoding = "UTF-8"`.
-
-- **pkgdown builds against the *installed* package, not the source.** A
-  `devtools::load_all()` session will show a fixed converter while the
-  rendered site still shows the old behaviour. `R CMD INSTALL .` before
-  building docs.
-
-- **[`pkgdown::build_article()`](https://pkgdown.r-lib.org/reference/build_articles.html)
-  does not re-copy `pkgdown/extra.css`.** CSS edits need
-  [`pkgdown::init_site()`](https://pkgdown.r-lib.org/reference/init_site.html)
-  (or a full `build_site()`) or you will be looking at a stale
-  stylesheet and debugging a fixed bug.
-
-- **Never point a knitr `child =` at a path containing `../`.** renders
-  into an intermediates directory under
-  [`tempdir()`](https://rdrr.io/r/base/tempfile.html) and copies
-  relative resources alongside it, so `../..` escapes that directory. It
-  appears to work on macOS, where
-  [`tempdir()`](https://rdrr.io/r/base/tempfile.html) is deep enough
-  that the escape lands somewhere writable (it silently creates stray
-  directories there), and fails on CI, where
-  [`tempdir()`](https://rdrr.io/r/base/tempfile.html) is two levels from
-  `/`. Put shared fragments in `inst/` and load them with
-  [`system.file()`](https://rdrr.io/r/base/system.file.html), which is
-  path-independent and is shimmed by
-  [`pkgload::load_all()`](https://pkgload.r-lib.org/reference/load_all.html)
-  to find the source tree.
-
-- **A local render is not proof when paths are involved.** Reproduce
-  with the same `TMPDIR` CI uses (`TMPDIR=/tmp Rscript -e '...'`) before
-  any conclusion regarding a path bug.
-
-- **Weekly data with fractional `.delay`** means the two date columns
-  are on different weekday grids. Use
-  [`align_weeks()`](https://rodrigozepeda.github.io/tbl.now/reference/align_weeks.md).
-
-- **A package that declares its own
-  [`tidy()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast.md)
-  generic silently breaks every other package’s methods.** The broom
-  convention is to re-export
-  [`generics::tidy`](https://generics.r-lib.org/reference/tidy.html), so
-  all methods land on one generic; declaring a fresh `UseMethod("tidy")`
-  makes methods registered on the `generics` one invisible, with no
-  error — just a different table. `diseasenowcasting` did this before
-  2.1.0. `broom` still overwrites `tbl.now`’s
-  [`tidy.list()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast.md)
-  method (the one `NobBS` and `nowcaster` need). Write
-  [`tbl.now::tidy()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast.md)
-  in article code where another package is attached, and re-export the
-  generic in any package you write.
-
-- **Register a method for another package’s class only if that package
-  has not.** `.onLoad()` checks `getS3method(..., optional = TRUE)`
-  before registering the `diseasenowcasting` method, so tbl.now fills
-  the gap on old versions without overriding the method newer ones ship.
-
-- **A vignette that displays cached results must not have TWO sources of
-  truth.** `nowcasting-models.Rmd` used to show one call and cache the
-  output of another, kept in step by a comment asking whoever edited one
-  to remember the other. Nobody did, and nothing caught it: the article
-  never runs what it prints, so the drift is invisible until a reader
-  copies a line off the page. The fix is structural, not a reminder –
-  purl the article and run *its* code (§7). If you find yourself writing
-  “keep this in step with”, you are building the bug.
-
-- **A test can assert the right fact and still miss the bug.** “The
-  strata columns are present in the converter’s output” was true,
-  passing, and useless: `NobBS.strat()` needs *one* column and there was
-  none, so a multiply stratified object could not be fitted at all.
-  Assert that the destination’s own entry point can be **called** with
-  what the converter returns.
-
-- **A Stan fit that does not converge does not error – it returns
-  numbers.** `run_engine()` wraps every fit in
-  `suppressWarnings(suppressMessages(...))`, so divergent-transition and
-  low-ESS warnings never reach the log and a broken fit records as `ok`.
-  One EpiNow2 fit was cached with its upper credible bound at `1e8` for
-  all 181 days of a stratum whose observed maximum was 842. Nothing
-  caught it until the numbers were read. Look at the numbers, and keep a
-  plausibility guard on anything written to a cache.
-
-- **One [`set.seed()`](https://rdrr.io/r/base/Random.html) at the top of
-  a precompute script is not reproducibility.** It only pins anything if
-  every engine consumes the same random numbers in the same order, so
-  refitting a SUBSET lands somewhere different from a full run. This bit
-  twice: it is how the `1e8` EpiNow2 fit above appeared and then refused
-  to reappear, and refitting `baselinenowcast` alone silently changed
-  its estimates, because its bootstrap resamples off the same RNG. It is
-  not a Stan problem – it is every stochastic engine.
-
-  Seed per `(engine, stratum)` **immediately before each fit**, so a fit
-  depends only on which fit it is, not on what ran before it or whether
-  anything did. `nowcast_models_precompute.R` seeds once before the run;
-  both engines then reproduce to `max abs diff == 0` with the RNG
-  deliberately perturbed in between.
-
-- **A uniqueness key that omits an attribute reports real rows as
-  duplicates.**
-  [`validate_tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/validate_tbl_now.md)’s
-  non-uniqueness warning built its `distinct()` key from the dates,
-  strata, covariates and effect columns. When revision arrived, a case
-  and its own retraction – same event, same report, opposite outcome –
-  came out as “exact duplicates”, advising
-  [`dplyr::distinct()`](https://dplyr.tidyverse.org/reference/distinct.html),
-  which would have **deleted the retraction**. Any column that
-  legitimately distinguishes two rows belongs in that key.
-
-- **`.quietly_if()`/[`suppressWarnings()`](https://rdrr.io/r/base/warning.html)
-  around a backend hides the warnings that matter.** Use suppress
-  messages only.
-
-------------------------------------------------------------------------
-
-## 10. Definition of done
-
-Before calling a change finished:
-
-`devtools::document()` run; `NAMESPACE` and `man/` regenerated, not
-hand-edited.
-
-`NOT_CRAN=true` test suite passes; new behaviour has new tests.
-
-`devtools::run_examples(run_donttest = T, run_dontrun = T)` runs without
-any error
-
-**Any new function taking a `tbl_now` has a grouped test** – it did not
-abort, the groups came back, and the answer matches the ungrouped one.
-See §8 and `devel/audit_grouped_verbs.R`; this bug has shipped six
-times.
-
-Any new functionality using the report-date or the revision-date handles
-the cases when those dates are censored either because: 1) censoring
-doesn’t matter, 2) it warns or errors about the censoring, or
-
-3.  it handles the censoring in a specific way consistent with their
-    status. The choice is justified.
-
-Any new attribute has an exported, documented, tested getter.
-
-A new converter has: `to`, `from` (where meaningful), an
-[`as_tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/as_tbl_now.md)
-method, the target package’s own coercion generic (or an entry in the
-registry in `test-coercion-methods.R` saying why there is none), a
-round-trip test, a
-[`tidy()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast.md)
-method (unless it returns only delays), a censoring-collapse call, a
-`.pool_undeclared()` call, and a vignette section covering both the
-plain and the stratified case.
-
-**No new function duplicates an existing one** – see the pre-flight grep
-in §4, and say in the commit message what you checked against.
-
-`NEWS.md` updated for anything user-visible, including deliberate
-behaviour changes.
-
-Any new article or vignette contains the `learning-more.Rmd` as
-explained in the Documenting section of this document.
-
-`SKILL.md` updated if the *user-facing* API changed.
-
-**Every new exported topic added to `reference:` in `_pkgdown.yml`.**
-The index is explicit, so `pkgdown` **fails the build** on a topic that
-is not listed. Check with
-[`pkgdown::check_pkgdown()`](https://pkgdown.r-lib.org/reference/check_pkgdown.html),
-which is fast and needs no site build.
-
-A new check or statistic goes **into the findings engine**, not beside
-it — see §11.
-
-Plots use
+and
+[`diagnose()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose.md)
+share `.tbl_now_findings()`. Add structural checks there so construction
+and diagnosis cannot diverge. Keep cheap class and metadata checks in
+[`is_tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/validate_tbl_now.md);
+do not move data scans into it.
+
+Findings distinguish:
+
+- `ok`: the check ran and passed;
+- `skipped`: the check could not apply;
+- `note`: useful information that should not make construction noisy;
+- `warning` / `error`: data problems at their established severity.
+
+Do not promote findings casually: validation runs during construction
+and many rebuilds. Statistical tests with tuning choices or optional
+dependencies belong in explicit functions such as
+[`diagnose_drift()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_drift.md)
+or
+[`diagnose_batches()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_batches.md),
+not in the structural
+[`diagnose()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose.md)
+report.
+
+All [`summary()`](https://rdrr.io/r/base/summary.html) components share
+one schema; all diagnosis components share another. Return the
+established columns and meanings so `bind_rows()` remains valid. Reuse
+the package’s quantile, maturity, grid, and stratum-label helpers so
+plots and reports agree. Unreviewed statistics stay out of default
+reports and retain their warning at every call.
+
+## Plots and print methods
+
+Use
 [`tbl_now_palette()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_palette.md)
-**by role name** and the reporting/epidemic grammar; no hex code outside
-`R/palette.R`; the prologue calls `.tbl_now_check_palette()`, and any
-`size`/`linewidth` it offers is revised with `.tbl_now_check_size()` and
-multiplies rather than replaces — see §6.
+by semantic role. Do not add hex values outside `R/palette.R`. Validate
+palettes and size controls with the existing helpers; `size` and
+`linewidth` are multipliers, not replacements for every geom value.
 
-No examples use `\donttest{}` or `\dontrun{}`. Nor do they use
-`if (FALSE)`.
+Anything emitted by a [`print()`](https://rdrr.io/r/base/print.html)
+method must go to stdout via `cli::cat_*()`. Register base print methods
+with `@exportS3Method base::print`, and test auto-printing with
+`capture.output(x)`. After documentation, verify NAMESPACE contains
+`S3method(base::print, ...)`, not a method on a shadowed generic.
 
-**`R CMD check` clean**. The test suite passing is not the same as this
-check.
+## Style, dependencies, and documentation
 
-**`checktor::checkup()` clean**. The extra CRAN-submission checks.
+- Use the native pipe `|>`, snake case, `<-`, and tidyverse style.
+- Prefer vectorized dplyr/tidyr code for data frames; use base R where
+  it is clearer for matrices, S3/S7 plumbing, or tight internals.
+- Match existing `function(x)` style in `R/`; concise lambda syntax is
+  fine in vignettes where already used.
+- Internal helpers are dot-prefixed and documented with `@noRd`.
+- Use `cli` for messages and warnings; no emoji in R output.
+- Document with roxygen. Never hand-edit `NAMESPACE` or `man/*.Rd`.
+- Update `NEWS.md` for user-visible changes and `SKILL.md` when the
+  public workflow changes.
+- Add every exported topic to the explicit reference index in
+  `_pkgdown.yml`.
+- Keep runnable examples runnable; do not hide failures with
+  `\dontrun{}`, `\donttest{}`, `if (FALSE)`, or warning suppression.
+- Prefer CRAN dependencies. Optional integrations belong in `Suggests`,
+  behind [`requireNamespace()`](https://rdrr.io/r/base/ns-load.html),
+  with repository metadata only when unavoidable.
 
-### The two checks, and why the suite does not cover them
+`pkgdown` renders from the installed package, so install current source
+before debugging site output. Use stable source-relative resources; do
+not use knitr child paths containing `../`.
 
-`testthat` runs your code. `R CMD check` checks the *package*: the
-things that only break for someone installing it fresh.
+## Verification
+
+Run the narrowest relevant tests while iterating, then the full package
+checks when the change warrants them:
 
 ``` r
 
-devtools::check()                 # or: R CMD check tbl.now_*.tar.gz
-checktor::checkup()               # extra CRAN-submission checks
+devtools::test(filter = "relevant-file")
+devtools::document()
+devtools::test()
+devtools::run_examples(run_donttest = TRUE, run_dontrun = TRUE)
+devtools::check()
+pkgdown::check_pkgdown()
+checktor::checkup()
 ```
 
-The one that keeps recurring here is **undeclared packages**:
+Before finishing, confirm that:
 
-    'library' or 'require' call not declared from: 'NobBS'
-
-Every package [`library()`](https://rdrr.io/r/base/library.html)d in a
-vignette must be in `DESCRIPTION`, even when the chunk is `eval = FALSE`
-— the check reads the source, not the evaluated output. The suite never
-sees this, because the vignettes do not run under `testthat`.
-
-For a package **not on CRAN**, adding it to `Suggests` alone is not
-enough: `Suggests` is resolved against the configured repositories, so
-it also needs an entry under `Additional_repositories` (this is how
-`epinowcast` is handled) or the vignette must stop attaching it and use
-`pkg::fun()` behind
-[`requireNamespace()`](https://rdrr.io/r/base/ns-load.html) instead.
-
-------------------------------------------------------------------------
-
-## 11. The two report families (`summary()` and `diagnose()`)
-
-`R/summary.R` and `R/diagnose.R` answer the two questions a user has
-about a new object: **what is in it** and **what is wrong with it**.
-They are built the same way, and the rules below are what keep them from
-drifting apart.
-
-### One engine, two presentations
-
-[`validate_tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/validate_tbl_now.md)
-and
-[`diagnose()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose.md)
-are **the same code**. `.tbl_now_findings()` computes the findings;
-[`diagnose()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose.md)
-returns them as a tibble, and
-[`validate_tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/validate_tbl_now.md)
-re-emits the `error` rows as an abort and the `warning` rows as
-warnings.
-
-This is the rule that matters: **a new check goes in the engine.**
-Adding one to
-[`validate_tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/validate_tbl_now.md)
-directly means
-[`diagnose()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose.md)
-cannot see it, and adding it to
-[`diagnose()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose.md)
-directly means construction stops complaining about it. Both failures
-are silent. Before the engine existed, the ordering and duplicate checks
-lived only in
-[`validate_tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/validate_tbl_now.md)
-as `cli` warnings, which is why they could not be tested on their value
-— only on whether a warning was thrown.
-
-Two constraints on the engine itself:
-
-- **Keep the pre-flight stage.** Missing attributes short-circuit before
-  the findings stage, because every later check assumes the attributes
-  exist. Do not flatten the two passes into one.
-
-- **Never promote a `note` to a `warning`.**
-  [`validate_tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/validate_tbl_now.md)
-  runs wherever the class is checked. A new warning there turns a quiet
-  construction into a noisy one for data that has always been accepted,
-  for every existing user at once. `note` exists precisely so
-  [`diagnose()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose.md)
-  can say more than `validate` does.
-
-  It has been done **once**, deliberately, and the bar it had to clear
-  is worth recording. The fractional-`.delay` finding became a `warning`
-  in 0.31.0 (#63) because a fractional delay is not a matter of taste:
-  every converter either aborts on it or silently reads `2.5` weeks as
-  something else. The package now refuses to *create* one, so the
-  warning only fires on the one remaining way in – two date columns on
-  different weekday grids – which
-  [`align_weeks()`](https://rodrigozepeda.github.io/tbl.now/reference/align_weeks.md)
-  exists to fix. It stayed a warning rather than an error precisely so
-  that the object you must hand to
-  [`align_weeks()`](https://rodrigozepeda.github.io/tbl.now/reference/align_weeks.md)
-  can still be built:
-  [`tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.md)
-  validates BEFORE its `align_weeks = TRUE` branch, so an error there
-  would have made the fix unreachable. If you want to promote a finding,
-  you need an argument of that shape – not “it seems important”.
-
-### The schema is the contract
-
-Every function in each family returns the same columns, so
-[`summary()`](https://rdrr.io/r/base/summary.html) and
-[`diagnose()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose.md)
-are literally the `bind_rows()` of their components — and there is a
-test asserting exactly that. When you add a block:
-
-- return the **full schema**, and let blocks **omit** columns they do
-  not populate. `bind_rows()` then infers each column’s type. Handing it
-  a logical `NA` where a `Date` belongs is an error, not a coercion —
-  which is why `date_min`/`date_max` appear only when a coverage row is
-  present.
-- put the *subset being described* in `stratum` and the *category* in
-  `quantity`. `"revision_type = confirmed"` is a quantity; `"Female"` is
-  a stratum. Mixing them makes a compositional row impossible to
-  interpret.
-- **say what `n` counts.** One shared schema means the two count columns
-  necessarily mean different things per block: `total` is always
-  **cases**, and `n` is always the block’s own unit – dates for
-  `"cases"`, runs for `"zero_run"`, (event, report) cells for `"delay"`
-  and `"composition"`. Two unexplained integers side by side is a reader
-  guessing, so `.summary_block_gloss()` prints one grey line per block
-  saying which is which, and a new block adds its entry there in the
-  same commit.
-
-### An unreviewed statistic does not go in the default report
-
-[`case_autocorrelation()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md)
-and
-[`reporting_completeness()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_summary_components.md)
-were written by an LLM and never checked by a human. They were part of
-[`summary()`](https://rdrr.io/r/base/summary.html), which means every
-user who printed a summary read two numbers nobody had verified, with
-nothing in the output saying so. In 0.33.0 they were taken out of
-[`summary()`](https://rdrr.io/r/base/summary.html) and now warn – **on
-every call, deliberately not throttled with `.frequency`**, unlike the
-experimental diagnostics – via `.summary_unreviewed_warning()`.
-
-The corollary, and it was missed the first time: **do not then suppress
-that warning in the documentation.** Adding `warning=FALSE` to the
-vignette chunk that calls one, or
-[`suppressWarnings()`](https://rdrr.io/r/base/warning.html) to its
-`@examples`, hides the caveat from exactly the reader it was written for
-– and makes the warning look broken to anyone who notices it is missing
-from the rendered page.
-
-The rule that follows: a block joins
-[`summary()`](https://rdrr.io/r/base/summary.html) (or
-[`diagnose()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose.md))
-only once a human has checked what it computes. Until then it can be
-exported, and it must say what it is every time it produces a number. A
-warning that fires once per session is the wrong tool here: the point is
-that the *number* carries the caveat, and a number copied into a report
-outlives the session that made it.
-
-### `skipped` is not `ok`, and the difference is load-bearing
-
-`ok` means the check ran and found nothing. `skipped` means it could not
-run — no revision process, the wrong data type, an optional package
-absent. A check that cannot be performed must never be reported as a
-pass; silence that reads as approval is the main way a health check
-misleads.
-
-The example that keeps coming up:
-**[`diagnose()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose.md)
-refuses to look for duplicates in a line list**, because one row is one
-case, so two identical rows are two infections. That is a `skipped` with
-a reason, not an `ok`, and not a bug.
-
-### Reuse the estimators, do not add new ones
-
-Both families reuse what the plots already use —
-`.tbl_now_weighted_quantile()` for every quantile,
-`.tbl_now_maturity_threshold()` for “how recent is too recent”,
-`.tbl_now_strata_label()` for stratum labels,
-`.tbl_now_date_seq()`/`.tbl_now_units_between()` for grids. This is not
-tidiness: a second median estimator means
-[`summary()`](https://rdrr.io/r/base/summary.html) and
-[`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html)
-print different numbers for the same data, and nothing fails to tell
-you.
-
-The consequence to accept: quantiles are **inverse-ECDF (type 1)**, so
-`q50` on an even number of observations is the upper middle value rather
-than the average. It is documented in a `@note` on both families.
-Changing it means changing the plots too.
-
-### Statistical tests live outside `diagnose()`
-
-[`diagnose()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose.md)
-is structural and deterministic: no test, no seed, no optional package,
-no runtime that depends on the data size. Drift and batching are
-statements about a distribution, and answering them means choosing a
-method, a window and a multiplicity correction — decisions a health
-check has no business making silently.
-
-So they are not in the report at all.
-[`diagnose()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose.md)
-used to emit `not_run` **signposts** carrying the call that answers each
-one; those were removed in 0.32.0, because a health check that lists
-what it did not do adds a block of rows the reader must skip on every
-single run to say something a `@seealso` already says once. A
-statistical diagnostic is its own exported function
-([`diagnose_drift()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_drift.md),
-[`diagnose_batches()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose_batches.md)),
-documented under `@seealso` on
-[`diagnose()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose.md);
-do not wire it into
-[`diagnose()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose.md),
-and do not add a row announcing that you did not.
-
-### Grids run to `now`, globally
-
-Every date grid in [`summary()`](https://rdrr.io/r/base/summary.html)
-runs from the earliest observed date on that axis to
-[`get_now()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md),
-stepping in that axis’s units — not to the last row present. A date with
-no rows is a **zero**, not an absence.
-
-Two things follow, and both are asserted in the tests:
-
-- a **line list summarises to exactly the same numbers as its counts**,
-  which is only true because the grid does not come from the rows;
-- the grid is **global**, not per-stratum, so a stratum whose cases
-  start late shows its leading zeros and the strata stay comparable. The
-  triangle-occupancy denominator uses the global widest delay for the
-  same reason — it was per-stratum first, and it flattered any stratum
-  whose cases all arrived same-day.
-
-### `NA` counts are dropped, visibly
-
-In count data an `NA` count means *not yet observed*; a `0` means
-*observed, and it was zero*.
-[`summary()`](https://rdrr.io/r/base/summary.html) drops the `NA`s and
-counts them in the `unobserved_cells` coverage row, so the drop is
-visible rather than silent. This was found by running against
-`flusight`: one `NA` turned every total in the table into `NA`.
-
-## Editing Instructions for LLMs
-
-When updating or adding rules to this document: - State the **Rule** and
-**Constraint** clearly first. - Keep context/rationale to 1–2 sentences
-maximum. - Do NOT write long post-mortems or historical narratives about
-how a bug was discovered unless explicitly asked.
+- new behavior has regression tests, including grouping and each
+  relevant data type, strata, revision, censoring, and `now` edge;
+- user-facing docs, `NEWS.md`, and the usage skill agree with the code;
+- generated documentation and NAMESPACE are current;
+- no unrelated file was reformatted;
+- `R CMD check` and CRAN-oriented checks are clean, or any unrun/failed
+  check is reported precisely.

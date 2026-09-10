@@ -1,6 +1,6 @@
 # Read what a `tbl_now` was told about itself
 
-**\[experimental\]**
+**\[stable\]**
 
 When you build a
 [`tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.md)

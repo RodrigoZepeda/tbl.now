@@ -1,6 +1,6 @@
 # One surveillance line list per stratum
 
-**\[experimental\]**
+**\[stable\]**
 
 The object returned by
 `tbl_now_to_surveillance(x, format = "linelist_list")`: one

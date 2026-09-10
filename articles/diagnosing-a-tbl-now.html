@@ -27,7 +27,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.35.4</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -43,8 +43,9 @@
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="../articles/custom-nowcast-models.html">Adding your own nowcasting model</a></li>
     <li><a class="dropdown-item" href="../articles/diagnosing-a-tbl-now.html">Diagnosing a tbl_now</a></li>
-    <li><a class="dropdown-item" href="../articles/ensemble-nowcasting.html">One call, many models: run_nowcast(), custom backends and ensembles</a></li>
-    <li><a class="dropdown-item" href="../articles/example.html">The nowcasting workflow: hospital-acquired infections in Bucaramanga, Colombia</a></li>
+    <li><a class="dropdown-item" href="../articles/ensemble-nowcasting.html">Fitting models from different nowcasting frameworks, backtesting and building an ensemble</a></li>
+    <li><a class="dropdown-item" href="../articles/example_revisions.html">The nowcasting workflow 2: COVID-19 case surveillance with revisions in the United States</a></li>
+    <li><a class="dropdown-item" href="../articles/example.html">The nowcasting workflow 1: hospital-acquired infections in Bucaramanga, Colombia</a></li>
     <li><a class="dropdown-item" href="../articles/nowcasting-models.html">Using tbl.now with different modelling packages</a></li>
     <li><a class="dropdown-item" href="../articles/tbl.now.html">tbl.now</a></li>
   </ul>
@@ -756,32 +757,6 @@ where the reports are.</p>
 </div>
 </div>
 <div class="section level3">
-<h3 id="scalograms">Scalograms<a class="anchor" aria-label="anchor" href="#scalograms"></a>
-</h3>
-<div class="alert alert-warning">
-<p>The scalogram functions are <strong>very experimental</strong>. We
-have yet to confirm they work for all batch cases. Feel free to skip to
-the section on <a href="https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html#sec-transport">transport</a></p>
-</div>
-<p>Scalograms show reductions of cases. For this example, consider the
-following simulated reporting process:</p>
-<p><img src="diagnosing-a-tbl-now_files/figure-html/unnamed-chunk-10-1.png" class="r-plt" alt="" width="1200"></p>
-<p>Its scalogram shows the decreases in the reporting cases as vertical
-streaks aligned with the minimal date of this decrease:</p>
-<p><img src="diagnosing-a-tbl-now_files/figure-html/unnamed-chunk-11-1.png" class="r-plt" alt="" width="1200"></p>
-<p>One can see the same vertical streaks in the previous reporting
-process we had been working on corresponding to the dip before the
-batch:</p>
-<div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_scalogram.html">plot_scalogram</a></span><span class="op">(</span><span class="va">ideal</span><span class="op">)</span></span></code></pre></div>
-<p><img src="diagnosing-a-tbl-now_files/figure-html/unnamed-chunk-13-1.png" class="r-plt" alt="" width="1200"></p>
-<p>and again the same release dates being the most identified, with
-additional dates having less of a clear pattern:</p>
-<div class="sourceCode" id="cb33"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_scalogram.html">plot_scalogram</a></span><span class="op">(</span><span class="va">tn</span><span class="op">)</span></span></code></pre></div>
-<p><img src="diagnosing-a-tbl-now_files/figure-html/unnamed-chunk-15-1.png" class="r-plt" alt="" width="1200"></p>
-</div>
-<div class="section level3">
 <h3 id="sec-transport">Transport vs creation<a class="anchor" aria-label="anchor" href="#sec-transport"></a>
 </h3>
 <p>This is the main tool for detecting batches and surges. Before the
@@ -837,11 +812,11 @@ little creation</strong>.</p>
 </h4>
 <p>The previous plot can be done with the
 <code><a href="../reference/plot_transport_discriminant.html">plot_transport_discriminant()</a></code> function:</p>
-<div class="sourceCode" id="cb34"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_transport_discriminant.html">plot_transport_discriminant</a></span><span class="op">(</span><span class="va">ideal</span><span class="op">)</span></span></code></pre></div>
 <p><img src="diagnosing-a-tbl-now_files/figure-html/disc-sim2-1.png" class="r-plt" alt="" width="1200"></p>
 <p>Which also works to identify the COVID-19 cases:</p>
-<div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb33"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_transport_discriminant.html">plot_transport_discriminant</a></span><span class="op">(</span><span class="va">tn</span>, period <span class="op">=</span> <span class="fl">7</span><span class="op">)</span></span></code></pre></div>
 <p><img src="diagnosing-a-tbl-now_files/figure-html/disc-covid2-1.png" class="r-plt" alt="" width="1200"></p>
 </div>
@@ -856,7 +831,7 @@ controls the false-discovery rate across all dates (see
 the <code>batch</code> rows gives the confirmed releases together with
 their <code>deficit</code> (how depleted the days just before were) and
 <code>delta</code> (how little the window total actually changed).</p>
-<div class="sourceCode" id="cb36"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb34"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/diagnose_batches.html">diagnose_batches</a></span><span class="op">(</span><span class="va">ideal</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">batch</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1 × 7</span></span></span>
@@ -871,7 +846,7 @@ preceded by a matching deficit of roughly the same size. That pairing is
 the whole test – the taller spikes of 12 December and 10 June are not
 flagged, because nothing was withheld beforehand to release, which makes
 them surges rather than batches:</p>
-<div class="sourceCode" id="cb38"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb36"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/diagnose_batches.html">diagnose_batches</a></span><span class="op">(</span><span class="va">tn</span>, period <span class="op">=</span> <span class="fl">7</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">batch</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1 × 7</span></span></span>
@@ -894,12 +869,12 @@ different plots for identifying delay problems.</p>
 Shows the overall trend of the delay. Normally it will be steady; a
 batch can be seen as a <strong>sudden bump upward</strong> on the
 release day.</p>
-<div class="sourceCode" id="cb40"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb38"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_delay_drift.html">plot_delay_drift</a></span><span class="op">(</span><span class="va">ideal</span><span class="op">)</span></span></code></pre></div>
 <p><img src="diagnosing-a-tbl-now_files/figure-html/drift-sim-1.png" class="r-plt" alt="" width="1200"></p>
 <p>On covid the delays show extreme variability in the beginning and a
 trend that decreases the delay in time:</p>
-<div class="sourceCode" id="cb41"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb39"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_delay_drift.html">plot_delay_drift</a></span><span class="op">(</span><span class="va">tn</span><span class="op">)</span></span></code></pre></div>
 <p><img src="diagnosing-a-tbl-now_files/figure-html/drift-covid-1.png" class="r-plt" alt="" width="1200"></p>
 <p>The functions <code><a href="../reference/diagnose_drift.html">diagnose_drift()</a></code> and
@@ -908,7 +883,7 @@ in the delay. We can see, for example, that it correctly identifies the
 drift in the COVID-19 dataset both for the median (trend) and the spread
 (see the quantiles getting tighter). On the ideal example this doesn’t
 happen so it does not detect a drift:</p>
-<div class="sourceCode" id="cb42"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb40"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/diagnose_drift.html">diagnose_drift</a></span><span class="op">(</span><span class="va">tn</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 2 × 9</span></span></span>
 <span><span class="co">#&gt;   strata stat       n    tau sens_slope statistic     p_value method    drift</span></span>
@@ -925,7 +900,7 @@ happen so it does not detect a drift:</p>
 COVID-19 delay distribution has completely changed from before. In the
 case of the ideal example the change is not long enough to be
 detected:</p>
-<div class="sourceCode" id="cb43"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb41"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/diagnose_changepoint.html">diagnose_changepoint</a></span><span class="op">(</span><span class="va">tn</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 2 × 10</span></span></span>
 <span><span class="co">#&gt;   strata stat       n changepoint statistic  p_value before after  shift changepoint_detected</span></span>
@@ -945,12 +920,12 @@ detected:</p>
 <p>Each faint line is one day’s distirbution of reporting delays. Most
 days report quickly, so their lines hug the left and concentrate around
 the same distribution:</p>
-<div class="sourceCode" id="cb44"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb42"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_delay_profiles.html">plot_delay_profiles</a></span><span class="op">(</span><span class="va">ideal</span><span class="op">)</span></span></code></pre></div>
 <p><img src="diagnosing-a-tbl-now_files/figure-html/prof-sim-1.png" class="r-plt" alt="" width="1200"></p>
 <p>On COVID-19 a whole spray of lines reaches far to the right days that
 reported cases months later.</p>
-<div class="sourceCode" id="cb45"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb43"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_delay_profiles.html">plot_delay_profiles</a></span><span class="op">(</span><span class="va">tn</span><span class="op">)</span></span></code></pre></div>
 <p><img src="diagnosing-a-tbl-now_files/figure-html/prof-covid-1.png" class="r-plt" alt="" width="1200"></p>
 </div>
@@ -1014,26 +989,21 @@ then released together.</p>
 <td>Horizontal slices show cases with the same report date.</td>
 </tr>
 <tr class="even">
-<td><strong>Wavelet scalogram</strong></td>
-<td>Bright short-period ridges in the reporting series show
-<em>holds</em> on the reporting.</td>
-</tr>
-<tr class="odd">
 <td><strong>Transport discriminant</strong></td>
 <td>A red dot up-and-left, in the “potential batch region” might
 indicate a batch.</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><strong><code><a href="../reference/diagnose_batches.html">diagnose_batches()</a></code></strong></td>
 <td>Shows the flagged reports in the discriminant as a
 <code>data.frame</code>
 </td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><strong>Delay profiles</strong></td>
 <td>Show the delay distribution for each event date.</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><strong>Reporting-delay drift</strong></td>
 <td>Shows how the delay and its variance change through time.</td>
 </tr>
@@ -1065,16 +1035,25 @@ Part 1.</li>
 <code><a href="../reference/diagnose_drift.html">?diagnose_drift</a></code>, <code><a href="../reference/diagnose_batches.html">?diagnose_batches</a></code> and
 <code><a href="../reference/diagnostic_plot.html">?diagnostic_plot</a></code> — the tests and figures of Part 3.</li>
 </ul>
-<!-- Single source for "Learning more"; pulled in as a knitr child by README.Rmd and every article. Edit on `learning.more.Rmd`.--><div class="section level3">
+<!-- Single source for "Learning more"; pulled in as a knitr child by README.Rmd and every article. Edit on `learning.more.Rmd`.--><div class="alert alert-info">
+<p>If you have any questions or comments regarding the contents of this
+article please <a href="https://github.com/RodrigoZepeda/tbl.now/issues/new" class="external-link">open an issue
+on Github</a>.</p>
+</div>
+<div class="section level3">
 <h3 id="learning-more">Learning more<a class="anchor" aria-label="anchor" href="#learning-more"></a>
 </h3>
 <ul>
+<li>End-to-end tutorial on real life surveillance data. Takes you from
+cleaning to diagnosing errors in the data to nowcasting: <a href="https://rodrigozepeda.github.io/tbl.now/articles/example.html">https://rodrigozepeda.github.io/tbl.now/articles/example.html</a>
+</li>
+<li>The same tutorial with a <strong>revision process</strong> — the
+optional third date, where a reported case is later confirmed, retracted
+or left pending: <a href="https://rodrigozepeda.github.io/tbl.now/articles/example_revisions.html">https://rodrigozepeda.github.io/tbl.now/articles/example_revisions.html</a>
+</li>
 <li>Introduction vignette: <a href="https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.html">https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.html</a>
 for the full anatomy of a <code>tbl_now</code>, data types, and temporal
 effects.</li>
-<li>End-to-end tutorial on real, messy surveillance data — cleaning,
-diagnostics and nowcasting: <a href="https://rodrigozepeda.github.io/tbl.now/articles/example.html">https://rodrigozepeda.github.io/tbl.now/articles/example.html</a>
-</li>
 <li>Tutorial on diagnosing your dataset — what is in it, what is
 structurally wrong with it, and detecting batches and other
 reporting-delay artifacts: <a href="https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html">https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html</a>

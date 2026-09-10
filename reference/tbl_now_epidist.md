@@ -143,6 +143,36 @@ tbl_now_to_epidist(
 A `tbl_now` (`from`) or an `epidist_linelist_data` /
 `epidist_aggregate_data` object (`to`).
 
+## One row, one observed delay
+
+Every row of the result is a distinct delay observation, and for the
+aggregate shape `n` is its weight. Two things would otherwise break
+that, and `tbl_now_to_epidist()` resolves both before building the
+object:
+
+- **Columns the object was never told about.**
+  [covid_colombia](https://rodrigozepeda.github.io/tbl.now/reference/covid_colombia.md)
+  carries `sex`, so an object built without `strata = sex` has two rows
+  per `(notification_date, diagnosis_date)` cell. `sex` is not carried
+  onto the epidist data, so those rows would arrive as indistinguishable
+  duplicates; they are pooled instead, exactly as
+  [`tbl_now_to_baselinenowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_baselinenowcast.md)
+  and
+  [`tbl_now_to_tsibble()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_tsibble.md)
+  do. Declare the column with
+  [`add_strata()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
+  to keep it as a model covariate rather than pool it away.
+
+- **The revision axis**, which is dropped (see below) and therefore
+  cannot keep two rows apart either. Pooling over it gives the `"total"`
+  case count: every case has exactly one outcome, so no case is counted
+  twice.
+
+Line lists are left alone – one row is already one case – and declared
+strata, covariates, materialised temporal-effect columns and the
+`is_censored_report` flag all keep rows apart, because all of them reach
+the epidist object (the flag through the censoring windows).
+
 ## Delays of zero, and the lognormal
 
 A delay distribution with a **point mass at zero** cannot be fitted with
@@ -219,7 +249,9 @@ has no way to represent the revision axis, so `has_revision(x)`,
 `revision_type`, `is_censored_revision` and the revision dates are
 **dropped** from the epidist object. `tbl_now_to_epidist()` warns once
 when it drops them, so a user who declared a revision process is told
-the converter is not surfacing it.
+the converter is not surfacing it. Count rows that differed only in
+their revision date or outcome are then pooled, so the drop does not
+leave duplicate rows behind.
 
 ## See also
 
