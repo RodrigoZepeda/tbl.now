@@ -26,10 +26,7 @@
 #'
 #' \describe{
 #'   \item{`component`}{Which block the row belongs to: `"cases"`, `"delay"`,
-#'     `"zero_run"`, `"composition"`, `"growth"` or `"coverage"`. The
-#'     `"autocorrelation"` and `"completeness"` blocks are no longer part of
-#'     `summary()`; call [case_autocorrelation()] and
-#'     [reporting_completeness()] directly for those.}
+#'     `"zero_run"`, `"composition"`, `"growth"` or `"coverage"`.}
 #'   \item{`quantity`}{What the row describes, including the category for the
 #'     compositional rows (`"revision_type = confirmed"`).}
 #'   \item{`stratum`}{Which subset of the data the row describes: `"all"` for
@@ -50,13 +47,11 @@
 #'   \item{`min`, `q25`, `q50`, `q75`, `q90`, `max`}{Quantiles. See the note
 #'     below on which estimator is used.}
 #'   \item{`prop_zero`}{Proportion of dates on the grid that are exactly zero.}
-#'   \item{`prop`}{Proportion of cases in this category (compositional rows),
-#'     or the pooled share that had arrived by delay `d` (`"completeness"`
-#'     rows).}
-#'   \item{`value`}{A single scalar that is not a distribution: a gap, an
-#'     occupancy, an autocorrelation. The `"completeness"` and `"growth"` rows
-#'     are distributions over event dates, so they populate `mean`/`sd`/the
-#'     quantiles (and `prop`) instead and leave `value` empty.}
+#'   \item{`prop`}{Proportion of cases in this category (compositional rows).}
+#'   \item{`value`}{A single scalar that is not a distribution: a gap or an
+#'     occupancy. The `"growth"` rows are distributions over event dates, so
+#'     they populate `mean`/`sd`/the quantiles instead and leave `value`
+#'     empty.}
 #'   \item{`date_min`, `date_max`}{Date range. Present only when the result
 #'     contains `"coverage"` rows.}
 #'   \item{`unobserved_cells`}{A `"coverage"` row counting the `NA`-count rows
@@ -176,9 +171,6 @@ summary.tbl_now <- function(object, ..., by_strata = NULL, strata = NULL,
 #'
 #' Every one of these returns the same schema as `summary()` itself, so they can
 #' be stacked with [dplyr::bind_rows()], compared across datasets, or used alone.
-#' Two of them -- `case_autocorrelation()` and `reporting_completeness()` -- were
-#' written by an AI and have not been checked by a human, so they are **not**
-#' part of `summary()` and warn on every call:
 #'
 #' * `cases_per_date()` -- case counts per date on one axis.
 #' * `delay_summary()` -- the case-weighted delay distribution.
@@ -188,15 +180,9 @@ summary.tbl_now <- function(object, ..., by_strata = NULL, strata = NULL,
 #' * `prop_strata()` -- proportion of cases per stratum.
 #' * `prop_covariate_levels()` -- proportion of cases per level of each
 #'   categorical covariate.
-#' * `case_autocorrelation()` -- lagged autocorrelation of the case series.
-#'   **Unreviewed:** not part of `summary()`, and warns on every call.
 #' * `date_ranges()` -- totals, date ranges and `now`.
 #' * `triangle_occupancy()` -- how full the reporting triangle is, and how
 #'   stale the object is.
-#' * `reporting_completeness()` -- share of each event date's eventual total
-#'   that had arrived by delay `d`, as a distribution over event dates
-#'   (`mean`, `sd`, the quantiles) plus the pooled share in `prop`.
-#'   **Unreviewed:** not part of `summary()`, and warns on every call.
 #' * `cumulative_growth()` -- ratio of one delay's running total to the
 #'   previous one's.
 #'
@@ -207,13 +193,7 @@ summary.tbl_now <- function(object, ..., by_strata = NULL, strata = NULL,
 #'   delay), `"event_to_revision"` (the same span measured to the
 #'   revision, so the two are comparable) or `"report_to_revision"`
 #'   (the laboratory's turnaround, the `.revision_delay` column).
-#' @param lags Integer vector of lags.
-#' @param delays Integer vector of delays to report completeness at. Defaults
-#'   to every observed delay.
 #' @param k Number of delays for the growth ratios.
-#' @param mature_only Logical. Drop event dates too recent to have been fully
-#'   reported. The cutoff is `now` minus the 95th percentile of the delay
-#'   distribution -- the same rule [autoplot.tbl_now()] uses.
 #' @param by_strata Logical. Add one set of rows per stratum on top of the
 #'   pooled (`"all"`) rows. Defaults to `TRUE` when the object has strata.
 #' @param strata Character vector of columns to stratify by. Defaults to
@@ -244,11 +224,8 @@ summary.tbl_now <- function(object, ..., by_strata = NULL, strata = NULL,
 #' cases_per_date(ndata, axis = "event")
 #' delay_summary(ndata)
 #'
-#' # How sparse the series is, and how strongly one week predicts the next.
-#' # `case_autocorrelation` warns because it is unreviewed; the warning is
-#' # deliberately not suppressed here, since it belongs with the number.
+#' # How sparse the series is.
 #' zero_run_summary(ndata, axis = "event")
-#' case_autocorrelation(ndata, lags = 1)
 #'
 #' # What the data is made of, and how far it reaches.
 #' prop_strata(ndata)
@@ -256,13 +233,8 @@ summary.tbl_now <- function(object, ..., by_strata = NULL, strata = NULL,
 #' date_ranges(ndata)
 #' triangle_occupancy(ndata)
 #'
-#' # What share of a week's eventual total had arrived by delay d, and how fast
-#' # the total is still growing. Both are distributions over event dates, so
-#' # they fill `mean`/`q50` -- and completeness also `prop`, the pooled share --
-#' # rather than the scalar `value` column. `reporting_completeness` is
-#' # unreviewed and warns; see above.
-#' reporting_completeness(ndata, delays = 0:3) |>
-#'   dplyr::select(quantity, stratum, n, mean, q50, prop)
+#' # How fast the running total is still growing. This is a distribution over
+#' # event dates, so it fills `mean`/`q50` rather than the scalar `value`.
 #' cumulative_growth(ndata, k = 3)
 #'
 #' # Every block shares one schema, so they stack.
@@ -344,17 +316,6 @@ prop_covariate_levels <- function(x, by_strata = NULL, strata = NULL) {
 
 #' @rdname nowcast_summary_components
 #' @export
-case_autocorrelation <- function(x, lags = 1,
-                                 axis = c("event", "report", "revision"),
-                                 by_strata = NULL, strata = NULL) {
-  axis <- match.arg(axis)
-  .summary_unreviewed_warning("case_autocorrelation")
-  context <- .summary_context(x, by_strata, strata, "case_autocorrelation")
-  .summary_finalise(list(.summary_autocorrelation(context, axis, lags)))
-}
-
-#' @rdname nowcast_summary_components
-#' @export
 date_ranges <- function(x, by_strata = NULL, strata = NULL) {
   context <- .summary_context(x, by_strata, strata, "date_ranges")
   .summary_finalise(list(.summary_coverage(context)))
@@ -369,43 +330,9 @@ triangle_occupancy <- function(x, by_strata = NULL, strata = NULL) {
 
 #' @rdname nowcast_summary_components
 #' @export
-reporting_completeness <- function(x, delays = NULL, mature_only = TRUE,
-                                   by_strata = NULL, strata = NULL) {
-  .summary_unreviewed_warning("reporting_completeness")
-  context <- .summary_context(x, by_strata, strata, "reporting_completeness")
-  .summary_finalise(list(.summary_completeness(context, delays, mature_only)))
-}
-
-#' @rdname nowcast_summary_components
-#' @export
 cumulative_growth <- function(x, k = 7, by_strata = NULL, strata = NULL) {
   context <- .summary_context(x, by_strata, strata, "cumulative_growth")
   .summary_finalise(list(.summary_growth(context, k)))
-}
-
-#' Warn that a block is unreviewed AI-written code.
-#'
-#' `case_autocorrelation()` and `reporting_completeness()` were written by an
-#' LLM and have not yet been checked by a human, which is why they were taken
-#' out of `summary()`: a report a user reads by default must not contain a
-#' statistic nobody has verified. They stay exported so the work is not lost,
-#' but every call says what they are.
-#' @param function_name The calling function, for the message.
-#' @keywords internal
-#' @noRd
-.summary_unreviewed_warning <- function(function_name) {
-  cli::cli_warn(
-    c(
-      "!" = "{.fn {function_name}} is {.emph experimental} and was written by
-             an AI; it has not yet been reviewed by a human.",
-      "i" = "It is no longer part of {.fn summary}. Check the numbers before
-             you rely on them."
-    )
-    # Deliberately NOT throttled with `.frequency`, unlike the other
-    # experimental diagnostics: an unreviewed number must carry its warning
-    # every time it is produced, including inside a loop or a report.
-  )
-  invisible(NULL)
 }
 
 # Shared context --------------------------------------------------------------
@@ -924,70 +851,6 @@ cumulative_growth <- function(x, k = 7, by_strata = NULL, strata = NULL) {
   dplyr::bind_rows(rows)
 }
 
-#' Lagged autocorrelation of the case series
-#'
-#' @param context A summary context.
-#' @param axis The axis.
-#' @param lags Integer vector of lags.
-#'
-#' @return A tibble of `"autocorrelation"` rows.
-#'
-#' @keywords internal
-#' @noRd
-.summary_autocorrelation <- function(context, axis, lags) {
-  if (is.null(.summary_axis(context, axis))) return(NULL)
-  lags <- as.integer(lags)
-  if (length(lags) == 0 || any(is.na(lags)) || any(lags < 1)) {
-    cli::cli_abort("{.arg lags} must be positive whole numbers.")
-  }
-
-  rows <- lapply(context$labels, function(label) {
-    series <- .summary_series(context, axis, .summary_rows(context, label))
-    dplyr::bind_rows(lapply(lags, function(lag) {
-      pairs <- .summary_lagged_correlation(series, lag)
-      dplyr::tibble(
-        component = "autocorrelation",
-        quantity = paste0("per_", axis, "_date lag ", lag),
-        stratum = label,
-        n = as.integer(pairs$n),
-        value = pairs$value
-      )
-    }))
-  })
-
-  dplyr::bind_rows(rows)
-}
-
-#' Pearson correlation between a series and its own lag
-#'
-#' Computed as `cor(y[1:(n - lag)], y[(1 + lag):n])`: the correlation of the
-#' lagged pairs. This is **not** the same as [stats::acf()], whose estimator
-#' divides by the full series length and centres both halves on the full-series
-#' mean. The lagged-pair form is the one a reader can reproduce by hand, and
-#' the difference is negligible except on very short series.
-#'
-#' @param series Numeric vector, or `NULL`.
-#' @param lag Positive integer.
-#'
-#' @return A list with `n` (number of pairs) and `value`.
-#'
-#' @keywords internal
-#' @noRd
-.summary_lagged_correlation <- function(series, lag) {
-  if (is.null(series) || length(series) <= lag + 1) {
-    return(list(n = 0L, value = NA_real_))
-  }
-  head_values <- series[seq_len(length(series) - lag)]
-  tail_values <- series[seq(lag + 1, length(series))]
-  if (stats::sd(head_values) == 0 || stats::sd(tail_values) == 0) {
-    return(list(n = length(head_values), value = NA_real_))
-  }
-  list(
-    n = length(head_values),
-    value = stats::cor(head_values, tail_values)
-  )
-}
-
 #' Every compositional block
 #'
 #' @param context A summary context.
@@ -1324,71 +1187,6 @@ cumulative_growth <- function(x, k = 7, by_strata = NULL, strata = NULL) {
   dplyr::bind_rows(rows)
 }
 
-#' Share of each event date's eventual total that had arrived by delay `d`
-#'
-#' @param context A summary context.
-#' @param delays Integer vector of delays, or `NULL` for all observed ones.
-#' @param mature_only Logical.
-#'
-#' @return A tibble of `"completeness"` rows.
-#'
-#' @keywords internal
-#' @noRd
-.summary_completeness <- function(context, delays, mature_only) {
-  cases <- context$cases
-  observed <- cases$event_to_report[!is.na(cases$event_to_report) &
-                                      cases$count > 0]
-  if (length(observed) == 0) return(NULL)
-
-  if (is.null(delays)) {
-    delays <- seq(0, max(observed))
-  }
-  delays <- sort(unique(as.integer(delays)))
-  delays <- delays[delays >= 0 & delays <= max(observed)]
-  if (length(delays) == 0) return(NULL)
-
-  check_bool(mature_only, "mature_only")
-  cutoff <- if (isTRUE(mature_only)) {
-    .tbl_now_maturity_threshold(
-      context$x,
-      dplyr::tibble(delay = cases$event_to_report, weight = cases$count),
-      0.95
-    )
-  } else {
-    NA
-  }
-
-  rows <- lapply(context$labels, function(label) {
-    selected <- .summary_rows(context, label) & !is.na(cases$event_to_report)
-    if (!is.na(cutoff)) selected <- selected & cases$event_date <= cutoff
-    if (!any(selected)) return(NULL)
-
-    event <- cases$event_date[selected]
-    delay <- cases$event_to_report[selected]
-    count <- cases$count[selected]
-    eventual <- tapply(count, factor(event), sum)
-    # An event date with no cases at all has no "share of its total".
-    eventual <- eventual[!is.na(eventual) & eventual != 0]
-    if (length(eventual) == 0) return(NULL)
-
-    dplyr::bind_rows(lapply(delays, function(d) {
-      arrived <- tapply(
-        count * (delay <= d), factor(event), sum
-      )[names(eventual)]
-      arrived[is.na(arrived)] <- 0
-      shares <- as.numeric(arrived / eventual)
-      row <- .summary_stat_row(
-        shares, NULL, "completeness", paste0("delay <= ", d), label,
-        n = length(shares), total = sum(arrived)
-      )
-      row$prop <- sum(arrived) / sum(eventual)
-      row
-    }))
-  })
-
-  dplyr::bind_rows(rows)
-}
-
 #' Ratio of one delay's running total to the previous one's
 #'
 #' Built by cumulating the incidence over a complete `0:k` delay grid within
@@ -1551,11 +1349,9 @@ print.tbl_now_summary_table <- function(x, ..., n = 10) {
     delay        = c(n = "(event, report) cells", total = "cases"),
     composition  = c(n = "(event, report) cells in the category",
                      total = "cases in the category"),
-    completeness = c(n = "event dates", total = "cases arrived by that delay"),
     growth       = c(n = "event dates", total = "cases added"),
     coverage     = c(n = "cells, or distinct dates on a date row",
                      total = "cases"),
-    autocorrelation = c(n = "lagged date pairs"),
     NULL
   )
   if (is.null(meaning)) return(NULL)

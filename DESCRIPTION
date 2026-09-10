@@ -25,6 +25,7 @@ Description: Defines tidy data structures and package-agnostic workflows for
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
+LazyDataCompression: xz
 Depends: 
     R (>= 4.2.0)
 Suggests:

@@ -544,7 +544,7 @@
 #' @references From the `nowcaster` package.
 #'  Bastos, S L, Economou, Theodoros, Gomes, FC M, Villela, AM D, Coelho, C F, Cruz, G O, Stoner, Oliver, Bailey,
 #'  Trevor, Codeço, T C (2019). “A Modelling approach for correcting reporting delays in disease surveillance
-#'  data.” _Statistics in medicine_, *38*(22), 4363-4377. doi:10.1002/sim.8303 <https://doi.org/10.1002/sim.8303>.
+#'  data.” _Statistics in medicine_, *38*(22), 4363-4377. \doi{10.1002/sim.8303}
 #' @keywords covid
 #' @md
 "sari_bh"

@@ -239,9 +239,7 @@ diagnostic_plot(x)
 Focused summaries include `cases_per_date()`, `delay_summary()`,
 `zero_run_summary()`, `prop_censored()`, `prop_revision_type()`,
 `prop_strata()`, `prop_covariate_levels()`, `date_ranges()`,
-`triangle_occupancy()`, and `cumulative_growth()`. The experimental,
-human-review-pending `case_autocorrelation()` and `reporting_completeness()` are
-not part of the default summary and warn on every call.
+`triangle_occupancy()`, and `cumulative_growth()`.
 
 `autoplot()` chooses applicable panels for the object's units, temporal-effect
 spec, and revision axis, and lays them out as one column per process: epidemic,

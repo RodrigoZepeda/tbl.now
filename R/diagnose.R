@@ -2006,9 +2006,8 @@ diagnose_strata <- function(x, by_strata = NULL, strata = NULL) {
     ))
   }
 
-  # The same maturity rule `autoplot()` and `reporting_completeness()` use:
-  # `now` minus the 95th percentile of the delay distribution. One rule, one
-  # place.
+  # The same maturity rule `autoplot()` uses: `now` minus the 95th percentile
+  # of the delay distribution. One rule, one place.
   cutoff <- .tbl_now_maturity_threshold(
     x,
     dplyr::tibble(

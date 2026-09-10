@@ -79,10 +79,7 @@ stacked with \code{\link[dplyr:bind_rows]{dplyr::bind_rows()}} and filtered with
 
 \describe{
 \item{\code{component}}{Which block the row belongs to: \code{"cases"}, \code{"delay"},
-\code{"zero_run"}, \code{"composition"}, \code{"growth"} or \code{"coverage"}. The
-\code{"autocorrelation"} and \code{"completeness"} blocks are no longer part of
-\code{summary()}; call \code{\link[=case_autocorrelation]{case_autocorrelation()}} and
-\code{\link[=reporting_completeness]{reporting_completeness()}} directly for those.}
+\code{"zero_run"}, \code{"composition"}, \code{"growth"} or \code{"coverage"}.}
 \item{\code{quantity}}{What the row describes, including the category for the
 compositional rows (\code{"revision_type = confirmed"}).}
 \item{\code{stratum}}{Which subset of the data the row describes: \code{"all"} for
@@ -103,13 +100,11 @@ expanding the counts to one row per case.}
 \item{\code{min}, \code{q25}, \code{q50}, \code{q75}, \code{q90}, \code{max}}{Quantiles. See the note
 below on which estimator is used.}
 \item{\code{prop_zero}}{Proportion of dates on the grid that are exactly zero.}
-\item{\code{prop}}{Proportion of cases in this category (compositional rows),
-or the pooled share that had arrived by delay \code{d} (\code{"completeness"}
-rows).}
-\item{\code{value}}{A single scalar that is not a distribution: a gap, an
-occupancy, an autocorrelation. The \code{"completeness"} and \code{"growth"} rows
-are distributions over event dates, so they populate \code{mean}/\code{sd}/the
-quantiles (and \code{prop}) instead and leave \code{value} empty.}
+\item{\code{prop}}{Proportion of cases in this category (compositional rows).}
+\item{\code{value}}{A single scalar that is not a distribution: a gap or an
+occupancy. The \code{"growth"} rows are distributions over event dates, so
+they populate \code{mean}/\code{sd}/the quantiles instead and leave \code{value}
+empty.}
 \item{\code{date_min}, \code{date_max}}{Date range. Present only when the result
 contains \code{"coverage"} rows.}
 \item{\code{unobserved_cells}}{A \code{"coverage"} row counting the \code{NA}-count rows

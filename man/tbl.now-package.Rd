@@ -44,21 +44,20 @@ own with \code{\link[=nowcast_fit]{nowcast_fit()}} and \code{\link[=nowcast_tidy
 nowcast was any good; \code{\link[=nowcast_ensemble]{nowcast_ensemble()}} combines several.
 }
 
-\code{vignette("tbl.now")} walks through this end to end. The
+\code{vignette("tbl.now")} walks this end to end, from a raw line list to a scored
+nowcast, and marks the point where you choose between a modelling package's
+native fitting API and the common cross-engine one. The
 \href{https://rodrigozepeda.github.io/tbl.now/}{package website} carries longer
-articles on the modelling packages, batch reporting, ensembles and writing
-your own backend.
-
-See \link{tbl_now_workflows} for the explicit boundary between a modelling
-package's native fitting/diagnostic API and the common cross-engine result,
-plotting, backtesting, scoring, and ensembling API.
+articles on the class itself, the modelling packages, batch reporting,
+ensembles and writing your own backend.
 }
 
 \section{Datasets}{
 
-Six surveillance datasets ship with the package for experimenting:
-\link{denguedat}, \link{mpoxdat}, \link{flusight}, \link{covid_colombia}, \link{covid_us} and
-\link{hai_bucaramanga} -- the last deliberately messy, for the diagnostics.
+Seven surveillance datasets ship with the package for experimenting:
+\link{denguedat}, \link{mpoxdat}, \link{flusight}, \link{covid_colombia}, \link{covid_us},
+\link{sari_bh} and \link{hai_bucaramanga} -- the last deliberately messy, for the
+diagnostics.
 }
 
 \seealso{

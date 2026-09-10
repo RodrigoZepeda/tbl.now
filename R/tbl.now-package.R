@@ -30,19 +30,18 @@
 #' 6. **Check.** [score_nowcast()] and [nowcast_backtest()] say whether the
 #'    nowcast was any good; [nowcast_ensemble()] combines several.
 #'
-#' `vignette("tbl.now")` walks through this end to end. The
+#' `vignette("tbl.now")` walks this end to end, from a raw line list to a scored
+#' nowcast, and marks the point where you choose between a modelling package's
+#' native fitting API and the common cross-engine one. The
 #' [package website](https://rodrigozepeda.github.io/tbl.now/) carries longer
-#' articles on the modelling packages, batch reporting, ensembles and writing
-#' your own backend.
-#'
-#' See [tbl_now_workflows] for the explicit boundary between a modelling
-#' package's native fitting/diagnostic API and the common cross-engine result,
-#' plotting, backtesting, scoring, and ensembling API.
+#' articles on the class itself, the modelling packages, batch reporting,
+#' ensembles and writing your own backend.
 #'
 #' @section Datasets:
-#' Six surveillance datasets ship with the package for experimenting:
-#' [denguedat], [mpoxdat], [flusight], [covid_colombia], [covid_us] and
-#' [hai_bucaramanga] -- the last deliberately messy, for the diagnostics.
+#' Seven surveillance datasets ship with the package for experimenting:
+#' [denguedat], [mpoxdat], [flusight], [covid_colombia], [covid_us],
+#' [sari_bh] and [hai_bucaramanga] -- the last deliberately messy, for the
+#' diagnostics.
 #'
 #' @keywords internal
 "_PACKAGE"

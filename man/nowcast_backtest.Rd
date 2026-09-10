@@ -182,8 +182,6 @@ if (requireNamespace("baselinenowcast", quietly = TRUE)) {
 
 }
 \seealso{
-\link{tbl_now_workflows} for choosing native model construction or cross-engine
-comparison;
 \code{\link[=engine]{engine()}} to specify each model being compared, and its \code{min_date} argument,
 which matters here because \code{now} moves between fits;
 \code{\link[=score_nowcast]{score_nowcast()}} for the scores computed at each \code{now};

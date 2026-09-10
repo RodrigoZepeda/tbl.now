@@ -9,10 +9,8 @@
 \alias{prop_revision_type}
 \alias{prop_strata}
 \alias{prop_covariate_levels}
-\alias{case_autocorrelation}
 \alias{date_ranges}
 \alias{triangle_occupancy}
-\alias{reporting_completeness}
 \alias{cumulative_growth}
 \title{Individual blocks of a \code{tbl_now} summary}
 \usage{
@@ -45,25 +43,9 @@ prop_strata(x, strata = NULL)
 
 prop_covariate_levels(x, by_strata = NULL, strata = NULL)
 
-case_autocorrelation(
-  x,
-  lags = 1,
-  axis = c("event", "report", "revision"),
-  by_strata = NULL,
-  strata = NULL
-)
-
 date_ranges(x, by_strata = NULL, strata = NULL)
 
 triangle_occupancy(x, by_strata = NULL, strata = NULL)
-
-reporting_completeness(
-  x,
-  delays = NULL,
-  mature_only = TRUE,
-  by_strata = NULL,
-  strata = NULL
-)
 
 cumulative_growth(x, k = 7, by_strata = NULL, strata = NULL)
 }
@@ -84,15 +66,6 @@ delay), \code{"event_to_revision"} (the same span measured to the
 revision, so the two are comparable) or \code{"report_to_revision"}
 (the laboratory's turnaround, the \code{.revision_delay} column).}
 
-\item{lags}{Integer vector of lags.}
-
-\item{delays}{Integer vector of delays to report completeness at. Defaults
-to every observed delay.}
-
-\item{mature_only}{Logical. Drop event dates too recent to have been fully
-reported. The cutoff is \code{now} minus the 95th percentile of the delay
-distribution -- the same rule \code{\link[=autoplot.tbl_now]{autoplot.tbl_now()}} uses.}
-
 \item{k}{Number of delays for the growth ratios.}
 }
 \value{
@@ -110,9 +83,6 @@ filtering it away.
 
 Every one of these returns the same schema as \code{summary()} itself, so they can
 be stacked with \code{\link[dplyr:bind_rows]{dplyr::bind_rows()}}, compared across datasets, or used alone.
-Two of them -- \code{case_autocorrelation()} and \code{reporting_completeness()} -- were
-written by an AI and have not been checked by a human, so they are \strong{not}
-part of \code{summary()} and warn on every call:
 \itemize{
 \item \code{cases_per_date()} -- case counts per date on one axis.
 \item \code{delay_summary()} -- the case-weighted delay distribution.
@@ -122,15 +92,9 @@ part of \code{summary()} and warn on every call:
 \item \code{prop_strata()} -- proportion of cases per stratum.
 \item \code{prop_covariate_levels()} -- proportion of cases per level of each
 categorical covariate.
-\item \code{case_autocorrelation()} -- lagged autocorrelation of the case series.
-\strong{Unreviewed:} not part of \code{summary()}, and warns on every call.
 \item \code{date_ranges()} -- totals, date ranges and \code{now}.
 \item \code{triangle_occupancy()} -- how full the reporting triangle is, and how
 stale the object is.
-\item \code{reporting_completeness()} -- share of each event date's eventual total
-that had arrived by delay \code{d}, as a distribution over event dates
-(\code{mean}, \code{sd}, the quantiles) plus the pooled share in \code{prop}.
-\strong{Unreviewed:} not part of \code{summary()}, and warns on every call.
 \item \code{cumulative_growth()} -- ratio of one delay's running total to the
 previous one's.
 }
@@ -148,11 +112,8 @@ ndata <- tbl_now(denguedat,
 cases_per_date(ndata, axis = "event")
 delay_summary(ndata)
 
-# How sparse the series is, and how strongly one week predicts the next.
-# `case_autocorrelation` warns because it is unreviewed; the warning is
-# deliberately not suppressed here, since it belongs with the number.
+# How sparse the series is.
 zero_run_summary(ndata, axis = "event")
-case_autocorrelation(ndata, lags = 1)
 
 # What the data is made of, and how far it reaches.
 prop_strata(ndata)
@@ -160,13 +121,8 @@ prop_censored(ndata)
 date_ranges(ndata)
 triangle_occupancy(ndata)
 
-# What share of a week's eventual total had arrived by delay d, and how fast
-# the total is still growing. Both are distributions over event dates, so
-# they fill `mean`/`q50` -- and completeness also `prop`, the pooled share --
-# rather than the scalar `value` column. `reporting_completeness` is
-# unreviewed and warns; see above.
-reporting_completeness(ndata, delays = 0:3) |>
-  dplyr::select(quantity, stratum, n, mean, q50, prop)
+# How fast the running total is still growing. This is a distribution over
+# event dates, so it fills `mean`/`q50` rather than the scalar `value`.
 cumulative_growth(ndata, k = 3)
 
 # Every block shares one schema, so they stack.

@@ -337,7 +337,7 @@ denguedat <- denguedat |>
 
 #Which is just a tibble with extra attributes
 denguedat
-#> # A tibble:  1,652 × 6
+#> # A tibble:  1,652 x 6
 #> # Data type: "linelist"
 #> # Frequency: Event: `weeks` | Report: `weeks`
 #>   onset_week   report_week   gender   .event_num .report_num .delay
@@ -348,11 +348,11 @@ denguedat
 #> 3 2005-01-03   2005-01-10    Female            0           1      1
 #> 4 2005-01-03   2005-01-10    Male              0           1      1
 #> 5 2005-01-03   2005-01-10    Male              0           1      1
-#> # ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+#> # ----------------------------------------------------------------------------------------------------------------------------------------------------------------
 #> # Now: 2005-09-26 | Event date: "onset_week" | Report date: "report_week"
 #> # Strata: "gender"
-#> # ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-#> # ℹ 1,647 more rows
+#> # ----------------------------------------------------------------------------------------------------------------------------------------------------------------
+#> # i 1,647 more rows
 ```
 
 Once transformed, it can help you diagnose data problems (see [this
@@ -419,8 +419,8 @@ version from [R universe](https://rodrigozepeda.r-universe.dev/tbl.now):
 install.packages("tbl.now", repos = c("https://rodrigozepeda.r-universe.dev", getOption("repos")))
 ```
 
-and checkout our articles starting with the
-[Introduction](https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.html):
+and checkout our articles starting with the [Get started
+guide](https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.html):
 
 <!-- Single source for "Learning more"; pulled in as a knitr child by README.Rmd and every article. Edit on `learning.more.Rmd`.-->
 
@@ -434,25 +434,30 @@ Github](https://github.com/RodrigoZepeda/tbl.now/issues/new).
 
 ## Learning more
 
-- End-to-end tutorial on real life surveillance data. Takes you from
-  cleaning to diagnosing errors in the data to nowcasting:
+- A **tutorial** on real life surveillance data. Takes you from cleaning
+  to diagnosing errors in the data to nowcasting:
   <https://rodrigozepeda.github.io/tbl.now/articles/example.html>
-- The same tutorial with a **revision process** — the optional third
-  date, where a reported case is later confirmed, retracted or left
-  pending:
+- The **second part of the tutorial** with a revision process: the
+  optional third date, where a reported case is later confirmed,
+  retracted or left pending:
   <https://rodrigozepeda.github.io/tbl.now/articles/example_revisions.html>
-- Introduction vignette:
-  <https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.html> for
-  the full anatomy of a `tbl_now`, data types, and temporal effects.
-- Tutorial on diagnosing your dataset — what is in it, what is
-  structurally wrong with it, and detecting batches and other
-  reporting-delay artifacts:
+- The **Get started vignette**: the whole workflow, from a raw line list
+  to a scored nowcast, in five minutes:
+  <https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.html>.
+- **More on the `tbl_now` object**: every attribute, the three data
+  types, the revision process, temporal effects and the `dplyr` methods:
+  <https://rodrigozepeda.github.io/tbl.now/articles/more-on-tbl-now.html>
+- More thoughts on **diagnosing your dataset** with `tbl.now`
   <https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html>
-- Using different nowcasting engines for the same dataset:
+- Detecting reporting **batches** with `tbl.now`
+  <https://rodrigozepeda.github.io/tbl.now/articles/batches.html>
+- How to use different nowcasting engines from `tbl.now`: here you can
+  learn **how it connects to the other nowcasting packages**.
   <https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html>
-- Ensemble nowcasting across different engines
+- How to **nowcast with multiple engines, backtest and ensemble**
+  nowcasts.
   <https://rodrigozepeda.github.io/tbl.now/articles/ensemble-nowcasting.html>
-- Adding your own nowcasting model
+- Adding your own **custom nowcasting model**
   <https://rodrigozepeda.github.io/tbl.now/articles/custom-nowcast-models.html>
 - Package reference:
   <https://rodrigozepeda.github.io/tbl.now/reference/>

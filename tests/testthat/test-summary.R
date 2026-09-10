@@ -100,9 +100,8 @@ test_that("component functions return the same schema as summary()", {
     cases_per_date(fixture_plain()),
     delay_summary(fixture_plain()),
     zero_run_summary(fixture_plain()),
-    suppressWarnings(case_autocorrelation(fixture_plain())),
     triangle_occupancy(fixture_plain()),
-    suppressWarnings(reporting_completeness(fixture_plain()))
+    cumulative_growth(fixture_plain())
   )) {
     expect_true(all(names(result) %in% schema))
     expect_identical(names(result), intersect(schema, names(result)))
@@ -349,54 +348,6 @@ test_that("a series with no zeros reports no runs", {
   expect_equal(row$mean, NA_real_)
 })
 
-# Autocorrelation --------------------------------------------------------------
-
-test_that("lag-1 autocorrelation is the lagged-pair correlation", {
-  skip_on_cran()
-  # Event grid 3, 3, 0, 0, 4.
-  #   head = 3, 3, 0, 0 (mean 1.5)   tail = 3, 0, 0, 4 (mean 1.75)
-  #   sum of products = 1.875 - 2.625 + 2.625 - 3.375 = -1.5
-  #   cor = (-1.5 / 3) / (sqrt(9 / 3) * sqrt(12.75 / 3)) = -0.5 / sqrt(12.75)
-  row <- pick(
-    suppressWarnings(case_autocorrelation(fixture_plain())),
-    "autocorrelation", "per_event_date lag 1"
-  )
-
-  expect_equal(row$n, 4L)
-  expect_equal(row$value, -0.5 / sqrt(12.75))
-  expect_equal(row$value, stats::cor(c(3, 3, 0, 0), c(3, 0, 0, 4)))
-})
-
-test_that("autocorrelation accepts several lags and axes", {
-  skip_on_cran()
-  result <- suppressWarnings(
-    case_autocorrelation(fixture_plain(), lags = c(1, 2), axis = "report")
-  )
-
-  expect_equal(nrow(result), 2)
-  # Report grid 2, 0, 1, 3, 4: lag 2 pairs (2, 0, 1) with (1, 3, 4).
-  lag_two <- pick(result, "autocorrelation", "per_report_date lag 2")
-  expect_equal(lag_two$n, 3L)
-  expect_equal(lag_two$value, stats::cor(c(2, 0, 1), c(1, 3, 4)))
-})
-
-test_that("a constant series has no autocorrelation to report", {
-  flat <- tbl_now(
-    data.frame(
-      onset  = as.Date(c("2024-01-01", "2024-01-02", "2024-01-03")),
-      report = as.Date(c("2024-01-01", "2024-01-02", "2024-01-03")),
-      n      = c(2L, 2L, 2L)
-    ),
-    event_date = "onset", report_date = "report", case_count = "n",
-    data_type = "count-incidence", now = as.Date("2024-01-03"), verbose = FALSE
-  )
-  expect_equal(
-    pick(suppressWarnings(case_autocorrelation(flat)),
-         "autocorrelation", "per_event_date lag 1")$value,
-    NA_real_
-  )
-})
-
 # Composition ------------------------------------------------------------------
 
 test_that("prop_strata() splits the cases between the strata", {
@@ -575,67 +526,6 @@ test_that("the now-gap notices a stale object", {
   expect_equal(
     pick(triangle_occupancy(stale), "coverage", "now_gap_report")$value, 7
   )
-})
-
-# Completeness -----------------------------------------------------------------
-
-test_that("reporting completeness is the share arrived by each delay", {
-  skip_on_cran()
-  # mature_only trims to now minus the 95th delay percentile (2 days), so only
-  # the event dates 01-01 and 01-02 are used. Their eventual totals are 3 and 3.
-  #   delay <= 0: 2/3 and 0/3   -> mean 1/3, sd sqrt(2/9), pooled 2/6
-  #   delay <= 2: 3/3 and 3/3   -> mean 1, pooled 1
-  result <- suppressWarnings(reporting_completeness(fixture_plain()))
-
-  same_day <- pick(result, "completeness", "delay <= 0")
-  expect_equal(same_day$n, 2L)
-  expect_equal(same_day$mean, 1 / 3)
-  expect_equal(same_day$sd, sqrt(2 / 9))
-  expect_equal(same_day$prop, 2 / 6)
-
-  complete <- pick(result, "completeness", "delay <= 2")
-  expect_equal(complete$mean, 1)
-  expect_equal(complete$sd, 0)
-  expect_equal(complete$prop, 1)
-})
-
-test_that("mature_only = FALSE keeps the immature event dates", {
-  skip_on_cran()
-  # 2024-01-05 is one day old and fully reported, so adding it lifts the
-  # same-day share to (2/3 + 0/3 + 4/4) / 3 = 5/9, pooled 6/10.
-  result <- suppressWarnings(
-    reporting_completeness(fixture_plain(), mature_only = FALSE)
-  )
-  same_day <- pick(result, "completeness", "delay <= 0")
-
-  expect_equal(same_day$n, 3L)
-  expect_equal(same_day$mean, 5 / 9)
-  expect_equal(same_day$prop, 0.6)
-})
-
-test_that("completeness is a distribution, so `value` stays empty", {
-  skip_on_cran()
-  # The share arrived by delay d varies from one event date to the next, so it
-  # is reported like every other distribution in the schema: mean/sd/quantiles
-  # across the event dates, plus the pooled share in `prop`. `value` is the
-  # column for the rows that really are a single scalar -- an autocorrelation,
-  # a gap, an occupancy -- and completeness must not fill it, because that
-  # would be a second estimator of a number `prop` already carries. The
-  # documented examples select `mean`/`q50`/`prop` for exactly this reason.
-  result <- suppressWarnings(reporting_completeness(fixture_plain()))
-  expect_true("value" %in% names(result))
-  expect_true(all(is.na(result$value)))
-  expect_false(anyNA(result$mean))
-  expect_false(anyNA(result$q50))
-  expect_false(anyNA(result$prop))
-
-})
-
-test_that("reporting_completeness() honours an explicit delay set", {
-  result <- suppressWarnings(
-    reporting_completeness(fixture_plain(), delays = c(0, 2))
-  )
-  expect_equal(result$quantity, c("delay <= 0", "delay <= 2"))
 })
 
 # Growth -----------------------------------------------------------------------
@@ -819,14 +709,6 @@ test_that("by_strata = TRUE without strata is an error, not a silent pooling", {
   expect_error(cases_per_date(fixture_plain(), by_strata = TRUE), "no strata")
 })
 
-test_that("bad lags are rejected", {
-  skip_on_cran()
-  suppressWarnings({
-    expect_error(case_autocorrelation(fixture_plain(), lags = 0), "positive whole")
-    expect_error(case_autocorrelation(fixture_plain(), lags = -1), "positive whole")
-  })
-})
-
 # Printing ---------------------------------------------------------------------
 
 test_that("a summary prints one block per component, on stdout", {
@@ -848,7 +730,7 @@ test_that("a block drops the columns it does not populate", {
   # The schema is wide because it holds every block at once; no block fills more
   # than a handful, and a table that is mostly `NA` is unreadable for a reason
   # that has nothing to do with the data.
-  printed <- capture.output(print(suppressWarnings(case_autocorrelation(fixture_plain()))))
+  printed <- capture.output(print(triangle_occupancy(fixture_plain())))
 
   expect_true(any(grepl("value", printed)))
   expect_false(any(grepl("prop_zero", printed)))
@@ -870,22 +752,4 @@ test_that("a summary is still a tibble", {
   expect_s3_class(result, "tbl_df")
   expect_s3_class(dplyr::filter(result, component == "delay"), "tbl_now_summary_table")
   expect_false(inherits(tibble::as_tibble(result), "tbl_now_summary_table"))
-})
-
-# Unreviewed components --------------------------------------------------------
-
-test_that("the AI-written components warn, and are not in summary()", {
-  skip_on_cran()
-  # They were written by an LLM and have not been checked by a human, so they
-  # cannot sit inside the report a user reads by default.
-  components <- unique(summary(fixture_plain())$component)
-  expect_false("autocorrelation" %in% components)
-  expect_false("completeness" %in% components)
-
-  expect_warning(case_autocorrelation(fixture_plain()), "written by\n?\\s*an AI")
-  expect_warning(reporting_completeness(fixture_plain()), "reviewed by a human")
-
-  # Deliberately not throttled: every call says it.
-  suppressWarnings(case_autocorrelation(fixture_plain()))
-  expect_warning(case_autocorrelation(fixture_plain()), "reviewed by a human")
 })

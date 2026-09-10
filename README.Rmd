@@ -188,7 +188,7 @@ If this seems as exciting to you as it is to us, install the development version
 install.packages("tbl.now", repos = c("https://rodrigozepeda.r-universe.dev", getOption("repos")))
 ```
 
-and checkout our articles starting with the [Introduction](https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.html):
+and checkout our articles starting with the [Get started guide](https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.html):
 
 ```{r learning-more, echo=FALSE, results="asis"}
 cat(

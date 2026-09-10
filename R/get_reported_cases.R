@@ -62,9 +62,7 @@
 #' @seealso
 #' [get_latest_revised_cases()][revised_cases] and friends for the same idea
 #' on the revision process; [to_count()] for the underlying data shapes;
-#' [score_nowcast()], which uses the latest counts as truth;
-#' [reporting_completeness()][nowcast_summary_components] for the same
-#' information as a proportion.
+#' [score_nowcast()], which uses the latest counts as truth.
 #'
 #' @examples
 #' data(denguedat)

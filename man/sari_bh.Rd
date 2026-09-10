@@ -33,6 +33,6 @@ varying from 2019-12-29 to 2022-03-27.
 From the \code{nowcaster} package.
 Bastos, S L, Economou, Theodoros, Gomes, FC M, Villela, AM D, Coelho, C F, Cruz, G O, Stoner, Oliver, Bailey,
 Trevor, Codeço, T C (2019). “A Modelling approach for correcting reporting delays in disease surveillance
-data.” \emph{Statistics in medicine}, \emph{38}(22), 4363-4377. doi:10.1002/sim.8303 \url{https://doi.org/10.1002/sim.8303}.
+data.” \emph{Statistics in medicine}, \emph{38}(22), 4363-4377. \doi{10.1002/sim.8303}
 }
 \keyword{covid}

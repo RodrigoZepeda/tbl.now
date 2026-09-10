@@ -1,4 +1,47 @@
-# tbl.now (development version)
+# tbl.now 1.0.0
+
+## Breaking: `case_autocorrelation()` and `reporting_completeness()` are gone
+
+Both were written by an AI and never reviewed by a human. They were taken out
+of `summary()` earlier for that reason and kept exported behind a warning on
+every call; shipping an unverified statistic in a CRAN release is a different
+proposition, so they are now removed from the package entirely and parked,
+tests and all, in `devel/unreviewed_summaries.R`. There is no deprecation shim.
+
+The `autocorrelation` and `completeness` components no longer exist anywhere,
+and `nowcast_summary_components` documents the ten remaining blocks. Nothing
+else in the family changes.
+
+## The Get Started vignette is now a five-minute tour
+
+`vignette("tbl.now")` used to be a 1,500-line reference that opened with the
+tidyverse and ended with format converters. It is now a **five-minute walk of
+the whole workflow** -- clean, `tbl_now()`, `diagnose()`, `summary()`,
+`autoplot()`, and then the fork between `tbl_now_to_*()` and
+`run_nowcast()`/`nowcast_backtest()` -- drawn as a diagram and run on the same
+dengue data as the README, with every stop linking to the article that covers
+it properly.
+
+Everything that was cut moved, unchanged, to a new article: **More on the
+`tbl_now` object**
+(<https://rodrigozepeda.github.io/tbl.now/articles/more-on-tbl-now.html>). It
+keeps the attribute reference (now complete: `revision_date`, `revision_type`
+and `revision_units` were missing), the three data types, censoring, temporal
+effects, the revision process, the `dplyr` methods and the utilities. The
+plotting and diagnostics sections were dropped in favour of the articles that
+already cover them.
+
+The website's articles are now grouped into **Tutorials**, **Diagnosing and
+visualizing** and **Miscellaneous** rather than listed flat.
+
+`?tbl_now_workflows` is gone; the vignette says the same thing with an example
+you can run.
+
+## Smaller installation
+
+`LazyDataCompression: xz` plus the shorter vignette take the installed package
+from 5.1 Mb to 3.4 Mb, comfortably back under CRAN's threshold. The datasets
+themselves are unchanged.
 
 ## Upstream examples now guard converter and fit equivalence
 
