@@ -167,7 +167,7 @@ summary.tbl_now <- function(object, ..., by_strata = NULL, strata = NULL,
 
 #' @title Individual blocks of a `tbl_now` summary
 #'
-#' @description `r lifecycle::badge("experimental")`
+#' @description `r lifecycle::badge("stable")`
 #'
 #' [summary()][tbl_now_summary] answers a dozen questions about a `tbl_now` at
 #' once. When you only want one of them -- for a report, a dashboard, or a check
@@ -1447,7 +1447,7 @@ cumulative_growth <- function(x, k = 7, by_strata = NULL, strata = NULL) {
 
 #' Print a `tbl_now` summary
 #'
-#' @description `r lifecycle::badge("experimental")`
+#' @description `r lifecycle::badge("stable")`
 #'
 #' Prints the table [summary()][tbl_now_summary] returned one **component** at a
 #' time, dropping the columns that component does not populate. The full schema

@@ -45,6 +45,9 @@
                             title = NULL, palette = .tbl_now_palette()) {
   if (isTRUE(plotly)) {
     .require_plotly()
+    # A plotly subplot is a stack, not a grid, so the spacers that hold a
+    # patchwork's columns in place have nothing to hold and nothing to draw.
+    panels <- Filter(function(p) !inherits(p, "spacer"), panels)
     widgets <- lapply(panels, function(p) suppressWarnings(plotly::ggplotly(p)))
     return(plotly::subplot(widgets, nrows = length(widgets),
                            titleX = TRUE, titleY = TRUE, margin = 0.04))

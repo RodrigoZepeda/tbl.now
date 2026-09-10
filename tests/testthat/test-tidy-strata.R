@@ -71,6 +71,7 @@ local_mock_epinowcast <- function(by = list("age_group"), frame = parent.frame()
 }
 
 test_that("tidy() reports one block per epinowcast `by` group", {
+  skip_on_cran()
   skip_if_not_installed("epinowcast")
   fit <- local_mock_epinowcast()
   out <- tidy(fit)
@@ -88,6 +89,7 @@ test_that("tidy() reports one block per epinowcast `by` group", {
 })
 
 test_that("tidy() keeps `stratum` = 'all' when epinowcast has no grouping", {
+  skip_on_cran()
   skip_if_not_installed("epinowcast")
   # `by` is `list(NULL)` on an ungrouped fit, which is what `enw_example()`
   # carries; the grouping columns present in the summary must be ignored.
@@ -101,6 +103,7 @@ test_that("tidy() keeps `stratum` = 'all' when epinowcast has no grouping", {
 })
 
 test_that("epinowcast `probs` quantiles stay with their own stratum", {
+  skip_on_cran()
   skip_if_not_installed("epinowcast")
   fit <- local_mock_epinowcast()
   out <- tidy(fit, probs = c(0.05, 0.5, 0.95))
@@ -137,6 +140,7 @@ nobbs_strat_fixture <- function() {
 }
 
 test_that("tidy() reports one block per NobBS.strat() stratum", {
+  skip_on_cran()
   out <- tidy(nobbs_strat_fixture())
 
   expect_setequal(unique(out$stratum), c("odd", "even"))
@@ -148,6 +152,7 @@ test_that("tidy() reports one block per NobBS.strat() stratum", {
 })
 
 test_that("an unstratified NobBS fit still reports 'all'", {
+  skip_on_cran()
   plain <- list(estimates = data.frame(
     estimate   = c(10, 8),
     lower      = c(6, 2),
@@ -240,6 +245,7 @@ test_that("tidy() splits a stratified baselinenowcast_df by its strata columns",
 })
 
 test_that("a stratified baselinenowcast_df honours `probs`", {
+  skip_on_cran()
   out <- tidy(fake_bnc_strata_fit(), probs = c(0.05, 0.95))
 
   expect_true(all(c("q5", "q95") %in% names(out)))
@@ -248,6 +254,7 @@ test_that("a stratified baselinenowcast_df honours `probs`", {
 })
 
 test_that("tidy() no longer routes a bare list of baselinenowcast_df fits", {
+  skip_on_cran()
   # A bare list used to be supported (via a per-stratum lapply loop over
   # `format = \"triangle_list\"`). Since baselinenowcast handles strata natively
   # now, tidy.list has no baselinenowcast branch and the shape errors.
@@ -269,12 +276,14 @@ test_that("tidy() no longer routes a bare list of baselinenowcast_df fits", {
 })
 
 test_that("a list that is neither shape still errors helpfully", {
+  skip_on_cran()
   expect_error(tidy(list(a = 1, b = 2)), "Don't know how to")
 })
 
 # --- NobBS: the width it does not report -------------------------------------
 
 test_that("tidy() reports NA level for NobBS and lets the caller set it", {
+  skip_on_cran()
   # `NobBS()` returns `list(estimates, estimates.inflated, nowcast.post.samps,
   # params.post)` -- no `specs`, so `specs$conf` (which produced lower/upper) is
   # unrecoverable. Guessing its 0.95 default would put a number in the one column

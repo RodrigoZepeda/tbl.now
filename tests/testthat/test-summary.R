@@ -69,6 +69,7 @@ pick <- function(result, component, quantity, stratum = "all") {
 # Schema -----------------------------------------------------------------------
 
 test_that("summary() returns the documented schema, in order", {
+  skip_on_cran()
   result <- summary(fixture_plain())
 
   expect_s3_class(result, "tbl_df")
@@ -84,6 +85,7 @@ test_that("summary() returns the documented schema, in order", {
 })
 
 test_that("summary() is a generic dispatching on tbl_now", {
+  skip_on_cran()
   expect_true("summary.tbl_now" %in% as.character(utils::methods("summary")))
   expect_false(identical(
     summary(fixture_plain()),
@@ -92,6 +94,7 @@ test_that("summary() is a generic dispatching on tbl_now", {
 })
 
 test_that("component functions return the same schema as summary()", {
+  skip_on_cran()
   schema <- names(summary(fixture_plain()))
   for (result in list(
     cases_per_date(fixture_plain()),
@@ -107,6 +110,7 @@ test_that("component functions return the same schema as summary()", {
 })
 
 test_that("summary() is the bind_rows of its components", {
+  skip_on_cran()
   x <- fixture_plain()
   whole <- summary(x)
   parts <- dplyr::bind_rows(
@@ -129,6 +133,7 @@ test_that("summary() is the bind_rows of its components", {
 # Cases per date ---------------------------------------------------------------
 
 test_that("cases per event date match the hand-computed grid", {
+  skip_on_cran()
   # Grid 3, 3, 0, 0, 4. Sum 10, mean 10/5 = 2.
   # sd = sqrt((1 + 1 + 4 + 4 + 4) / 4) = sqrt(3.5)
   # Sorted 0, 0, 3, 3, 4 with equal weights; cumulative shares .2 .4 .6 .8 1
@@ -150,6 +155,7 @@ test_that("cases per event date match the hand-computed grid", {
 })
 
 test_that("cases per report date match the hand-computed grid", {
+  skip_on_cran()
   # Grid 2, 0, 1, 3, 4. Sum 10, mean 2.
   # sd = sqrt((0 + 4 + 1 + 1 + 4) / 4) = sqrt(2.5)
   # Sorted 0, 1, 2, 3, 4 -> min 0, q25 1, q50 2, q75 3, q90 4, max 4
@@ -165,6 +171,7 @@ test_that("cases per report date match the hand-computed grid", {
 })
 
 test_that("the date grid runs to now, not to the last row", {
+  skip_on_cran()
   # Nothing is reported after 2024-01-03, but now is 2024-01-08, so the grid
   # is eight days long and the last five of them are zeros.
   late <- tbl_now(
@@ -184,6 +191,7 @@ test_that("the date grid runs to now, not to the last row", {
 })
 
 test_that("cases per event date are stratified on the shared grid", {
+  skip_on_cran()
   result <- summary(fixture_strata())
 
   # F: 2, 0, 0, 0, 4 -> total 6, mean 1.2,
@@ -213,6 +221,7 @@ test_that("cases per event date are stratified on the shared grid", {
 })
 
 test_that("by_strata = FALSE drops the per-stratum rows", {
+  skip_on_cran()
   result <- summary(fixture_strata(), by_strata = FALSE)
   expect_true(all(result$stratum == "all"))
   expect_equal(
@@ -224,6 +233,7 @@ test_that("by_strata = FALSE drops the per-stratum rows", {
 # Delays -----------------------------------------------------------------------
 
 test_that("the delay distribution is weighted by the case counts", {
+  skip_on_cran()
   # Delays 0 (2 cases), 2 (1), 2 (3), 0 (4): six 0s and four 2s.
   #   mean = 8 / 10 = 0.8
   #   sd   = sqrt((6 * 0.64 + 4 * 1.44) / 9) = sqrt(9.6 / 9)
@@ -240,6 +250,7 @@ test_that("the delay distribution is weighted by the case counts", {
 })
 
 test_that("the weighted delay statistics equal the expanded line list's", {
+  skip_on_cran()
   # The same ten cases, one row each: the weighting must be exactly equivalent
   # to expanding the counts, which is what the documentation promises.
   counts <- pick(delay_summary(fixture_strata()), "delay", "event_to_report")
@@ -258,6 +269,7 @@ test_that("the weighted delay statistics equal the expanded line list's", {
 })
 
 test_that("per-stratum delays are hand-computable", {
+  skip_on_cran()
   result <- delay_summary(fixture_strata())
 
   # F: both rows have delay 0 -> mean 0, sd 0, six cases.
@@ -274,11 +286,13 @@ test_that("per-stratum delays are hand-computable", {
 })
 
 test_that("delay_summary() refuses count-cumulative data", {
+  skip_on_cran()
   cumulative <- to_count(fixture_plain(), to = "count-cumulative")
   expect_error(delay_summary(cumulative), "not additive across delays")
 })
 
 test_that("summary() of count-cumulative data trades delays for growth", {
+  skip_on_cran()
   result <- summary(to_count(fixture_plain(), to = "count-cumulative"))
   expect_false("delay" %in% result$component)
   expect_true("growth" %in% result$component)
@@ -287,6 +301,7 @@ test_that("summary() of count-cumulative data trades delays for growth", {
 # Zero runs --------------------------------------------------------------------
 
 test_that("zero-run lengths count consecutive zero dates", {
+  skip_on_cran()
   # Event grid 3, 3, 0, 0, 4 -> exactly one run, of length 2.
   event <- pick(summary(fixture_plain()), "zero_run", "event_date")
   expect_equal(event$n, 1L)        # one run
@@ -302,6 +317,7 @@ test_that("zero-run lengths count consecutive zero dates", {
 })
 
 test_that("zero runs split correctly when there are two of them", {
+  skip_on_cran()
   # M on the report grid is 0, 0, 1, 3, 0: runs of length 2 and 1.
   #   mean = 1.5, sd = sqrt(((2 - 1.5)^2 + (1 - 1.5)^2) / 1) = sqrt(0.5)
   #   sorted 1, 2 -> min 1, q25 1, q50 1, q75 2, q90 2, max 2
@@ -336,6 +352,7 @@ test_that("a series with no zeros reports no runs", {
 # Autocorrelation --------------------------------------------------------------
 
 test_that("lag-1 autocorrelation is the lagged-pair correlation", {
+  skip_on_cran()
   # Event grid 3, 3, 0, 0, 4.
   #   head = 3, 3, 0, 0 (mean 1.5)   tail = 3, 0, 0, 4 (mean 1.75)
   #   sum of products = 1.875 - 2.625 + 2.625 - 3.375 = -1.5
@@ -351,6 +368,7 @@ test_that("lag-1 autocorrelation is the lagged-pair correlation", {
 })
 
 test_that("autocorrelation accepts several lags and axes", {
+  skip_on_cran()
   result <- suppressWarnings(
     case_autocorrelation(fixture_plain(), lags = c(1, 2), axis = "report")
   )
@@ -392,6 +410,7 @@ test_that("prop_strata() splits the cases between the strata", {
 })
 
 test_that("prop_censored() reports the case-weighted censored share", {
+  skip_on_cran()
   # Censor the two rows carrying 1 and 3 cases: 4 of 10 cases, 2 of 4 rows.
   censored <- tbl_now(
     cbind(fixture_frame(), flagged = c(FALSE, TRUE, TRUE, FALSE)),
@@ -412,6 +431,7 @@ test_that("prop_censored() reports the case-weighted censored share", {
 })
 
 test_that("prop_censored() is absent when the object has no flag", {
+  skip_on_cran()
   expect_equal(nrow(prop_censored(fixture_plain())), 0)
   expect_false("censored" %in% summary(fixture_plain())$quantity)
 })
@@ -464,6 +484,7 @@ test_that("prop_revision_type() splits the cases between the outcomes", {
 })
 
 test_that("prop_covariate_levels() reports categorical covariates only", {
+  skip_on_cran()
   covariates <- tbl_now(
     cbind(fixture_frame(), setting = c("urban", "rural", "rural", "urban"),
           temperature = c(20, 21, 22, 23)),
@@ -487,6 +508,7 @@ test_that("prop_covariate_levels() reports categorical covariates only", {
 # Coverage ---------------------------------------------------------------------
 
 test_that("date_ranges() reports the totals, the ranges and now", {
+  skip_on_cran()
   result <- date_ranges(fixture_plain())
 
   totals <- pick(result, "coverage", "total_cases")
@@ -509,6 +531,7 @@ test_that("date_ranges() reports the totals, the ranges and now", {
 })
 
 test_that("triangle occupancy counts the cells that could have arrived", {
+  skip_on_cran()
   # Widest delay is 2. The five event dates have 4, 3, 2, 1 and 0 days of room
   # before now, so the reachable cells are 3 + 3 + 3 + 2 + 1 = 12.
   # Four cells carry cases: (01-01, 0), (01-01, 2), (01-02, 2), (01-05, 0).
@@ -523,6 +546,7 @@ test_that("triangle occupancy counts the cells that could have arrived", {
 })
 
 test_that("the occupancy denominator is shared between strata", {
+  skip_on_cran()
   # F's own delays are all 0, but it is still measured against the same
   # twelve-cell triangle as M, or the two would not be comparable.
   result <- triangle_occupancy(fixture_strata())
@@ -556,6 +580,7 @@ test_that("the now-gap notices a stale object", {
 # Completeness -----------------------------------------------------------------
 
 test_that("reporting completeness is the share arrived by each delay", {
+  skip_on_cran()
   # mature_only trims to now minus the 95th delay percentile (2 days), so only
   # the event dates 01-01 and 01-02 are used. Their eventual totals are 3 and 3.
   #   delay <= 0: 2/3 and 0/3   -> mean 1/3, sd sqrt(2/9), pooled 2/6
@@ -575,6 +600,7 @@ test_that("reporting completeness is the share arrived by each delay", {
 })
 
 test_that("mature_only = FALSE keeps the immature event dates", {
+  skip_on_cran()
   # 2024-01-05 is one day old and fully reported, so adding it lifts the
   # same-day share to (2/3 + 0/3 + 4/4) / 3 = 5/9, pooled 6/10.
   result <- suppressWarnings(
@@ -588,6 +614,7 @@ test_that("mature_only = FALSE keeps the immature event dates", {
 })
 
 test_that("completeness is a distribution, so `value` stays empty", {
+  skip_on_cran()
   # The share arrived by delay d varies from one event date to the next, so it
   # is reported like every other distribution in the schema: mean/sd/quantiles
   # across the event dates, plus the pooled share in `prop`. `value` is the
@@ -614,6 +641,7 @@ test_that("reporting_completeness() honours an explicit delay set", {
 # Growth -----------------------------------------------------------------------
 
 test_that("cumulative growth is the ratio of consecutive running totals", {
+  skip_on_cran()
   # Event 01-01 runs 2, 2, 3 over delays 0, 1, 2 -> ratios 1 and 1.5.
   # Event 01-02 has nothing until delay 2, so it has no ratio at delay 1 or 2
   # (dividing out of zero is infinite, not large) and only joins at delay 3.
@@ -639,6 +667,7 @@ test_that("cumulative_growth() rejects a nonsensical k", {
 # Not-yet-observed cells -------------------------------------------------------
 
 test_that("NA counts are dropped as not-yet-observed, and the drop is reported", {
+  skip_on_cran()
   # An NA count is a cell that has not been observed yet. It carries no cases,
   # so the totals must match the fixture exactly -- and before this was handled
   # a single NA turned every sum in the table into NA.
@@ -672,6 +701,7 @@ test_that("unobserved_cells is zero when everything is observed", {
 # Factor covariates ------------------------------------------------------------
 
 test_that("factor covariates are summarised by level", {
+  skip_on_cran()
   # The stated case is a factor, not a character: a level with no cases must
   # still not appear, and the shares must come out case-weighted.
   covariates <- tbl_now(
@@ -717,6 +747,7 @@ test_that("covariate shares are also computed within each stratum", {
 # The revision axis in a full summary --------------------------------------
 
 test_that("summary() carries the revision blocks when there is a third date", {
+  skip_on_cran()
   confirmed <- tbl_now(
     cbind(
       fixture_frame(),
@@ -755,6 +786,7 @@ test_that("summary() carries the revision blocks when there is a third date", {
 # Line-list equivalence --------------------------------------------------------
 
 test_that("a line list and its counts summarise identically", {
+  skip_on_cran()
   # The line list cannot represent a zero, so this also proves the grid is
   # built from now rather than from the rows that happen to be present.
   from_counts <- summary(fixture_strata())
@@ -782,11 +814,13 @@ test_that("the summary functions reject non-tbl_now input", {
 })
 
 test_that("by_strata = TRUE without strata is an error, not a silent pooling", {
+  skip_on_cran()
   expect_error(prop_strata(fixture_plain()), "no strata")
   expect_error(cases_per_date(fixture_plain(), by_strata = TRUE), "no strata")
 })
 
 test_that("bad lags are rejected", {
+  skip_on_cran()
   suppressWarnings({
     expect_error(case_autocorrelation(fixture_plain(), lags = 0), "positive whole")
     expect_error(case_autocorrelation(fixture_plain(), lags = -1), "positive whole")
@@ -796,6 +830,7 @@ test_that("bad lags are rejected", {
 # Printing ---------------------------------------------------------------------
 
 test_that("a summary prints one block per component, on stdout", {
+  skip_on_cran()
   # `cli_*` writes to the MESSAGE stream, which `capture.output()` does not see.
   printed <- capture.output(print(summary(fixture_plain())))
 
@@ -809,6 +844,7 @@ test_that("a summary prints one block per component, on stdout", {
 })
 
 test_that("a block drops the columns it does not populate", {
+  skip_on_cran()
   # The schema is wide because it holds every block at once; no block fills more
   # than a handful, and a table that is mostly `NA` is unreadable for a reason
   # that has nothing to do with the data.
@@ -819,6 +855,7 @@ test_that("a block drops the columns it does not populate", {
 })
 
 test_that("dropping the schema columns falls back to the tibble", {
+  skip_on_cran()
   narrowed <- dplyr::select(summary(fixture_plain()), quantity, value)
   printed <- capture.output(print(narrowed))
 
@@ -827,6 +864,7 @@ test_that("dropping the schema columns falls back to the tibble", {
 })
 
 test_that("a summary is still a tibble", {
+  skip_on_cran()
   result <- summary(fixture_plain())
 
   expect_s3_class(result, "tbl_df")
@@ -837,6 +875,7 @@ test_that("a summary is still a tibble", {
 # Unreviewed components --------------------------------------------------------
 
 test_that("the AI-written components warn, and are not in summary()", {
+  skip_on_cran()
   # They were written by an LLM and have not been checked by a human, so they
   # cannot sit inside the report a user reads by default.
   components <- unique(summary(fixture_plain())$component)

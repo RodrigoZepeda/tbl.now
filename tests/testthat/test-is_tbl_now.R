@@ -17,6 +17,7 @@ messy_fixture <- function() {
 }
 
 test_that("is_tbl_now() is silent on an object validate_tbl_now() complains about", {
+  skip_on_cran()
   x <- messy_fixture()
 
   # The object is malformed data in a well-formed container, and the two
@@ -29,6 +30,7 @@ test_that("is_tbl_now() is silent on an object validate_tbl_now() complains abou
 })
 
 test_that("is_tbl_now() does not run the findings engine at all", {
+  skip_on_cran()
   x <- messy_fixture()
 
   # If the predicate still called it, this mock would abort.
@@ -42,6 +44,7 @@ test_that("is_tbl_now() does not run the findings engine at all", {
 })
 
 test_that("is_tbl_now() checks the class, its attributes and their columns", {
+  skip_on_cran()
   x <- tbl_now(
     data.frame(
       onset = as.Date("2021-01-04") + 0:3,
@@ -104,6 +107,7 @@ test_that("is_tbl_now() is TRUE for a grouped tbl_now", {
 })
 
 test_that("a verb that fixes a problem does not re-report it (#62)", {
+  skip_on_cran()
   x <- messy_fixture()
 
   # `censor_reports()` asserts the class, rebuilds, and asserts again. Before
@@ -118,6 +122,7 @@ test_that("a verb that fixes a problem does not re-report it (#62)", {
 })
 
 test_that("validate_tbl_now() still answers loudly", {
+  skip_on_cran()
   # Nothing about #62 makes the validator quieter; it is only no longer run
   # from the predicate.
   expect_error(validate_tbl_now(data.frame(x = 1:3)))

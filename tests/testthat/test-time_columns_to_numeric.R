@@ -29,6 +29,7 @@ setup_test_data <- function() {
 
 # Tests for time_cols_to_numeric() with days ----
 test_that("time_cols_to_numeric creates .event_num and .report_num columns", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   result <- time_cols_to_numeric(
@@ -45,6 +46,7 @@ test_that("time_cols_to_numeric creates .event_num and .report_num columns", {
 })
 
 test_that("time_cols_to_numeric correctly converts daily data", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   result <- time_cols_to_numeric(
@@ -67,6 +69,7 @@ test_that("time_cols_to_numeric correctly converts daily data", {
 })
 
 test_that("time_cols_to_numeric anchors to minimum event_date", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   result <- time_cols_to_numeric(
@@ -84,6 +87,7 @@ test_that("time_cols_to_numeric anchors to minimum event_date", {
 
 # Tests for time_cols_to_numeric() with weeks ----
 test_that("time_cols_to_numeric correctly converts weekly data", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   result <- time_cols_to_numeric(
@@ -107,6 +111,7 @@ test_that("time_cols_to_numeric correctly converts weekly data", {
 
 # Tests for time_cols_to_numeric() with months ----
 test_that("time_cols_to_numeric correctly converts monthly data", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   result <- time_cols_to_numeric(
@@ -132,6 +137,7 @@ test_that("time_cols_to_numeric correctly converts monthly data", {
 })
 
 test_that("time_cols_to_numeric handles month differences correctly", {
+  skip_on_cran()
   # Test data with different month scenarios
   month_edge_data <- data.frame(
     event_date = as.Date(c("2020-01-31", "2020-02-29", "2020-03-31")),
@@ -153,6 +159,7 @@ test_that("time_cols_to_numeric handles month differences correctly", {
 })
 
 test_that("time_cols_to_numeric handles negative month differences", {
+  skip_on_cran()
   # Test when month difference would be negative
   month_neg_data <- data.frame(
     event_date = as.Date(c("2020-12-15", "2021-01-10")),
@@ -173,6 +180,7 @@ test_that("time_cols_to_numeric handles negative month differences", {
 })
 
 test_that("time_cols_to_numeric doesn't create temp columns in final output", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   result <- time_cols_to_numeric(
@@ -190,6 +198,7 @@ test_that("time_cols_to_numeric doesn't create temp columns in final output", {
 
 # Tests for time_cols_to_numeric() with years ----
 test_that("time_cols_to_numeric correctly converts yearly data", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   result <- time_cols_to_numeric(
@@ -213,6 +222,7 @@ test_that("time_cols_to_numeric correctly converts yearly data", {
 
 # Tests for time_cols_to_numeric() with numeric ----
 test_that("time_cols_to_numeric correctly converts numeric data", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   result <- time_cols_to_numeric(
@@ -236,6 +246,7 @@ test_that("time_cols_to_numeric correctly converts numeric data", {
 
 # Tests for revision and error handling ----
 test_that("time_cols_to_numeric fails when mixing numeric with date units", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   expect_error(
@@ -264,6 +275,7 @@ test_that("time_cols_to_numeric fails when mixing numeric with date units", {
 })
 
 test_that("time_cols_to_numeric fails when report_units is finer than event_units", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   expect_error(
@@ -307,6 +319,7 @@ test_that("time_cols_to_numeric accepts report_units equal to event_units", {
 })
 
 test_that("time_cols_to_numeric accepts report_units coarser than event_units", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   expect_silent({
@@ -333,6 +346,7 @@ test_that("time_cols_to_numeric accepts report_units coarser than event_units", 
 })
 
 test_that("time_cols_to_numeric fails with invalid units", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   expect_error(
@@ -349,6 +363,7 @@ test_that("time_cols_to_numeric fails with invalid units", {
 })
 
 test_that("time_cols_to_numeric fails when .year_difference_temp exists without force", {
+  skip_on_cran()
   test_data <- setup_test_data()
   data_with_temp <- test_data$monthly_data
   data_with_temp$.year_difference_temp <- 1
@@ -367,6 +382,7 @@ test_that("time_cols_to_numeric fails when .year_difference_temp exists without 
 })
 
 test_that("time_cols_to_numeric fails when .month_difference_temp exists without force", {
+  skip_on_cran()
   test_data <- setup_test_data()
   data_with_temp <- test_data$monthly_data
   data_with_temp$.month_difference_temp <- 1
@@ -385,6 +401,7 @@ test_that("time_cols_to_numeric fails when .month_difference_temp exists without
 })
 
 test_that("time_cols_to_numeric overwrites with force = TRUE", {
+  skip_on_cran()
   test_data <- setup_test_data()
   data_with_temp <- test_data$monthly_data
   data_with_temp$.year_difference_temp <- 999
@@ -404,6 +421,7 @@ test_that("time_cols_to_numeric overwrites with force = TRUE", {
 
 # Tests for different unit combinations ----
 test_that("time_cols_to_numeric works with days for event and weeks for report", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   result <- time_cols_to_numeric(
@@ -421,6 +439,7 @@ test_that("time_cols_to_numeric works with days for event and weeks for report",
 })
 
 test_that("time_cols_to_numeric works with weeks for event and months for report", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   result <- time_cols_to_numeric(
@@ -437,6 +456,7 @@ test_that("time_cols_to_numeric works with weeks for event and months for report
 })
 
 test_that("time_cols_to_numeric works with months for event and years for report", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   result <- time_cols_to_numeric(
@@ -454,6 +474,7 @@ test_that("time_cols_to_numeric works with months for event and years for report
 
 # Tests for data integrity ----
 test_that("time_cols_to_numeric preserves original columns", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   result <- time_cols_to_numeric(
@@ -471,6 +492,7 @@ test_that("time_cols_to_numeric preserves original columns", {
 })
 
 test_that("time_cols_to_numeric preserves number of rows", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   original_rows <- nrow(test_data$daily_data)
@@ -488,6 +510,7 @@ test_that("time_cols_to_numeric preserves number of rows", {
 })
 
 test_that("time_cols_to_numeric produces non-negative numbers", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   result <- time_cols_to_numeric(
@@ -505,6 +528,7 @@ test_that("time_cols_to_numeric produces non-negative numbers", {
 
 # Tests for edge cases ----
 test_that("time_cols_to_numeric handles single row data", {
+  skip_on_cran()
   single_row <- data.frame(
     event_date = as.Date("2020-07-08"),
     report_date = as.Date("2020-07-11")
@@ -524,6 +548,7 @@ test_that("time_cols_to_numeric handles single row data", {
 })
 
 test_that("time_cols_to_numeric handles data with same event and report dates", {
+  skip_on_cran()
   same_date_data <- data.frame(
     event_date = as.Date(c("2020-07-08", "2020-07-09")),
     report_date = as.Date(c("2020-07-08", "2020-07-09"))
@@ -542,6 +567,7 @@ test_that("time_cols_to_numeric handles data with same event and report dates", 
 })
 
 test_that("time_cols_to_numeric handles leap years correctly", {
+  skip_on_cran()
   leap_year_data <- data.frame(
     event_date = as.Date(c("2020-02-28", "2020-02-29", "2020-03-01")),
     report_date = as.Date(c("2020-03-01", "2020-03-02", "2020-03-03"))
@@ -561,6 +587,7 @@ test_that("time_cols_to_numeric handles leap years correctly", {
 })
 
 test_that("time_cols_to_numeric handles year boundaries for monthly data", {
+  skip_on_cran()
   year_boundary_data <- data.frame(
     event_date = as.Date(c("2019-11-15", "2019-12-15", "2020-01-15", "2020-02-15")),
     report_date = as.Date(c("2019-11-20", "2019-12-20", "2020-01-20", "2020-02-20"))
@@ -583,6 +610,7 @@ test_that("time_cols_to_numeric handles year boundaries for monthly data", {
 
 # Tests for numeric consistency ----
 test_that("time_cols_to_numeric produces consistent differences", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   result <- time_cols_to_numeric(

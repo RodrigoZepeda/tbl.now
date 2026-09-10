@@ -15,7 +15,7 @@
 #'   recent report. This is the current best estimate of what really happened,
 #'   and it is what you score a nowcast against.
 #' * `get_nth_reported_cases()` -- the count accumulated **within a given
-#'   delay**. `r lifecycle::badge("experimental")` `delay = 0` gives the cases
+#'   delay**. `r lifecycle::badge("stable")` `delay = 0` gives the cases
 #'   reported on the event date itself, `delay = 1` adds those reported one
 #'   period later, and so on. `delay = Inf` is the same as
 #'   `get_latest_reported_cases()`.
@@ -527,7 +527,7 @@ get_nth_reported_cases <- function(x, delay, type = "total") {
 
 #' Cases at a chosen point in the revision process
 #'
-#' @description `r lifecycle::badge("experimental")`
+#' @description `r lifecycle::badge("stable")`
 #'
 #' The same three questions as [get_latest_reported_cases()][get_latest_first],
 #' asked of the **third** date: not when the system heard about a case, but when

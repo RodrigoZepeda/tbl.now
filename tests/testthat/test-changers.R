@@ -34,6 +34,7 @@ setup_test_data <- function() {
 
 # Tests for change_event_date() ----
 test_that("change_event_date changes event_date to new column", {
+  skip_on_cran()
   test_data <- setup_test_data()
   ndata <- test_data$ndata
 
@@ -127,6 +128,7 @@ test_that("change_event_date updates now if needed", {
 
 # Tests for change_report_date() ----
 test_that("change_report_date changes report_date to new column", {
+  skip_on_cran()
   test_data <- setup_test_data()
   ndata <- test_data$ndata
 
@@ -203,6 +205,7 @@ test_that("change_report_date fails when column is not Date", {
 
 # Tests for change_strata() ----
 test_that("change_strata changes strata to new columns", {
+  skip_on_cran()
   test_data <- setup_test_data()
   ndata <- test_data$ndata
 
@@ -258,6 +261,7 @@ test_that("change_strata fails when column not found", {
 
 # Tests for remove_strata() ----
 test_that("remove_strata removes specified strata", {
+  skip_on_cran()
   test_data <- setup_test_data()
   ndata <- test_data$ndata
 
@@ -299,6 +303,7 @@ test_that("remove_strata can remove multiple strata", {
 
 # Tests for add_strata() ----
 test_that("add_strata adds new strata", {
+  skip_on_cran()
   test_data <- setup_test_data()
   ndata <- test_data$ndata
 
@@ -339,6 +344,7 @@ test_that("add_strata works when no existing strata", {
 
 # Tests for remove_all_strata() ----
 test_that("remove_all_strata removes all strata", {
+  skip_on_cran()
   test_data <- setup_test_data()
   ndata <- test_data$ndata
 
@@ -367,6 +373,7 @@ test_that("remove_all_strata works when no strata exist", {
 
 # Tests for change_covariates() ----
 test_that("change_covariates changes covariates to new columns", {
+  skip_on_cran()
   test_data <- setup_test_data()
   ndata <- test_data$ndata
 
@@ -422,6 +429,7 @@ test_that("change_covariates fails when column not found", {
 
 # Tests for remove_covariates() ----
 test_that("remove_covariates removes specified covariate", {
+  skip_on_cran()
   test_data <- setup_test_data()
   ndata <- test_data$ndata
 
@@ -463,6 +471,7 @@ test_that("remove_covariates can remove multiple covariates", {
 
 # Tests for add_covariates() ----
 test_that("add_covariates adds new covariate", {
+  skip_on_cran()
   test_data <- setup_test_data()
   ndata <- test_data$ndata
 
@@ -503,6 +512,7 @@ test_that("add_covariates works when no existing covariates", {
 
 # Tests for remove_all_covariates() ----
 test_that("remove_all_covariates removes all covariates", {
+  skip_on_cran()
   test_data <- setup_test_data()
   ndata <- test_data$ndata
 
@@ -531,6 +541,7 @@ test_that("remove_all_covariates works when no covariates exist", {
 
 # Tests for change_now() ----
 test_that("change_now changes the now date", {
+  skip_on_cran()
   test_data <- setup_test_data()
   ndata <- test_data$ndata
 
@@ -876,6 +887,7 @@ test_that("change_report_date warns when report is before event", {
 # ============================================================================
 
 test_that("change_case_count works with count data", {
+  skip_on_cran()
   test_data <- setup_additional_test_data()
   ndata <- test_data$ndata |>
     to_count(to = "count-incidence")
@@ -952,6 +964,7 @@ test_that("change_is_censored_report fails with non-logical column", {
 })
 
 test_that("change_is_censored_report works with tidy select", {
+  skip_on_cran()
   test_data <- setup_additional_test_data()
   ndata <- test_data$ndata
 
@@ -967,6 +980,7 @@ test_that("change_is_censored_report works with tidy select", {
 # ============================================================================
 
 test_that("remove_is_censored_report sets is_censored_report to NULL", {
+  skip_on_cran()
   test_data <- setup_additional_test_data()
   ndata <- test_data$ndata
 
@@ -996,6 +1010,7 @@ test_that("remove_is_censored_report works when is_censored_report is already NU
 # ============================================================================
 
 test_that("add_is_censored_report adds is_censored_report when none exists", {
+  skip_on_cran()
   test_data <- setup_additional_test_data()
   ndata <- test_data$ndata |>
     remove_is_censored_report()
@@ -1251,6 +1266,7 @@ test_that("remove_covariates with tidy select", {
 # ============================================================================
 
 test_that("replace_temporal_effects removes old effects", {
+  skip_on_cran()
   test_data <- setup_additional_test_data()
   ndata <- test_data$ndata |>
     add_temporal_effects(temporal_effects(day_of_week = TRUE))

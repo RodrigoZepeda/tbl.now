@@ -61,6 +61,44 @@
   0.9 * step
 }
 
+#' Check one of `autoplot.tbl_nowcast()`'s zoom arguments
+#'
+#' `NULL` means "leave this axis alone" and is returned unchanged. Anything else
+#' must be a length-2 vector of dates or numbers; `NA` in either slot leaves that
+#' end free, which is what [ggplot2::coord_cartesian()] expects.
+#'
+#' The values are NOT sorted: `c(hi, lo)` is a deliberate way to reverse an axis
+#' in \pkg{ggplot2}, and silently swapping them would take that away.
+#'
+#' @param limits The user's `date_lim` or `ylim`.
+#' @param arg The argument name, for the error message.
+#'
+#' @returns `limits`, unchanged, or `NULL`.
+#'
+#' @keywords internal
+#' @noRd
+.nowcast_axis_limits <- function(limits, arg) {
+  if (is.null(limits)) {
+    return(NULL)
+  }
+  # `c(NA, NA)` is a *logical* vector, so it has to be recognised as "no zoom"
+  # before the type check, which would otherwise reject the one value that means
+  # the caller wants both ends left alone.
+  if (length(limits) == 2 && all(is.na(limits))) {
+    return(NULL)
+  }
+  ok_type <- inherits(limits, "Date") || inherits(limits, "POSIXct") ||
+    is.numeric(limits)
+  if (!ok_type || length(limits) != 2) {
+    cli::cli_abort(c(
+      "{.arg {arg}} must be a length-2 vector of dates or numbers.",
+      "x" = "Got {.obj_type_friendly {limits}} of length {length(limits)}.",
+      "i" = "Use {.code NA} for an end you want to leave alone."
+    ))
+  }
+  limits
+}
+
 #' Plot a nowcast
 #'
 #' @description `r lifecycle::badge('experimental')`
@@ -89,6 +127,20 @@
 #'   a nowcast is an estimate of the **epidemic** process (cases by event date),
 #'   which the package always draws in green, with red reserved for the
 #'   reporting process.
+#' @param date_lim Length-2 vector of event-axis limits, as `Date`s (or as
+#'   numbers on a numeric event axis). `NA` in either position leaves that end
+#'   alone. A nowcast covers the whole series but only *corrects* its final
+#'   periods, so the interesting part is usually the last few weeks; this zooms
+#'   on to them.
+#'
+#'   The limits are applied with [ggplot2::coord_cartesian()], so they **crop**
+#'   the drawn plot rather than filter the data. That matters here: a scale
+#'   limit would drop the out-of-range rows before the ribbon is built, which
+#'   cuts the fan off at the boundary instead of letting it run to the edge.
+#' @param ylim Length-2 vector of count-axis limits, applied the same way.
+#'   `NULL` (default) leaves the axis to \pkg{ggplot2}. Note that a stratified
+#'   nowcast facets with `scales = "free_y"`, so one pair of limits is imposed
+#'   on every panel.
 #'
 #' @return A `ggplot` object.
 #'
@@ -105,6 +157,9 @@
 #'
 #' autoplot(nc)
 #'
+#' # Zoom on to the corrected weeks without dropping the rows that build the fan.
+#' autoplot(nc, date_lim = c(as.Date("2020-01-19"), as.Date("2020-02-02")))
+#'
 #' @name autoplot.tbl_nowcast
 #' @usage NULL
 #' @importFrom ggplot2 autoplot
@@ -112,6 +167,7 @@
 S7::method(autoplot, tbl_nowcast) <- function(object, ..., levels = NULL,
                                               show_reported = TRUE,
                                               colour = NULL, linewidth = 1,
+                                              date_lim = NULL, ylim = NULL,
                                               palette = .tbl_now_palette()) {
   if (!requireNamespace("ggplot2", quietly = TRUE)) {
     cli::cli_abort("Package {.pkg ggplot2} is required for {.fn autoplot}.")
@@ -119,6 +175,8 @@ S7::method(autoplot, tbl_nowcast) <- function(object, ..., levels = NULL,
 
   .tbl_now_check_palette(palette, "autoplot.tbl_nowcast")
   .tbl_now_check_size(linewidth, "linewidth")
+  date_lim <- .nowcast_axis_limits(date_lim, "date_lim")
+  ylim <- .nowcast_axis_limits(ylim, "ylim")
   colour <- colour %||% palette[["epidemic"]]
 
   event_col <- object@event_date
@@ -241,11 +299,21 @@ S7::method(autoplot, tbl_nowcast) <- function(object, ..., levels = NULL,
     plot <- plot + ggplot2::facet_wrap(strata, scales = "free_y")
   }
 
-  plot +
+  plot <- plot +
     ggplot2::labs(
       title = paste0("Nowcast (", object@method, ")"),
       subtitle = if (!is.null(object@now)) paste("as of", object@now) else NULL,
       x = event_col, y = "Cases"
     ) +
     ggplot2::theme_bw()
+
+  # `coord_cartesian()` rather than scale limits: the fan is a ribbon between
+  # two quantile series, and a scale limit removes the out-of-range rows BEFORE
+  # the ribbon is drawn, so the band would stop dead at the boundary instead of
+  # running off the edge of the panel. A coord zooms the finished plot.
+  if (!is.null(date_lim) || !is.null(ylim)) {
+    plot <- plot + ggplot2::coord_cartesian(xlim = date_lim, ylim = ylim)
+  }
+
+  plot
 }

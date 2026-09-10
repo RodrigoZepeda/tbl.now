@@ -34,6 +34,7 @@ make_revised_daily_now <- function() {
 }
 
 test_that("autoplot.tbl_now returns a patchwork object (weekly linelist)", {
+  skip_on_cran()
   skip_if_not_installed("ggplot2")
   skip_if_not_installed("patchwork")
 
@@ -47,6 +48,7 @@ test_that("autoplot.tbl_now returns a patchwork object (weekly linelist)", {
 })
 
 test_that("autoplot.tbl_now works on daily count data", {
+  skip_on_cran()
   skip_if_not_installed("ggplot2")
   skip_if_not_installed("patchwork")
 
@@ -87,14 +89,19 @@ test_that("autoplot panel selection returns the requested subset", {
   expect_s3_class(single, "ggplot")
   expect_false(inherits(single, "patchwork"))
 
-  # Two panels come back as a patchwork
+  # Two panels come back as a patchwork. They sit in different columns (the
+  # epidemic process and the reporting process) *and* in different rows, so the
+  # matrix is 2x2 with two spacers holding the columns in place.
   two <- ggplot2::autoplot(nowobj, panels = c("epidemic", "delay_seasonality"))
   expect_s3_class(two, "patchwork")
-  expect_length(two$patches$plots, 1) # 2 panels
+  expect_length(two$patches$plots, 3) # 4 cells: 2 panels + 2 spacers
+  expect_equal(two$patches$layout$ncol, 2)
 
-  # The "delay_calendar" alias expands to both delay calendar panels (daily)
+  # A selection covering one process is one column, because the columns *are*
+  # the processes.
   delay_cal <- ggplot2::autoplot(nowobj, panels = "delay_calendar")
   expect_length(delay_cal$patches$plots, 1) # 2 panels (weekday + week)
+  expect_equal(delay_cal$patches$layout$ncol, 1)
 })
 
 test_that("autoplot rejects unknown panels and warns on inapplicable ones", {
@@ -117,20 +124,61 @@ test_that("autoplot rejects unknown panels and warns on inapplicable ones", {
 
 test_that("panel key vocabulary depends on the event unit", {
   skip_on_cran()
+  # Row by row through the matrix: the epidemic panel, then its reporting twin.
   expect_equal(
     tbl.now:::.tbl_now_all_panel_keys("days"),
-    c("delay_distribution", "epidemic", "calendar_weekday", "calendar_week",
-      "seasonality", "delay_weekday", "delay_week", "delay_seasonality")
+    c("epidemic", "delay_distribution",
+      "calendar_weekday", "delay_weekday",
+      "calendar_week", "delay_week",
+      "seasonality", "delay_seasonality")
   )
   expect_equal(
     tbl.now:::.tbl_now_all_panel_keys("weeks"),
-    c("delay_distribution", "epidemic", "calendar_week", "seasonality",
-      "delay_week", "delay_seasonality")
+    c("epidemic", "delay_distribution",
+      "calendar_week", "delay_week",
+      "seasonality", "delay_seasonality")
   )
   # "all" resolves to every applicable key, in canonical order
   expect_equal(
     tbl.now:::.tbl_now_resolve_panels("all", "weeks"),
     tbl.now:::.tbl_now_all_panel_keys("weeks")
+  )
+})
+
+test_that("the revision delay distribution is a panel and a plot", {
+  skip_on_cran()
+  skip_if_not_installed("ggplot2")
+
+  object <- make_revised_daily_now()
+
+  panel <- ggplot2::autoplot(object, panels = "revision_distribution")
+  expect_s3_class(panel, "ggplot")
+  expect_equal(panel$labels$subtitle, "Revision process")
+  expect_equal(panel$labels$x, "Revision delay")
+  # The gallery is read as a grid of shapes, so it does not split by outcome.
+  expect_false("outcome" %in% names(panel$data))
+
+  # The stand-alone plot is the same panel, and it does split.
+  split <- plot_delay_distribution(object, axis = "revision")
+  expect_equal(split$labels$title, panel$labels$title)
+  expect_true("outcome" %in% names(split$data))
+  expect_equal(
+    ggplot2::autoplot(object, panels = "revision_distribution",
+                      by_revision_type = TRUE)$data,
+    split$data
+  )
+
+  # `by_strata` already owns the fill, so it wins.
+  by_strata <- plot_delay_distribution(
+    add_strata(object, dplyr::all_of("outcome")),
+    axis = "revision", by_strata = TRUE
+  )
+  expect_false("outcome" %in% names(by_strata$data))
+  expect_true("strata" %in% names(by_strata$data))
+
+  expect_error(
+    ggplot2::autoplot(object, by_revision_type = "yes"),
+    "must be a single"
   )
 })
 
@@ -144,7 +192,8 @@ test_that("revision panels appear when a revision process is present", {
     revision_units = "days", has_revision = TRUE
   )
   expect_true(all(c(
-    "revision_weekday", "revision_week", "revision_seasonality"
+    "revision_distribution", "revision_weekday", "revision_week",
+    "revision_seasonality"
   ) %in% keys))
   expect_equal(
     tbl.now:::.tbl_now_resolve_panels("revision_calendar", "days",
@@ -155,7 +204,9 @@ test_that("revision panels appear when a revision process is present", {
 
   p <- ggplot2::autoplot(object)
   expect_s3_class(p, "patchwork")
-  expect_length(p$patches$plots, 10) # 11 panels: the old 8 plus 3 revision
+  expect_length(p$patches$plots, 11) # 12 panels: the old 8 plus 4 revision
+  # Three dates, so three columns -- epidemic, reporting, revision.
+  expect_equal(p$patches$layout$ncol, 3)
   expect_equal(
     ggplot2::autoplot(object, panels = "revision_weekday")$labels$subtitle,
     "Revision process"
@@ -175,6 +226,7 @@ test_that("calendar groupings depend on event units", {
 })
 
 test_that("autoplot.tbl_now errors on a non-tbl_now", {
+  skip_on_cran()
   skip_if_not_installed("ggplot2")
   expect_error(autoplot.tbl_now(data.frame(a = 1)), "tbl_now")
 })
@@ -1172,6 +1224,35 @@ test_that("the plot_* twins draw the same panel as autoplot()", {
   expect_s3_class(plot_delay_distribution(object), "ggplot")
   expect_s3_class(plot_observed_cases(object), "ggplot")
   expect_s3_class(plot_week_of_year_effects(object), "ggplot")
+})
+
+test_that("plot_month_of_year_effects() draws the month panel on monthly data", {
+  skip_if_not_installed("ggplot2")
+  # The month panel is the one calendar grouping that needs monthly units, so it
+  # gets its own fixture rather than riding on `make_daily_now()`.
+  months <- seq(as.Date("2018-01-01"), as.Date("2021-12-01"), by = "month")
+  monthly <- tbl_now(
+    data.frame(event_date = months, report_date = months + 31),
+    event_date, report_date,
+    event_units = "months", report_units = "months", verbose = FALSE
+  )
+
+  p <- plot_month_of_year_effects(monthly)
+  expect_s3_class(p, "ggplot")
+  # All twelve months get a box, whatever the data starts on
+  expect_setequal(as.character(sort(unique(ggplot2::layer_data(p)$x))),
+                  as.character(1:12))
+
+  # Same panel as autoplot(), for both processes -- `type` picks the family and
+  # `measure` the y axis, exactly as it does for the day-of-week twin.
+  expect_equal(p$labels, ggplot2::autoplot(monthly, panels = "calendar_month")$labels)
+  expect_equal(
+    plot_month_of_year_effects(monthly, type = "report", measure = "normalized")$labels,
+    ggplot2::autoplot(monthly, panels = "delay_month", measure = "normalized")$labels
+  )
+  expect_equal(p$labels$x, "Month")
+
+  expect_error(plot_month_of_year_effects(monthly, type = "nope"), "should be one of")
 })
 
 test_that("percent needs date columns", {

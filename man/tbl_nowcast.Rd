@@ -47,7 +47,7 @@ tbl_nowcast(
 A \code{tbl_nowcast} object.
 }
 \description{
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
 
 An S7 object holding a nowcast in a package-agnostic shape. It is what
 \code{\link[=run_nowcast]{run_nowcast()}} returns and what \code{\link[=nowcast_ensemble]{nowcast_ensemble()}} and \code{\link[=score_nowcast]{score_nowcast()}}

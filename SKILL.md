@@ -244,9 +244,21 @@ human-review-pending `case_autocorrelation()` and `reporting_completeness()` are
 not part of the default summary and warn on every call.
 
 `autoplot()` chooses applicable panels for the object's units, temporal-effect
-spec, and revision axis. Pass one panel name to receive one ggplot or select
+spec, and revision axis, and lays them out as one column per process: epidemic,
+reporting, and revision when the object declares one. The number of columns
+follows the selection. Pass one panel name to receive one ggplot or select
 families such as `"calendar"`, `"delay_calendar"`, or
 `"revision_calendar"`. Use `tbl_now_palette()` and role names when recoloring.
+
+`plot_delay_distribution()` and `plot_reporting_process()` take `axis` to swap
+the reporting axis for the revision one, and `by_revision_type` to split the
+panel by `confirmed` / `pending` / `retracted` / `unknown`. Both split by
+default; `autoplot()` and `diagnostic_plot()` do not.
+
+```r
+plot_delay_distribution(x, axis = "revision")
+plot_reporting_process(x, by_revision_type = FALSE)
+```
 
 Statistical diagnostics are explicit rather than part of `diagnose()`:
 
@@ -299,14 +311,22 @@ tidy(fit)
 as_tibble(fit)                 # quantiles
 as_tibble(fit, type = "draws")
 autoplot(fit)
+autoplot(fit, date_lim = c(as.Date("2026-06-01"), NA), ylim = c(0, 500))
 fit@fit                        # untouched backend result
 ```
+
+`autoplot()`'s `date_lim` and `ylim` crop the plot with
+`ggplot2::coord_cartesian()` rather than filtering the data, so the fan still
+runs to the edge of the panel. `NA` leaves one end free.
 
 Available constructors are `engine_diseasenowcasting()`,
 `engine_baselinenowcast()`, `engine_epinowcast()`, `engine_nobbs()`,
 `engine_surveillance()`, and `engine_epinow2()`. Use
 `list_nowcast_methods()` to inspect availability. Set engine-specific controls
 on the engine object, including `min_date`, `quantile_levels`, and `label`.
+A `label` becomes the fit's `@method`, which is how two configurations of one
+backend stay distinguishable in a backtest and an ensemble; without one the
+fit is named after its package.
 
 Score against the full data, not the historical snapshot used to fit:
 

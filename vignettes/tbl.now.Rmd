@@ -860,8 +860,9 @@ Finally, when a system produces both revisions and retractions you can ask
 whether they take equally long -- a laboratory that rules cases out faster than
 it confirms them will bias any nowcast that treats the two alike.
 `diagnose_revision_delay()` tests exactly that (a Wilcoxon rank-sum test on the
-two delay distributions) and `plot_revision_delay()` draws it. `covid_us`
-records no retractions, so there is nothing to compare here.
+two delay distributions) and `plot_delay_distribution(axis = "revision")` draws
+it, one colour per outcome. `covid_us` records no retractions, so there is
+nothing to compare here.
 
 ### Getting, removing and changing attributes
 
@@ -1474,8 +1475,6 @@ as_tbl_now(dengue_ts, report_date = "report_week", verbose = FALSE)
 See the [vignette on using different models](https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html) to see all conversion formats. 
 
 
-## References
-
 ```{r learning-more, echo=FALSE, results="asis"}
 cat(
   knitr::knit_child(
@@ -1485,3 +1484,5 @@ cat(
   sep = "\n"
 )
 ```
+
+## References

@@ -81,7 +81,7 @@ A \code{nowcast_engine} object, as \code{\link[=engine]{engine()}} returns, that
 \code{\link[=run_nowcast]{run_nowcast()}} and \code{\link[=nowcast_backtest]{nowcast_backtest()}} accept.
 }
 \description{
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
 
 A deliberately naive nowcasting engine that needs no modelling package. It
 exists so that the examples in this package can actually run: every real

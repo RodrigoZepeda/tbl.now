@@ -37,7 +37,7 @@ grid, not \pkg{ggplot2}'s. Default \code{0.3}.}
 A \pkg{ggplot2} object (or a \pkg{plotly} widget when \code{plotly = TRUE}).
 }
 \description{
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
 
 Places each report date by its creation score (x) and transport / deficit
 score (y) from \code{\link[=transport_discriminant]{transport_discriminant()}}, shading the region that decides the

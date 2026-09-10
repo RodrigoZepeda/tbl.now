@@ -1,4 +1,5 @@
 test_that("autoplot.tbl_nowcast draws every symmetric band, not just the 50%", {
+  skip_on_cran()
   skip_if_not_installed("ggplot2")
 
   levels <- nowcast_quantile_levels()
@@ -23,6 +24,7 @@ test_that("autoplot.tbl_nowcast draws every symmetric band, not just the 50%", {
 })
 
 test_that("autoplot.tbl_nowcast honours `levels` and rejects unavailable ones", {
+  skip_on_cran()
   skip_if_not_installed("ggplot2")
 
   predictions <- tidyr::expand_grid(
@@ -57,4 +59,63 @@ test_that("autoplot.tbl_nowcast errors when no symmetric pair exists", {
   )
 
   expect_error(ggplot2::autoplot(nowcast), "no symmetric quantile pairs")
+})
+
+test_that("autoplot.tbl_nowcast zooms with `date_lim` and `ylim` without dropping rows", {
+  skip_on_cran()
+  skip_if_not_installed("ggplot2")
+
+  predictions <- tidyr::expand_grid(
+    onset_week = as.Date("2020-01-06") + seq(0, 28, by = 7),
+    .quantile_level = c(0.05, 0.25, 0.5, 0.75, 0.95)
+  )
+  predictions$.value <- 100 * predictions$.quantile_level
+
+  nowcast <- tbl_nowcast(
+    predictions = predictions, method = "toy", event_date = "onset_week"
+  )
+
+  window <- c(as.Date("2020-01-20"), as.Date("2020-02-03"))
+  zoomed <- ggplot2::autoplot(nowcast, date_lim = window, ylim = c(0, 80))
+
+  expect_s3_class(zoomed, "ggplot")
+  built <- ggplot2::ggplot_build(zoomed)
+  # `coord_cartesian()` crops, it does not filter: every date is still in the
+  # ribbon's data, which is what keeps the fan running to the panel edge rather
+  # than stopping dead at the limit.
+  expect_equal(nrow(built$data[[1]]), 5 * 2)
+  expect_equal(built$layout$coord$limits$x, window)
+  expect_equal(built$layout$coord$limits$y, c(0, 80))
+
+  # An open end is allowed on either side.
+  expect_s3_class(
+    ggplot2::autoplot(nowcast, date_lim = c(as.Date("2020-01-20"), NA)),
+    "ggplot"
+  )
+  # Two NAs mean "no zoom at all", so no coord is added.
+  expect_null(
+    ggplot2::ggplot_build(
+      ggplot2::autoplot(nowcast, date_lim = c(NA, NA))
+    )$layout$coord$limits$x
+  )
+})
+
+test_that("autoplot.tbl_nowcast rejects malformed zoom limits", {
+  skip_on_cran()
+  skip_if_not_installed("ggplot2")
+
+  predictions <- tidyr::expand_grid(
+    onset_week = as.Date("2020-01-06") + seq(0, 21, by = 7),
+    .quantile_level = c(0.05, 0.5, 0.95)
+  )
+  predictions$.value <- 100 * predictions$.quantile_level
+  nowcast <- tbl_nowcast(
+    predictions = predictions, method = "toy", event_date = "onset_week"
+  )
+
+  expect_error(
+    ggplot2::autoplot(nowcast, date_lim = as.Date("2020-01-20")),
+    "length-2"
+  )
+  expect_error(ggplot2::autoplot(nowcast, ylim = c("a", "b")), "length-2")
 })

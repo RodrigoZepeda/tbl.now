@@ -10,6 +10,11 @@
 # succeeding says nothing about whether the engine behind it can fit what the
 # converter produced.
 
+# This file fans one scenario out across every converter / engine, which is
+# an integration matrix rather than a unit test: too slow for CRAN, and most
+# of it needs packages that are not on CRAN anyway.
+skip_on_cran()
+
 CONVERTERS <- list(
   baselinenowcast = function(x) tbl_now_to_baselinenowcast(x, verbose = FALSE),
   epinowcast      = function(x) tbl_now_to_epinowcast(x, verbose = FALSE, quiet = TRUE),

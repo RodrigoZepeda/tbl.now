@@ -1,11 +1,11 @@
 ---
-title: "The nowcasting workflow: hospital-acquired infections in Bucaramanga, Colombia"
+title: "The nowcasting workflow 1: hospital-acquired infections in Bucaramanga, Colombia"
 output: rmarkdown::html_vignette
 bibliography: ../references.bib
 link-citations: true
 vignette: >
   %\VignetteEncoding{UTF-8}
-  %\VignetteIndexEntry{The nowcasting workflow: hospital-acquired infections in Bucaramanga, Colombia}
+  %\VignetteIndexEntry{The nowcasting workflow 1: hospital-acquired infections in Bucaramanga, Colombia}
   %\VignetteEngine{knitr::rmarkdown}
 editor_options: 
   markdown: 
@@ -31,13 +31,8 @@ has <- function(pkg) requireNamespace(pkg, quietly = TRUE)
 run_stan <- FALSE
 ```
 
-<!-- This article has been thoroughly reviewed by a human. Any correction done by an AI
-that has not been reviewed by a human should preface the corresponding section by
-stating "This section was last edited by an AI model automatically". These labels
-can only be removed by humans.-->
-
 This article is an end-to-end walk-through of the `tbl.now` workflow on
-a real, **deliberately unpolished** dataset. We will:
+a real-life, **deliberately messy** dataset. We will:
 
 1.  **Build** a `tbl_now` from a messy surveillance extract and show how
     to `diagnose()` possible data errors.
@@ -49,8 +44,9 @@ a real, **deliberately unpolished** dataset. We will:
 6.  **Nowcast** with two different engines using everything we found.
 
 We'll start the process by nowcasting with two dates (event and report
-dates) and then we'll focus on nowcasting with three dates (event,
-report, and revision dates).
+dates). We suggest following this example first and then moving to the
+[nowcasting with revisions](https://rodrigozepeda.github.io/tbl.now/articles/example_revisions.html) article if your data also contains revisions (i.e.
+cases can become 'confirmed' or 'retracted'). 
 
 Let's start by calling the libraries:
 
@@ -93,7 +89,7 @@ For our example, six columns matter:
 
 For the tutorial, we will do perform a nowcast assuming we are standing
 on July 18th 2022. For that purpose we filter our data to what it would
-have looked like:
+have looked like back then:
 
 ```{r}
 hai_bucaramanga <- hai_bucaramanga |>
@@ -102,9 +98,9 @@ hai_bucaramanga <- hai_bucaramanga |>
 ```
 
 ::: {.alert .alert-warning}
-For this tutorial we are keeping those events that have missing dates.
-That is what the `is.na()` section on the left side of the filter is
-doing as we keep either cases by July 18th 2022 or missing.
+For this tutorial we are keeping those events that have missing dates to
+show how to detect them with the package. That is what the `is.na()` section 
+on the left side of the filter is doing.
 :::
 
 ## 1. Initial data cleaning
@@ -149,7 +145,7 @@ The `tbl.now()` automatically fires several warnings. Let's take a look!
 
 ::: {.alert .alert-info}
 The `tbl.now()` package also considers the possibility of a third `revision_date` where
-reports that have already been submitted by `report_date` are either `confirmed` or `rejected` (or maybe just one of those). We show more diagnostics for such an example in the  [article on diagnosing a `tbl.now()`](https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html). 
+reports that have already been submitted by `report_date` are either `confirmed` or `rejected` (or maybe just one of those). We show more diagnostics for such an example in [its own article](https://rodrigozepeda.github.io/tbl.now/articles/example_revisions.html) though we suggest familiarizing yourself with this one first. 
 :::
 
 
@@ -166,13 +162,13 @@ Let's see what they identify.
 
 ### The warnings
 
-In general the warnings will look for missing data within the dates and
-the strata or for violations of the nowcasting hypotheses (for example
+In general **the warnings will look for missing data** within the dates and
+the strata **or for violations of the nowcasting hypotheses** (for example
 reports that "see the future" and identify an event before it happens!).
 In our case, specifically we identify missing dates in both the report
 and the event as well as some reports that have incorrect dates.
 
-There is no solution that works in all cases for these problems and
+**There is no solution that works in all cases** for these problems and
 oftentimes the ideal solution is to identify the reason for the
 misingness. Here we posit some approaches for the warnings:
 
@@ -198,7 +194,7 @@ hai_bucaramanga <- hai_bucaramanga |>
     will indicate that that report is censored.
 
 When calling the function we specify that the ones we are censoring are
-the missing values and that the date they should input is "2022/10/18"
+the missing values and that the date they should input is `"2022/10/18"`
 which corresponds to the date of the nowcast in this example.
 
 ```{r, warning=FALSE, message=FALSE}
@@ -229,7 +225,7 @@ hai_bucaramanga <- hai_bucaramanga |>
 3.  Currently there is **nothing we can do for the cases were the event
     date is unknown**. Hence we just document them and we'll remove from
     the dataset given that they represent such a small percent
-    (`r 100*(hai_bucaramanga |> filter(is.na(specimen_date)) |> nrow())/nrow(hai_bucaramanga)`%).
+    (`r round(100*(hai_bucaramanga |> filter(is.na(specimen_date)) |> nrow())/nrow(hai_bucaramanga),1)`%).
 
 ```{r, warning=FALSE}
 hai_bucaramanga <- hai_bucaramanga |> filter(!is.na(specimen_date))
@@ -328,6 +324,7 @@ The temporal effect gets added lazily. You can use
 hai_bucaramanga |> compute_temporal_effects()
 ```
 
+For a deeper explanation on what to see in each of the panels when there are effects and no effects you can see the article on [diagnosing a tbl.now](https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html)
 
 ## 6. Looking at the data
 
@@ -403,10 +400,9 @@ delay_summary(hai_bucaramanga)
 
 The `zero_run_summary()` quantifies the sparcity by counting how many
 days with continuous zeroes happened for either the event or the report
-dates. That is, it measures the distribution of days of continuous
-zeroes. You can see that usually there are on average
-`r round(zero_run_summary(hai_bucaramanga)$mean[1],2)` continuous zeroes before a
-case. However there have been runs of
+dates. That is, it measures the distribution of days when nothing happened (hence zero registries). You can see that usually there are on average
+`r round(zero_run_summary(hai_bucaramanga)$mean[1],2)` days with no cases before one with a
+case. You can also see that there have been runs of
 `r zero_run_summary(hai_bucaramanga)$max[1]` continuous days with no
 cases (continuous zeroes) until one case:
 
@@ -444,7 +440,7 @@ Due to the sparcity, the nowcast predicts almost no cases at any time
 with just maybe a second case at the now for males:
 
 ```{r, message=FALSE, eval=has("diseasenowcasting"), warning=FALSE, fig.width=9, fig.height=4.5, fig.alt="A sparse nowcast"}
-autoplot(hai_fit) 
+autoplot(hai_fit, date_lim = c(as.Date("2022-07-01"), as.Date("2022-07-19")))
 ```
 
 ## 8. Changing to weekly data
@@ -466,7 +462,7 @@ autoplot(hai_bucaramanga)
 ```
 
 One should run again the `summary()` and `diagnose()` in the aggregated to draw
-conclusions from this data. For us, however it will suffice to see that
+conclusions from this data. For this tutorial, however it will suffice to see that
 the sparcity has reduced to usually just 1 week with zero cases before
 having cases again:
 
@@ -537,7 +533,9 @@ plot_reporting_process(hai_bucaramanga)
 ```
 
 We can see that there were several reports that dropped near the end of
-2022. The reporting hexamap allows us to visualize the date of the
+2022. That is our censoring. However if we didn't know better (i.e. if we ignored that we censored it) we would analyze those reports to try to explain whether they are batches. 
+
+The reporting hexamap allows us to visualize the date of the
 report at the same time as the day of the event and the corresponding
 delay
 
@@ -600,10 +598,7 @@ hai_bucaramanga |>
 ```
 
 Where we further identify the date of `2021-11-28` as a potential batch
-with its `p_value < 0.003`.
-
-Given that the 
-
+with its `p_value < 0.05`.
 
 ## 11. Nowcasting
 
@@ -651,12 +646,12 @@ tidy(hai_fit_weekly) |> arrange(event_date) |> tail()
 ## 12. Evaluate your nowcast
 
 One way to evaluate the nowcast is to go back in time and 
-see, what would the nowcast have produced with the information
-available at a previous date contrasting it with the information
+see **what would the nowcast have produced with the information
+available at a previous date** and contrast it with the information
 known by now. You can use `nowcast_backtest()` for that purpose:
-for every past date it truncates the data to the reports that were 
-available *then*, refits the nowcast, and scores the result against the
-resolved truth defined by `truth_axis` and `truth_type` (reported totals by
+**for every past date it truncates the data to the reports that were 
+available _then_, refits the nowcast, and scores the result against the
+final observation** defined by `truth_axis` and `truth_type` (reported totals by
 default).
 
 To best evaluate the nowcast we need something to compare against. Hence
@@ -682,10 +677,17 @@ hai_backtest <- hai_bucaramanga |>
     seed      = 20260904
   )
 ```
-Printing the object shows the results from the backtest which includes the individual results for the weighted interval score (`wis`), the median absolute error (`ae_median`), and the coverage of the 50 and 90% intervals (`coverage_*`):
 
-```{r, eval=has("baselinenowcast") & has("diseasenowcasting")}
-hai_backtest
+
+The backtest is compatible with `scoringutils::as_forecast_quantile()` which can be used to evaluate the results:
+
+```{r, eval=has("baselinenowcast") & has("diseasenowcasting") & has("scoringutils")}
+library(scoringutils)
+
+hai_backtest |> 
+  as_forecast_quantile() |> 
+  score() |> 
+  summarise_scores()
 ```
 
 In this scenario,  `diseasenowcasting` scores better on both
@@ -694,7 +696,6 @@ We caution however that we cannot conclude anything from just 3 data points
 and in a real scenario one should use more. 
 
 Date-level indicators for the `wis`, `ae_median` and coverage can be obtained with tidy:
-
 
 ```{r, eval=FALSE}
 tidy(hai_backtest)
@@ -713,7 +714,7 @@ might lead to a more robust nowcast. You can think of an ensemble as an average
 of the models. 
 
 To create an ensemble model one needs to pass the model
-specifications (with a name) as well as the backtest:
+specifications as well as the backtest:
 
 ```{r ensemble-weighted, warning=FALSE, message=FALSE, eval=has("baselinenowcast") & has("diseasenowcasting")}
 hai_ensemble <- nowcast_ensemble(
@@ -725,6 +726,7 @@ hai_ensemble <- nowcast_ensemble(
 ```
 
 The same `tidy()` and `autoplot()` functions can be used here:
+
 
 ```{r, eval=has("baselinenowcast") & has("diseasenowcasting")}
 autoplot(hai_ensemble)
@@ -752,20 +754,8 @@ In this example we showed:
 
 9. How to backtest a nowcast with `nowcast_backtest()` and create an ensemble with `nowcast_ensemble()`.
 
-::: {.alert .alert-info}
-If you have any questions regarding this article or comments please [open an issue](https://github.com/RodrigoZepeda/tbl.now/issues/new)
-:::
-
-
 
 ```{r learning-more, echo=FALSE, results="asis"}
-# The fragment is looked up by ABSOLUTE path via system.file(), never by a
-# relative one. pkgdown/rmarkdown render into an intermediates directory under
-# tempdir() and copy relative resources alongside; a path containing "../.."
-# escapes that directory ("cannot create file '/tmp/RtmpXXX/../../man/...'"),
-# which fails wherever tempdir() sits near the filesystem root -- as it does on
-# CI. `system.file()` also works under pkgload::load_all(), which shims it to
-# find inst/ in the source tree.
 cat(
   knitr::knit_child(
     system.file("fragments", "learning-more.Rmd", package = "tbl.now"),

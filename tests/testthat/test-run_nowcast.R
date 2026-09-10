@@ -23,6 +23,11 @@ nowcast_tidy.testtoy <- function(engine, fit, x, ..., quantile_levels) {
   list(predictions = NULL, draws = draws)
 }
 
+# Registered here rather than inside a test: `list_nowcast_methods()` below has
+# to see the toy backend even when the tests that fit with it are skipped.
+registerS3method("nowcast_fit", "testtoy", nowcast_fit.testtoy, envir = asNamespace("tbl.now"))
+registerS3method("nowcast_tidy", "testtoy", nowcast_tidy.testtoy, envir = asNamespace("tbl.now"))
+
 toy_tbl_now <- function() {
   set.seed(42)
   dates <- as.Date("2020-01-06") + seq(0, 7 * 19, by = 7)
@@ -40,6 +45,7 @@ toy_tbl_now <- function() {
 }
 
 test_that("engine() canonicalises the built-in names", {
+  skip_on_cran()
   expect_equal(engine("nobbs")$name, "NobBS")
   expect_equal(engine("NOBBS")$name, "NobBS")
   expect_equal(engine("epinowcast")$name, "epinowcast")
@@ -78,7 +84,42 @@ test_that("engine_diseasenowcasting leaves automatic selection to diseasenowcast
   expect_false("confirmation" %in% names(spec$args))
 })
 
+test_that("engine_epinowcast() keeps epinowcast's staged model arguments apart", {
+  # epinowcast takes one list per model stage rather than a flat argument list,
+  # so the constructor has to keep the stages as named slots instead of folding
+  # them into `...`. Building the spec touches no modelling package.
+  spec <- engine_epinowcast()
+
+  expect_s3_class(spec, "nowcast_engine")
+  expect_s3_class(spec, "epinowcast")
+  expect_equal(spec$name, "epinowcast")
+  expect_equal(spec$label, "epinowcast")
+
+  # `preprocess_args` defaults to an empty list, not NULL, so it survives the
+  # NULL-dropping every other stage goes through and epinowcast always gets one.
+  expect_named(spec$args, "preprocess_args")
+  expect_equal(spec$args$preprocess_args, list())
+
+  staged <- engine_epinowcast(
+    expectation = "EXPECTATION", reference = "REFERENCE", report = "REPORT",
+    fit = "FIT", max_delay = 3, label = "enw"
+  )
+  expect_equal(
+    staged$args[c("expectation", "reference", "report", "fit")],
+    list(expectation = "EXPECTATION", reference = "REFERENCE",
+         report = "REPORT", fit = "FIT")
+  )
+  # A stage epinowcast does not have goes through `...` untouched
+  expect_equal(staged$args$max_delay, 3)
+  expect_equal(staged$label, "enw")
+
+  # The shared validation still applies
+  expect_error(engine_epinowcast(1), "must be named")
+  expect_error(engine_epinowcast(quantile_levels = 1.5), "between")
+})
+
 test_that("run_nowcast() refuses a bare method name, and says what to write", {
+  skip_on_cran()
   x <- toy_tbl_now()
   expect_error(run_nowcast(x, "testtoy"), "engine")
   # The message has to name the constructor, or the reader is left guessing
@@ -87,6 +128,7 @@ test_that("run_nowcast() refuses a bare method name, and says what to write", {
 })
 
 test_that("an unregistered method gives an actionable error", {
+  skip_on_cran()
   x <- toy_tbl_now()
   expect_error(
     run_nowcast(x, engine("definitely_not_a_method"), verbose = FALSE),
@@ -95,6 +137,7 @@ test_that("an unregistered method gives an actionable error", {
 })
 
 test_that("a backend with no nowcast_tidy() method is reported as such", {
+  skip_on_cran()
   x <- toy_tbl_now()
   # Register only half a backend, in this test's environment
   local({
@@ -107,9 +150,8 @@ test_that("a backend with no nowcast_tidy() method is reported as such", {
 })
 
 test_that("run_nowcast() returns a well formed tbl_nowcast", {
+  skip_on_cran()
   x <- toy_tbl_now()
-  registerS3method("nowcast_fit", "testtoy", nowcast_fit.testtoy, envir = asNamespace("tbl.now"))
-  registerS3method("nowcast_tidy", "testtoy", nowcast_tidy.testtoy, envir = asNamespace("tbl.now"))
 
   nowcast <- run_nowcast(x, engine("testtoy"), verbose = FALSE)
 
@@ -130,6 +172,7 @@ test_that("run_nowcast() returns a well formed tbl_nowcast", {
 })
 
 test_that("the engine's quantile_levels reach the result", {
+  skip_on_cran()
   x <- toy_tbl_now()
   nowcast <- run_nowcast(
     x, engine("testtoy", quantile_levels = c(0.1, 0.5, 0.9)), verbose = FALSE
@@ -138,6 +181,7 @@ test_that("the engine's quantile_levels reach the result", {
 })
 
 test_that("the engine's min_date trims the series it is fitted on", {
+  skip_on_cran()
   x <- toy_tbl_now()
   now <- get_now(x)
 
@@ -171,10 +215,12 @@ test_that("the engine's min_date trims the series it is fitted on", {
 })
 
 test_that("run_nowcast() rejects anything that is not a tbl_now", {
+  skip_on_cran()
   expect_error(run_nowcast(mtcars, engine("testtoy")), "tbl_now")
 })
 
 test_that("the predicted quantiles are monotone in the quantile level", {
+  skip_on_cran()
   x <- toy_tbl_now()
   nowcast <- run_nowcast(x, engine("testtoy"), verbose = FALSE)
 
@@ -192,6 +238,7 @@ test_that("list_nowcast_methods() finds registered backends", {
 })
 
 test_that("tbl_nowcast validates its inputs", {
+  skip_on_cran()
   expect_error(
     tbl_nowcast(
       predictions = data.frame(a = 1, .quantile_level = 0.5, .value = 1),
@@ -219,6 +266,7 @@ test_that("tbl_nowcast validates its inputs", {
 })
 
 test_that("as_tibble() gives quantiles by default and draws on request", {
+  skip_on_cran()
   x <- toy_tbl_now()
   nowcast <- run_nowcast(x, engine("testtoy"), verbose = FALSE)
 
@@ -233,6 +281,7 @@ test_that("as_tibble() gives quantiles by default and draws on request", {
 })
 
 test_that("autoplot() draws a fan", {
+  skip_on_cran()
   skip_if_not_installed("ggplot2")
   x <- toy_tbl_now()
   nowcast <- run_nowcast(x, engine("testtoy"), verbose = FALSE)
@@ -245,6 +294,7 @@ test_that("autoplot() draws a fan", {
 # Printing ---------------------------------------------------------------------
 
 test_that("printing a nowcast leads with the value at the now edge", {
+  skip_on_cran()
   predictions <- dplyr::tibble(
     onset_week = rep(as.Date("2020-01-05") + c(0, 7), each = 3),
     .quantile_level = rep(c(0.025, 0.5, 0.975), times = 2),
@@ -267,6 +317,7 @@ test_that("printing a nowcast leads with the value at the now edge", {
 })
 
 test_that("the value at the now edge is reported per stratum", {
+  skip_on_cran()
   predictions <- dplyr::tibble(
     onset_week = as.Date("2020-01-05"),
     gender = rep(c("Female", "Male"), each = 3),
@@ -286,6 +337,7 @@ test_that("the value at the now edge is reported per stratum", {
 })
 
 test_that("a single quantile level prints a point estimate and no interval", {
+  skip_on_cran()
   nowcast <- tbl_nowcast(
     predictions = dplyr::tibble(
       onset_week = as.Date("2020-01-05"), .quantile_level = 0.5, .value = 7

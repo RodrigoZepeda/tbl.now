@@ -26,6 +26,7 @@ make_drift_now <- function(slope = 0, from = "2018-01-01", to = "2020-06-30",
 # --- plot_delay_drift() -----------------------------------------------------
 
 test_that("plot_delay_drift returns a ggplot that builds", {
+  skip_on_cran()
   skip_if_not_installed("ggplot2")
 
   p <- plot_delay_drift(make_drift_now(slope = 0.003))
@@ -56,6 +57,7 @@ test_that("plot_delay_drift validates its input", {
 # --- diagnose_drift() -----------------------------------------------------
 
 test_that("diagnose_drift returns one tidy row per stat", {
+  skip_on_cran()
   skip_if_not_installed("modifiedmk")
 
   # First hit trips the throttled "experimental" warning.
@@ -159,6 +161,7 @@ test_that(".tbl_now_pettitt locates a clear step and guards edge cases", {
 })
 
 test_that("diagnose_changepoint returns one tidy row per stat", {
+  skip_on_cran()
   # First hit trips the throttled "experimental" warning.
   res <- suppressWarnings(
     diagnose_changepoint(make_step_now(), stat = c("median", "mean"))

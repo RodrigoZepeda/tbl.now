@@ -1,6 +1,6 @@
 #' Fill in the days when nothing was reported
 #'
-#' @description `r lifecycle::badge("experimental")`
+#' @description `r lifecycle::badge("stable")`
 #'
 #' Surveillance data records what happened, not what didn't. If no dengue case
 #' with onset on 3 January was reported on 5 January, there is simply no row for

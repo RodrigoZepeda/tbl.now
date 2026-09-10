@@ -5,7 +5,7 @@
 
 #' Tidy a fitted nowcast into one standard table
 #'
-#' @description `r lifecycle::badge("experimental")`
+#' @description `r lifecycle::badge("stable")`
 #'
 #' Every nowcasting package returns its answer in its own shape -- a matrix of
 #' posterior draws, an `stsNC` object, a Stan fit, an INLA summary, a bare list.
@@ -813,7 +813,7 @@ tidy.estimate_truncation <- function(x, probs = NULL, ...) {
 
 #' Tidy a fitted delay distribution
 #'
-#' @description `r lifecycle::badge("experimental")`
+#' @description `r lifecycle::badge("stable")`
 #'
 #' \pkg{epidist} and [EpiNow2::estimate_dist()] (new in \pkg{EpiNow2} 1.9.0) do
 #' not produce a nowcast: they estimate a **reporting-delay distribution**. There

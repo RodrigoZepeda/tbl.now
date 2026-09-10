@@ -30,7 +30,7 @@ Defaults to the object's own event units.}
 A \code{Date} vector, in increasing order.
 }
 \description{
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
 
 \code{\link[surveillance:nowcast]{surveillance::nowcast()}} takes three dates and two date \emph{grids}, and none of
 them have defaults you can rely on. These two helpers build the grids from the

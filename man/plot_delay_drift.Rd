@@ -72,7 +72,7 @@ the two at any setting).}
 A \pkg{ggplot2} object.
 }
 \description{
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
 
 Draws a \strong{rolling fan chart} of the count-weighted reporting-delay
 distribution indexed by \strong{event date}: a solid line for the rolling median,

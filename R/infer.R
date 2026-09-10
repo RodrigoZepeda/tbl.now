@@ -113,20 +113,30 @@ infer_units_one_column <- function(data, date_column, date_units) {
       )
     }
 
-    # Calculate the differences between consecutive dates
+    # Calculate the differences between consecutive dates. `NA` is dropped
+    # first: it is not a date, and counting it as a distinct one let a column
+    # holding one date plus missings past the guard below, where `diff()` gave
+    # `NA` and `min()` warned about its own empty arguments. A revision axis
+    # with pending cases is full of those missings.
     date_vals <- data |>
+      dplyr::filter(!is.na(!!as.symbol(date_column))) |>
       dplyr::distinct(!!as.symbol(date_column)) |>
       dplyr::arrange(!!as.symbol(date_column)) |>
       dplyr::pull(!!as.symbol(date_column))
 
     # Check if they are date or numeric
     if (lubridate::is.Date(date_vals)) {
-      # One distinct date has no spacing to read. Without this the `diff()` is
-      # empty, `min()` warns and returns `Inf`, and the abort below arrives
-      # behind a warning about `min` that says nothing about the data.
+      # Fewer than two distinct dates have no spacing to read. Without this the
+      # `diff()` is empty, `min()` warns and returns `Inf`, and the abort below
+      # arrives behind a warning about `min` that says nothing about the data.
       if (length(date_vals) < 2) {
+        seen <- if (length(date_vals) == 0) {
+          "no distinct dates"
+        } else {
+          "a single distinct date"
+        }
         cli::cli_abort(c(
-          "Cannot infer time units: {.val {date_column}} has a single distinct date.",
+          "Cannot infer time units: {.val {date_column}} has {seen}.",
           "i" = "Declare them with {.arg units} (or {.arg event_units} /
                  {.arg report_units}): one of {.val {setdiff(valid_units, 'numeric')}}."
         ))

@@ -164,7 +164,7 @@ diagnose.tbl_now <- function(x, ..., checks = NULL, by_strata = NULL,
 
 #' @title Individual blocks of a `tbl_now` diagnosis
 #'
-#' @description `r lifecycle::badge("experimental")`
+#' @description `r lifecycle::badge("stable")`
 #'
 #' Each function returns one block of [diagnose()], in the same schema, so they
 #' can be stacked with [dplyr::bind_rows()] or used on their own.
@@ -176,7 +176,10 @@ diagnose.tbl_now <- function(x, ..., checks = NULL, by_strata = NULL,
 #' * `diagnose_missing()` -- `NA` values, per column and per stratum. An `NA`
 #'   *count* is reported neutrally: in a reporting triangle it means *not yet
 #'   observed*, which is correct data rather than a defect.
-#' * `diagnose_duplicates()` -- rows that repeat on the full key.
+#' * `diagnose_duplicates()` -- rows that repeat on the full key: the declared
+#'   dates, the revision type, the strata, the covariates and the censoring
+#'   flags. A row with an `NA` in that key is not compared, because *unobserved*
+#'   cannot be shown to equal *unobserved*.
 #' * `diagnose_units()` -- the declared units against each other, against the
 #'   calendar the dates actually land on, and against the delay they produce.
 #' * `diagnose_negatives()` -- negative counts, and the negative increments a
@@ -1333,8 +1336,19 @@ diagnose_strata <- function(x, by_strata = NULL, strata = NULL) {
                get_covariates(x))
   columns <- intersect(unique(columns), colnames(x))
 
+  # A pending case is DEFINED by having no revision date, so counting its NA is
+  # counting the definition back at the user. Only a revision date missing from
+  # a case the object claims is already resolved says anything.
+  pending <- if (!is.null(revision_type)) {
+    x[[revision_type]] %in% "pending"
+  } else {
+    rep(FALSE, nrow(x))
+  }
+
   for (column in columns) {
     missing <- is.na(x[[column]])
+    exempt <- identical(column, revision) & pending
+    missing <- missing & !exempt
     # An `NA` COUNT is not a defect: in a reporting triangle it means the cell
     # has not been observed yet, which is different from an observed zero. The
     # same goes for a revision date that has not come back. Say so, rather
@@ -1343,12 +1357,31 @@ diagnose_strata <- function(x, by_strata = NULL, strata = NULL) {
     for (label in context$labels) {
       selected <- .diagnose_rows(context, label)
       offending <- which(selected & missing)
-      rows[[length(rows) + 1L]] <- .diagnose_count_row(
-        "missing", column, length(offending), sum(selected), "note",
+      excused <- sum(selected & exempt)
+      # Saying "no missing values" about a column that is full of them, even
+      # legitimately, reads as the check having failed to look.
+      clean <- if (excused > 0) {
+        .diagnose_text(
+          "Every missing value in {.val {column}} ({excused} of them) belongs
+           to a case that is still {.val pending}."
+        )
+      } else {
+        .diagnose_text("No missing values in {.val {column}}.")
+      }
+      message <- if (excused > 0) {
+        .diagnose_text(
+          "{length(offending)} row{?s} {?has/have} NA values in {.val {column}}
+           without being {.val pending}."
+        )
+      } else {
         .diagnose_text(
           "{length(offending)} row{?s} {?has/have} NA values in {.val {column}}."
-        ),
-        clean = .diagnose_text("No missing values in {.val {column}}."),
+        )
+      }
+      rows[[length(rows) + 1L]] <- .diagnose_count_row(
+        "missing", column, length(offending), sum(selected), "note",
+        message,
+        clean = clean,
         stratum = label,
         hint = if (neutral) {
           .diagnose_text(
@@ -1423,14 +1456,26 @@ diagnose_strata <- function(x, by_strata = NULL, strata = NULL) {
   # confirmed/retracted pair came out as an "exact duplicate", and the advice to
   # call `distinct()` would have deleted the retraction.
   key_cols <- unique(c(
-    get_report_date(x), get_event_date(x), get_covariates(x), get_strata(x),
-    get_is_censored_report(x), get_temporal_effect_cols(x),
-    .revision_group_cols(x)
+    get_event_date(x), get_report_date(x), .revision_group_cols(x),
+    get_strata(x), get_covariates(x), get_is_censored_report(x),
+    get_temporal_effect_cols(x)
   ))
   key_cols <- intersect(key_cols, colnames(x))
-  repeated <- which(duplicated(
-    as.data.frame(.strip_tbl_now(x))[, key_cols, drop = FALSE]
-  ))
+  key_frame <- as.data.frame(.strip_tbl_now(x))[, key_cols, drop = FALSE]
+
+  # `NA` is unobserved, not a value, so two rows agreeing on it are not known
+  # to describe the same cell -- the same rule a SQL unique index follows, and
+  # the same argument that puts the revision columns in the key above. A
+  # pending case has no revision date YET: two pending rows in one (event,
+  # report) cell may still resolve on different days, so calling them an "exact
+  # duplicate" and advising `distinct()` would delete a real case.
+  # `is.na()` column by column rather than `stats::complete.cases()`, which
+  # aborts on a list column.
+  known <- !Reduce(
+    `|`, lapply(key_frame, is.na), init = logical(nrow(key_frame))
+  )
+  repeated <- which(known)[duplicated(key_frame[known, , drop = FALSE])]
+  unknown <- sum(!known)
 
   # Naming the culprit matters. The usual cause is a column the object was never
   # told about -- `sex` in `covid_colombia` -- and advising `distinct()` there
@@ -1456,18 +1501,32 @@ diagnose_strata <- function(x, by_strata = NULL, strata = NULL) {
     .diagnose_text("Use {.fn dplyr::distinct} to drop the repeats.")
   }
 
-  event_date <- get_event_date(x)
-  report_date <- get_report_date(x)
+  # Name the key that was actually checked. It used to read "(event, report)",
+  # which invited the reasonable objection that a declared revision date should
+  # have separated those rows -- it always did, but the message never said so.
+  # `.revision_num` is dropped: it is the revision date in another unit.
+  key_label <- paste0(
+    "(", paste(setdiff(key_cols, ".revision_num"), collapse = ", "), ")"
+  )
+  clean <- if (unknown > 0) {
+    .diagnose_join(
+      .diagnose_text("Every row is unique on {key_label}."),
+      .diagnose_text(
+        "{unknown} row{?s} {?was/were} not compared: an NA in the key -- a
+         pending case has no revision date -- is unobserved rather than a
+         value, so it cannot match another row."
+      )
+    )
+  } else {
+    .diagnose_text("Every row is unique on {key_label}.")
+  }
   .diagnose_count_row(
     "duplicates", "key", length(repeated), nrow(x), "warning",
     .diagnose_text(
-      "*Non-unique*: {length(repeated)} row{?s} {?shares/share} an
-       ({event_date}, {report_date}) combination."
+      "*Non-unique*: {length(repeated)} row{?s} {?shares/share} a {key_label}
+       combination."
     ),
-    clean = .diagnose_text(
-      "Every row is unique on ({event_date}, {report_date}) and everything the
-       object declares."
-    ),
+    clean = clean,
     hint = .diagnose_join(cause, fix),
     rows = repeated
   )
@@ -2231,20 +2290,30 @@ diagnose_strata <- function(x, by_strata = NULL, strata = NULL) {
     # so say that rather than printing "longer than NA days".
     against <- if (is.na(typical)) {
       .diagnose_text(
-        "nothing has been confirmed yet, so there is no turnaround to compare
-         them with"
+        "Nothing has been confirmed yet, so there is no turnaround to compare
+         them with."
       )
     } else {
       .diagnose_text(
         "{round(overdue)} of them have waited longer than the median turnaround
-         of {round(typical, 2)} {report_units}"
+         of {round(typical, 2)} {report_units}."
       )
     }
+    # The pooled row is not a stratum, so "% of the stratum" reads as if it
+    # were one more of them.
+    of_what <- if (identical(label, "all")) "all cases" else "the stratum"
     rows[[length(rows) + 1L]] <- .diagnose_count_row(
       "strata", "pending", open_cases, total, "note",
-      .diagnose_text(
-        "{round(open_cases)} case{?s} {?is/are} still pending, {share}% of the
-         stratum; {against}."
+      # `.diagnose_join()`, not `{against}`: a `diagnose_text` is a deferred
+      # template, so interpolating one into another template hands cli a list to
+      # deparse, and the message came out carrying a literal
+      # `list(list(args = ...))`. Joining defers both and formats each in turn.
+      .diagnose_join(
+        .diagnose_text(
+          "{round(open_cases)} case{?s} {?is/are} still pending, {share}% of
+           {of_what}."
+        ),
+        against
       ),
       clean = .diagnose_text("No revision is still pending."),
       stratum = label,
@@ -2346,7 +2415,7 @@ diagnose_strata <- function(x, by_strata = NULL, strata = NULL) {
 
 #' Print a `tbl_now` diagnosis
 #'
-#' @description `r lifecycle::badge("experimental")`
+#' @description `r lifecycle::badge("stable")`
 #'
 #' Prints the findings [diagnose()] returned as a report: the errors, warnings
 #' and notes in full, each with its hint, and the checks that passed and that

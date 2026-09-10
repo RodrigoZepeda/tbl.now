@@ -40,6 +40,7 @@ epinow2_weekly <- function(strata = FALSE) {
 # --- the daily grid ----------------------------------------------------------
 
 test_that("a weekly series is laid on EpiNow2's daily grid with `accumulate`", {
+  skip_on_cran()
   skip_if_not_installed("EpiNow2")
   x <- epinow2_weekly()
   out <- q(tbl_now_to_EpiNow2(x, verbose = FALSE, quiet = TRUE))
@@ -57,6 +58,7 @@ test_that("a weekly series is laid on EpiNow2's daily grid with `accumulate`", {
 })
 
 test_that("the grid is exactly what EpiNow2::fill_missing() would build", {
+  skip_on_cran()
   skip_if_not_installed("EpiNow2")
   # The converter delegates to `fill_missing()` rather than laying the grid out
   # by hand. This pins that: reimplementing it is how the six-day shift got in.
@@ -74,6 +76,7 @@ test_that("the grid is exactly what EpiNow2::fill_missing() would build", {
 })
 
 test_that("the daily expansion preserves the case total exactly", {
+  skip_on_cran()
   skip_if_not_installed("EpiNow2")
   x <- epinow2_weekly()
   out <- q(tbl_now_to_EpiNow2(x, verbose = FALSE, quiet = TRUE))
@@ -89,6 +92,7 @@ test_that("the daily expansion preserves the case total exactly", {
 })
 
 test_that("daily data passes through with no `accumulate` column", {
+  skip_on_cran()
   skip_if_not_installed("EpiNow2")
   daily <- tbl_now(
     data.frame(
@@ -105,6 +109,7 @@ test_that("daily data passes through with no `accumulate` column", {
 })
 
 test_that("EpiNow2 refuses grids it cannot lay on a daily axis", {
+  skip_on_cran()
   skip_if_not_installed("EpiNow2")
   numeric_grid <- tbl_now(
     data.frame(
@@ -128,6 +133,7 @@ test_that("EpiNow2 refuses grids it cannot lay on a daily axis", {
 # --- regional_epinow ---------------------------------------------------------
 
 test_that("strata become a `region` column, each keeping its own cases", {
+  skip_on_cran()
   skip_if_not_installed("EpiNow2")
   x <- epinow2_weekly(strata = TRUE)
   out <- q(tbl_now_to_EpiNow2(
@@ -144,6 +150,7 @@ test_that("strata become a `region` column, each keeping its own cases", {
 })
 
 test_that("no region loses its first period to the accumulate grid", {
+  skip_on_cran()
   skip_if_not_installed("EpiNow2")
   # Regression, and the kind that only shows up on real data. `fill_missing()`
   # infers `initial_accumulate` when it is not given, and with `by` that
@@ -173,6 +180,7 @@ test_that("no region loses its first period to the accumulate grid", {
 })
 
 test_that("the single-series targets pool strata with a warning", {
+  skip_on_cran()
   skip_if_not_installed("EpiNow2")
   x <- epinow2_weekly(strata = TRUE)
   expect_warning(
@@ -188,6 +196,7 @@ test_that("the single-series targets pool strata with a warning", {
 # --- estimate_truncation snapshots -------------------------------------------
 
 test_that("snapshots are one per report date, shortest first, non-decreasing", {
+  skip_on_cran()
   skip_if_not_installed("EpiNow2")
   x <- epinow2_weekly()
   snaps <- q(tbl_now_to_EpiNow2(
@@ -208,6 +217,7 @@ test_that("snapshots are one per report date, shortest first, non-decreasing", {
 })
 
 test_that("`snapshots` caps how many are emitted", {
+  skip_on_cran()
   skip_if_not_installed("EpiNow2")
   x <- epinow2_weekly()
   snaps <- q(tbl_now_to_EpiNow2(
@@ -219,6 +229,7 @@ test_that("`snapshots` caps how many are emitted", {
 })
 
 test_that("invalid EpiNow2 converter controls are refused", {
+  skip_on_cran()
   skip_if_not_installed("EpiNow2")
   x <- epinow2_weekly()
 
@@ -243,6 +254,7 @@ test_that("invalid EpiNow2 converter controls are refused", {
 })
 
 test_that("each snapshot is the series as known at its own report date", {
+  skip_on_cran()
   skip_if_not_installed("EpiNow2")
   x <- epinow2_weekly()
   snaps <- q(tbl_now_to_EpiNow2(
@@ -262,6 +274,7 @@ test_that("each snapshot is the series as known at its own report date", {
 # --- the inverse -------------------------------------------------------------
 
 test_that("snapshots round-trip back into a tbl_now with every case", {
+  skip_on_cran()
   skip_if_not_installed("EpiNow2")
   x <- epinow2_weekly()
   snaps <- q(tbl_now_to_EpiNow2(
@@ -302,6 +315,7 @@ test_that("EpiNow2's own example_truncated round-trips", {
 })
 
 test_that("the inverse refuses what it genuinely cannot invert", {
+  skip_on_cran()
   skip_if_not_installed("EpiNow2")
   # A single series has no report dimension to recover.
   expect_error(
@@ -327,6 +341,7 @@ test_that("the inverse refuses what it genuinely cannot invert", {
 # --- estimate_dist -----------------------------------------------------------
 
 test_that("estimate_dist gets the schema EpiNow2 documents", {
+  skip_on_cran()
   skip_if_not_installed("EpiNow2")
   x <- epinow2_weekly()
   out <- q(tbl_now_to_EpiNow2(
@@ -352,6 +367,7 @@ test_that("estimate_dist gets the schema EpiNow2 documents", {
 })
 
 test_that("estimate_dist and tbl_now_to_epidist build identical windows", {
+  skip_on_cran()
   skip_if_not_installed("EpiNow2")
   skip_if_not_installed("epidist")
   # They share `.delay_censoring_windows()`. This is the regression guard on that
@@ -372,6 +388,7 @@ test_that("estimate_dist and tbl_now_to_epidist build identical windows", {
 })
 
 test_that("count data reaches estimate_dist as `n` weights, with no empty cells", {
+  skip_on_cran()
   skip_if_not_installed("EpiNow2")
   x <- epinow2_weekly()
   counts <- q(to_count(x, to = "count-incidence"))
@@ -389,6 +406,7 @@ test_that("count data reaches estimate_dist as `n` weights, with no empty cells"
 })
 
 test_that("estimate_dist warns that it pools strata", {
+  skip_on_cran()
   skip_if_not_installed("EpiNow2")
   # `estimate_dist()` has no grouping argument (`args$n` is the observation
   # weight, not a stratum count), so it fits ONE distribution to everything.
@@ -405,6 +423,7 @@ test_that("estimate_dist warns that it pools strata", {
 })
 
 test_that("a large share of zero delays warns before the fit misbehaves", {
+  skip_on_cran()
   skip_if_not_installed("EpiNow2")
   # A lognormal has zero density at zero, so a point mass there does not error --
   # it inflates the variance. `?tbl_now_epidist` records a case where that gave
@@ -455,6 +474,7 @@ test_that("a large share of zero delays warns before the fit misbehaves", {
 })
 
 test_that("estimate_dist keeps the censoring flag the others must drop", {
+  skip_on_cran()
   skip_if_not_installed("EpiNow2")
   # Estimating a delay distribution is the one job that can USE a per-case
   # censoring flag, so this target does not collapse it -- exactly the carve-out
@@ -492,6 +512,7 @@ test_that("estimate_dist keeps the censoring flag the others must drop", {
 })
 
 test_that("EpiNow2 series targets warn when lazy temporal effects are dropped", {
+  skip_on_cran()
   skip_if_not_installed("EpiNow2")
   unstratified <- epinow2_weekly() |>
     add_temporal_effects(temporal_effects(day_of_week = TRUE))
@@ -524,6 +545,7 @@ test_that("EpiNow2 series targets warn when lazy temporal effects are dropped", 
 # --- line list vs counts ------------------------------------------------------
 
 test_that("a line list and its own aggregate give the same series", {
+  skip_on_cran()
   skip_if_not_installed("EpiNow2")
   x <- epinow2_weekly()
   counts <- q(to_count(x, to = "count-incidence"))
@@ -543,6 +565,7 @@ test_that("a line list and its own aggregate give the same series", {
 # from a real `estimate_dist()` fit on `denguedat`.
 
 test_that(".epinow2_interval reads the width off the widest column pair", {
+  skip_on_cran()
   default_cris <- data.frame(
     median = 1, mean = 1, sd = 0.1,
     lower_90 = 0.5, lower_50 = 0.8, lower_20 = 0.9,
@@ -572,6 +595,7 @@ test_that(".epinow2_interval reads the width off the widest column pair", {
 })
 
 test_that("tidy() on an estimate_dist fit returns the DELAY schema", {
+  skip_on_cran()
   skip_if_not_installed("EpiNow2")
   # Draws of `meanlog`/`sdlog` plus the derived delay moments -- the shape
   # `.epinow2_delay_draws()` returns, checked once against a real cmdstan fit.
@@ -602,6 +626,7 @@ test_that("tidy() on an estimate_dist fit returns the DELAY schema", {
 })
 
 test_that("the draws columns line up with the family's parameter names", {
+  skip_on_cran()
   skip_if_not_installed("EpiNow2")
   # `.epinow2_delay_draws()` labels the draws matrix with
   # `names(fix_parameters(spec)$parameters)`, relying on that order matching the
@@ -635,6 +660,7 @@ test_that("the draws columns line up with the family's parameter names", {
 })
 
 test_that("delay moments come from the distribution, not the family's algebra", {
+  skip_on_cran()
   skip_if_not_installed("EpiNow2")
   # The moments are computed by discretising the fitted `dist_spec`, so a family
   # EpiNow2 adds later works without touching this package. Check the arithmetic
@@ -663,6 +689,7 @@ test_that("delay moments come from the distribution, not the family's algebra", 
 })
 
 test_that("tidy() on estimate_dist honours `level` and `probs`", {
+  skip_on_cran()
   skip_if_not_installed("EpiNow2")
   set.seed(2)
   fake_draws <- cbind(meanlog = rnorm(1000, 2, 0.1), sdlog = rnorm(1000, 0.7, 0.05))
@@ -690,6 +717,7 @@ test_that("tidy() on estimate_dist honours `level` and `probs`", {
 })
 
 test_that("tidy() on an estimate_infections fit meets the nowcast contract", {
+  skip_on_cran()
   skip_if_not_installed("EpiNow2")
   fake_predictions <- data.frame(
     date     = as.Date("2020-03-01") + 0:2,
@@ -727,6 +755,7 @@ test_that("tidy() on an estimate_infections fit meets the nowcast contract", {
 })
 
 test_that("tidy() gives regional_epinow one block per region", {
+  skip_on_cran()
   skip_if_not_installed("EpiNow2")
   # `regional_epinow()` returns a plain nested list, so `tidy.list()` has to
   # recognise it by structure. The two regions are an order of magnitude apart,
@@ -760,6 +789,7 @@ test_that("tidy() gives regional_epinow one block per region", {
 })
 
 test_that("tidy() unwraps `$estimates` in a regional_epinow block", {
+  skip_on_cran()
   skip_if_not_installed("EpiNow2")
   # `regional_epinow(output = c("regions", ...))` (the default) returns each
   # region's `estimate_infections` fit wrapped under `$estimates` of the

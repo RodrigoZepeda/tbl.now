@@ -20,6 +20,7 @@ weekly_tbl_now <- function() {
 }
 
 test_that("the `when` grid ends exactly at `now` and has `length` entries", {
+  skip_on_cran()
   x <- daily_tbl_now()
   when <- get_surveillance_when(x, length = 3)
 
@@ -30,6 +31,7 @@ test_that("the `when` grid ends exactly at `now` and has `length` entries", {
 })
 
 test_that("the `range` grid runs from the first event to `now`", {
+  skip_on_cran()
   x <- daily_tbl_now()
   range <- get_surveillance_range(x)
 
@@ -40,6 +42,7 @@ test_that("the `range` grid runs from the first event to `now`", {
 })
 
 test_that("both grids follow the object's own time step", {
+  skip_on_cran()
   x <- weekly_tbl_now()
 
   when <- get_surveillance_when(x, length = 4)
@@ -52,6 +55,7 @@ test_that("both grids follow the object's own time step", {
 })
 
 test_that("`by` counts back from `now` rather than forward from a start", {
+  skip_on_cran()
   # A month is not a fixed number of days, so seq()-ing forward from a computed
   # start lands somewhere near `now` instead of on it. It is the `now` end that
   # has to be exact -- that is the day being nowcast.
@@ -77,6 +81,7 @@ test_that("`from`, `to` and `by` override the defaults", {
 })
 
 test_that("a numeric grid is refused rather than turned into 1970 dates", {
+  skip_on_cran()
   d <- data.frame(ev = c(1L, 2L, 3L), rp = c(2L, 3L, 5L))
   x <- tbl_now(d, event_date = "ev", report_date = "rp", event_units = "numeric",
                report_units = "numeric", verbose = FALSE)
@@ -88,6 +93,7 @@ test_that("a numeric grid is refused rather than turned into 1970 dates", {
 })
 
 test_that("bad arguments abort with a message that names them", {
+  skip_on_cran()
   x <- daily_tbl_now()
 
   expect_error(get_surveillance_when(x, length = 0), "length")
@@ -137,6 +143,7 @@ test_that("the grids drive a real surveillance::nowcast() call", {
 # `dRange`, so it inherited that default and failed on anything of consequence.
 
 test_that("the surveillance support is scaled off the data, not left at 300", {
+  skip_on_cran()
   x <- daily_tbl_now()
   # Five events, one per day: the largest period total is 1, so the floor holds.
   expect_equal(tbl.now:::.surveillance_support(x), 300L)

@@ -33,6 +33,7 @@ tidy_test_tbl_now <- function() {
 }
 
 test_that("tidy() on a baselinenowcast fit meets the contract", {
+  skip_on_cran()
   skip_if_not_installed("baselinenowcast")
   x <- tidy_test_tbl_now()
   triangle <- suppressWarnings(tbl_now_to_baselinenowcast(x, verbose = FALSE))
@@ -43,6 +44,7 @@ test_that("tidy() on a baselinenowcast fit meets the contract", {
 })
 
 test_that("tidy() adds a q* column per requested probability", {
+  skip_on_cran()
   skip_if_not_installed("baselinenowcast")
   x <- tidy_test_tbl_now()
   triangle <- suppressWarnings(tbl_now_to_baselinenowcast(x, verbose = FALSE))
@@ -59,6 +61,7 @@ test_that("tidy() adds a q* column per requested probability", {
 })
 
 test_that("tidy() refuses a `probs` the NobBS fit was never asked for", {
+  skip_on_cran()
   skip_if_not_installed("NobBS")
   # A bare list carrying NobBS's shape, so no model has to be fitted. No
   # `specs$quantiles` was set, so there are no `q_*` columns at all.
@@ -73,6 +76,7 @@ test_that("tidy() refuses a `probs` the NobBS fit was never asked for", {
 })
 
 test_that("tidy() returns the quantiles a NobBS fit WAS asked for", {
+  skip_on_cran()
   skip_if_not_installed("NobBS")
   # `specs = list(quantiles = c(0.1, 0.5, 0.9))` puts these columns in
   # `estimates`. Reading them back is a lookup, not an approximation, so it must
@@ -105,6 +109,7 @@ test_that("tidy() recognises a NobBS fit by structure", {
 })
 
 test_that("tidy() records the interval width each engine actually returns", {
+  skip_on_cran()
   # epinowcast's default band is q5-q95, i.e. 90% -- not the 95% the others use.
   # Recording it is what stops a 90% band being compared with a 95% one.
   #
@@ -167,6 +172,7 @@ surveillance_fit <- local({
 }
 
 test_that("tidy() reads surveillance's prediction interval", {
+  skip_on_cran()
   skip_if_not_installed("surveillance")
   tidied <- generics::tidy(surveillance_fit())
 
@@ -179,6 +185,7 @@ test_that("tidy() reads surveillance's prediction interval", {
 })
 
 test_that("tidy() reports surveillance's interval width from control$alpha", {
+  skip_on_cran()
   skip_if_not_installed("surveillance")
   tidied <- generics::tidy(surveillance_fit())
 
@@ -188,6 +195,7 @@ test_that("tidy() reports surveillance's interval width from control$alpha", {
 })
 
 test_that("tidy() falls back to NA bounds when there is no pi slot", {
+  skip_on_cran()
   skip_if_not_installed("surveillance")
   fit <- surveillance_fit()
 
@@ -238,6 +246,7 @@ with_mocked_epidist <- function(code) {
 fake_epidist_fit <- function() structure(list(), class = c("brmsfit", "epidist_fit"))
 
 test_that("tidy() on an epidist fit returns the delay distribution", {
+  skip_on_cran()
   skip_if_not_installed("epidist")
 
   with_mocked_epidist({
@@ -261,6 +270,7 @@ test_that("tidy() on an epidist fit returns the delay distribution", {
 })
 
 test_that("tidy() drops epidist's bookkeeping columns", {
+  skip_on_cran()
   skip_if_not_installed("epidist")
 
   with_mocked_epidist({
@@ -271,6 +281,7 @@ test_that("tidy() drops epidist's bookkeeping columns", {
 })
 
 test_that("tidy() honours probs and level on an epidist fit", {
+  skip_on_cran()
   skip_if_not_installed("epidist")
 
   with_mocked_epidist({
@@ -288,6 +299,7 @@ test_that("tidy() honours probs and level on an epidist fit", {
 })
 
 test_that("tidy() rejects an impossible level for an epidist fit", {
+  skip_on_cran()
   skip_if_not_installed("epidist")
 
   with_mocked_epidist({

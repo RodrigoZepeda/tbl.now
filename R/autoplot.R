@@ -51,20 +51,37 @@
 #' Works for linelist and count data alike (counts come from `to_count()`).
 #'
 #' @param object A `tbl_now` object.
+#' @param axis `"report"` for the reporting delay (`.delay`) or `"revision"`
+#'   for the report-to-resolution delay (`.revision_delay`).
+#' @param by_revision_type Whether to carry an `outcome` column, so the panel
+#'   can split the delays by how the case eventually resolved.
 #'
-#' @return A tibble with columns `delay` and `weight` (positive weights only).
+#' @return A tibble with columns `delay` and `weight` (positive weights only),
+#'   plus `outcome` when `by_revision_type` is `TRUE`.
 #'
 #' @keywords internal
 #' @noRd
-.tbl_now_delay_distribution <- function(object) {
+.tbl_now_delay_distribution <- function(object, axis = c("report", "revision"),
+                                        by_revision_type = FALSE) {
+  axis <- match.arg(axis)
   incidence <- object |>
     ungroup() |>
     to_count(to = "count-incidence")
   case_count_column <- get_case_count(incidence)
-  dplyr::tibble(
-    delay  = incidence[[".delay"]],
+  delay_column <- if (identical(axis, "revision")) ".revision_delay" else ".delay"
+
+  distribution <- dplyr::tibble(
+    delay  = incidence[[delay_column]],
     weight = incidence[[case_count_column]]
-  ) |>
+  )
+  if (isTRUE(by_revision_type)) {
+    distribution$outcome <- .tbl_now_revision_type_factor(
+      incidence[[get_revision_type(object)]],
+      !is.na(incidence[[get_revision_date(object)]])
+    )
+  }
+
+  distribution |>
     dplyr::filter(!is.na(.data$delay), !is.na(.data$weight), .data$weight > 0)
 }
 
@@ -354,33 +371,86 @@
 
 # Individual panels-----
 
+#' Labels for a delay-distribution panel
+#'
+#' The reporting and revision axes draw the same histogram of two different
+#' delays, so the only thing that separates them is what they are called and
+#' which process they belong to.
+#'
+#' @param axis `"report"` or `"revision"`.
+#'
+#' @return A list with `process`, `title` and `x`.
+#'
+#' @keywords internal
+#' @noRd
+.tbl_now_delay_axis_labels <- function(axis) {
+  if (identical(axis, "revision")) {
+    list(
+      process = "revision",
+      title   = "Empirical revision delay distribution",
+      x       = "Revision delay"
+    )
+  } else {
+    list(
+      process = "reporting",
+      title   = "Empirical delay distribution",
+      x       = "Reporting delay"
+    )
+  }
+}
+
 #' Panel: empirical delay distribution
 #'
 #' @param delay_distribution A tibble from `.tbl_now_delay_distribution()`.
 #' @param palette A named colour palette.
+#' @param axis `"report"` (the reporting delay) or `"revision"` (the
+#'   report-to-resolution delay).
 #'
 #' @return A ggplot object.
 #'
 #' @keywords internal
 #' @noRd
 .tbl_now_panel_delay <- function(delay_distribution, palette, size = 1,
-                                linewidth = 1) {
+                                linewidth = 1, axis = "report") {
+  if (nrow(delay_distribution) == 0) {
+    return(.tbl_now_empty_panel("No delays to summarise", palette))
+  }
   normalised_weight <- delay_distribution$weight / sum(delay_distribution$weight)
   plot_data <- dplyr::mutate(delay_distribution, normalised_weight = normalised_weight)
 
-  style <- .tbl_now_process_style("reporting", palette)
+  labels <- .tbl_now_delay_axis_labels(axis)
+  style <- .tbl_now_process_style(labels$process, palette)
 
-  ggplot2::ggplot(plot_data, ggplot2::aes(x = .data$delay)) +
-    ggplot2::geom_histogram(
-      ggplot2::aes(weight = .data$normalised_weight),
-      fill = style$fill, colour = style$line,
-      linewidth = 0.5 * linewidth,
-      binwidth = 1, center = 0
-    ) +
+  panel <- ggplot2::ggplot(plot_data, ggplot2::aes(x = .data$delay))
+  if ("outcome" %in% names(plot_data)) {
+    # Stacked, so the bar heights still read as the delay distribution of the
+    # whole series; the split says which part of each bar resolved which way.
+    # The outline is the ink colour rather than the process colour because one
+    # of the four fills is white, and a white bar with a white outline is not a
+    # bar.
+    panel <- panel +
+      ggplot2::geom_histogram(
+        ggplot2::aes(weight = .data$normalised_weight, fill = .data$outcome),
+        colour = palette[["ink"]],
+        linewidth = 0.3 * linewidth,
+        binwidth = 1, center = 0
+      ) +
+      .tbl_now_revision_type_scale(palette)
+  } else {
+    panel <- panel +
+      ggplot2::geom_histogram(
+        ggplot2::aes(weight = .data$normalised_weight),
+        fill = style$fill, colour = style$line,
+        linewidth = 0.5 * linewidth,
+        binwidth = 1, center = 0
+      )
+  }
+
+  panel +
     ggplot2::labs(
-      title = "Empirical delay distribution",
+      title = labels$title,
       subtitle = style$subtitle,
-      x = "Reporting delay", y = "Density"
+      x = labels$x, y = "Density"
     )
 }
 
@@ -1345,21 +1415,25 @@
 #'
 #' @param object A `tbl_now` object.
 #' @param strata_cols Character vector of strata columns.
+#' @param axis `"report"` or `"revision"`; which delay to summarise.
 #'
 #' @return A tibble with `strata`, `delay` and a within-stratum `density`.
 #'
 #' @keywords internal
 #' @noRd
-.tbl_now_delay_distribution_by <- function(object, strata_cols) {
+.tbl_now_delay_distribution_by <- function(object, strata_cols,
+                                           axis = c("report", "revision")) {
+  axis <- match.arg(axis)
   incidence <- object |>
     ungroup() |>
     to_count(to = "count-incidence")
   case_count_column <- get_case_count(incidence)
   observations <- as.data.frame(incidence)
+  delay_column <- if (identical(axis, "revision")) ".revision_delay" else ".delay"
 
   dplyr::tibble(
     strata = .tbl_now_strata_label(observations, strata_cols),
-    delay  = observations[[".delay"]],
+    delay  = observations[[delay_column]],
     weight = observations[[case_count_column]]
   ) |>
     dplyr::filter(!is.na(.data$delay), !is.na(.data$weight), .data$weight > 0) |>
@@ -1410,16 +1484,19 @@
 #'
 #' @param delay_distribution_by A tibble from `.tbl_now_delay_distribution_by()`.
 #' @param palette A named colour palette.
+#' @param axis `"report"` or `"revision"`.
 #'
 #' @return A ggplot object.
 #'
 #' @keywords internal
 #' @noRd
 .tbl_now_panel_delay_strata <- function(delay_distribution_by, palette,
-                                       size = 1, linewidth = 1) {
+                                       size = 1, linewidth = 1,
+                                       axis = "report") {
   if (nrow(delay_distribution_by) == 0) {
     return(.tbl_now_empty_panel("No delays to summarise", palette))
   }
+  labels <- .tbl_now_delay_axis_labels(axis)
   ggplot2::ggplot(
     delay_distribution_by,
     ggplot2::aes(x = .data$delay, y = .data$density, fill = .data$strata)
@@ -1430,9 +1507,9 @@
     ) +
     .tbl_now_strata_fill_scale() +
     ggplot2::labs(
-      title = "Empirical delay distribution",
-      subtitle = .tbl_now_process_style("reporting", palette)$subtitle,
-      x = "Reporting delay", y = "Density within stratum"
+      title = labels$title,
+      subtitle = .tbl_now_process_style(labels$process, palette)$subtitle,
+      x = labels$x, y = "Density within stratum"
     )
 }
 
@@ -1758,22 +1835,49 @@
 
 # Panel selection-----
 
-#' The full, ordered set of panel keys applicable to an event unit
+#' The three processes an `autoplot()` panel can belong to, in column order
+#'
+#' The gallery is a matrix: one **column** per process, one **row** per
+#' question asked of it. `autoplot()` reads this order left to right, so the
+#' epidemic process is always the leftmost column and the revision process --
+#' when there is one -- always the rightmost.
+#'
+#' @return A character vector of the three process names.
+#'
+#' @keywords internal
+#' @noRd
+.tbl_now_panel_processes <- function() {
+  c("epidemic", "report", "revision")
+}
+
+#' The panel matrix: one row per question, one column per process
+#'
+#' Each row is a named list with an `epidemic`, `report` and `revision` element,
+#' holding the panel key that answers that row's question for that process, or
+#' `NULL` when the object cannot answer it -- weekly data has no day-of-week
+#' panel, an object with no holiday calendar has no holiday panel, an object
+#' with no revision axis has no revision column at all. `autoplot()` lays the
+#' matrix out directly, so a hole in it stays a hole and the columns keep their
+#' meaning.
 #'
 #' @param event_units The event units (`"days"`, `"weeks"`, `"months"`, ...).
 #' @param holiday_config A list from `.tbl_now_holiday_config()`, or `NULL`. The
 #'   holiday panels are available only when the object carries a holiday or
 #'   weekend temporal effect for them to describe.
+#' @param revision_units,revision_holiday_config The same two for the revision
+#'   axis.
+#' @param has_revision Whether the object carries a revision process.
+#' @param report_holiday_config The holiday config of the report date.
 #'
-#' @return An ordered character vector of concrete panel keys.
+#' @return A list of rows, each a named list of three (possibly `NULL`) keys.
 #'
 #' @keywords internal
 #' @noRd
-.tbl_now_all_panel_keys <- function(event_units, holiday_config = NULL,
-                                    revision_units = NULL,
-                                    revision_holiday_config = NULL,
-                                    has_revision = FALSE,
-                                    report_holiday_config = holiday_config) {
+.tbl_now_panel_grid <- function(event_units, holiday_config = NULL,
+                                revision_units = NULL,
+                                revision_holiday_config = NULL,
+                                has_revision = FALSE,
+                                report_holiday_config = holiday_config) {
   event_groupings <- c(
     .tbl_now_calendar_groupings(event_units),
     .tbl_now_holiday_groupings(holiday_config)
@@ -1786,18 +1890,62 @@
     .tbl_now_calendar_groupings(revision_units),
     .tbl_now_holiday_groupings(revision_holiday_config)
   )
-  c(
-    "delay_distribution",
-    "epidemic",
-    if (length(event_groupings) > 0) paste0("calendar_", event_groupings),
-    "seasonality",
-    if (length(report_groupings) > 0) paste0("delay_", report_groupings),
-    "delay_seasonality",
-    if (has_revision && length(revision_groupings) > 0) {
-      paste0("revision_", revision_groupings)
-    },
-    if (has_revision) "revision_seasonality"
+
+  calendar_rows <- lapply(
+    c("weekday", "week", "month", "holiday", "holiday_lag"),
+    function(grouping) {
+      list(
+        epidemic = if (grouping %in% event_groupings) paste0("calendar_", grouping),
+        report   = if (grouping %in% report_groupings) paste0("delay_", grouping),
+        revision = if (has_revision && grouping %in% revision_groupings) {
+          paste0("revision_", grouping)
+        }
+      )
+    }
   )
+
+  rows <- c(
+    list(list(
+      epidemic = "epidemic",
+      report   = "delay_distribution",
+      revision = if (has_revision) "revision_distribution"
+    )),
+    calendar_rows,
+    list(list(
+      epidemic = "seasonality",
+      report   = "delay_seasonality",
+      revision = if (has_revision) "revision_seasonality"
+    ))
+  )
+
+  Filter(function(row) length(unlist(row)) > 0, rows)
+}
+
+#' The full, ordered set of panel keys applicable to an object
+#'
+#' The matrix of `.tbl_now_panel_grid()`, read row by row, which is the order
+#' the panels are drawn in.
+#'
+#' @inheritParams .tbl_now_panel_grid
+#'
+#' @return An ordered character vector of concrete panel keys.
+#'
+#' @keywords internal
+#' @noRd
+.tbl_now_all_panel_keys <- function(event_units, holiday_config = NULL,
+                                    revision_units = NULL,
+                                    revision_holiday_config = NULL,
+                                    has_revision = FALSE,
+                                    report_holiday_config = holiday_config) {
+  grid <- .tbl_now_panel_grid(
+    event_units, holiday_config,
+    revision_units = revision_units,
+    revision_holiday_config = revision_holiday_config,
+    has_revision = has_revision,
+    report_holiday_config = report_holiday_config
+  )
+  unlist(lapply(grid, function(row) unlist(row[.tbl_now_panel_processes()])),
+         use.names = FALSE)
 }
 
 #' Resolve the `panels` argument into an ordered vector of concrete panel keys
@@ -1856,7 +2004,7 @@
   requested <- unique(unlist(lapply(panels, expand_alias)))
 
   known_keys <- c(
-    "delay_distribution", "epidemic",
+    "delay_distribution", "revision_distribution", "epidemic",
     "calendar_weekday", "calendar_week", "calendar_month",
     "calendar_holiday", "calendar_holiday_lag", "seasonality",
     "delay_weekday", "delay_week", "delay_month",
@@ -1939,8 +2087,13 @@
     delay_distribution = if (identical(ctx$data_type, "count-cumulative")) {
       .tbl_now_panel_delay_cumulative(ctx$delay_growth, palette, size = size, linewidth = linewidth)
     } else {
-      .tbl_now_panel_delay(ctx$delay_distribution, palette, size = size, linewidth = linewidth)
+      .tbl_now_panel_delay(ctx$delay_distribution, palette, size = size,
+                           linewidth = linewidth, axis = "report")
     },
+    revision_distribution = .tbl_now_panel_delay(
+      ctx$revision_distribution, palette, size = size, linewidth = linewidth,
+      axis = "revision"
+    ),
     epidemic = .tbl_now_panel_epidemic(
       ctx$epidemic_process, ctx$incomplete_threshold, ctx$level, palette,
       ctx$holiday_points,
@@ -2073,8 +2226,13 @@
     delay_distribution = if (identical(ctx$data_type, "count-cumulative")) {
       .tbl_now_panel_delay_cumulative_strata(ctx$delay_growth_by, palette, size = size, linewidth = linewidth)
     } else {
-      .tbl_now_panel_delay_strata(ctx$delay_distribution_by, palette, size = size, linewidth = linewidth)
+      .tbl_now_panel_delay_strata(ctx$delay_distribution_by, palette, size = size,
+                                  linewidth = linewidth, axis = "report")
     },
+    revision_distribution = .tbl_now_panel_delay_strata(
+      ctx$revision_distribution_by, palette, size = size, linewidth = linewidth,
+      axis = "revision"
+    ),
     epidemic = .tbl_now_panel_epidemic_strata(
       ctx$epidemic_process_by, ctx$incomplete_threshold, ctx$level, palette,
       size = size, linewidth = linewidth
@@ -2189,6 +2347,9 @@
 #' @keywords internal
 #' @noRd
 .tbl_now_panel_xlim <- function(key, xlims) {
+  if (identical(key, "revision_distribution")) {
+    return(xlims$delay_distribution)
+  }
   if (grepl("^(calendar|revision)_", key)) {
     return(xlims$calendar_effect)
   }
@@ -2215,9 +2376,18 @@ ggplot2::autoplot
 #' @description `r lifecycle::badge("experimental")`
 #'
 #' Produces a multi-panel diagnostic overview of a `tbl_now` using
-#' [ggplot2::ggplot()] and \pkg{patchwork}. Two families of panels are available
-#' — one describing the **case counts** and one describing the **reporting
-#' delay** — and you choose which to draw with the `panels` argument.
+#' [ggplot2::ggplot()] and \pkg{patchwork}. The gallery is a **matrix with one
+#' column per process**: the **case counts** on the left, the **reporting
+#' delay** next to them, and — when the object declares a revision axis — the
+#' **revision process** on the right. Each row asks the same question of every
+#' process, so an object with two dates comes out two columns wide and one with
+#' three dates three columns wide. You choose which panels to draw with the
+#' `panels` argument, and the number of columns follows: a selection covering
+#' one family only (`panels = "calendar"`) is one column.
+#'
+#' A row a process cannot answer — weekly data has no day-of-week panel — leaves
+#' that cell empty rather than closing the gap, so the columns keep their
+#' meaning all the way down.
 #'
 #' **Case-count panels**
 #'
@@ -2268,6 +2438,17 @@ ggplot2::autoplot
 #' * `"delay_seasonality"` — a **cycles** periodogram of the mean-delay series,
 #'   whose peak marks a cycle in the reporting delay (e.g. a weekly reporting
 #'   rhythm).
+#'
+#' **Revision-process panels** (only when the object declares a revision axis)
+#'
+#' * `"revision_distribution"` — the reporting-delay histogram's twin on the
+#'   revision axis: a (case-count weighted) histogram of `.revision_delay`, the
+#'   time from a report to its resolution. A case still `"pending"` has no
+#'   resolution and so no revision delay, and does not appear.
+#' * `"revision_weekday"`, `"revision_week"`, `"revision_month"`,
+#'   `"revision_holiday"`, `"revision_holiday_lag"`, `"revision_seasonality"` —
+#'   the same calendar and periodogram questions asked of the dates resolutions
+#'   arrived on.
 #'
 #' Every panel is colour-coded by the process it describes — **red** for the
 #' reporting-delay panels, **green** for the case-count (epidemic) ones — and
@@ -2328,6 +2509,14 @@ ggplot2::autoplot
 #'   is two days in seven — so a share would mostly report how the calendar is
 #'   built rather than how the data behave: "29% of cases at the weekend" is
 #'   average, not low.
+#' @param by_revision_type Logical (default `FALSE`). When `TRUE`, the two
+#'   delay-distribution panels are split by how each case eventually resolved:
+#'   `confirmed`, `pending`, `retracted` and `unknown`, stacked, in the palette's
+#'   outcome colours (see [tbl_now_palette()]). Ignored on an object with no
+#'   revision axis, and when `by_strata = TRUE`, which already spends the fill on
+#'   the strata. It defaults to `FALSE` here because the gallery is read as a
+#'   grid of shapes, and to `TRUE` in [plot_delay_distribution()], where the
+#'   panel is the whole plot.
 #' @param level Completeness level used for the incompleteness line in the
 #'   `"epidemic"` panel (and to trim the delay panels). The line is drawn at
 #'   `now - q`, where `q` is the `level` quantile of the delay distribution. With
@@ -2352,8 +2541,9 @@ ggplot2::autoplot
 #'   limits.
 #' @param ... Unused; present for compatibility with [ggplot2::autoplot()].
 #'
-#' @return A \pkg{patchwork} object combining the selected panels, or — when a
-#'   single panel is selected — that panel as a \pkg{ggplot2} object.
+#' @return A \pkg{patchwork} object combining the selected panels, one column per
+#'   process, or — when a single panel is selected — that panel as a
+#'   \pkg{ggplot2} object.
 #'
 #' @examplesIf requireNamespace("patchwork", quietly = TRUE)
 #' data(denguedat)
@@ -2396,6 +2586,7 @@ ggplot2::autoplot
 autoplot.tbl_now <- function(object, ..., panels = "all", by_strata = FALSE,
                              strata = NULL,
                              measure = c("percent", "normalized"),
+                             by_revision_type = FALSE,
                              level = 0.95, plotly = FALSE,
                              size = 1, linewidth = 1,
                              palette = .tbl_now_palette(),
@@ -2421,6 +2612,11 @@ autoplot.tbl_now <- function(object, ..., panels = "all", by_strata = FALSE,
   if (!rlang::is_bool(by_strata)) {
     cli::cli_abort("{.arg by_strata} must be a single {.val TRUE} or {.val FALSE}.")
   }
+  if (!rlang::is_bool(by_revision_type)) {
+    cli::cli_abort(
+      "{.arg by_revision_type} must be a single {.val TRUE} or {.val FALSE}."
+    )
+  }
   measure <- match.arg(measure)
 
   object <- ungroup(object)
@@ -2428,6 +2624,14 @@ autoplot.tbl_now <- function(object, ..., panels = "all", by_strata = FALSE,
   revision_units <- get_revision_units(object)
   data_type <- get_data_type(object)
   has_revision_process <- has_revision(object)
+
+  # An outcome split needs outcomes. Asking for one on a two-date object is not
+  # an error -- the same call has to work on both -- it just has nothing to
+  # split by, and the panels fall back to their single process colour. The
+  # by-strata panels already spend their fill on the strata, so the split is
+  # dropped there too.
+  split_by_outcome <- isTRUE(by_revision_type) && has_revision_process &&
+    !isTRUE(by_strata)
 
   # The holiday panels describe the attached temporal-effects spec, so which of
   # them exist depends on the object, not just on its time unit.
@@ -2463,6 +2667,8 @@ autoplot.tbl_now <- function(object, ..., panels = "all", by_strata = FALSE,
     object <- add_strata(object, dplyr::all_of(undeclared_strata))
   }
 
+  # The incompleteness line is read off the *reporting* delay whatever panels
+  # were asked for, so this one is computed unsplit and unconditionally.
   delay_distribution <- .tbl_now_delay_distribution(object)
 
   # Date beyond which less than `level` of the delay has arrived
@@ -2549,6 +2755,9 @@ autoplot.tbl_now <- function(object, ..., panels = "all", by_strata = FALSE,
       delay_distribution_by = if ("delay_distribution" %in% panel_keys && !is_cumulative) {
         .tbl_now_delay_distribution_by(object, strata_cols)
       },
+      revision_distribution_by = if ("revision_distribution" %in% panel_keys) {
+        .tbl_now_delay_distribution_by(object, strata_cols, axis = "revision")
+      },
       delay_growth_by = if (needs_growth) {
         .tbl_now_cumulative_growth(object, strata_cols)
       },
@@ -2567,7 +2776,16 @@ autoplot.tbl_now <- function(object, ..., panels = "all", by_strata = FALSE,
     ctx <- list(
       by_strata            = FALSE,
       data_type            = data_type,
-      delay_distribution   = delay_distribution,
+      delay_distribution   = if (split_by_outcome) {
+        .tbl_now_delay_distribution(object, by_revision_type = TRUE)
+      } else {
+        delay_distribution
+      },
+      revision_distribution = if ("revision_distribution" %in% panel_keys) {
+        .tbl_now_delay_distribution(
+          object, axis = "revision", by_revision_type = split_by_outcome
+        )
+      },
       delay_growth         = if (needs_growth) .tbl_now_cumulative_growth(object),
       epidemic_process     = epidemic_process,
       delay_per_date       = delay_per_date,
@@ -2600,12 +2818,86 @@ autoplot.tbl_now <- function(object, ..., panels = "all", by_strata = FALSE,
                                   linewidth = linewidth) + shared_theme
     .tbl_now_apply_xlim(panel, .tbl_now_panel_xlim(key, xlims))
   })
+  names(built_panels) <- panel_keys
 
   # A single selected panel is returned as a plain ggplot for convenience.
   if (length(built_panels) == 1) {
     return(.as_plotly(built_panels[[1]], plotly))
   }
 
-  .combine_panels(built_panels, plotly = plotly, ncol = 2, byrow = TRUE,
-                  title = "Automatic plot of effects", palette = palette)
+  layout <- .tbl_now_panel_layout(
+    built_panels,
+    .tbl_now_panel_grid(
+      event_units, holiday_config,
+      revision_units = revision_units,
+      revision_holiday_config = revision_holiday_config,
+      has_revision = has_revision_process,
+      report_holiday_config = report_holiday_config
+    )
+  )
+
+  .combine_panels(layout$panels, plotly = plotly, ncol = layout$ncol,
+                  byrow = TRUE, title = "Automatic plot of effects",
+                  palette = palette)
+}
+
+#' Lay the built panels out as one column per process
+#'
+#' The gallery reads across: the epidemic process on the left, the reporting
+#' process next to it, and the revision process -- when the object has one -- on
+#' the right, so a row is one question asked of every process at once. The
+#' number of columns is therefore the number of processes the selection actually
+#' covers: two for the usual event/report object, three once a revision axis is
+#' declared, one when the selection is a single family such as `"calendar"`.
+#'
+#' A hole in the matrix -- weekly data has no day-of-week panel to put in the
+#' epidemic column, so its `"week"` row is short -- is filled with a
+#' [patchwork::plot_spacer()] rather than closed up, because closing it would
+#' slide every later panel into the wrong column and the columns are the whole
+#' point.
+#'
+#' @param built_panels A named list of built panels, keyed by panel key.
+#' @param grid The matrix from `.tbl_now_panel_grid()`.
+#'
+#' @return A list with `panels` (row-major, spacers included) and `ncol`.
+#'
+#' @keywords internal
+#' @noRd
+.tbl_now_panel_layout <- function(built_panels, grid) {
+  processes <- .tbl_now_panel_processes()
+  selected <- names(built_panels)
+
+  # Only the columns the selection actually reaches; only the rows it fills.
+  keeps <- function(key) !is.null(key) && key %in% selected
+  columns <- Filter(
+    function(process) any(vapply(grid, function(row) keeps(row[[process]]), logical(1))),
+    processes
+  )
+  rows <- Filter(
+    function(row) any(vapply(columns, function(process) keeps(row[[process]]), logical(1))),
+    grid
+  )
+
+  panels <- unlist(
+    lapply(rows, function(row) {
+      lapply(columns, function(process) {
+        if (keeps(row[[process]])) {
+          built_panels[[row[[process]]]]
+        } else {
+          patchwork::plot_spacer()
+        }
+      })
+    }),
+    recursive = FALSE
+  )
+
+  # A key that is in the selection but not in the matrix would be dropped
+  # silently, which would be a bug in the matrix rather than in the call.
+  placed <- unlist(lapply(rows, function(row) unlist(row[columns])), use.names = FALSE)
+  stray <- setdiff(selected, placed)
+  if (length(stray) > 0) {
+    panels <- c(panels, built_panels[stray])
+  }
+
+  list(panels = panels, ncol = max(length(columns), 1L))
 }

@@ -41,7 +41,7 @@ The strata, covariates and temporal-effect columns ride along, plus the
 single pasted \code{strata_col} that \code{\link[NobBS:NobBS.strat]{NobBS::NobBS.strat()}} takes.
 }
 \description{
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
 
 \code{\link[NobBS:NobBS]{NobBS::NobBS()}} counts \strong{rows}: it takes an individual-level line list with
 one column for the event date and one for the report date, and treats each row

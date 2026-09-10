@@ -109,7 +109,7 @@ have no third date.}
 }
 }
 \description{
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
 
 When you build a \code{\link[=tbl_now]{tbl_now()}} you tell it which column is the event date, which
 is the report date, which are strata, and so on. These functions read that

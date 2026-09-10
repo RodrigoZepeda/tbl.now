@@ -57,7 +57,7 @@ carry their own date mapping.}
 A \code{tbl_now} object.
 }
 \description{
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
 
 Convert a supported object into a \link{tbl_now}. For a plain \code{data.frame} /
 \code{data.table} (or an existing \code{tbl_now}) you supply the \code{event_date} and

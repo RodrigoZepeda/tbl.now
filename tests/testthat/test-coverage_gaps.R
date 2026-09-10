@@ -79,6 +79,7 @@ base_cumulative <- function() {
 
 # --- change_report_date ---
 test_that("change_report_date updates report_date attribute", {
+  skip_on_cran()
   x <- base_daily()
   x$report2 <- x$report - 1L
   result <- change_report_date(x, "report2")
@@ -87,6 +88,7 @@ test_that("change_report_date updates report_date attribute", {
 })
 
 test_that("change_report_date recalculates .delay", {
+  skip_on_cran()
   x <- base_daily()
   x$report2 <- x$report - 1L
   result <- change_report_date(x, "report2")
@@ -96,6 +98,7 @@ test_that("change_report_date recalculates .delay", {
 
 # --- change_case_count ---
 test_that("change_case_count updates case_count attribute", {
+  skip_on_cran()
   x <- base_weekly(count = TRUE)
   x$n2 <- x$n * 2L
   result <- change_case_count(x, n2)
@@ -103,6 +106,7 @@ test_that("change_case_count updates case_count attribute", {
 })
 
 test_that("change_case_count accepts NULL (clears case_count on linelist data)", {
+  skip_on_cran()
   # Clearing case_count on linelist data is fine; count-incidence would fail validate
   x <- base_daily() # linelist, no case_count
   x$n2 <- as.numeric(seq_len(nrow(x)))
@@ -114,6 +118,7 @@ test_that("change_case_count accepts NULL (clears case_count on linelist data)",
 
 # --- change_is_censored_report ---
 test_that("change_is_censored_report sets is_censored_report column", {
+  skip_on_cran()
   x <- base_daily()
   x$cens <- c(FALSE, TRUE, FALSE, FALSE, FALSE)
   result <- change_is_censored_report(x, cens)
@@ -121,6 +126,7 @@ test_that("change_is_censored_report sets is_censored_report column", {
 })
 
 test_that("change_is_censored_report accepts NULL (clears is_censored_report)", {
+  skip_on_cran()
   x <- base_daily()
   x$cens <- c(FALSE, TRUE, FALSE, FALSE, FALSE)
   x2 <- change_is_censored_report(x, cens)
@@ -130,6 +136,7 @@ test_that("change_is_censored_report accepts NULL (clears is_censored_report)", 
 
 # --- remove_is_censored_report ---
 test_that("remove_is_censored_report clears is_censored_report", {
+  skip_on_cran()
   x <- base_daily()
   x$cens <- c(FALSE, TRUE, FALSE, FALSE, FALSE)
   x2 <- change_is_censored_report(x, cens)
@@ -138,6 +145,7 @@ test_that("remove_is_censored_report clears is_censored_report", {
 })
 
 test_that("remove_is_censored_report emits message on count-cumulative data", {
+  skip_on_cran()
   # cli_alert_warning fires as a message, not an R warning
   x <- base_cumulative()
   x$cens <- c(FALSE, FALSE, FALSE, FALSE)
@@ -147,35 +155,41 @@ test_that("remove_is_censored_report emits message on count-cumulative data", {
 
 # --- remove_strata / remove_all_strata ---
 test_that("remove_strata removes one strata column", {
+  skip_on_cran()
   x <- base_daily()
   result <- remove_strata(x, sex)
   expect_null(get_strata(result))
 })
 
 test_that("remove_strata emits message on count-cumulative data", {
+  skip_on_cran()
   x <- base_cumulative()
   expect_message_quietly(suppressWarnings(remove_strata(x, sex)), "cumulative")
 })
 
 test_that("remove_all_strata removes all strata", {
+  skip_on_cran()
   x <- base_daily()
   result <- remove_all_strata(x)
   expect_null(get_strata(result))
 })
 
 test_that("remove_all_strata emits message on count-cumulative data", {
+  skip_on_cran()
   x <- base_cumulative()
   expect_message_quietly(remove_all_strata(x), "cumulative")
 })
 
 # --- remove_covariates / remove_all_covariates ---
 test_that("remove_covariates removes specific covariate", {
+  skip_on_cran()
   x <- base_daily()
   result <- remove_covariates(x, weather)
   expect_null(get_covariates(result))
 })
 
 test_that("remove_covariates emits message on count-cumulative data", {
+  skip_on_cran()
   x <- base_cumulative()
   x$tmp_cov <- rnorm(4)
   x <- change_covariates(x, tmp_cov)
@@ -183,12 +197,14 @@ test_that("remove_covariates emits message on count-cumulative data", {
 })
 
 test_that("remove_all_covariates removes all covariates", {
+  skip_on_cran()
   x <- base_daily()
   result <- remove_all_covariates(x)
   expect_null(get_covariates(result))
 })
 
 test_that("remove_all_covariates emits message on count-cumulative data", {
+  skip_on_cran()
   x <- base_cumulative()
   x$tmp_cov <- rnorm(4)
   x <- change_covariates(x, tmp_cov)
@@ -197,12 +213,14 @@ test_that("remove_all_covariates emits message on count-cumulative data", {
 
 # --- replace_temporal_effects ---
 test_that("replace_temporal_effects emits message on count-cumulative data", {
+  skip_on_cran()
   x <- base_cumulative()
   te <- temporal_effects(week_of_year = TRUE)
   expect_message_quietly(replace_temporal_effects(x, te), "cumulative")
 })
 
 test_that("replace_temporal_effects replaces the spec", {
+  skip_on_cran()
   x <- base_weekly() |>
     add_temporal_effects(temporal_effects(week_of_year = TRUE))
   te2 <- temporal_effects(month_of_year = TRUE)
@@ -214,6 +232,7 @@ test_that("replace_temporal_effects replaces the spec", {
 })
 
 test_that("replace_temporal_effects removes old computed columns", {
+  skip_on_cran()
   x <- base_weekly() |>
     add_temporal_effects(temporal_effects(week_of_year = TRUE)) |>
     compute_temporal_effects()
@@ -228,6 +247,7 @@ test_that("replace_temporal_effects removes old computed columns", {
 # ============================================================
 
 test_that("add_temporal_effects.data.frame adds day_of_month column", {
+  skip_on_cran()
   d <- tibble(
     event  = as.Date(c("2023-01-01", "2023-01-08", "2023-01-15", "2023-01-22")),
     report = as.Date(c("2023-01-02", "2023-01-09", "2023-01-16", "2023-01-23"))
@@ -248,6 +268,7 @@ test_that("add_temporal_effects.data.frame adds day_of_month column", {
 })
 
 test_that("add_temporal_effects.data.frame adds weekend column", {
+  skip_on_cran()
   d <- tibble(
     event  = as.Date(c("2023-01-02", "2023-01-07", "2023-01-08", "2023-01-09")),
     report = as.Date(c("2023-01-03", "2023-01-08", "2023-01-09", "2023-01-10"))
@@ -264,6 +285,7 @@ test_that("add_temporal_effects.data.frame adds weekend column", {
 })
 
 test_that("add_temporal_effects.data.frame adds month_of_year column", {
+  skip_on_cran()
   d <- tibble(
     event  = as.Date(c("2023-01-01", "2023-02-01", "2023-03-01", "2023-04-01")),
     report = as.Date(c("2023-01-02", "2023-02-02", "2023-03-02", "2023-04-02"))
@@ -277,6 +299,7 @@ test_that("add_temporal_effects.data.frame adds month_of_year column", {
 })
 
 test_that("add_temporal_effects.data.frame errors when overwrite=FALSE and col exists", {
+  skip_on_cran()
   d <- tibble(
     event           = as.Date(c("2023-01-02", "2023-01-09")),
     report          = as.Date(c("2023-01-03", "2023-01-10")),
@@ -293,6 +316,7 @@ test_that("add_temporal_effects.data.frame errors when overwrite=FALSE and col e
 })
 
 test_that("add_temporal_effects.tbl_now errors on invalid date_type", {
+  skip_on_cran()
   x <- base_weekly()
   te <- temporal_effects(week_of_year = TRUE)
   expect_error(
@@ -302,6 +326,7 @@ test_that("add_temporal_effects.tbl_now errors on invalid date_type", {
 })
 
 test_that("add_temporal_effects.tbl_now errors on non-temporal_effects object", {
+  skip_on_cran()
   x <- base_weekly()
   expect_error(
     add_temporal_effects(x, t_effects = list(a = 1)),
@@ -310,6 +335,7 @@ test_that("add_temporal_effects.tbl_now errors on non-temporal_effects object", 
 })
 
 test_that("add_temporal_effects.tbl_now with report_date stores spec with report_date type", {
+  skip_on_cran()
   x <- base_weekly()
   te <- temporal_effects(week_of_year = TRUE)
   result <- add_temporal_effects(x, t_effects = te, date_type = "report_date")
@@ -322,6 +348,7 @@ test_that("add_temporal_effects.tbl_now with report_date stores spec with report
 # ============================================================
 
 test_that("compute_temporal_effects with overwrite=TRUE replaces existing cols", {
+  skip_on_cran()
   x <- base_weekly() |>
     add_temporal_effects(temporal_effects(week_of_year = TRUE)) |>
     compute_temporal_effects()
@@ -336,6 +363,7 @@ test_that("compute_temporal_effects with overwrite=TRUE replaces existing cols",
 # ============================================================
 
 test_that("rowwise.tbl_now warns and demotes to a plain rowwise_df", {
+  skip_on_cran()
   x <- base_weekly()
   expect_warning(result <- rowwise(x), "not implemented")
 
@@ -350,6 +378,7 @@ test_that("rowwise.tbl_now warns and demotes to a plain rowwise_df", {
 })
 
 test_that("rowwise() on a grouped_tbl_now warns too", {
+  skip_on_cran()
   # `rowwise.grouped_df` sits before `tbl_now` in the class vector, so without
   # a `grouped_tbl_now` method this path demoted leakily and in silence.
   x <- group_by(base_weekly(strata = TRUE), sex)
@@ -361,6 +390,7 @@ test_that("rowwise() on a grouped_tbl_now warns too", {
 })
 
 test_that("rowwise.tbl_now still computes, and forwards its columns", {
+  skip_on_cran()
   x <- base_weekly(strata = TRUE)
 
   result <- suppressWarnings(rowwise(x)) |> dplyr::mutate(one = max(n))
@@ -371,6 +401,7 @@ test_that("rowwise.tbl_now still computes, and forwards its columns", {
 })
 
 test_that("the rebuild path the warning names actually works", {
+  skip_on_cran()
   x <- base_weekly()
   demoted <- suppressWarnings(rowwise(x))
 
@@ -384,6 +415,7 @@ test_that("the rebuild path the warning names actually works", {
 })
 
 test_that("summarise.tbl_now with .groups argument works", {
+  skip_on_cran()
   x <- base_weekly(strata = TRUE)
   xg <- group_by(x, sex)
   # .groups argument path
@@ -393,6 +425,7 @@ test_that("summarise.tbl_now with .groups argument works", {
 })
 
 test_that("summarise.tbl_now: preserves tbl_now when dates survive", {
+  skip_on_cran()
   x <- base_daily()
   # summarise that keeps event_date and report_date
   xg <- group_by(x, event, report)
@@ -401,6 +434,7 @@ test_that("summarise.tbl_now: preserves tbl_now when dates survive", {
 })
 
 test_that("summarize.grouped_tbl_now dispatches correctly", {
+  skip_on_cran()
   x <- base_weekly(strata = TRUE)
   xg <- group_by(x, sex)
   # Uses summarize (alias) on grouped_tbl_now
@@ -409,6 +443,7 @@ test_that("summarize.grouped_tbl_now dispatches correctly", {
 })
 
 test_that("reframe.tbl_now returns valid result", {
+  skip_on_cran()
   x <- base_weekly(strata = TRUE)
   # reframe with no grouping just expands rows
   result <- suppressWarnings(reframe(x, delay = unique(.delay)))
@@ -416,6 +451,7 @@ test_that("reframe.tbl_now returns valid result", {
 })
 
 test_that("$<-.grouped_tbl_now adds column and preserves class", {
+  skip_on_cran()
   x <- base_weekly()
   xg <- group_by(x, onset)
   xg$new_col <- seq_len(nrow(xg))
@@ -428,6 +464,7 @@ test_that("$<-.grouped_tbl_now adds column and preserves class", {
 # ============================================================
 
 test_that("validate_tbl_now emits message when event and report date are the same col", {
+  skip_on_cran()
   # cli_alert_warning fires as a message, not an R warning
   x <- base_daily()
   attr(x, "report_date") <- get_event_date(x)
@@ -439,6 +476,7 @@ test_that("validate_tbl_now emits message when event and report date are the sam
 # ============================================================
 
 test_that("tbl_now warns and ungroups grouped input", {
+  skip_on_cran()
   d <- tibble(
     event  = as.Date(c("2023-01-01", "2023-01-02", "2023-01-03")),
     report = as.Date(c("2023-01-02", "2023-01-03", "2023-01-04"))
@@ -450,6 +488,7 @@ test_that("tbl_now warns and ungroups grouped input", {
 })
 
 test_that("tbl_now force=TRUE overwrites .event_num and .report_num if present", {
+  skip_on_cran()
   d <- tibble(
     event = as.Date(c("2023-01-01", "2023-01-02", "2023-01-03")),
     report = as.Date(c("2023-01-02", "2023-01-03", "2023-01-04")),
@@ -469,6 +508,7 @@ test_that("tbl_now force=TRUE overwrites .event_num and .report_num if present",
 # ============================================================
 
 test_that("tbl_now delay: error if delay column named .event_date when report+delay used", {
+  skip_on_cran()
   d <- tibble(
     report = as.Date(c("2023-01-02", "2023-01-03")),
     .event_date = c(1, 1)
@@ -483,6 +523,7 @@ test_that("tbl_now delay: error if delay column named .event_date when report+de
 })
 
 test_that("tbl_now delay: error if delay column named .report_date when event+delay used", {
+  skip_on_cran()
   d <- tibble(
     event = as.Date(c("2023-01-01", "2023-01-02")),
     .report_date = c(1, 1)
@@ -497,6 +538,7 @@ test_that("tbl_now delay: error if delay column named .report_date when event+de
 })
 
 test_that("tbl_now delay: non-numeric delay column errors in .reconstruct_date_from_delay", {
+  skip_on_cran()
   d <- tibble(
     event = as.Date(c("2023-01-01", "2023-01-02")),
     delay = c("a", "b")
@@ -519,6 +561,7 @@ test_that("tbl_now_attributes errors on non-tbl_now input", {
 })
 
 test_that("tbl_now_attributes returns expected names", {
+  skip_on_cran()
   x <- base_daily()
   attrs <- tbl_now_attributes(x)
   expect_true("event_date" %in% names(attrs))
@@ -531,6 +574,7 @@ test_that("tbl_now_attributes returns expected names", {
 # ============================================================
 
 test_that("get_temporal_effect_cols returns character(0) when attr missing", {
+  skip_on_cran()
   x <- base_daily()
   # Remove the attribute entirely
   attr(x, "computed_temporal_effect_cols") <- NULL
@@ -543,6 +587,7 @@ test_that("get_temporal_effect_cols returns character(0) when attr missing", {
 # ============================================================
 
 test_that("infer_data_type warns when linelist data has a case_count column", {
+  skip_on_cran()
   d <- tibble(
     event  = as.Date(c("2023-01-01", "2023-01-02")),
     report = as.Date(c("2023-01-02", "2023-01-03")),
@@ -563,6 +608,7 @@ test_that("infer_data_type warns when linelist data has a case_count column", {
 # ============================================================
 
 test_that("time_cols_to_numeric with force=TRUE overwrites existing .delay", {
+  skip_on_cran()
   d <- tibble(
     event  = as.Date(c("2023-01-01", "2023-01-02", "2023-01-03")),
     report = as.Date(c("2023-01-02", "2023-01-03", "2023-01-04")),
@@ -580,6 +626,7 @@ test_that("time_cols_to_numeric with force=TRUE overwrites existing .delay", {
 # ============================================================
 
 test_that("update.tbl_now binds new rows and preserves class", {
+  skip_on_cran()
   x <- base_daily()
   new_rows <- tibble(
     event   = as.Date(c("2023-01-06")),
@@ -603,6 +650,7 @@ test_that("update.tbl_now binds new rows and preserves class", {
 # ============================================================
 
 test_that("rename_with.tbl_now renames a strata column and updates attribute", {
+  skip_on_cran()
   x <- base_daily()
   result <- rename_with(x, toupper, .cols = "sex")
   expect_true("SEX" %in% colnames(result))
@@ -610,6 +658,7 @@ test_that("rename_with.tbl_now renames a strata column and updates attribute", {
 })
 
 test_that("rename_with.tbl_now renames a covariate column and updates attribute", {
+  skip_on_cran()
   x <- base_daily()
   result <- rename_with(x, toupper, .cols = "weather")
   expect_true("WEATHER" %in% colnames(result))
@@ -617,6 +666,7 @@ test_that("rename_with.tbl_now renames a covariate column and updates attribute"
 })
 
 test_that("rename_with.tbl_now renaming event_date col updates event_date attribute", {
+  skip_on_cran()
   x <- base_daily()
   result <- rename_with(x, toupper, .cols = "event")
   expect_true("EVENT" %in% colnames(result))
@@ -624,6 +674,7 @@ test_that("rename_with.tbl_now renaming event_date col updates event_date attrib
 })
 
 test_that("rename_with.tbl_now renaming a protected generated col emits message", {
+  skip_on_cran()
   x <- base_daily()
   add_prefix <- function(nm) paste0("x_", nm)
   expect_message_quietly(
@@ -639,6 +690,7 @@ test_that("rename_with.tbl_now renaming a protected generated col emits message"
 # ============================================================
 
 test_that("summarise.tbl_now with .by argument works", {
+  skip_on_cran()
   x <- base_daily()
   result <- suppressWarnings(summarise(x, n_rows = n(), .by = "sex"))
   expect_true(is.data.frame(result))
@@ -646,6 +698,7 @@ test_that("summarise.tbl_now with .by argument works", {
 })
 
 test_that("summarize.tbl_now alias dispatches correctly", {
+  skip_on_cran()
   x <- base_daily()
   xg <- group_by(x, sex)
   result <- suppressWarnings(summarize(xg, n_rows = n()))
@@ -653,6 +706,7 @@ test_that("summarize.tbl_now alias dispatches correctly", {
 })
 
 test_that("reframe.grouped_tbl_now dispatches correctly and returns data", {
+  skip_on_cran()
   x <- base_weekly(strata = TRUE)
   xg <- group_by(x, sex)
   # reframe on a grouped_tbl_now should work: the method strips grouped_df
@@ -666,6 +720,7 @@ test_that("reframe.grouped_tbl_now dispatches correctly and returns data", {
 # ============================================================
 
 test_that("validate_tbl_now catches NA report_date values with a warning", {
+  skip_on_cran()
   x <- base_daily()
   # The `$<-` on a tbl_now revalidates and warns; that is not what this test
   # is checking, only the explicit `validate_tbl_now()` call below is.
@@ -679,6 +734,7 @@ test_that("validate_tbl_now catches NA report_date values with a warning", {
 # ============================================================
 
 test_that("tbl_now errors when data is not a data.frame", {
+  skip_on_cran()
   expect_error(
     tbl_now(list(a = 1), event_date = "a", report_date = "b"),
     "data.frame"
@@ -686,6 +742,7 @@ test_that("tbl_now errors when data is not a data.frame", {
 })
 
 test_that("tbl_now errors when case_count has length > 1 (via string vector)", {
+  skip_on_cran()
   d <- tibble(
     event  = as.Date(c("2023-01-01", "2023-01-02")),
     report = as.Date(c("2023-01-02", "2023-01-03")),
@@ -703,6 +760,7 @@ test_that("tbl_now errors when case_count has length > 1 (via string vector)", {
 })
 
 test_that("tbl_now errors when .event_num already exists without force", {
+  skip_on_cran()
   d <- tibble(
     event = as.Date(c("2023-01-01", "2023-01-02")),
     report = as.Date(c("2023-01-02", "2023-01-03")),
@@ -715,6 +773,7 @@ test_that("tbl_now errors when .event_num already exists without force", {
 })
 
 test_that("tbl_now errors when .report_num already exists without force", {
+  skip_on_cran()
   d <- tibble(
     event       = as.Date(c("2023-01-01", "2023-01-02")),
     report      = as.Date(c("2023-01-02", "2023-01-03")),
@@ -731,22 +790,26 @@ test_that("tbl_now errors when .report_num already exists without force", {
 # ============================================================
 
 test_that("change_report_date errors when column not found", {
+  skip_on_cran()
   x <- base_daily()
   # tidyselect fires the "doesn't exist" error before our check
   expect_error(change_report_date(x, "nonexistent_col"))
 })
 
 test_that("change_case_count errors on non-numeric column", {
+  skip_on_cran()
   x <- base_daily()
   expect_error(change_case_count(x, sex), "numeric")
 })
 
 test_that("change_is_censored_report errors on non-logical column", {
+  skip_on_cran()
   x <- base_daily()
   expect_error(change_is_censored_report(x, weather), "logical")
 })
 
 test_that("replace_temporal_effects errors on non-temporal_effects object", {
+  skip_on_cran()
   x <- base_daily()
   expect_error(replace_temporal_effects(x, list(a = 1)), "temporal_effects")
 })
@@ -756,6 +819,7 @@ test_that("replace_temporal_effects errors on non-temporal_effects object", {
 # ============================================================
 
 test_that("add_temporal_effects.data.frame adds season (Fourier) columns", {
+  skip_on_cran()
   d <- tibble(
     event      = as.Date(c("2023-01-01", "2023-01-08", "2023-01-15", "2023-01-22")),
     report     = as.Date(c("2023-01-02", "2023-01-09", "2023-01-16", "2023-01-23")),
@@ -772,6 +836,7 @@ test_that("add_temporal_effects.data.frame adds season (Fourier) columns", {
 })
 
 test_that("add_temporal_effects.data.frame errors when season col already exists", {
+  skip_on_cran()
   d <- tibble(
     event = as.Date(c("2023-01-01", "2023-01-08")),
     .event_num = 0:1,
@@ -789,6 +854,7 @@ test_that("add_temporal_effects.data.frame errors when season col already exists
 })
 
 test_that("add_temporal_effects.data.frame errors when week_of_year col already exists", {
+  skip_on_cran()
   d <- tibble(
     event                = as.Date(c("2023-01-02", "2023-01-09")),
     .event_week_of_year  = c(1L, 2L)
@@ -805,6 +871,7 @@ test_that("add_temporal_effects.data.frame errors when week_of_year col already 
 })
 
 test_that("add_temporal_effects.data.frame errors when month_of_year col already exists", {
+  skip_on_cran()
   d <- tibble(
     event                 = as.Date(c("2023-01-01", "2023-02-01")),
     .event_month_of_year  = c(1L, 2L)
@@ -825,6 +892,7 @@ test_that("add_temporal_effects.data.frame errors when month_of_year col already
 # ============================================================
 
 test_that("complete_zeroes works with numeric data", {
+  skip_on_cran()
   d <- tibble(
     event  = c(1L, 1L, 2L, 4L, 4L),
     report = c(1L, 2L, 2L, 4L, 5L),
@@ -842,6 +910,7 @@ test_that("complete_zeroes works with numeric data", {
 })
 
 test_that("complete_zeroes errors when event and report units differ", {
+  skip_on_cran()
   # Manually craft object with mismatched units
   x <- tibble(
     event  = as.Date(c("2020-01-01", "2020-01-08", "2020-01-15")),

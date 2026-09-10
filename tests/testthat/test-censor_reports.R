@@ -37,24 +37,28 @@ make_delays <- function() {
 # ---- Wrong inputs -----------------------------------------------------------
 
 test_that("censor_reports and censor_reporting_delays refuse a non-tbl_now", {
+  skip_on_cran()
   df <- data.frame(a = 1)
   expect_error(censor_reports(df, a > 0), "must be a <tbl_now>")
   expect_error(censor_reporting_delays(df, a > 0), "must be a <tbl_now>")
 })
 
 test_that("the condition is required", {
+  skip_on_cran()
   x <- make_delays()
   expect_error(censor_reports(x), "condition")
   expect_error(censor_reporting_delays(x), "condition")
 })
 
 test_that("a condition naming a column that is not there is an error", {
+  skip_on_cran()
   x <- make_delays()
   expect_error(suppressWarnings(censor_reports(x, no_such_column > 1)), "no_such_column")
   expect_error(suppressWarnings(censor_reporting_delays(x, no_such_column > 1)), "no_such_column")
 })
 
 test_that("a condition that is not logical, or the wrong length, is refused", {
+  skip_on_cran()
   x <- make_delays()
   expect_error(censor_reports(x, .delay), "logical")
   expect_error(censor_reporting_delays(x, onset), "logical")
@@ -62,6 +66,7 @@ test_that("a condition that is not logical, or the wrong length, is refused", {
 })
 
 test_that("a replacement of the wrong type or length is refused", {
+  skip_on_cran()
   x <- make_delays()
   expect_error(
     censor_reports(x, .delay > 60, to_report = 100),
@@ -77,6 +82,7 @@ test_that("a replacement of the wrong type or length is refused", {
 })
 
 test_that("verbose is checked", {
+  skip_on_cran()
   x <- make_delays()
   expect_error(censor_reports(x, .delay > 60, verbose = "yes"), "verbose")
   expect_error(censor_reporting_delays(x, .delay > 60, verbose = 1), "verbose")
@@ -85,6 +91,7 @@ test_that("verbose is checked", {
 # ---- Results worked out by hand ---------------------------------------------
 
 test_that("censor_reports replaces the matching dates with `now` by default", {
+  skip_on_cran()
   x <- make_messy()
   out <- suppressWarnings(censor_reports(
     x, is.na(reported) | reported > as.Date("2100-01-01"),
@@ -104,6 +111,7 @@ test_that("censor_reports replaces the matching dates with `now` by default", {
 })
 
 test_that("censor_reports honours an explicit replacement date", {
+  skip_on_cran()
   x <- make_messy()
   out <- suppressWarnings(censor_reports(
     x, is.na(reported),
@@ -116,6 +124,7 @@ test_that("censor_reports honours an explicit replacement date", {
 })
 
 test_that("a per-row replacement vector is applied row by row", {
+  skip_on_cran()
   x <- make_delays()
   out <- censor_reports(
     x, .delay > 3,
@@ -129,6 +138,7 @@ test_that("a per-row replacement vector is applied row by row", {
 })
 
 test_that("censor_reports with to_report = NULL only sets the flag", {
+  skip_on_cran()
   x <- make_messy()
   out <- suppressWarnings(censor_reports(x, is.na(reported), to_report = NULL, verbose = FALSE))
 
@@ -137,6 +147,7 @@ test_that("censor_reports with to_report = NULL only sets the flag", {
 })
 
 test_that("censor_reporting_delays caps the delay by moving the report date", {
+  skip_on_cran()
   x <- make_delays()
   out <- censor_reporting_delays(x, .delay > 60, to_delay = 60, verbose = FALSE)
 
@@ -149,6 +160,7 @@ test_that("censor_reporting_delays caps the delay by moving the report date", {
 })
 
 test_that("censor_reporting_delays without a replacement only sets the flag", {
+  skip_on_cran()
   x <- make_delays()
   out <- censor_reporting_delays(x, .delay > 60, verbose = FALSE)
 
@@ -157,6 +169,7 @@ test_that("censor_reporting_delays without a replacement only sets the flag", {
 })
 
 test_that("censor_reporting_delays agrees with censor_reporting_delays_above on the same rule", {
+  skip_on_cran()
   x <- make_delays()
   general <- censor_reporting_delays(x, is.finite(.delay) & .delay > 60, verbose = FALSE)
   special <- censor_reporting_delays_above(x, max_delay = 60, verbose = FALSE)
@@ -168,6 +181,7 @@ test_that("censor_reporting_delays agrees with censor_reporting_delays_above on 
 })
 
 test_that("an NA condition is not a match", {
+  skip_on_cran()
   x <- make_messy()
   # `reported > date` is NA for the row with no report date.
   out <- suppressWarnings(censor_reports(x, reported > as.Date("2100-01-01"), verbose = FALSE))
@@ -177,6 +191,7 @@ test_that("an NA condition is not a match", {
 })
 
 test_that("a condition matching nothing leaves the data alone", {
+  skip_on_cran()
   x <- make_delays()
   out <- censor_reporting_delays(x, .delay > 1e6, verbose = FALSE)
 
@@ -185,6 +200,7 @@ test_that("a condition matching nothing leaves the data alone", {
 })
 
 test_that("a length-1 condition is recycled over every row", {
+  skip_on_cran()
   x <- make_delays()
   expect_true(all(censor_reporting_delays(x, TRUE, verbose = FALSE)[[".is_censored_report"]]))
   expect_false(any(censor_reporting_delays(x, FALSE, verbose = FALSE)[[".is_censored_report"]]))
@@ -193,6 +209,7 @@ test_that("a length-1 condition is recycled over every row", {
 # ---- The existing flag ------------------------------------------------------
 
 test_that("an existing censoring column is merged, never cleared", {
+  skip_on_cran()
   x <- make_messy(flag = TRUE)
   expect_equal(get_is_censored_report(x), "was_censored")
 
@@ -205,6 +222,7 @@ test_that("an existing censoring column is merged, never cleared", {
 })
 
 test_that("the flag column is created when the object has none", {
+  skip_on_cran()
   x <- make_delays()
   expect_null(get_is_censored_report(x))
 
@@ -215,6 +233,7 @@ test_that("the flag column is created when the object has none", {
 # ---- Grouped objects --------------------------------------------------------
 
 test_that("a grouped tbl_now gets the same answer as an ungrouped one", {
+  skip_on_cran()
   x <- make_delays()
   grouped <- x |> group_by(!!as.symbol(get_event_date(x)))
 
@@ -244,6 +263,7 @@ test_that("a grouped tbl_now gets the same answer as an ungrouped one", {
 })
 
 test_that("a condition may name a grouping column", {
+  skip_on_cran()
   x <- make_messy()
   out <- suppressWarnings(
     censor_reports(x |> group_by(sex), sex == "M" & is.na(reported), verbose = FALSE)
@@ -254,6 +274,7 @@ test_that("a condition may name a grouping column", {
 # ---- Count data and the revision process ----------------------------------
 
 test_that("count data is censored cell by cell, and the totals are untouched", {
+  skip_on_cran()
   df <- data.frame(
     event = as.Date("2020-01-01") + c(0, 0, 1),
     report = as.Date("2020-01-01") + c(0, 70, 1),
@@ -271,6 +292,7 @@ test_that("count data is censored cell by cell, and the totals are untouched", {
 })
 
 test_that("censoring a report keeps the revision process attached", {
+  skip_on_cran()
   cases <- data.frame(
     onset = as.Date("2021-01-04") + 0:4,
     visit = as.Date(c("2021-01-05", NA, "2021-01-07", "2021-01-08", "2021-01-09")),
@@ -296,6 +318,7 @@ test_that("censoring a report keeps the revision process attached", {
 })
 
 test_that("censor_revision_delays_above still needs a revision process", {
+  skip_on_cran()
   expect_error(
     censor_revision_delays_above(make_delays(), max_delay = 10),
     "needs a revision process"
@@ -305,6 +328,7 @@ test_that("censor_revision_delays_above still needs a revision process", {
 # ---- Messages ---------------------------------------------------------------
 
 test_that("the censoring functions report what they did unless silenced", {
+  skip_on_cran()
   x <- make_delays()
   expect_message_quietly(censor_reports(x, .delay > 60), "Censored")
   expect_message_quietly(censor_reporting_delays(x, .delay > 60), "Censored")
@@ -314,6 +338,7 @@ test_that("the censoring functions report what they did unless silenced", {
 # ---- Second pass: composition, idempotence, and the other data shapes -------
 
 test_that("censoring twice is the same as censoring once", {
+  skip_on_cran()
   x <- make_delays()
   once <- censor_reporting_delays(x, .delay > 60, to_delay = 60, verbose = FALSE)
   twice <- censor_reporting_delays(once, .delay > 60, to_delay = 60, verbose = FALSE)
@@ -327,6 +352,7 @@ test_that("censoring twice is the same as censoring once", {
 })
 
 test_that("a later, looser censoring never clears an earlier, stricter one", {
+  skip_on_cran()
   x <- make_delays()
   strict <- censor_reporting_delays(x, .delay > 3, verbose = FALSE)
   loose <- censor_reporting_delays(strict, .delay > 1000, verbose = FALSE)
@@ -336,6 +362,7 @@ test_that("a later, looser censoring never clears an earlier, stricter one", {
 })
 
 test_that("the condition sees variables from the calling environment", {
+  skip_on_cran()
   x <- make_delays()
   threshold <- 60
   out <- censor_reporting_delays(x, .delay > threshold, verbose = FALSE)
@@ -343,6 +370,7 @@ test_that("the condition sees variables from the calling environment", {
 })
 
 test_that("a replacement before the event date is allowed, and warned about", {
+  skip_on_cran()
   x <- make_delays()
   expect_warning(
     censor_reports(x, .delay > 60, to_report = as.Date("2019-12-01"), verbose = FALSE),
@@ -351,6 +379,7 @@ test_that("a replacement before the event date is allowed, and warned about", {
 })
 
 test_that("a per-row to_delay is applied row by row", {
+  skip_on_cran()
   x <- make_delays()
   out <- censor_reporting_delays(x, .delay > 3, to_delay = c(0, 2, 0, 10), verbose = FALSE)
   # Rows 2 (delay 5) and 4 (delay 298) match, and take positions 2 and 4.
@@ -358,6 +387,7 @@ test_that("a per-row to_delay is applied row by row", {
 })
 
 test_that("censoring works on a numeric axis, and refuses a fractional replacement", {
+  skip_on_cran()
   x <- tbl_now(data.frame(event = 1:10, report = 1:10 + 2L),
     event_date = event, report_date = report,
     units = "numeric", verbose = FALSE
@@ -378,6 +408,7 @@ test_that("censoring works on a numeric axis, and refuses a fractional replaceme
 })
 
 test_that("the delay is expressed in the object's own units, not always days", {
+  skip_on_cran()
   onset <- as.Date("2024-01-07") + 7 * (0:4)
   df <- data.frame(
     onset = onset,
@@ -397,6 +428,7 @@ test_that("the delay is expressed in the object's own units, not always days", {
 })
 
 test_that("censor_reports keeps a count-cumulative object cumulative", {
+  skip_on_cran()
   df <- data.frame(
     event = as.Date("2024-01-01") + rep(c(0, 1), each = 3),
     report = as.Date("2024-01-01") + c(0, 1, 2, 1, 2, 3),
@@ -414,6 +446,7 @@ test_that("censor_reports keeps a count-cumulative object cumulative", {
 })
 
 test_that("covariates and the temporal-effects spec survive a censoring rebuild", {
+  skip_on_cran()
   df <- data.frame(
     onset = as.Date("2020-01-01") + 0:5,
     reported = as.Date("2020-01-01") + 0:5 + c(1, 2, 1, 2, 1, 300),
@@ -440,6 +473,7 @@ test_that("covariates and the temporal-effects spec survive a censoring rebuild"
 })
 
 test_that("materialised temporal-effect columns are recomputed, not left stale", {
+  skip_on_cran()
   df <- data.frame(
     onset = as.Date("2020-01-01") + 0:5,
     reported = as.Date("2020-01-01") + 0:5 + c(1, 2, 1, 2, 1, 300)
@@ -471,6 +505,7 @@ test_that("materialised temporal-effect columns are recomputed, not left stale",
 })
 
 test_that("censoring a report date leaves the object valid and coherent", {
+  skip_on_cran()
   x <- make_messy()
   out <- suppressWarnings(censor_reports(
     x, is.na(reported) | reported > as.Date("2100-01-01"),
@@ -484,6 +519,7 @@ test_that("censoring a report date leaves the object valid and coherent", {
 })
 
 test_that("the issue's own use case works on the shipped messy dataset", {
+  skip_on_cran()
   data(hai_bucaramanga, envir = environment())
   x <- suppressWarnings(tbl_now(hai_bucaramanga,
     event_date = specimen_date, report_date = report_date, strata = sex,
@@ -504,6 +540,7 @@ test_that("the issue's own use case works on the shipped messy dataset", {
 })
 
 test_that("censoring reports then aggregating keeps every case", {
+  skip_on_cran()
   x <- make_messy()
   fixed <- suppressWarnings(censor_reports(
     x, is.na(reported) | reported > as.Date("2100-01-01"),

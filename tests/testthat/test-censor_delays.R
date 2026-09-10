@@ -20,6 +20,7 @@ make_delay_data <- function(is_censored_report = FALSE) {
 }
 
 test_that("censor_reporting_delays_above flags long delays and creates the column", {
+  skip_on_cran()
   out <- censor_reporting_delays_above(make_delay_data(), max_delay = 60, verbose = FALSE)
 
   expect_true(is_tbl_now(out))
@@ -38,6 +39,7 @@ test_that("censor_reporting_delays_above merges with existing censoring (never u
 })
 
 test_that("censor_reporting_delays_above emits an informative message unless verbose = FALSE", {
+  skip_on_cran()
   expect_message_quietly(
     censor_reporting_delays_above(make_delay_data(), max_delay = 60),
     "censored"
@@ -46,11 +48,13 @@ test_that("censor_reporting_delays_above emits an informative message unless ver
 })
 
 test_that("censor_reporting_delays_above flags nothing when max_delay is large", {
+  skip_on_cran()
   out <- censor_reporting_delays_above(make_delay_data(), max_delay = 1000, verbose = FALSE)
   expect_false(any(out[[".is_censored_report"]]))
 })
 
 test_that("censor_reporting_delays_above works on count data via the .delay column", {
+  skip_on_cran()
   d <- tibble(
     event  = as.Date("2020-01-01") + c(0, 0, 7),
     report = as.Date("2020-01-01") + c(0, 70, 7), # middle row: 10-week delay
@@ -67,12 +71,14 @@ test_that("censor_reporting_delays_above works on count data via the .delay colu
 })
 
 test_that("censor_reporting_delays_above validates its arguments", {
+  skip_on_cran()
   expect_error(censor_reporting_delays_above(data.frame(a = 1), max_delay = 5), "tbl_now")
   expect_error(censor_reporting_delays_above(make_delay_data(), max_delay = -1), "max_delay")
   expect_error(censor_reporting_delays_above(make_delay_data(), max_delay = c(1, 2)), "max_delay")
 })
 
 test_that("censor_reporting_delays_above works on a grouped tbl_now and keeps the groups", {
+  skip_on_cran()
   grouped <- make_delay_data() |> dplyr::group_by(onset)
   out <- censor_reporting_delays_above(grouped, max_delay = 60, verbose = FALSE)
 

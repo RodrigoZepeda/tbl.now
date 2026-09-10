@@ -198,7 +198,7 @@
 
 #' Visualise whether the reporting-delay distribution drifts over time
 #'
-#' @description `r lifecycle::badge("experimental")`
+#' @description `r lifecycle::badge("stable")`
 #'
 #' Draws a **rolling fan chart** of the count-weighted reporting-delay
 #' distribution indexed by **event date**: a solid line for the rolling median,
@@ -473,7 +473,7 @@ plot_delay_drift <- function(x, ..., window = NULL, step = NULL, min_n = 1,
 
 #' Test whether the reporting-delay distribution drifts over time
 #'
-#' @description `r lifecycle::badge("experimental")`
+#' @description `r lifecycle::badge("stable")`
 #'
 #' Runs an **autocorrelation-robust monotonic-trend test** on the per-period,
 #' count-weighted delay summaries, to answer "do delays drift over time?" in a
@@ -754,7 +754,7 @@ diagnose_drift <- function(x, ...,
 
 #' Detect an abrupt change point in the reporting-delay distribution
 #'
-#' @description `r lifecycle::badge("experimental")`
+#' @description `r lifecycle::badge("stable")`
 #'
 #' Complements [diagnose_drift()]. Where that tests for a *gradual* monotonic
 #' trend, this tests for a **single abrupt shift** (e.g. a reporting-system change

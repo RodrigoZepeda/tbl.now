@@ -38,7 +38,7 @@
 
 #' Fit a nowcast with one modelling package
 #'
-#' @description `r lifecycle::badge('experimental')`
+#' @description `r lifecycle::badge('stable')`
 #'
 #' `nowcast_fit()` and [nowcast_tidy()] are the two extension points of the
 #' nowcasting framework. Together they teach [run_nowcast()] about a new
@@ -138,7 +138,7 @@ nowcast_fit.default <- function(engine, x, ..., quantile_levels = nowcast_quanti
 
 #' Standardise a fitted nowcast
 #'
-#' @description `r lifecycle::badge('experimental')`
+#' @description `r lifecycle::badge('stable')`
 #'
 #' The second extension point of the nowcasting framework (see [nowcast_fit()]).
 #' It receives the object the modelling package returned and must express its
@@ -191,7 +191,7 @@ nowcast_tidy.default <- function(engine, fit, x, ..., quantile_levels) {
 
 #' List the available nowcasting methods
 #'
-#' @description `r lifecycle::badge('experimental')`
+#' @description `r lifecycle::badge('stable')`
 #'
 #' Scans the S3 methods registered for [nowcast_fit()] in every loaded
 #' namespace, so any backend you (or another package) defined shows up here as
@@ -261,7 +261,7 @@ list_nowcast_methods <- function(installed_only = TRUE) {
 
 #' Nowcast a `tbl_now` with any supported modelling package
 #'
-#' @description `r lifecycle::badge('experimental')`
+#' @description `r lifecycle::badge('stable')`
 #'
 #' Fits a nowcasting model to a `tbl_now` and returns the result in a
 #' package-agnostic shape, so that models from different packages can be
@@ -479,9 +479,14 @@ run_nowcast <- function(x, engine = engine_diseasenowcasting(), verbose = TRUE) 
   quantile_levels <- engine$quantile_levels
 
   if (isTRUE(verbose)) {
-    cli::cli_alert_info(
-      "Nowcasting with {.val {engine$name}} as of {.val {get_now(x)}}."
-    )
+    # Two configurations of one backend differ only by label, so naming the
+    # package alone would print the same line twice for two different models.
+    who <- if (identical(engine$label, engine$name)) {
+      engine$name
+    } else {
+      paste0(engine$label, " (", engine$name, ")")
+    }
+    cli::cli_alert_info("Nowcasting with {.val {who}} as of {.val {get_now(x)}}.")
   }
 
   # Trim BEFORE the fit and keep the trimmed object: everything downstream --
@@ -497,13 +502,29 @@ run_nowcast <- function(x, engine = engine_diseasenowcasting(), verbose = TRUE) 
     )
   )
   if (is_tbl_nowcast(fit)) {
+    # A backend that returns the common result directly -- \pkg{diseasenowcasting}
+    # does -- named itself, so the label the caller attached to the engine never
+    # reached the fit. Two configurations of that backend then both said
+    # "diseasenowcasting" while `nowcast_backtest()` scored them under their two
+    # labels, and `nowcast_ensemble(weights = "inverse_score")` could match
+    # neither. An explicit label wins; without one the backend keeps its own name.
+    if (!identical(engine$label, engine$name)) {
+      fit@method <- engine$label
+    }
     return(fit)
   }
   tidied <- nowcast_tidy(engine, fit, x, quantile_levels = quantile_levels)
 
+  # The LABEL, not the package name. `label` defaults to the package name, so an
+  # unlabelled engine is unaffected -- but two configurations of one backend are
+  # two members, and `nowcast_backtest()` already scores them under their labels.
+  # Recording the package here instead meant a labelled fit and its own backtest
+  # scores disagreed about what the model was called, so
+  # `nowcast_ensemble(weights = "inverse_score")` could not find a fit's scores
+  # and aborted.
   .as_tbl_nowcast(
     tidied,
-    x = x, method = engine$name, fit = fit,
+    x = x, method = engine$label, fit = fit,
     quantile_levels = quantile_levels, call = match.call()
   )
 }

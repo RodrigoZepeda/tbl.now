@@ -62,7 +62,7 @@ A \code{data.frame} line list (\code{format = "linelist"}), a
 \link[surveillance:sts]{surveillance::sts} object (\code{format = "sts"}).
 }
 \description{
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
 
 \code{\link[surveillance:nowcast]{surveillance::nowcast()}} works from an individual-level line list with one
 column holding the event date and another the report date, named by its

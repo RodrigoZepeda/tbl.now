@@ -36,6 +36,7 @@ make_flat_linelist <- function(n_origins = 60L, per_origin = 12L, seed = 1L) {
 # -- simulate_batch() ----------------------------------------------------------
 
 test_that("simulate_batch() conserves items and only ever moves reports later", {
+  skip_on_cran()
   clean_tbl <- make_flat_linelist()
   closed    <- as.Date(c("2021-02-01", "2021-02-02", "2021-02-03"))
 
@@ -105,6 +106,7 @@ test_that("simulate_batch() rejects an empty or fully-closed schedule", {
 # -- diagnose_batches(): the conservation law --------------------------------------
 
 test_that("diagnose_batches() recovers a planted batch and finds none in clean data", {
+  skip_on_cran()
   clean_tbl   <- make_flat_linelist()
   closed      <- as.Date(c("2021-02-01", "2021-02-02", "2021-02-03"))
   release_date <- as.Date("2021-02-04")
@@ -123,6 +125,7 @@ test_that("diagnose_batches() recovers a planted batch and finds none in clean d
 })
 
 test_that("a batch screen auto-prints through its own formatter", {
+  skip_on_cran()
   # `capture.output(x)` AUTO-prints its argument -- it is not `print(x)` -- which
   # is the thing that was broken: the method was registered with a plain
   # `@export`, so it landed in the package's own methods table rather than
@@ -369,6 +372,7 @@ test_that("the repeated median resists a batch episode (50% breakdown)", {
 # -- diagnose_batches2() --------------------------------------------------------
 
 test_that("diagnose_batches2() sees the inflated delays of a released backlog", {
+  skip_on_cran()
   clean_tbl    <- make_flat_linelist(n_origins = 70L, per_origin = 15L, seed = 3L)
   closed       <- as.Date(c("2021-02-01", "2021-02-02", "2021-02-03"))
   release_date <- as.Date("2021-02-04")
@@ -467,6 +471,7 @@ test_that("count-cumulative data de-accumulates and screens with the robust null
 })
 
 test_that("revision-axis count-cumulative increments keep revision delays", {
+  skip_on_cran()
   cumulative_tbl <- tbl_now(
     data.frame(
       onset = as.Date("2021-01-01"),
@@ -534,6 +539,7 @@ test_that("the batch family ignores censored arrival dates", {
 })
 
 test_that("the shared increment helper keeps censored arrivals by default", {
+  skip_on_cran()
   onset <- as.Date("2024-01-01") + rep(0:19, each = 2)
   report <- onset + 1
   report_censored <- rep(c(TRUE, FALSE), length.out = length(onset))
@@ -577,6 +583,7 @@ test_that("the shared increment helper keeps censored arrivals by default", {
 })
 
 test_that("one-observation batch diagnostics fail or degenerate clearly", {
+  skip_on_cran()
   one <- tbl_now(
     data.frame(onset = as.Date("2024-01-01"), report = as.Date("2024-01-01")),
     event_date = "onset", report_date = "report",
@@ -601,6 +608,7 @@ test_that("one-observation batch diagnostics fail or degenerate clearly", {
 })
 
 test_that("revision-axis increments use report-to-revision delays", {
+  skip_on_cran()
   frame <- data.frame(
     onset = as.Date("2021-01-01") + 0:13,
     report = as.Date("2021-01-02") + 0:13,
@@ -624,6 +632,7 @@ test_that("revision-axis increments use report-to-revision delays", {
 })
 
 test_that("revision-axis registration totals use revision units", {
+  skip_on_cran()
   x <- suppressWarnings(tbl_now(
     data.frame(
       onset = as.Date("2021-01-01") + 0:3,
@@ -665,6 +674,7 @@ test_that("diagnose_batches() works on a grouped tbl_now", {
 # -- subsetting a screen -------------------------------------------------------
 
 test_that("a screen subset down to a few columns prints as a tibble", {
+  skip_on_cran()
   screened <- quiet_messages(suppressWarnings(
     diagnose_batches(make_flat_linelist(), lookback = 2)
   ))
@@ -688,6 +698,7 @@ test_that("a screen subset down to a few columns prints as a tibble", {
 })
 
 test_that("a screen that keeps its columns is still a screen", {
+  skip_on_cran()
   screened <- quiet_messages(suppressWarnings(
     diagnose_batches(make_flat_linelist(), lookback = 2)
   ))
@@ -706,6 +717,7 @@ test_that("a screen that keeps its columns is still a screen", {
 })
 
 test_that("a screen missing a column still prints rather than aborting", {
+  skip_on_cran()
   screened <- quiet_messages(suppressWarnings(
     diagnose_batches(make_flat_linelist(), lookback = 2)
   ))

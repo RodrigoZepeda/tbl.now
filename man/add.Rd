@@ -129,9 +129,12 @@ name several columns at once.}
 \item{warn_now}{Boolean. Whether to warn if \code{now} falls before the last report
 date, or unreasonably far into the future.}
 
-\item{warn_non_uniqueness}{(optional) Logical. Whether to throw a warning if data
-has multiple observations for same event and report date (conditional on covariates
-and strata)}
+\item{warn_non_uniqueness}{(optional) Logical. Whether to throw a warning if
+data has several rows on the same full key: the event, report and (when
+declared) revision dates, the revision type, the strata, the covariates and
+the censoring flags. Rows carrying an \code{NA} anywhere in that key -- a pending
+case has no revision date -- are left out of the comparison, because an
+unobserved value cannot be shown to equal another.}
 
 \item{t_effects}{(optional) Either \code{NULL} (default), a \code{\link[=temporal_effects]{temporal_effects()}} object
 or a character vector with the names of the columns containing the temporal effects.}

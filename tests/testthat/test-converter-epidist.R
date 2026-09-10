@@ -65,6 +65,7 @@ quiet_epidist <- function(expr) suppressWarnings(suppressMessages(force(expr)))
 # --- 1. obs_date is written and equals get_now(x) + w ------------------------
 
 test_that("tbl_now_to_epidist() sets obs_date to get_now(x) + w by default", {
+  skip_on_cran()
   x <- silent_tail_now()
   out <- quiet_epidist(tbl_now_to_epidist(x, verbose = FALSE, quiet = TRUE))
 
@@ -78,6 +79,7 @@ test_that("tbl_now_to_epidist() sets obs_date to get_now(x) + w by default", {
 })
 
 test_that("tbl_now_to_epidist() honours a user-supplied obs_date", {
+  skip_on_cran()
   x <- silent_tail_now()
   chosen <- as.Date("2024-02-01")
   out <- quiet_epidist(
@@ -87,6 +89,7 @@ test_that("tbl_now_to_epidist() honours a user-supplied obs_date", {
 })
 
 test_that("tbl_now_to_epidist() sets obs_date on the aggregate path", {
+  skip_on_cran()
   x <- silent_tail_now()
   out <- quiet_epidist(
     tbl_now_to_epidist(x, format = "aggregate", verbose = FALSE, quiet = TRUE)
@@ -112,6 +115,7 @@ test_that("tbl_now_to_epidist() sets obs_date on the linelist path too", {
 })
 
 test_that("tbl_now_to_epidist() sets obs_date on the interval path", {
+  skip_on_cran()
   # Interval source: user-carried upper-bound covariate columns.
   df <- data.frame(
     event   = as.Date("2024-01-01") + 0:4,
@@ -133,6 +137,7 @@ test_that("tbl_now_to_epidist() sets obs_date on the interval path", {
 })
 
 test_that("obs_date scales with the censoring window on weekly data", {
+  skip_on_cran()
   df <- data.frame(
     event  = as.Date("2024-01-07") + 7 * (0:4),
     report = as.Date("2024-01-14") + 7 * (0:4),
@@ -148,6 +153,7 @@ test_that("obs_date scales with the censoring window on weekly data", {
 })
 
 test_that("obs_date length mismatch is a clear error", {
+  skip_on_cran()
   x <- silent_tail_now()
   expect_error(
     tbl_now_to_epidist(x, obs_date = as.Date(c("2024-02-01", "2024-02-02")),
@@ -160,6 +166,7 @@ test_that("obs_date length mismatch is a clear error", {
 # --- 2. round trip preserves `now` ------------------------------------------
 
 test_that("tbl_now_from_epidist() recovers `now` from obs_date", {
+  skip_on_cran()
   x <- silent_tail_now()
   out  <- quiet_epidist(tbl_now_to_epidist(x, verbose = FALSE, quiet = TRUE))
   back <- quiet_epidist(tbl_now_from_epidist(out, verbose = FALSE))
@@ -169,6 +176,7 @@ test_that("tbl_now_from_epidist() recovers `now` from obs_date", {
 })
 
 test_that("round-tripped `now` differs from max(report_date)", {
+  skip_on_cran()
   # The whole point: without the fix, from_epidist() would read `now` as
   # max(report_date). Assert the recovered `now` is strictly later.
   x <- silent_tail_now()
@@ -180,6 +188,7 @@ test_that("round-tripped `now` differs from max(report_date)", {
 })
 
 test_that("explicit `now` argument to tbl_now_from_epidist() wins over recovery", {
+  skip_on_cran()
   x <- silent_tail_now()
   out <- quiet_epidist(tbl_now_to_epidist(x, verbose = FALSE, quiet = TRUE))
   chosen <- as.Date("2024-02-15")
@@ -192,6 +201,7 @@ test_that("explicit `now` argument to tbl_now_from_epidist() wins over recovery"
 # --- 3. revision axis warning -----------------------------------------------
 
 test_that("tbl_now_to_epidist() warns once when a revision process is dropped", {
+  skip_on_cran()
   x <- revision_now()
   expect_warning(
     suppressMessages(tbl_now_to_epidist(x, verbose = FALSE)),
@@ -200,6 +210,7 @@ test_that("tbl_now_to_epidist() warns once when a revision process is dropped", 
 })
 
 test_that("quiet = TRUE silences the revision-dropped warning", {
+  skip_on_cran()
   x <- revision_now()
   # No revision warning at all under quiet = TRUE.
   seen <- character(0)
@@ -216,6 +227,7 @@ test_that("quiet = TRUE silences the revision-dropped warning", {
 })
 
 test_that("no revision warning fires on a plain tbl_now", {
+  skip_on_cran()
   x <- silent_tail_now()
   seen <- character(0)
   withCallingHandlers(
@@ -233,6 +245,7 @@ test_that("no revision warning fires on a plain tbl_now", {
 # --- 4. tidy.epidist_fit() bookkeeping filter -------------------------------
 
 test_that("tidy.epidist_fit() strips epidist's marginal-model bookkeeping columns", {
+  skip_on_cran()
   # Simulate the shape `predict_delay_parameters()` returns for an aggregate/
   # marginal model: a `weight` (or `n`) column plus `.observation`/`.row`. Neither
   # is a delay parameter and each is numeric, so a blocklist that misses them
@@ -270,6 +283,7 @@ test_that("tidy.epidist_fit() strips epidist's marginal-model bookkeeping column
 # --- 5. grouped input keeps working ----------------------------------------
 
 test_that("obs_date fix does not break a grouped tbl_now", {
+  skip_on_cran()
   df <- data.frame(
     onset    = as.Date("2024-01-01") + rep(0:9, each = 2),
     reported = as.Date("2024-01-03") + rep(0:9, each = 2),

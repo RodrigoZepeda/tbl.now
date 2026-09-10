@@ -13,7 +13,7 @@ is_nowcast_engine(x)
 A single \code{TRUE} or \code{FALSE}.
 }
 \description{
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
 
 Tests whether an object is a nowcasting engine -- the specification built by
 \code{\link[=engine]{engine()}} that says which modelling package to use and how to configure it.

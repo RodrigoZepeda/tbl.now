@@ -1,5 +1,210 @@
 # tbl.now (development version)
 
+## `autoplot()` is now one column per process
+
+The gallery used to flow left to right in two columns, so which process a panel
+belonged to was something you read off its colour. It is now a **matrix**: the
+epidemic process is the first column, the reporting process the second, and the
+revision process -- on an object that declares one -- the third, with each row
+asking the same question of every process. A two-date object is therefore two
+columns wide and a three-date object three, and a row a process cannot answer
+(weekly data has no day-of-week panel) leaves that cell empty rather than
+sliding the next panel into the wrong column.
+
+The number of columns follows the selection, because the columns *are* the
+processes: `panels = "calendar"` or `panels = "delay_calendar"` now comes back
+as a single column rather than a two-wide flow.
+
+## `plot_revision_delay()` is removed, and the revision delay joins the gallery
+(breaking)
+
+`plot_revision_delay()` drew the report-to-resolution delay as boxplots split by
+outcome, and was the one delay picture that was not a panel of `autoplot()`.
+
+* **Breaking**: `plot_revision_delay()` is gone. Use
+  `plot_delay_distribution(x, axis = "revision")`, which draws the same delays,
+  split the same way, as the histogram the reporting delay already got.
+  `diagnose_revision_delay()`, the Wilcoxon test behind the picture, is
+  unchanged.
+* `plot_delay_distribution()` gains `axis`, matching `plot_reporting_process()`
+  and `plot_epidemic_process()`: `"report"` (default) is the reporting delay,
+  `"revision"` the report-to-resolution delay, drawn in the revision process's
+  ochre.
+* New `autoplot()` panel `"revision_distribution"`, which is that panel inside
+  the gallery, and fills the revision column's first row.
+
+## Delays and arrivals can be split by revision outcome
+
+`plot_delay_distribution()` and `plot_reporting_process()` gain
+`by_revision_type` (default `TRUE`). It splits the panel by how each case
+eventually resolved -- `confirmed`, `pending`, `retracted` and `unknown` --
+so "do negative results come back faster than positive ones?" and "was that
+spike a day of retractions?" are visible rather than inferred.
+
+* `tbl_now_palette()` gains a `retracted` role, the counterpart of `revision`,
+  so the four outcomes draw as ochre / white / blue / grey and re-theme as a
+  unit.
+* It is ignored on an object with no revision axis, and when `by_strata = TRUE`,
+  which already spends the fill on the strata. `count-cumulative` data records
+  running totals rather than cases and cannot carry an outcome, so
+  `plot_reporting_process()` says so and draws the unsplit bars.
+* `autoplot()` also takes `by_revision_type`, but defaults it to `FALSE`: the
+  gallery is read as a grid of shapes, and `diagnostic_plot()` keeps its
+  reporting panel in the reporting colour for the same reason.
+
+## `as_forecast_point()` is no longer exported (breaking)
+
+`as_forecast_point()` is a \pkg{scoringutils} generic, and this package
+supplied both a method for it *and* an exported function of the same name. The
+exported copy masked the generic: after `library(scoringutils); library(tbl.now)`
+a bare `as_forecast_point()` reached tbl.now's version, which is not a generic
+and aborts on anything that is not a `tbl_nowcast` or a `nowcast_backtest()`.
+`as_forecast_quantile()` and `as_forecast_sample()` were never exported this
+way, so the three were also inconsistent with each other.
+
+* **Fixed**: the exported `as_forecast_point()` is gone. Call
+  `scoringutils::as_forecast_point(x, truth = truth)`, exactly as you already
+  call `scoringutils::as_forecast_quantile()` and
+  `scoringutils::as_forecast_sample()`. The methods for `tbl_nowcast`,
+  ensembles and `nowcast_backtest()` are unchanged, so the only edit a caller
+  needs is the `scoringutils::` prefix (or attaching \pkg{scoringutils} first).
+
+## `diagnose()` stops reporting the revision axis as a defect
+
+Declaring a revision axis made `diagnose()` complain about the two things that
+axis exists to record. A pending case has no revision date *yet*, and that `NA`
+was read as a value.
+
+* **Fixed**: rows carrying an `NA` anywhere in the uniqueness key are no longer
+  compared against each other. Two pending cases in one `(event, report)` cell
+  are byte-identical apart from a resolution neither has, yet they may still
+  resolve on different days -- calling them an "exact duplicate" and advising
+  `dplyr::distinct()` would have deleted a real case. Rows with a complete key
+  are checked exactly as before, so a genuine repeat still warns.
+* **Fixed**: the `duplicates/key` message now names the key it actually
+  checked. It always included the revision columns, the strata, the covariates
+  and the censoring flags, but it read `"(event, report)"` whatever else was
+  declared.
+* **Fixed**: `missing/<revision date>` no longer counts the missing resolution
+  of a case the object says is `"pending"` -- that is the definition of pending,
+  not a defect. A revision date missing from a case recorded as `"confirmed"` or
+  `"retracted"` is still reported.
+* **Fixed**: the pooled `strata/pending` note said "% of the stratum" when it
+  was reporting every stratum at once; it now says "% of all cases".
+* **Fixed**: `infer_units()` drops `NA` before reading the spacing of a date
+  column. A column holding one real date plus missings slipped past the
+  "fewer than two dates" guard, and `min()` warned about its own empty
+  arguments before the abort that followed blamed the spacing.
+
+## The delay-distribution converters return one row per observed delay
+
+`tbl_now_to_epidist()` and `tbl_now_to_EpiNow2(target = "estimate_dist")` are
+the two converters that keep the `is_censored_report` flag, and they were also
+the two that never pooled. Neither carries an undeclared column or the revision
+axis onto its result, so rows separated only by those arrived as duplicates that
+nothing downstream could tell apart: `covid_colombia` (which carries an
+undeclared `sex`) came back from `tbl_now_to_epidist()` as 3456 rows covering
+1898 distinct delays.
+
+* **Fixed**: both converters now pool over undeclared columns, exactly as
+  `tbl_now_to_baselinenowcast()` and `tbl_now_to_tsibble()` do, and report what
+  they pooled under `verbose = TRUE`. Case totals are unchanged.
+* **Fixed**: the revision axis is now removed *before* that pooling. It was
+  already dropped from the result (with a warning), but its columns stayed in
+  the cell key, so the rows they separated stayed split. Pooling over it gives
+  the `"total"` case count -- every case has exactly one outcome, so no case is
+  counted twice.
+* **Fixed**: on the aggregate/count shape, rows describing the same delay
+  observation are summed. This closes the last collision: a censored report
+  inside its own event period is widened to the window an uncensored report in
+  that period already has.
+* Declared strata, covariates and materialised temporal-effect columns are
+  untouched -- they reach the target package, so they still keep rows apart.
+  Line lists are untouched too: one row is already one case.
+* **Fixed**: `remove_revision_date()` no longer loses the object's `now`. It
+  rebuilt without passing it, so the constructor re-inferred `now` from the
+  dates that were left -- and the revision axis is the one that usually holds
+  the latest of them. This reached `tbl_now_to_epidist()` as a wrong `obs_date`,
+  epidist's right-truncation clock.
+
+## `plot_scalogram()` is removed
+
+The wavelet scalogram was shipped as **very experimental** and never earned its
+keep: it was never confirmed to identify batches reliably, and the two packages
+it needed to do so -- \pkg{wavScalogram} and \pkg{WaveletComp} -- were carried
+in `Suggests` for that one plot alone.
+
+* **Breaking**: `plot_scalogram()` is gone, with no deprecation. Its section in
+  the *Diagnosing a `tbl_now`* article and its row in that article's summary
+  table have been removed with it.
+* `plot_reporting_process()`, `plot_epidemic_process()`, `plot_cycles()`,
+  `plot_reporting_hexamap()` and the transport diagnostics
+  (`transport_discriminant()`, `diagnose_batches()`, `diagnose_batches2()`) are
+  untouched; the transport plane, not the scalogram, is the batch tool this
+  package stands behind.
+* **Dependencies**: \pkg{wavScalogram} and \pkg{WaveletComp} are dropped from
+  `Suggests`. Nothing else used either of them -- \pkg{WaveletComp} was in fact
+  already unreferenced anywhere in the sources.
+
+## Most of the package is now `stable`
+
+The lifecycle badges have been promoted: every exported topic now reads
+`stable`, except the surfaces still being worked on --- `update()`,
+`summary(<tbl_now>)`, `diagnose()`, `diagnose_batches()`, `diagnose_batches2()`,
+`simulate_batch()`, `transport_discriminant()`, `autoplot()` (both methods),
+`tbl_now_to_EpiNow2()` and `tbl_now_to_epidist()`, which keep `experimental`.
+
+No behaviour changed; this is a statement about which signatures are now
+expected to hold still.
+
+## `autoplot(<tbl_nowcast>)` gains `date_lim` and `ylim`
+
+A nowcast covers the whole series but only *corrects* its final periods, so
+almost every call was followed by a `coord_cartesian()` to zoom on to them.
+
+* **New**: `autoplot(fit, date_lim = c(from, to))` and
+  `autoplot(fit, ylim = c(lo, hi))`. `NA` in either position leaves that end
+  free; `NULL` (the default) leaves the axis alone.
+* Both are applied with `ggplot2::coord_cartesian()`, so they **crop** the
+  drawn plot instead of filtering the data. That is the point: a scale limit
+  drops the out-of-range rows before the ribbon is built, which cuts the fan off
+  at the boundary rather than letting it run to the edge of the panel.
+
+## Two fixes the revisions article turned up
+
+* **Fix (`run_nowcast()` lost the engine's `label`)**: the fit recorded the
+  backend's package name as its `@method` while `nowcast_backtest()` scored the
+  same engines under their **labels**. Two configurations of one backend --
+  exactly what `label` exists for -- were therefore indistinguishable once
+  fitted, and `nowcast_ensemble(weights = "inverse_score", backtest = )` aborted
+  with *"the backtest has no scores for method \"diseasenowcasting\""*.
+  `run_nowcast()` now records the label. An unlabelled engine is unaffected: its
+  label defaults to its package name. A backend that returns a `tbl_nowcast`
+  directly (\pkg{diseasenowcasting} does) keeps its own name unless the caller
+  supplied a label. `run_nowcast(verbose = TRUE)` now names the label as well,
+  so two configurations no longer print the same line.
+* **Fix (`diagnose()`'s pending note printed an R object)**: the
+  `strata/pending` note built its "how overdue are they" clause as a deferred
+  `.diagnose_text()` and then interpolated it into the outer template as
+  `{against}`. cli deparsed the object, and the note read *"... 3.4% of the
+  stratum; list(list(args = list(...), envir = <environment>))."* The two
+  fragments are now joined rather than nested, and the note reads as prose in
+  both of its branches.
+
+## A revisions walk-through
+
+* **New article**: *Nowcasting with revisions*, which picks up where the
+  `hai_bucaramanga` walk-through leaves off and adds the third date, running
+  `run_nowcast()`, `nowcast_backtest()` and `nowcast_ensemble()` on a
+  `tbl_now` that carries a revision process.
+
+## Site
+
+* The package version in the pkgdown navbar was the only item there that
+  changed colour with the light switch: pkgdown renders it inside
+  `.text-muted`, whose Bootstrap 5.3 definition follows the theme. It is now
+  pinned to the same white as the package name in both modes.
+
 ## `complete_zeroes()` keeps temporal effects computed
 
 `complete_zeroes()` adds rows, and materialised [`temporal_effects()`] columns

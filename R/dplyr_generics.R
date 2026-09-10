@@ -7,7 +7,7 @@
 
 #' Check that an object is a valid `tbl_now`
 #'
-#' @description `r lifecycle::badge("experimental")`
+#' @description `r lifecycle::badge("stable")`
 #'
 #' Two different questions about an object, and one function for each.
 #'

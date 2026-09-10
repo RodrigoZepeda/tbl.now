@@ -55,6 +55,7 @@ cases_fixture <- function(strata = "sex", covariates = "region",
 # The reporting axis ----------------------------------------------------------
 
 test_that("the reporting getters count what the fixture says they should", {
+  skip_on_cran()
   x <- cases_fixture()
 
   # Cells per (onset, sex, region), cumulated over the visit:
@@ -83,6 +84,7 @@ test_that("the reporting getters count what the fixture says they should", {
 })
 
 test_that("the reporting getters pool what they were not told about", {
+  skip_on_cran()
   # No strata, no covariates: sex, region and hospital are all undeclared, so
   # every case for an event date lands in one cell.
   x <- cases_fixture(strata = NULL, covariates = NULL)
@@ -95,6 +97,7 @@ test_that("the reporting getters pool what they were not told about", {
 })
 
 test_that("a covariate but no strata keys on the covariate alone", {
+  skip_on_cran()
   x <- cases_fixture(strata = NULL, covariates = "region")
 
   latest <- get_latest_reported_cases(x)
@@ -104,6 +107,7 @@ test_that("a covariate but no strata keys on the covariate alone", {
 })
 
 test_that("the getters return a count-cumulative tbl_now", {
+  skip_on_cran()
   x <- cases_fixture()
   latest <- get_latest_reported_cases(x)
 
@@ -117,6 +121,7 @@ test_that("the getters return a count-cumulative tbl_now", {
 # Grouping (#61) --------------------------------------------------------------
 
 test_that("the reporting getters keep a grouping and answer by it", {
+  skip_on_cran()
   x <- cases_fixture()
 
   # Grouping by a column that is ALREADY a key changes nothing but the
@@ -154,6 +159,7 @@ test_that("the reporting getters keep a grouping and answer by it", {
 })
 
 test_that("grouping is kept by the initial and nth getters too", {
+  skip_on_cran()
   x <- cases_fixture() |> dplyr::group_by(region, hospital)
 
   for (out in list(
@@ -169,6 +175,7 @@ test_that("grouping is kept by the initial and nth getters too", {
 })
 
 test_that("a grouping survives an object with no revision process", {
+  skip_on_cran()
   x <- cases_fixture(revision = FALSE)
   expect_false(has_revision(x))
 
@@ -180,6 +187,7 @@ test_that("a grouping survives an object with no revision process", {
 })
 
 test_that("to_count() warns that it is dropping the grouping (#61)", {
+  skip_on_cran()
   x <- cases_fixture()
 
   expect_warning(
@@ -197,6 +205,7 @@ test_that("to_count() warns that it is dropping the grouping (#61)", {
 })
 
 test_that("to_count() does not warn about a grouping it set itself", {
+  skip_on_cran()
   # The linelist -> cumulative path recurses through `to_count()` twice, on an
   # object this function had just grouped by the cell key.
   linelist <- tbl_now(
@@ -212,6 +221,7 @@ test_that("to_count() does not warn about a grouping it set itself", {
 # The revision axis (#64) ---------------------------------------------------
 
 test_that("the revised getters count arrivals on the third date", {
+  skip_on_cran()
   x <- cases_fixture()
 
   # Row 4 is pending, so it never appears: cells per (onset, sex, region),
@@ -238,6 +248,7 @@ test_that("the revised getters count arrivals on the third date", {
 })
 
 test_that("the revised getters return the full three-date object", {
+  skip_on_cran()
   x <- cases_fixture()
   latest <- get_latest_revised_cases(x)
 
@@ -254,6 +265,7 @@ test_that("the revised getters return the full three-date object", {
 })
 
 test_that("type = filters the outcome on both axes", {
+  skip_on_cran()
   x <- cases_fixture()
 
   # Confirmed: rows 1, 3, 5, 6 -- one per cell, so both axes agree.
@@ -285,6 +297,7 @@ test_that("type = filters the outcome on both axes", {
 })
 
 test_that("type = 'by_type' reports every outcome side by side", {
+  skip_on_cran()
   x <- cases_fixture()
 
   # The reporting axis keeps all four rows of event d0, pending included.
@@ -307,6 +320,7 @@ test_that("type = 'by_type' reports every outcome side by side", {
 })
 
 test_that("type = respects a grouping too", {
+  skip_on_cran()
   x <- cases_fixture() |> dplyr::group_by(hospital)
 
   confirmed <- get_latest_revised_cases(x, type = "confirmed")
@@ -328,6 +342,7 @@ test_that("the revised getters refuse an object with no revision", {
 })
 
 test_that("type = on an object with no revision warns and pools", {
+  skip_on_cran()
   x <- cases_fixture(revision = FALSE)
 
   expect_warning(
@@ -341,6 +356,7 @@ test_that("type = on an object with no revision warns and pools", {
 })
 
 test_that("an all-NA revision date is an error that says so", {
+  skip_on_cran()
   frame <- cases_frame()
   frame$result <- as.Date(NA)
   frame$outcome <- "pending"
@@ -390,6 +406,7 @@ test_that("an empty nth selection names the delay rather than failing later", {
 })
 
 test_that("the getters check their arguments", {
+  skip_on_cran()
   x <- cases_fixture()
 
   expect_error(get_nth_reported_cases(x, "two"), "non-negative number")

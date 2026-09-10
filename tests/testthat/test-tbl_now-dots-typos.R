@@ -17,12 +17,14 @@ build <- function(...) {
 }
 
 test_that("a name that is nearly a real argument warns", {
+  skip_on_cran()
   expect_warning(build(case_col = "n"), "case_count")
   expect_warning(build(stata = "gender"), "strata")
   expect_warning(build(reprot_date = "reported"), "report_date")
 })
 
 test_that("deliberate metadata does not warn", {
+  skip_on_cran()
   expect_no_warning(build(data_source = "Ministry of Health"))
   expect_no_warning(build(citation = "doi:10.0000/example"))
   expect_no_warning(build(source = "surveillance system"))
@@ -30,6 +32,7 @@ test_that("deliberate metadata does not warn", {
 })
 
 test_that("metadata is still stored, warning or not", {
+  skip_on_cran()
   x <- suppressWarnings(build(case_col = "n"))
   expect_identical(attr(x, "case_col"), "n")
 

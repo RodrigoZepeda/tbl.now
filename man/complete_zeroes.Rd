@@ -37,7 +37,7 @@ missing counts in the input remain \code{NA}; only cells created by
 computed temporal-effect columns (recomputed over the new rows).
 }
 \description{
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
 
 Surveillance data records what happened, not what didn't. If no dengue case
 with onset on 3 January was reported on 5 January, there is simply no row for

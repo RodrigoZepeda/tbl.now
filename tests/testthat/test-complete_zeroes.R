@@ -91,12 +91,14 @@ make_count_cumulative <- function() {
 # ---- basic structure ----
 
 test_that("complete_zeroes returns a tbl_now", {
+  skip_on_cran()
   x <- make_count_incidence()
   result <- complete_zeroes(x)
   expect_s3_class(result, "tbl_now")
 })
 
 test_that("complete_zeroes fills missing event dates with 0", {
+  skip_on_cran()
   x <- make_count_incidence()
   # 2020-01-03 is missing from the data
   result <- complete_zeroes(x)
@@ -105,6 +107,7 @@ test_that("complete_zeroes fills missing event dates with 0", {
 })
 
 test_that("complete_zeroes filled rows have n = 0", {
+  skip_on_cran()
   x <- make_count_incidence()
   result <- complete_zeroes(x)
   filled <- result |>
@@ -114,12 +117,14 @@ test_that("complete_zeroes filled rows have n = 0", {
 })
 
 test_that("complete_zeroes: max_delay argument limits delay range", {
+  skip_on_cran()
   x <- make_count_incidence()
   result <- complete_zeroes(x, max_delay = 2)
   expect_true(max(result[[".delay"]]) <= 2)
 })
 
 test_that("complete_zeroes infers max_delay when not supplied", {
+  skip_on_cran()
   x <- make_count_incidence()
   result_auto <- complete_zeroes(x)
   result_manual <- complete_zeroes(x, max_delay = max(x[[".delay"]]))
@@ -129,6 +134,7 @@ test_that("complete_zeroes infers max_delay when not supplied", {
 # ---- with strata ----
 
 test_that("complete_zeroes works with strata", {
+  skip_on_cran()
   x <- make_count_incidence_with_strata()
   result <- complete_zeroes(x)
   expect_s3_class(result, "tbl_now")
@@ -140,6 +146,7 @@ test_that("complete_zeroes works with strata", {
 # ---- weekly units ----
 
 test_that("complete_zeroes works with weekly data", {
+  skip_on_cran()
   x <- make_count_incidence(units = "weeks")
   result <- complete_zeroes(x)
   expect_s3_class(result, "tbl_now")
@@ -149,6 +156,7 @@ test_that("complete_zeroes works with weekly data", {
 })
 
 test_that("complete_zeroes preserves explicit NA counts while filling generated cells", {
+  skip_on_cran()
   x <- suppressWarnings(tbl_now(
     tibble(
       event = as.Date(c("2024-01-01", "2024-01-03")),
@@ -173,6 +181,7 @@ test_that("complete_zeroes preserves explicit NA counts while filling generated 
 })
 
 test_that("complete_zeroes fills monthly count-incidence grids through now", {
+  skip_on_cran()
   x <- tbl_now(
     tibble(
       event = as.Date("2024-01-01"),
@@ -200,6 +209,7 @@ test_that("complete_zeroes fills monthly count-incidence grids through now", {
 })
 
 test_that("complete_zeroes fills yearly count-incidence grids through now", {
+  skip_on_cran()
   x <- tbl_now(
     tibble(
       event = as.Date("2022-01-01"),
@@ -229,12 +239,14 @@ test_that("complete_zeroes fills yearly count-incidence grids through now", {
 # ---- count-cumulative ----
 
 test_that("complete_zeroes works with count-cumulative data", {
+  skip_on_cran()
   x <- make_count_cumulative()
   result <- suppressWarnings(complete_zeroes(x))
   expect_s3_class(result, "tbl_now")
 })
 
 test_that("complete_zeroes carries monthly cumulative counts across generated delays", {
+  skip_on_cran()
   x <- tbl_now(
     tibble(
       event = as.Date(c("2024-01-01", "2024-01-01")),
@@ -261,6 +273,7 @@ test_that("complete_zeroes carries monthly cumulative counts across generated de
 })
 
 test_that("complete_zeroes carries yearly cumulative counts across generated delays", {
+  skip_on_cran()
   x <- tbl_now(
     tibble(
       event = as.Date(c("2022-01-01", "2022-01-01")),
@@ -287,6 +300,7 @@ test_that("complete_zeroes carries yearly cumulative counts across generated del
 })
 
 test_that("complete_zeroes preserves integer numeric axes", {
+  skip_on_cran()
   x <- tbl_now(
     tibble(
       event = as.integer(c(0, 0, 1)),
@@ -311,6 +325,7 @@ test_that("complete_zeroes preserves integer numeric axes", {
 # ---- error cases ----
 
 test_that("complete_zeroes errors on linelist data", {
+  skip_on_cran()
   x <- tbl_now(
     tibble(
       event  = as.Date(c("2020-01-01", "2020-01-02", "2020-01-03")),
@@ -329,6 +344,7 @@ test_that("complete_zeroes errors on non-tbl_now input", {
 })
 
 test_that("complete_zeroes recomputes temporal-effect columns on the rows it adds", {
+  skip_on_cran()
   x <- make_count_incidence() |>
     add_temporal_effects(temporal_effects(day_of_week = TRUE)) |>
     compute_temporal_effects()
@@ -351,6 +367,7 @@ test_that("complete_zeroes recomputes temporal-effect columns on the rows it add
 })
 
 test_that("complete_zeroes no longer asks the caller to recompute", {
+  skip_on_cran()
   x <- make_count_incidence() |>
     add_temporal_effects(temporal_effects(day_of_week = TRUE)) |>
     compute_temporal_effects()
@@ -359,6 +376,7 @@ test_that("complete_zeroes no longer asks the caller to recompute", {
 })
 
 test_that("complete_zeroes recomputes seasonal (Fourier) effects too", {
+  skip_on_cran()
   # Seasonal effects are the case that used to be unrecoverable: the pair of
   # sin/cos columns tripped the `overwrite` guard, so even the recompute the
   # old message asked for aborted.
@@ -379,6 +397,7 @@ test_that("complete_zeroes recomputes seasonal (Fourier) effects too", {
 })
 
 test_that("complete_zeroes leaves an uncomputed temporal-effect spec lazy", {
+  skip_on_cran()
   x <- make_count_incidence() |>
     add_temporal_effects(temporal_effects(day_of_week = TRUE))
   expect_equal(get_temporal_effect_cols(x), character(0))
@@ -412,6 +431,7 @@ make_censored_incidence <- function() {
 }
 
 test_that("complete_zeroes works with an is_censored_report column (count-incidence)", {
+  skip_on_cran()
   cz <- complete_zeroes(make_censored_incidence())
 
   expect_true(is_tbl_now(cz))
@@ -427,6 +447,7 @@ test_that("complete_zeroes works with an is_censored_report column (count-incide
 })
 
 test_that("complete_zeroes works with is_censored_report on count-cumulative data", {
+  skip_on_cran()
   cz <- make_censored_incidence() |>
     to_count("count-cumulative") |>
     complete_zeroes()
@@ -464,6 +485,7 @@ make_gappy_tbl_now <- function() {
 }
 
 test_that("complete_zeroes() does not drop cases at the final report date", {
+  skip_on_cran()
   x <- make_gappy_tbl_now()
   completed <- complete_zeroes(x)
 
@@ -482,6 +504,7 @@ test_that("complete_zeroes() does not drop cases at the final report date", {
 })
 
 test_that("complete_zeroes() completes up to the `now`, not just the last event", {
+  skip_on_cran()
   x <- make_gappy_tbl_now()
   completed <- complete_zeroes(x)
 
@@ -503,6 +526,7 @@ test_that("complete_zeroes() completes up to the `now`, not just the last event"
 })
 
 test_that("complete_zeroes() honours `until` but never truncates the data", {
+  skip_on_cran()
   x <- make_gappy_tbl_now()
 
   # An `until` earlier than the data must not remove event dates.
@@ -515,6 +539,7 @@ test_that("complete_zeroes() honours `until` but never truncates the data", {
 })
 
 test_that("complete_zeroes() rejects a line list with actionable advice", {
+  skip_on_cran()
   ll <- tbl_now(
     dplyr::tibble(
       event  = as.Date(c("2020-01-01", "2020-01-02")),
@@ -528,6 +553,7 @@ test_that("complete_zeroes() rejects a line list with actionable advice", {
 })
 
 test_that("complete_zeroes works on a grouped tbl_now", {
+  skip_on_cran()
   df <- data.frame(
     onset = as.Date("2024-01-07") + 7 * rep(0:9, each = 2),
     reported = as.Date("2024-01-14") + 7 * rep(0:9, each = 2),
@@ -555,6 +581,7 @@ test_that("complete_zeroes works on a grouped tbl_now", {
 })
 
 test_that("complete_zeroes gives the same grid when grouped by a non-stratum", {
+  skip_on_cran()
   df <- data.frame(
     onset = as.Date("2024-01-07") + 7 * rep(0:5, each = 2),
     reported = as.Date("2024-01-14") + 7 * rep(0:5, each = 2),
@@ -593,6 +620,7 @@ make_na_report <- function() {
 }
 
 test_that("complete_zeroes works when a report date is missing (#66)", {
+  skip_on_cran()
   x <- suppressWarnings(make_na_report())
 
   out <- suppressWarnings(complete_zeroes(x))
@@ -606,6 +634,7 @@ test_that("complete_zeroes works when a report date is missing (#66)", {
 })
 
 test_that("complete_zeroes works when an event date is missing (#66)", {
+  skip_on_cran()
   df <- tibble(
     event = as.Date(c("2020-01-01", "2020-01-01", NA, "2020-01-04")),
     report = as.Date(c("2020-01-01", "2020-01-02", "2020-01-03", "2020-01-04")),
@@ -624,6 +653,7 @@ test_that("complete_zeroes works when an event date is missing (#66)", {
 })
 
 test_that("complete_zeroes keeps .event_num for rows that are off the grid", {
+  skip_on_cran()
   # A negative delay has no cell either, so the join that used to supply
   # `.event_num` matched nothing and blanked a perfectly known event number.
   df <- tibble(
@@ -643,6 +673,7 @@ test_that("complete_zeroes keeps .event_num for rows that are off the grid", {
 })
 
 test_that("complete_zeroes refuses an object with no usable date pair", {
+  skip_on_cran()
   df <- tibble(
     event = as.Date(c("2020-01-01", "2020-01-02")),
     report = as.Date(c(NA, NA)),
@@ -658,6 +689,7 @@ test_that("complete_zeroes refuses an object with no usable date pair", {
 })
 
 test_that("complete_zeroes works on a grouped tbl_now with missing dates (#66)", {
+  skip_on_cran()
   df <- tibble(
     event = as.Date(rep(c("2020-01-01", "2020-01-02", "2020-01-04"), each = 2)),
     report = as.Date(c(

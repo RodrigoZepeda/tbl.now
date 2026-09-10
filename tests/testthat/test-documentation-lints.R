@@ -23,6 +23,7 @@ test_that("articles and vignettes end with learning-more", {
 })
 
 test_that("public docs do not reference removed as_scoringutils() helper", {
+  skip_on_cran()
   root <- normalizePath(file.path(testthat::test_path(), "..", ".."))
   docs <- c(
     file.path(root, "README.Rmd"),

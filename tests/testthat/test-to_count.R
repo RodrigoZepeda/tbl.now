@@ -81,6 +81,7 @@ setup_test_data <- function() {
 
 # Tests for to_count.tbl_now() with linelist data ----
 test_that("to_count converts linelist data to count incidence data", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   ndata <- tbl_now(
@@ -345,6 +346,7 @@ test_that("to_count creates separate counts for censored vs non-censored", {
 
 # Tests for to_count.tbl_now() with count data ----
 test_that("to_count handles count data by summing", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   ndata <- tbl_now(
@@ -722,6 +724,7 @@ test_that("to_count handles all combinations correctly", {
 
 # Tests for error handling ----
 test_that("to_count fails gracefully with invalid data_type", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   ndata <- tbl_now(

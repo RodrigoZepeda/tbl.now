@@ -19,6 +19,7 @@ test_that("add_temporal_effects.data.frame returns data.frame unchanged when t_e
 })
 
 test_that("add_temporal_effects.data.frame fails with non-temporal_effects object", {
+  skip_on_cran()
   df <- data.frame(
     date = as.Date(c("2020-01-01", "2020-01-08")),
     value = 1:2
@@ -35,6 +36,7 @@ test_that("add_temporal_effects.data.frame fails with non-temporal_effects objec
 })
 
 test_that("add_temporal_effects.data.frame fails when date_col doesn't exist", {
+  skip_on_cran()
   df <- data.frame(
     date = as.Date(c("2020-01-01", "2020-01-08")),
     value = 1:2
@@ -53,6 +55,7 @@ test_that("add_temporal_effects.data.frame fails when date_col doesn't exist", {
 })
 
 test_that("add_temporal_effects.data.frame fails when numeric_col doesn't exist", {
+  skip_on_cran()
   df <- data.frame(
     date = as.Date(c("2020-01-01", "2020-01-08")),
     value = 1:2
@@ -72,6 +75,7 @@ test_that("add_temporal_effects.data.frame fails when numeric_col doesn't exist"
 })
 
 test_that("add_temporal_effects.data.frame fails when column already exists and overwrite = FALSE", {
+  skip_on_cran()
   df <- data.frame(
     date = as.Date(c("2020-01-01", "2020-01-08")),
     value = 1:2,
@@ -93,6 +97,7 @@ test_that("add_temporal_effects.data.frame fails when column already exists and 
 })
 
 test_that("add_temporal_effects.data.frame overwrites when overwrite = TRUE", {
+  skip_on_cran()
   df <- data.frame(
     date = as.Date(c("2020-01-01", "2020-01-08")),
     value = 1:2,
@@ -123,6 +128,7 @@ test_that("add_temporal_effects.data.frame overwrites when overwrite = TRUE", {
 })
 
 test_that("add_temporal_effects.data.frame weekend effect works with custom weekend_days", {
+  skip_on_cran()
   df <- data.frame(
     date = as.Date(c("2020-04-17", "2020-04-18", "2020-04-19", "2020-04-20"))
   )
@@ -148,6 +154,7 @@ test_that("add_temporal_effects.data.frame weekend effect works with custom week
 })
 
 test_that("add_temporal_effects.data.frame month_of_year cycles correctly", {
+  skip_on_cran()
   df <- data.frame(
     date = seq(as.Date("2020-01-15"), as.Date("2020-12-15"), by = "month")
   )
@@ -171,6 +178,7 @@ test_that("add_temporal_effects.data.frame month_of_year cycles correctly", {
 })
 
 test_that("add_temporal_effects.data.frame month_of_year handles year boundary", {
+  skip_on_cran()
   df <- data.frame(
     date = as.Date(c("2020-11-15", "2020-12-15", "2021-01-15", "2021-02-15"))
   )
@@ -189,6 +197,7 @@ test_that("add_temporal_effects.data.frame month_of_year handles year boundary",
 })
 
 test_that("add_temporal_effects.data.frame week_of_year cycles correctly", {
+  skip_on_cran()
   df <- data.frame(
     date = seq(as.Date("2020-01-08"), as.Date("2020-12-30"), by = "week")
   )
@@ -210,6 +219,7 @@ test_that("add_temporal_effects.data.frame week_of_year cycles correctly", {
 })
 
 test_that("add_temporal_effects.data.frame week_of_year handles year boundary", {
+  skip_on_cran()
   df <- data.frame(
     date = as.Date(c("2020-12-23", "2020-12-30", "2021-01-06", "2021-01-13"))
   )
@@ -228,6 +238,7 @@ test_that("add_temporal_effects.data.frame week_of_year handles year boundary", 
 })
 
 test_that("add_temporal_effects.data.frame seasons creates sin and cos columns", {
+  skip_on_cran()
   df <- data.frame(
     date = as.Date(c("2020-01-01", "2020-07-01")),
     numeric_col = c(1, 183)
@@ -248,6 +259,7 @@ test_that("add_temporal_effects.data.frame seasons creates sin and cos columns",
 })
 
 test_that("add_temporal_effects.data.frame multiple seasons create multiple columns", {
+  skip_on_cran()
   df <- data.frame(
     date = as.Date(c("2020-01-01", "2020-07-01")),
     numeric_col = c(1, 183)
@@ -273,6 +285,7 @@ test_that("add_temporal_effects.data.frame multiple seasons create multiple colu
 })
 
 test_that("add_temporal_effects.data.frame seasons fail when column exists and overwrite = FALSE", {
+  skip_on_cran()
   df <- data.frame(
     date = as.Date(c("2020-01-01", "2020-07-01")),
     numeric_col = c(1, 183),
@@ -295,6 +308,7 @@ test_that("add_temporal_effects.data.frame seasons fail when column exists and o
 })
 
 test_that("add_temporal_effects.data.frame seasons overwrite when overwrite = TRUE", {
+  skip_on_cran()
   # `&&` binds tighter than `||`, so the guard used to read
   # `cos_exists || (sin_exists && !overwrite)` and aborted on the `_cos` column
   # no matter what `overwrite` was -- which made a seasonal effect impossible to
@@ -320,6 +334,7 @@ test_that("add_temporal_effects.data.frame seasons overwrite when overwrite = TR
 })
 
 test_that("compute_temporal_effects(overwrite = TRUE) refreshes seasonal columns", {
+  skip_on_cran()
   x <- dplyr::tibble(
     event = as.Date("2020-01-01") + 0:5,
     report = as.Date("2020-01-01") + 0:5
@@ -339,6 +354,7 @@ test_that("compute_temporal_effects(overwrite = TRUE) refreshes seasonal columns
 })
 
 test_that("add_temporal_effects.data.frame holidays fails without almanac", {
+  skip_on_cran()
   #From https://stackoverflow.com/a/79102488/5067372
   with_mocked_bindings(
     {
@@ -362,6 +378,7 @@ test_that("add_temporal_effects.data.frame holidays fails without almanac", {
 })
 
 test_that("add_temporal_effects.data.frame holidays creates binary column", {
+  skip_on_cran()
   skip_if_not_installed("almanac")
 
   df <- data.frame(
@@ -385,6 +402,7 @@ test_that("add_temporal_effects.data.frame holidays creates binary column", {
 })
 
 test_that("add_temporal_effects.data.frame holidays fail when column exists and overwrite = FALSE", {
+  skip_on_cran()
   skip_if_not_installed("almanac")
 
   df <- data.frame(
@@ -408,6 +426,7 @@ test_that("add_temporal_effects.data.frame holidays fail when column exists and 
 })
 
 test_that("add_temporal_effects.data.frame custom name_prefix works", {
+  skip_on_cran()
   df <- data.frame(
     my_date = as.Date(c("2020-01-01", "2020-01-08"))
   )
@@ -430,6 +449,7 @@ test_that("add_temporal_effects.data.frame custom name_prefix works", {
 # ============================================================================
 
 test_that("add_temporal_effects.tbl_now returns unchanged when t_effects is NULL", {
+  skip_on_cran()
   data(denguedat)
 
   df_now <- denguedat |>
@@ -446,6 +466,7 @@ test_that("add_temporal_effects.tbl_now returns unchanged when t_effects is NULL
 })
 
 test_that("add_temporal_effects.tbl_now stores spec lazily — no columns added", {
+  skip_on_cran()
   data(denguedat)
 
   df_now <- denguedat |>
@@ -462,6 +483,7 @@ test_that("add_temporal_effects.tbl_now stores spec lazily — no columns added"
 })
 
 test_that("add_temporal_effects.tbl_now stores date_type in spec", {
+  skip_on_cran()
   data(denguedat)
 
   df_now <- denguedat |>
@@ -475,6 +497,7 @@ test_that("add_temporal_effects.tbl_now stores date_type in spec", {
 })
 
 test_that("add_temporal_effects.tbl_now fails with invalid date_type", {
+  skip_on_cran()
   data(denguedat)
 
   df_now <- denguedat |>
@@ -489,6 +512,7 @@ test_that("add_temporal_effects.tbl_now fails with invalid date_type", {
 })
 
 test_that("add_temporal_effects.tbl_now accumulates specs with multiple calls", {
+  skip_on_cran()
   data(denguedat)
 
   df_now <- denguedat |>
@@ -510,6 +534,7 @@ test_that("add_temporal_effects.tbl_now accumulates specs with multiple calls", 
 })
 
 test_that("add_temporal_effects.tbl_now preserves tbl_now class", {
+  skip_on_cran()
   data(denguedat)
 
   df_now <- denguedat |>
@@ -523,6 +548,7 @@ test_that("add_temporal_effects.tbl_now preserves tbl_now class", {
 })
 
 test_that("add_temporal_effects.tbl_now preserves all tbl_now attributes", {
+  skip_on_cran()
   data(denguedat)
 
   df_now <- denguedat |>
@@ -546,6 +572,7 @@ test_that("add_temporal_effects.tbl_now preserves all tbl_now attributes", {
 # ============================================================================
 
 test_that("compute_temporal_effects returns unchanged when no spec", {
+  skip_on_cran()
   data(denguedat)
 
   df_now <- denguedat |>
@@ -557,6 +584,7 @@ test_that("compute_temporal_effects returns unchanged when no spec", {
 })
 
 test_that("compute_temporal_effects adds day_of_week columns to event_date", {
+  skip_on_cran()
   data(denguedat)
 
   df_now <- denguedat |>
@@ -570,6 +598,7 @@ test_that("compute_temporal_effects adds day_of_week columns to event_date", {
 })
 
 test_that("compute_temporal_effects adds columns to report_date when specified", {
+  skip_on_cran()
   data(denguedat)
 
   df_now <- denguedat |>
@@ -583,6 +612,7 @@ test_that("compute_temporal_effects adds columns to report_date when specified",
 })
 
 test_that("revision-date temporal effects require a revision process", {
+  skip_on_cran()
   x <- tbl_now(
     data.frame(
       event = as.Date("2024-01-01") + 0:1,
@@ -602,6 +632,7 @@ test_that("revision-date temporal effects require a revision process", {
 })
 
 test_that("compute_temporal_effects adds columns to revision_date when specified", {
+  skip_on_cran()
   x <- tbl_now(
     data.frame(
       event = as.Date(c("2024-01-01", "2024-01-02", "2024-01-03")),
@@ -631,6 +662,7 @@ test_that("compute_temporal_effects adds columns to revision_date when specified
 })
 
 test_that("compute_temporal_effects populates computed_temporal_effect_cols", {
+  skip_on_cran()
   data(denguedat)
 
   df_now <- denguedat |>
@@ -649,6 +681,7 @@ test_that("compute_temporal_effects populates computed_temporal_effect_cols", {
 })
 
 test_that("compute_temporal_effects handles multiple specs (event + report)", {
+  skip_on_cran()
   data(denguedat)
 
   df_now <- denguedat |>
@@ -666,6 +699,7 @@ test_that("compute_temporal_effects handles multiple specs (event + report)", {
 })
 
 test_that("compute_temporal_effects uses .event_num for seasons on event_date", {
+  skip_on_cran()
   data(denguedat)
 
   df_now <- denguedat |>
@@ -679,6 +713,7 @@ test_that("compute_temporal_effects uses .event_num for seasons on event_date", 
 })
 
 test_that("compute_temporal_effects uses .report_num for seasons on report_date", {
+  skip_on_cran()
   data(denguedat)
 
   df_now <- denguedat |>
@@ -692,6 +727,7 @@ test_that("compute_temporal_effects uses .report_num for seasons on report_date"
 })
 
 test_that("compute_temporal_effects preserves tbl_now class", {
+  skip_on_cran()
   data(denguedat)
 
   df_now <- denguedat |>
@@ -705,6 +741,7 @@ test_that("compute_temporal_effects preserves tbl_now class", {
 })
 
 test_that("compute_temporal_effects preserves the temporal_effects spec", {
+  skip_on_cran()
   data(denguedat)
 
   df_now <- denguedat |>
@@ -720,6 +757,7 @@ test_that("compute_temporal_effects preserves the temporal_effects spec", {
 })
 
 test_that("compute_temporal_effects works with count data", {
+  skip_on_cran()
   data(denguedat)
 
   df_now <- denguedat |>
@@ -735,6 +773,7 @@ test_that("compute_temporal_effects works with count data", {
 })
 
 test_that("compute_temporal_effects weekend effect respects weekend_days parameter", {
+  skip_on_cran()
   data(denguedat)
 
   df_now <- denguedat |>
@@ -748,6 +787,7 @@ test_that("compute_temporal_effects weekend effect respects weekend_days paramet
 })
 
 test_that("compute_temporal_effects handles all effects together", {
+  skip_on_cran()
   skip_if_not_installed("almanac")
 
   data(denguedat)
@@ -777,6 +817,7 @@ test_that("compute_temporal_effects handles all effects together", {
 })
 
 test_that("compute_temporal_effects preserves data integrity", {
+  skip_on_cran()
   data(denguedat)
 
   df_now <- denguedat |>
@@ -797,6 +838,7 @@ test_that("compute_temporal_effects preserves data integrity", {
 # ============================================================================
 
 test_that("dplyr::filter preserves the temporal_effects spec", {
+  skip_on_cran()
   data(denguedat)
 
   df_now <- denguedat |>
@@ -813,6 +855,7 @@ test_that("dplyr::filter preserves the temporal_effects spec", {
 })
 
 test_that("dplyr::select preserves the temporal_effects spec", {
+  skip_on_cran()
   data(denguedat)
 
   df_now <- denguedat |>
@@ -831,6 +874,7 @@ test_that("dplyr::select preserves the temporal_effects spec", {
 })
 
 test_that("dplyr::mutate preserves the temporal_effects spec", {
+  skip_on_cran()
   data(denguedat)
 
   df_now <- denguedat |>
@@ -847,6 +891,7 @@ test_that("dplyr::mutate preserves the temporal_effects spec", {
 })
 
 test_that("dplyr operations preserve computed_temporal_effect_cols after compute", {
+  skip_on_cran()
   data(denguedat)
 
   df_computed <- denguedat |>
@@ -866,6 +911,7 @@ test_that("dplyr operations preserve computed_temporal_effect_cols after compute
 })
 
 test_that("selecting away a computed temporal-effect column removes it from computed_temporal_effect_cols", {
+  skip_on_cran()
   data(denguedat)
 
   df_computed <- denguedat |>
@@ -884,6 +930,7 @@ test_that("selecting away a computed temporal-effect column removes it from comp
 })
 
 test_that("change_event_date invalidates computed temporal-effect columns", {
+  skip_on_cran()
   x <- tbl_now(
     data.frame(
       event = as.Date(c("2024-01-01", "2024-01-02")),
@@ -905,6 +952,7 @@ test_that("change_event_date invalidates computed temporal-effect columns", {
 })
 
 test_that("change_report_date invalidates computed temporal-effect columns", {
+  skip_on_cran()
   x <- tbl_now(
     data.frame(
       event = as.Date(c("2024-01-01", "2024-01-02")),
@@ -929,6 +977,7 @@ test_that("change_report_date invalidates computed temporal-effect columns", {
 })
 
 test_that("change_revision_date invalidates computed temporal-effect columns", {
+  skip_on_cran()
   x <- tbl_now(
     data.frame(
       event = as.Date(c("2024-01-01", "2024-01-02")),
@@ -956,6 +1005,7 @@ test_that("change_revision_date invalidates computed temporal-effect columns", {
 })
 
 test_that("remove_revision_date drops only revision-date temporal effects", {
+  skip_on_cran()
   x <- tbl_now(
     data.frame(
       event = as.Date(c("2024-01-01", "2024-01-02")),
@@ -982,6 +1032,7 @@ test_that("remove_revision_date drops only revision-date temporal effects", {
 })
 
 test_that("converters recompute temporal effects after a date change", {
+  skip_on_cran()
   skip_if_not_installed("data.table")
 
   x <- tbl_now(
@@ -1004,6 +1055,7 @@ test_that("converters recompute temporal effects after a date change", {
 })
 
 test_that("converters recompute revision temporal effects after a revision date change", {
+  skip_on_cran()
   skip_if_not_installed("data.table")
 
   x <- tbl_now(
@@ -1032,6 +1084,7 @@ test_that("converters recompute revision temporal effects after a revision date 
 })
 
 test_that("aggregate_time_units coarsens revision-date temporal effects", {
+  skip_on_cran()
   x <- tbl_now(
     data.frame(
       event = as.Date(c("2024-01-01", "2024-01-08")),
@@ -1061,6 +1114,7 @@ test_that("aggregate_time_units coarsens revision-date temporal effects", {
 # ============================================================================
 
 test_that("temporal_effects can be passed to tbl_now constructor (lazy)", {
+  skip_on_cran()
   data(denguedat)
 
   t_eff <- temporal_effects(week_of_year = TRUE, month_of_year = TRUE)
@@ -1086,6 +1140,7 @@ test_that("temporal_effects can be passed to tbl_now constructor (lazy)", {
 })
 
 test_that("temporal_effects with seasons integrates correctly", {
+  skip_on_cran()
   data(denguedat)
 
   result <- denguedat[1:100, ] |>
@@ -1100,6 +1155,7 @@ test_that("temporal_effects with seasons integrates correctly", {
 })
 
 test_that("temporal_effects with holidays integrates correctly", {
+  skip_on_cran()
   skip_if_not_installed("almanac")
 
   data(denguedat)
@@ -1127,6 +1183,7 @@ print_lines <- function(x) {
 }
 
 test_that("print method for temporal_effects reports the active effects", {
+  skip_on_cran()
   txt <- print_lines(temporal_effects(day_of_week = TRUE, week_of_year = TRUE))
   expect_match(txt, "Temporal Effects")
   expect_match(txt, "day_of_week")
@@ -1136,6 +1193,7 @@ test_that("print method for temporal_effects reports the active effects", {
 })
 
 test_that("print method reports when no effects are switched on", {
+  skip_on_cran()
   expect_match(
     print_lines(temporal_effects(day_of_week = FALSE, week_of_year = FALSE)),
     "No temporal effects"
@@ -1143,6 +1201,7 @@ test_that("print method reports when no effects are switched on", {
 })
 
 test_that("print method returns its input invisibly", {
+  skip_on_cran()
   te <- temporal_effects(day_of_week = TRUE)
   utils::capture.output(res <- withVisible(print(te)))
   expect_false(res$visible)

@@ -25,6 +25,7 @@ make_test_tbl_now <- function(n = 10) {
 # ----------------------------------------------------------------------
 
 test_that("`[.tbl_now` preserves class on valid subset", {
+  skip_on_cran()
   x <- make_test_tbl_now(n = 20)
   subset_valid <- x[1:10, ]
 
@@ -51,6 +52,7 @@ test_that("`[.tbl_now` downgrades to tibble if protected columns are dropped", {
 })
 
 test_that("`names<-.tbl_now` preserves class if protected columns are not renamed", {
+  skip_on_cran()
   x <- make_test_tbl_now()
   # Rename a non-protected column
   names(x)[4] <- "new_value"
@@ -81,6 +83,7 @@ test_that("`names<-.tbl_now` downgrades to tibble if a protected column is renam
 })
 
 test_that("`$<-.tbl_now` preserves class on valid column replacement/addition", {
+  skip_on_cran()
   x <- make_test_tbl_now()
   # Add a new column
   x$new_col <- "test"
@@ -94,6 +97,7 @@ test_that("`$<-.tbl_now` preserves class on valid column replacement/addition", 
 # ----------------------------------------------------------------------
 
 test_that("`dplyr_row_dplyr::slice.tbl_now` preserves class and attributes", {
+  skip_on_cran()
   x <- make_test_tbl_now(n = 20)
   # Row slicing via `dplyr::slice()`
   sliced <- x |> dplyr::slice(1:5)
@@ -104,6 +108,7 @@ test_that("`dplyr_row_dplyr::slice.tbl_now` preserves class and attributes", {
 })
 
 test_that("`dplyr_col_modify.tbl_now` preserves class and attributes", {
+  skip_on_cran()
   x <- make_test_tbl_now()
   # Column modification via `dplyr::mutate()`
   modified <- x |> dplyr::mutate(value = value * 2)
@@ -114,6 +119,7 @@ test_that("`dplyr_col_modify.tbl_now` preserves class and attributes", {
 })
 
 test_that("`dplyr_reconstruct.tbl_now` handles reconstruction logic", {
+  skip_on_cran()
   template <- make_test_tbl_now()
   # Scenario 1: Valid data reconstruction
   valid_data <- template |> dplyr::select(-gender) # Drop 'value'
@@ -156,6 +162,7 @@ test_that("`dplyr_reconstruct.tbl_now` handles reconstruction logic", {
 # ----------------------------------------------------------------------
 
 test_that("`group_by.tbl_now` creates a `grouped_tbl_now`", {
+  skip_on_cran()
   x <- make_test_tbl_now()
   grouped <- x |> group_by(gender)
 
@@ -168,6 +175,7 @@ test_that("`group_by.tbl_now` creates a `grouped_tbl_now`", {
 })
 
 test_that("`ungroup.grouped_tbl_now` returns an ungrouped `tbl_now`", {
+  skip_on_cran()
   x <- make_test_tbl_now()
   grouped <- x |> group_by(gender)
   ungrouped <- grouped |> ungroup()
@@ -178,6 +186,7 @@ test_that("`ungroup.grouped_tbl_now` returns an ungrouped `tbl_now`", {
 })
 
 test_that("`summarise.tbl_now` preserves class when valid", {
+  skip_on_cran()
   x <- make_test_tbl_now()
 
 
@@ -258,6 +267,7 @@ setup_test_data <- function() {
 
 # Tests for validate_tbl_now() ----
 test_that("validate_tbl_now passes for valid tbl_now", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   expect_true(validate_tbl_now(test_data$ndata))
@@ -476,6 +486,7 @@ test_that("validate_tbl_now warns when report_date before event_date", {
 
 # Tests for is_tbl_now() ----
 test_that("is_tbl_now returns TRUE for valid tbl_now", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   expect_true(is_tbl_now(test_data$ndata))
@@ -1170,6 +1181,7 @@ demotion_fixture <- function() {
 }
 
 test_that("demotion drops the class's attributes", {
+  skip_on_cran()
   x <- demotion_fixture()
   demoted <- suppressWarnings(x |> dplyr::select(-!!as.symbol("onset")))
 
@@ -1185,6 +1197,7 @@ test_that("demotion drops the class's attributes", {
 })
 
 test_that("demotion drops the same attributes whether or not the object is grouped", {
+  skip_on_cran()
   x <- demotion_fixture()
 
   ungrouped <- suppressWarnings(x |> dplyr::select(-!!as.symbol("onset")))
@@ -1201,6 +1214,7 @@ test_that("demotion drops the same attributes whether or not the object is group
 })
 
 test_that("demotion keeps the metadata the user attached through `...`", {
+  skip_on_cran()
   df <- data.frame(
     onset = as.Date("2024-01-01") + 0:9,
     reported = as.Date("2024-01-02") + 0:9
@@ -1224,6 +1238,7 @@ add_revision_date_fixture <- function(x) {
 }
 
 test_that("every attribute tbl_now() sets is listed as one the class owns", {
+  skip_on_cran()
   # `.demote_to_tibble()` works off a hard-coded list; an attribute added to the
   # class but not to that list would outlive the demotion, and its column name
   # would outlive the column.
@@ -1236,6 +1251,7 @@ test_that("every attribute tbl_now() sets is listed as one the class owns", {
 })
 
 test_that("mutating protected date columns rebuilds generated delays", {
+  skip_on_cran()
   x <- tbl_now(
     data.frame(
       event = as.Date("2021-01-01") + 0:2,
@@ -1258,6 +1274,7 @@ test_that("mutating protected date columns rebuilds generated delays", {
 })
 
 test_that("mutating revision dates rebuilds revision numeric columns", {
+  skip_on_cran()
   x <- tbl_now(
     data.frame(
       event = as.Date("2021-01-01") + 0:2,
@@ -1281,6 +1298,7 @@ test_that("mutating revision dates rebuilds revision numeric columns", {
 })
 
 test_that("date-column rebuilds preserve grouping", {
+  skip_on_cran()
   x <- demotion_fixture() |>
     dplyr::group_by(sex)
 
@@ -1293,6 +1311,7 @@ test_that("date-column rebuilds preserve grouping", {
 })
 
 test_that("renaming protected generated columns demotes without stale attributes", {
+  skip_on_cran()
   x <- add_revision_date_fixture(demotion_fixture())
 
   demoted <- quiet_messages(suppressWarnings(
@@ -1307,6 +1326,7 @@ test_that("renaming protected generated columns demotes without stale attributes
 })
 
 test_that("mutating a count column to non-numeric invalidates count data", {
+  skip_on_cran()
   x <- tbl_now(
     data.frame(
       event = as.Date("2021-01-01") + 0:2,

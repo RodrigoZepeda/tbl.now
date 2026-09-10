@@ -22,24 +22,28 @@ xmas_cal <- function() {
 # ---------------------------------------------------------------------------
 
 test_that("temporal_effects() stores lag depths", {
+  skip_on_cran()
   te <- temporal_effects(holidays = xmas_cal(), holiday_lags = 3, weekend_lags = 2)
   expect_identical(te@holiday_lags, 3L)
   expect_identical(te@weekend_lags, 2L)
 })
 
 test_that("temporal_effects() stores negative (before-event) lag depths", {
+  skip_on_cran()
   te <- temporal_effects(holidays = xmas_cal(), holiday_lags = -3, weekend_lags = -2)
   expect_identical(te@holiday_lags, -3L)
   expect_identical(te@weekend_lags, -2L)
 })
 
 test_that("lag depths default to 0 (off)", {
+  skip_on_cran()
   te <- temporal_effects()
   expect_identical(te@holiday_lags, 0L)
   expect_identical(te@weekend_lags, 0L)
 })
 
 test_that("holiday_lags without a holidays calendar errors", {
+  skip_on_cran()
   expect_error(temporal_effects(holiday_lags = 2), "holidays")
   expect_error(temporal_effects(holiday_lags = -2), "holidays")
 })
@@ -50,6 +54,7 @@ test_that("weekend_lags does not require a holidays calendar", {
 })
 
 test_that("non-integer lag depths error", {
+  skip_on_cran()
   expect_error(temporal_effects(weekend_lags = 1.5), "single integer")
   expect_error(temporal_effects(weekend_lags = -1.5), "single integer")
   expect_error(temporal_effects(weekend_lags = c(1, 2)), "single integer")
@@ -61,6 +66,7 @@ test_that("non-integer lag depths error", {
 # ---------------------------------------------------------------------------
 
 test_that("after-holiday lags create the right indicator columns", {
+  skip_on_cran()
   skip_if_not_installed("almanac")
   x <- tbl_now(make_daily(), event_date = "onset", report_date = "report",
                case_count = "n", data_type = "count-incidence", verbose = FALSE) |>
@@ -89,6 +95,7 @@ test_that("after-holiday lags create the right indicator columns", {
 })
 
 test_that("after-weekend lags flag the first working day(s) after a weekend", {
+  skip_on_cran()
   x <- tbl_now(make_daily(), event_date = "onset", report_date = "report",
                case_count = "n", data_type = "count-incidence", verbose = FALSE) |>
     add_temporal_effects(temporal_effects(weekend_lags = 1))
@@ -102,6 +109,7 @@ test_that("after-weekend lags flag the first working day(s) after a weekend", {
 })
 
 test_that("weekend lags skip holidays when counting working days", {
+  skip_on_cran()
   skip_if_not_installed("almanac")
   # New Year's Day is Fri Jan 1 2021. The weekend Sat Jan 2/Sun Jan 3 is followed
   # by Mon Jan 4, which is the first working day -> weekend_lag_1.
@@ -117,6 +125,7 @@ test_that("weekend lags skip holidays when counting working days", {
 # ---------------------------------------------------------------------------
 
 test_that("negative weekend lags flag the working day(s) before a weekend", {
+  skip_on_cran()
   x <- tbl_now(make_daily(), event_date = "onset", report_date = "report",
                case_count = "n", data_type = "count-incidence", verbose = FALSE) |>
     add_temporal_effects(temporal_effects(weekend_lags = -3))
@@ -144,6 +153,7 @@ test_that("negative weekend lags flag the working day(s) before a weekend", {
 })
 
 test_that("negative holiday lags flag the working days leading up to a holiday", {
+  skip_on_cran()
   skip_if_not_installed("almanac")
   x <- tbl_now(make_daily(), event_date = "onset", report_date = "report",
                case_count = "n", data_type = "count-incidence", verbose = FALSE) |>
@@ -166,6 +176,7 @@ test_that("negative holiday lags flag the working days leading up to a holiday",
 })
 
 test_that("before- and after-event effects can coexist on one object", {
+  skip_on_cran()
   skip_if_not_installed("almanac")
   x <- tbl_now(make_daily(), event_date = "onset", report_date = "report",
                case_count = "n", data_type = "count-incidence", verbose = FALSE) |>
@@ -178,6 +189,7 @@ test_that("before- and after-event effects can coexist on one object", {
 })
 
 test_that("get_temporal_effect_cols() reports the lag columns", {
+  skip_on_cran()
   x <- tbl_now(make_daily(), event_date = "onset", report_date = "report",
                case_count = "n", data_type = "count-incidence", verbose = FALSE) |>
     add_temporal_effects(temporal_effects(holidays = xmas_cal(),
@@ -192,6 +204,7 @@ test_that("get_temporal_effect_cols() reports the lag columns", {
 # ---------------------------------------------------------------------------
 
 test_that("lag effects can be attached to the report date", {
+  skip_on_cran()
   skip_if_not_installed("almanac")
   x <- tbl_now(make_daily(), event_date = "onset", report_date = "report",
                case_count = "n", data_type = "count-incidence", verbose = FALSE) |>
@@ -203,6 +216,7 @@ test_that("lag effects can be attached to the report date", {
 })
 
 test_that("event and report lag effects can coexist on one object", {
+  skip_on_cran()
   skip_if_not_installed("almanac")
   cal <- xmas_cal()
   x <- tbl_now(make_daily(), event_date = "onset", report_date = "report",
@@ -221,6 +235,7 @@ test_that("event and report lag effects can coexist on one object", {
 # ---------------------------------------------------------------------------
 
 test_that("re-computing lag columns without overwrite errors", {
+  skip_on_cran()
   x <- tbl_now(make_daily(), event_date = "onset", report_date = "report",
                case_count = "n", data_type = "count-incidence", verbose = FALSE) |>
     add_temporal_effects(temporal_effects(weekend_lags = 1))
@@ -234,6 +249,7 @@ test_that("re-computing lag columns without overwrite errors", {
 # ---------------------------------------------------------------------------
 
 test_that("converters carry the after-lag columns", {
+  skip_on_cran()
   skip_if_not_installed("data.table")
   x <- tbl_now(make_daily(), event_date = "onset", report_date = "report",
                case_count = "n", data_type = "count-incidence", verbose = FALSE) |>

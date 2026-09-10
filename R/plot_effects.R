@@ -113,7 +113,7 @@
 
 #' Calendar effects on the case counts or on the reporting delay
 #'
-#' @description `r lifecycle::badge("experimental")`
+#' @description `r lifecycle::badge("stable")`
 #'
 #' One panel of [autoplot()], drawn on its own. Each function shows the same
 #' boxplots the corresponding `autoplot()` panel does, for one calendar grouping:
@@ -268,16 +268,13 @@ plot_holiday_lag_effects <- function(x, type = c("epidemic", "report", "revision
 
 #' Periodogram of the case counts or of the reporting delay
 #'
-#' @description `r lifecycle::badge("experimental")`
+#' @description `r lifecycle::badge("stable")`
 #'
 #' The `"seasonality"` / `"delay_seasonality"` panels of [autoplot()], drawn on
 #' their own: a periodogram whose dominant peak is marked. For
 #' `type = "epidemic"` (green) the peak suggests a Fourier season length to pass
 #' to [temporal_effects()]; for `type = "report"` (red) it marks a cycle in the
 #' reporting delay itself, such as a weekly reporting rhythm.
-#'
-#' For a *time-resolved* view — which cycles are strong **when** — see
-#' [plot_scalogram()].
 #'
 #' @param x A [tbl_now()] object.
 #' @param type `"epidemic"` (default), `"report"` or `"revision"`.
@@ -286,7 +283,7 @@ plot_holiday_lag_effects <- function(x, type = c("epidemic", "report", "revision
 #'
 #' @return A \pkg{ggplot2} object (or a \pkg{plotly} widget when `plotly = TRUE`).
 #'
-#' @seealso [autoplot.tbl_now()], [plot_scalogram()], [calendar_effect_plots].
+#' @seealso [autoplot.tbl_now()], [calendar_effect_plots].
 #'
 #' @examplesIf requireNamespace("ggplot2", quietly = TRUE)
 #' data(denguedat)
@@ -305,9 +302,9 @@ plot_cycles <- function(x, type = c("epidemic", "report", "revision"), ...) {
   .tbl_now_plot_panel(x, key, ...)
 }
 
-#' Empirical distribution of the reporting delay
+#' Empirical distribution of the reporting or revision delay
 #'
-#' @description `r lifecycle::badge("experimental")`
+#' @description `r lifecycle::badge("stable")`
 #'
 #' The `"delay_distribution"` panel of [autoplot()], drawn on its own: a
 #' case-count weighted histogram of `.delay`. For **`count-cumulative`** data it
@@ -315,28 +312,68 @@ plot_cycles <- function(x, type = c("epidemic", "report", "revision"), ...) {
 #' of the ratio of each event date's cumulative count at a delay to its count at
 #' the previous delay.
 #'
+#' `axis = "revision"` draws the same histogram of `.revision_delay`, the time
+#' from a report to its resolution, in the revision process's colours. A case
+#' still `"pending"` has no resolution, and so no revision delay, and does not
+#' appear.
+#'
 #' @param x A [tbl_now()] object.
+#' @param axis Which delay to draw: `"report"` (default), the time from the
+#'   event to the report, or `"revision"`, the time from the report to its
+#'   resolution. `"revision"` needs a revision process (see
+#'   [add_revision_date()][add]).
+#' @param by_revision_type Logical (default `TRUE`). Split the histogram by how
+#'   each case eventually resolved — `confirmed`, `pending`, `retracted` and
+#'   `unknown`, stacked, in the palette's outcome colours (see
+#'   [tbl_now_palette()]). Whether a negative result comes back faster than a
+#'   positive one is the question the split exists to answer, and
+#'   [diagnose_revision_delay()] is the test of it. Ignored on an object with no
+#'   revision axis, and when `by_strata = TRUE`, which already uses the fill for
+#'   the strata.
 #' @param ... Further arguments passed to [autoplot.tbl_now()], e.g. `by_strata`,
 #'   `strata`, `delay_distribution_xlim`, `plotly` or `palette`.
 #'
 #' @return A \pkg{ggplot2} object (or a \pkg{plotly} widget when `plotly = TRUE`).
 #'
-#' @seealso [autoplot.tbl_now()], [plot_delay_profiles()], [plot_delay_drift()].
+#' @seealso [autoplot.tbl_now()], [plot_delay_profiles()], [plot_delay_drift()];
+#'   [diagnose_revision_delay()] for the test behind the outcome split.
 #'
 #' @examplesIf requireNamespace("ggplot2", quietly = TRUE)
 #' data(denguedat)
 #' dengue_now <- tbl_now(denguedat, onset_week, report_week, verbose = FALSE)
 #' plot_delay_distribution(dengue_now)
 #'
+#' # On the revision axis, split by how each case resolved.
+#' cases <- data.frame(
+#'   onset = as.Date("2021-01-04") + rep(0:9, each = 4),
+#'   visit = as.Date("2021-01-05") + rep(0:9, each = 4),
+#'   result = as.Date("2021-01-05") + rep(0:9, each = 4) +
+#'     rep(c(1, 1, 5, 6), times = 10),
+#'   outcome = rep(c("confirmed", "confirmed", "retracted", "retracted"), times = 10)
+#' )
+#' flu <- tbl_now(cases,
+#'   event_date = onset, report_date = visit,
+#'   revision_date = result, revision_type = outcome,
+#'   data_type = "linelist", verbose = FALSE
+#' )
+#' plot_delay_distribution(flu, axis = "revision")
+#'
 #' @export
 #' @md
-plot_delay_distribution <- function(x, ...) {
-  .tbl_now_plot_panel(x, "delay_distribution", ...)
+plot_delay_distribution <- function(x, axis = c("report", "revision"),
+                                    by_revision_type = TRUE, ...) {
+  axis <- match.arg(axis)
+  key <- if (identical(axis, "revision")) {
+    "revision_distribution"
+  } else {
+    "delay_distribution"
+  }
+  .tbl_now_plot_panel(x, key, by_revision_type = by_revision_type, ...)
 }
 
 #' Observed epidemic process with the incompleteness line
 #'
-#' @description `r lifecycle::badge("experimental")`
+#' @description `r lifecycle::badge("stable")`
 #'
 #' The `"epidemic"` panel of [autoplot()], drawn on its own: the latest reported
 #' counts per `event_date`, with a dashed vertical line marking where the data

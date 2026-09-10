@@ -25,6 +25,7 @@ builds_ok <- function(p) {
 }
 
 test_that("all panels returns a patchwork, a single panel returns a plain plot", {
+  skip_on_cran()
   skip_if_not_installed("patchwork")
   tn <- make_diag_tbl()
   expect_s3_class(suppressWarnings(diagnostic_plot(tn)), "patchwork")
@@ -34,6 +35,7 @@ test_that("all panels returns a patchwork, a single panel returns a plain plot",
 })
 
 test_that("every panel builds, on its own and facetted by stratum", {
+  skip_on_cran()
   tn <- make_diag_tbl(strata = TRUE)
   panels <- c("reporting", "triangle", "profiles", "delay_drift", "transport")
   for (panel in panels) {
@@ -43,6 +45,7 @@ test_that("every panel builds, on its own and facetted by stratum", {
 })
 
 test_that("each panel has a stand-alone plotting function", {
+  skip_on_cran()
   tn <- make_diag_tbl(strata = TRUE)
   expect_s3_class(suppressWarnings(plot_reporting_process(tn)), "ggplot")
   expect_s3_class(suppressWarnings(plot_epidemic_process(tn)), "ggplot")
@@ -75,7 +78,64 @@ test_that("stand-alone process plots label revision-axis arrivals", {
   expect_equal(epidemic$labels$title, "Epidemic process")
 })
 
+test_that("plot_reporting_process() splits arrivals by revision outcome", {
+  frame <- data.frame(
+    onset = as.Date("2021-01-01") + rep(0:9, each = 2),
+    report = as.Date("2021-01-02") + rep(0:9, each = 2),
+    result = as.Date("2021-01-04") + rep(0:9, each = 2),
+    outcome = rep(c("confirmed", "retracted"), times = 10)
+  )
+  x <- tbl_now(frame,
+    event_date = onset, report_date = report,
+    revision_date = result, revision_type = outcome,
+    data_type = "linelist", verbose = FALSE
+  )
+
+  split <- plot_reporting_process(x)
+  expect_true(".outcome" %in% names(split$data))
+  expect_setequal(
+    as.character(unique(split$data$.outcome)), c("confirmed", "retracted")
+  )
+  # The split rearranges the bars, it does not change what they add up to.
+  expect_equal(sum(split$data$n), nrow(frame))
+
+  plain <- plot_reporting_process(x, by_revision_type = FALSE)
+  expect_false(".outcome" %in% names(plain$data))
+  expect_equal(sum(plain$data$n), nrow(frame))
+
+  # A two-date object has no outcomes; the same call still has to work on it.
+  two_date <- tbl_now(frame,
+    event_date = onset, report_date = report,
+    data_type = "linelist", verbose = FALSE
+  )
+  expect_false(".outcome" %in% names(plot_reporting_process(two_date)$data))
+
+  expect_error(plot_reporting_process(x, by_revision_type = "yes"))
+})
+
+test_that("plot_reporting_process() refuses the split on cumulative data", {
+  frame <- data.frame(
+    e = rep(as.Date("2021-01-01") + 0:4, each = 3),
+    r = rep(as.Date("2021-01-01") + 0:4, each = 3) + c(0, 1, 2),
+    cf = rep(as.Date("2021-01-01") + 0:4, each = 3) + c(1, 2, 3),
+    ty = "confirmed",
+    n = as.numeric(rep(c(1, 3, 5), 5))
+  )
+  x <- tbl_now(frame,
+    event_date = e, report_date = r, revision_date = cf, revision_type = ty,
+    case_count = n, data_type = "count-cumulative", verbose = FALSE
+  )
+
+  expect_warning(
+    panel <- plot_reporting_process(x),
+    "records running totals"
+  )
+  expect_false(".outcome" %in% names(panel$data))
+  expect_no_warning(plot_reporting_process(x, by_revision_type = FALSE))
+})
+
 test_that(".diag_batch_stripes finds an obvious volume spike and honours k = 0", {
+  skip_on_cran()
   inc <- data.frame(
     .report_date = as.Date("2023-01-01") + 0:29,
     .count       = c(rep(5, 15), 500, rep(5, 14))       # a lone spike on day 16
@@ -86,6 +146,7 @@ test_that(".diag_batch_stripes finds an obvious volume spike and honours k = 0",
 })
 
 test_that("the reporting triangle draws the report-date axis, toggled by report_ticks", {
+  skip_on_cran()
   tn <- make_diag_tbl(strata = FALSE)
   has_abline <- function(p) {
     any(vapply(p$layers, function(l) inherits(l$geom, "GeomAbline"), logical(1)))
@@ -96,6 +157,7 @@ test_that("the reporting triangle draws the report-date axis, toggled by report_
 })
 
 test_that("the reporting triangle separates reported zeros from not-yet-reportable", {
+  skip_on_cran()
   tn    <- make_diag_tbl(strata = FALSE)
   build <- ggplot2::ggplot_build(suppressWarnings(plot_reporting_triangle(tn)))
   fills <- unlist(lapply(build$data, function(d) d$fill))
@@ -105,6 +167,7 @@ test_that("the reporting triangle separates reported zeros from not-yet-reportab
 })
 
 test_that("an event date with zero rows in the raw data is drawn as a zero, not left blank", {
+  skip_on_cran()
   # A whole origin week with truly no cases never appears in the raw data at all,
   # so the tile grid must be built from the FULL calendar (not just observed event
   # dates), or that date silently vanishes from the triangle instead of reading 0.
@@ -124,18 +187,21 @@ test_that("an event date with zero rows in the raw data is drawn as a zero, not 
 })
 
 test_that("panels facet by stratum only when strata are present", {
+  skip_on_cran()
   expect_equal(n_panels(suppressWarnings(diagnostic_plot(make_diag_tbl(TRUE),  panels = "triangle"))), 2L)
   expect_equal(n_panels(suppressWarnings(diagnostic_plot(make_diag_tbl(FALSE), panels = "triangle"))), 1L)
   expect_equal(n_panels(suppressWarnings(diagnostic_plot(make_diag_tbl(TRUE), panels = "transport"))), 2L)
 })
 
 test_that("the profiles panel switches summarisation axis with `by`", {
+  skip_on_cran()
   tn <- make_diag_tbl(strata = FALSE)
   expect_true(builds_ok(diagnostic_plot(tn, panels = "profiles", by = "report")))
   expect_true(builds_ok(diagnostic_plot(tn, panels = "profiles", by = "event")))
 })
 
 test_that("`...` routes only the accepted args to the transport panel", {
+  skip_on_cran()
   tn <- make_diag_tbl(strata = FALSE)
   expect_true(builds_ok(suppressWarnings(
     diagnostic_plot(tn, panels = "transport", period = 7, lookback = 3)
@@ -143,6 +209,7 @@ test_that("`...` routes only the accepted args to the transport panel", {
 })
 
 test_that("inputs are validated", {
+  skip_on_cran()
   tn <- make_diag_tbl(strata = FALSE)
   expect_error(diagnostic_plot(tn, panels = "ledger"),  "Unknown panel")   # old name, renamed
   expect_error(diagnostic_plot(tn, panels = "staleness"),  "Unknown panel") # old name, renamed
@@ -164,6 +231,7 @@ test_that("plot_transport_discriminant() names its axes in plain text", {
 })
 
 test_that("the plotly transport plane hovers on the dates, not the z scores", {
+  skip_on_cran()
   skip_if_not_installed("plotly")
   tn <- make_diag_tbl(strata = FALSE)
   widget <- suppressWarnings(
@@ -182,6 +250,7 @@ test_that("the plotly transport plane hovers on the dates, not the z scores", {
 # -- censoring belongs to the arrival axis only -------------------------------
 
 test_that("censored report dates do not remove cases from the epidemic curve", {
+  skip_on_cran()
   # This shipped wrong once: the drop lived in the shared increments helper, so
   # `plot_epidemic_process()` silently deleted every case whose REPORT date had
   # been censored -- a statement about the arrival axis, not the event axis.

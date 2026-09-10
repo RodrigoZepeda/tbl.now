@@ -180,26 +180,52 @@ test_that("EpiNow2 estimate_dist keeps the flag as interval censoring", {
     )
   ))
 
-  censored <- x[[get_is_censored_report(x)]]
   expect_true(all(
     c("pdate_lwr", "pdate_upr", "sdate_lwr", "sdate_upr", "obs_date") %in%
       colnames(converted)
   ))
-  expect_equal(
-    converted$sdate_lwr[censored],
-    x[[get_event_date(x)]][censored]
+
+  # `estimate_dist()` data is one row per observed DELAY, not one row per input
+  # row -- the converter pools the rows it cannot tell apart -- so the windows
+  # are matched by their (primary, secondary) triple rather than by position.
+  win      <- 1L # daily data
+  event    <- x[[get_event_date(x)]]
+  report   <- x[[get_report_date(x)]]
+  censored <- as.logical(x[[get_is_censored_report(x)]])
+
+  produced <- paste(
+    converted$pdate_lwr, converted$sdate_lwr, converted$sdate_upr
   )
+
+  # A censored report with a positive delay is known only to lie in
+  # [event_date, report_date].
+  positive_delay <- censored & report > event
   expect_true(all(
-    converted$sdate_upr[censored] >= x[[get_report_date(x)]][censored]
+    paste(
+      event[positive_delay], event[positive_delay], report[positive_delay]
+    ) %in% produced
   ))
-  positive_delay <- censored & x[[get_report_date(x)]] > x[[get_event_date(x)]]
-  expect_equal(
-    converted$sdate_upr[positive_delay],
-    x[[get_report_date(x)]][positive_delay]
-  )
+
+  # An uncensored report happened in its own period, [report, report + w).
   expect_true(all(
-    converted$sdate_lwr[!censored] >= x[[get_report_date(x)]][!censored]
+    paste(event[!censored], report[!censored], report[!censored] + win) %in%
+      produced
   ))
+
+  # ... and the converter invented nothing else.
+  expect_setequal(unique(produced), unique(c(
+    paste(
+      event[positive_delay], event[positive_delay], report[positive_delay]
+    ),
+    # A censored report inside its own event period collapses to a zero-width
+    # window and is widened up to [event, event + w) -- which is the window the
+    # uncensored rows in that period already have, so the two pool together.
+    paste(
+      event[censored & !positive_delay], event[censored & !positive_delay],
+      event[censored & !positive_delay] + win
+    ),
+    paste(event[!censored], report[!censored], report[!censored] + win)
+  )))
 })
 
 test_that("no censoring declared means no censoring warning anywhere", {

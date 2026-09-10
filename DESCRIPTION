@@ -1,7 +1,7 @@
 Package: tbl.now
 Type: Package
-Title: Tidy Extension for Nowcasting
-Version: 0.35.5
+Title: A Tidy Workflow for Epidemiological Nowcasting
+Version: 1.0.0
 Authors@R: 
     c(person("Rodrigo", "Zepeda-Tello", , "rzepeda17@gmail.com", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0003-4471-5270")),
@@ -11,9 +11,17 @@ Authors@R:
            comment = c(ORCID = "0000-0002-9465-6216")),
       person("Teresa", "Yamana", role = c("ctb"),
            comment = c(ORCID = "0000-0001-8349-3151")),
-      person("Jeffrey", "Shaman", role = c("ctb")),
+      person("Jeffrey", "Shaman", role = c("ctb"),
+           comment = c(ORCID = "0000-0002-7216-7809")),
       person(given = "Columbia University in the City of New York", role = c("cph", "fnd")))
-Description: Provides a 'tbl_now' class for temporal data for performing nowcasts. The 'tbl_now' allows for easy manipulation of event dates, report dates, strata and covariates for implementing different nowcasting models while at the same time permitting ease of use with 'dplyr' functions. It also provides a grammar to systematize nowcasting across several frameworks and produce ensemble nowcasts.
+Description: Defines tidy data structures and package-agnostic workflows for
+    epidemiological nowcasting. The 'tbl_now' class records event, report, and
+    revision dates alongside strata, covariates, censoring, and
+    reporting-delay metadata while remaining compatible with 'dplyr'. Tools
+    support validation, manipulation, diagnostics, visualization, format
+    conversion, retrospective evaluation, and multiple modelling engines. The
+    'tbl_nowcast' class standardizes probabilistic predictions for plotting,
+    scoring, comparison, and ensembling.
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
@@ -22,23 +30,21 @@ Depends:
 Suggests:
     almanac,
     baselinenowcast (>= 0.2.1),
-    diseasenowcasting (>= 2.3.0),
+    diseasenowcasting (>= 2.4.0),
     data.table,
-    epidist,
+    epidist (>= 0.4.1),
     EpiNow2 (>= 1.9.0),
-    epinowcast,
+    epinowcast (>= 0.7.0),
     knitr,
-    modifiedmk,
-    NobBS,
+    modifiedmk (>= 1.6.0),
+    NobBS (>= 1.1.1),
     patchwork,
     plotly,
     rmarkdown,
     scoringutils (>= 2.0.0),
-    surveillance,
+    surveillance (>= 1.26.1),
     testthat (>= 3.0.0),
     tsibble,
-    wavScalogram,
-    WaveletComp,
     withr
 Additional_repositories:
     https://epinowcast.r-universe.dev,

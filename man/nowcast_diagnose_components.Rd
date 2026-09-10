@@ -57,7 +57,7 @@ because it runs on every \code{dplyr} verb.}
 A tibble in the schema documented in \code{\link[=diagnose]{diagnose()}}.
 }
 \description{
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
 
 Each function returns one block of \code{\link[=diagnose]{diagnose()}}, in the same schema, so they
 can be stacked with \code{\link[dplyr:bind_rows]{dplyr::bind_rows()}} or used on their own.
@@ -69,7 +69,10 @@ temporal effects that were added but never materialised.
 \item \code{diagnose_missing()} -- \code{NA} values, per column and per stratum. An \code{NA}
 \emph{count} is reported neutrally: in a reporting triangle it means \emph{not yet
 observed}, which is correct data rather than a defect.
-\item \code{diagnose_duplicates()} -- rows that repeat on the full key.
+\item \code{diagnose_duplicates()} -- rows that repeat on the full key: the declared
+dates, the revision type, the strata, the covariates and the censoring
+flags. A row with an \code{NA} in that key is not compared, because \emph{unobserved}
+cannot be shown to equal \emph{unobserved}.
 \item \code{diagnose_units()} -- the declared units against each other, against the
 calendar the dates actually land on, and against the delay they produce.
 \item \code{diagnose_negatives()} -- negative counts, and the negative increments a

@@ -12,9 +12,12 @@ is_tbl_now(x)
 \arguments{
 \item{x}{An object to check.}
 
-\item{warn_non_uniqueness}{(optional) Logical. Whether to throw a warning if data
-has multiple observations for same event and report date (conditional on covariates
-and strata)}
+\item{warn_non_uniqueness}{(optional) Logical. Whether to throw a warning if
+data has several rows on the same full key: the event, report and (when
+declared) revision dates, the revision type, the strata, the covariates and
+the censoring flags. Rows carrying an \code{NA} anywhere in that key -- a pending
+case has no revision date -- are left out of the comparison, because an
+unobserved value cannot be shown to equal another.}
 
 \item{warn_now}{Boolean. Whether to warn if \code{now} falls before the last report
 date, or unreasonably far into the future.}
@@ -26,7 +29,7 @@ date, or unreasonably far into the future.}
 warning it raises when the object is malformed.
 }
 \description{
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
 
 Two different questions about an object, and one function for each.
 \itemize{

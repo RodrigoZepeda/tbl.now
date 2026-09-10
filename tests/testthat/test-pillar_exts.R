@@ -13,6 +13,7 @@ ll_data <- tibble(
 # === TEST SUITE FOR PILLAR EXTENSIONS (Pretty Printing) ===
 
 test_that("tbl_sum.tbl_now shows correct class and frequency", {
+  skip_on_cran()
   result <- tbl_now(
     data = ll_data,
     event_date = "event_date_col",
@@ -35,6 +36,7 @@ test_that("tbl_sum.tbl_now shows correct class and frequency", {
 })
 
 test_that("tbl_format_footer.tbl_now displays mandatory attributes", {
+  skip_on_cran()
   result <- tbl_now(
     data = ll_data,
     event_date = "event_date_col",
@@ -61,6 +63,7 @@ test_that("tbl_format_footer.tbl_now displays mandatory attributes", {
 })
 
 test_that("tbl_format_footer.tbl_now displays Strata and Covariates when present", {
+  skip_on_cran()
   result <- tbl_now(
     data = ll_data,
     event_date = "event_date_col",
@@ -76,6 +79,7 @@ test_that("tbl_format_footer.tbl_now displays Strata and Covariates when present
 })
 
 test_that("ctl_new_pillar.tbl_now annotates event and report date columns", {
+  skip_on_cran()
   result <- tbl_now(
     data = ll_data,
     event_date = "event_date_col",
@@ -116,6 +120,7 @@ daily_te <- tibble(
 )
 
 test_that("footer shows a LAZY temporal-effects spec with every effect kind", {
+  skip_on_cran()
   skip_if_not_installed("almanac")
 
   spec_event <- temporal_effects(
@@ -146,6 +151,7 @@ test_that("footer shows a LAZY temporal-effects spec with every effect kind", {
 })
 
 test_that("footer shows COMPUTED temporal effects and pillars get [t_effect]", {
+  skip_on_cran()
   x <- tbl_now(daily_te,
     event_date = event, report_date = report,
     event_units = "days", report_units = "days", verbose = FALSE
@@ -166,6 +172,7 @@ test_that(".format_temporal_effects_spec returns NULL for an empty spec list", {
 })
 
 test_that("footer shows the left-censored indicator when set", {
+  skip_on_cran()
   x <- tbl_now(
     daily_te |> mutate(flag = c(FALSE, TRUE, FALSE, FALSE)),
     event_date = event, report_date = report, is_censored_report = flag,

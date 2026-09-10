@@ -20,7 +20,7 @@
 #' Plot the reporting triangle as an age-period-cohort hexamap
 #'
 #' @description
-#' `r lifecycle::badge("experimental")`
+#' `r lifecycle::badge("stable")`
 #'
 #' Draws the reporting triangle as a hexagonal age-period-cohort map, using the
 #' projection of Jalal and Burke (2020). Event date, report date and reporting

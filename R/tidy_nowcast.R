@@ -38,7 +38,7 @@
 
 #' Tidy a nowcast produced by `run_nowcast()` or `nowcast_ensemble()`
 #'
-#' @description `r lifecycle::badge("experimental")`
+#' @description `r lifecycle::badge("stable")`
 #'
 #' Turns a [tbl_nowcast] into the same table every other `tidy()` method in this
 #' package returns, so a nowcast produced through [run_nowcast()] and one
@@ -197,7 +197,7 @@ tidy_tbl_nowcast <- function(x, probs = NULL, ...) {
 
 #' Tidy the predictions and scores of a `nowcast_backtest()`
 #'
-#' @description `r lifecycle::badge("experimental")`
+#' @description `r lifecycle::badge("stable")`
 #'
 #' One row per (method, `now` date, target) carrying both halves of the
 #' comparison -- what the model said and what happened -- with the dot-prefixed

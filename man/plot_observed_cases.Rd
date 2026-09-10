@@ -16,7 +16,7 @@ plot_observed_cases(x, ...)
 A \pkg{ggplot2} object (or a \pkg{plotly} widget when \code{plotly = TRUE}).
 }
 \description{
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
 
 The \code{"epidemic"} panel of \code{\link[=autoplot]{autoplot()}}, drawn on its own: the latest reported
 counts per \code{event_date}, with a dashed vertical line marking where the data

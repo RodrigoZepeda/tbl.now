@@ -16,7 +16,7 @@ A character vector of method names, suitable for passing to
 \code{\link[=engine]{engine()}}.
 }
 \description{
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
 
 Scans the S3 methods registered for \code{\link[=nowcast_fit]{nowcast_fit()}} in every loaded
 namespace, so any backend you (or another package) defined shows up here as

@@ -41,6 +41,7 @@ revision_fixture_days <- function() {
 # Refused where a delay is created -------------------------------------------
 
 test_that("censor_reporting_delays() refuses a fractional to_delay on a calendar axis", {
+  skip_on_cran()
   x <- daily_fixture()
 
   # The two halves that used to disagree with each other.
@@ -72,6 +73,7 @@ test_that("censor_reporting_delays() still refuses one on a numeric axis", {
 })
 
 test_that("censor_revision_delays() refuses a fractional to_delay", {
+  skip_on_cran()
   x <- revision_fixture_days()
 
   expect_error(
@@ -88,6 +90,7 @@ test_that("censor_revision_delays() refuses a fractional to_delay", {
 })
 
 test_that("tbl_now(delay =) refuses a fractional delay column", {
+  skip_on_cran()
   frame <- data.frame(
     onset = as.Date("2020-01-01") + 0:3,
     lag = c(1, 2.5, 3, 4)
@@ -121,6 +124,7 @@ test_that("tbl_now(delay =) refuses a fractional delay column", {
 })
 
 test_that("a grouped object is refused the same way", {
+  skip_on_cran()
   x <- tbl_now(
     data.frame(
       onset = as.Date("2020-01-01") + rep(0:3, 2),
@@ -162,6 +166,7 @@ misaligned_weeks <- function() {
 }
 
 test_that("validate_tbl_now() warns about a fractional .delay", {
+  skip_on_cran()
   expect_warning(
     x <- tbl_now(misaligned_weeks(),
       event_date = "onset", report_date = "reported", case_count = "n",
@@ -192,6 +197,7 @@ test_that("validate_tbl_now() warns about a fractional .delay", {
 })
 
 test_that("the fractional finding is the same one diagnose() reports", {
+  skip_on_cran()
   x <- suppressWarnings(tbl_now(misaligned_weeks(),
     event_date = "onset", report_date = "reported", case_count = "n",
     data_type = "count-incidence", units = "weeks", verbose = FALSE
@@ -212,6 +218,7 @@ test_that("the fractional finding is the same one diagnose() reports", {
 })
 
 test_that("validate_tbl_now() still does not run the expensive grid checks", {
+  skip_on_cran()
   # The `units` block is in the validator's list for the fractional delay
   # alone. Its two grid checks cost a pass over the date columns and have
   # never been more than notes, so they stay in `diagnose()`.

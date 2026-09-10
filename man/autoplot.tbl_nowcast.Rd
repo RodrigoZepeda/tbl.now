@@ -27,6 +27,22 @@ periods' counts rather than its own.}
 a nowcast is an estimate of the \strong{epidemic} process (cases by event date),
 which the package always draws in green, with red reserved for the
 reporting process.}
+
+\item{date_lim}{Length-2 vector of event-axis limits, as \code{Date}s (or as
+numbers on a numeric event axis). \code{NA} in either position leaves that end
+alone. A nowcast covers the whole series but only \emph{corrects} its final
+periods, so the interesting part is usually the last few weeks; this zooms
+on to them.
+
+The limits are applied with \code{\link[ggplot2:coord_cartesian]{ggplot2::coord_cartesian()}}, so they \strong{crop}
+the drawn plot rather than filter the data. That matters here: a scale
+limit would drop the out-of-range rows before the ribbon is built, which
+cuts the fan off at the boundary instead of letting it run to the edge.}
+
+\item{ylim}{Length-2 vector of count-axis limits, applied the same way.
+\code{NULL} (default) leaves the axis to \pkg{ggplot2}. Note that a stratified
+nowcast facets with \code{scales = "free_y"}, so one pair of limits is imposed
+on every panel.}
 }
 \value{
 A \code{ggplot} object.
@@ -48,6 +64,9 @@ predictions$.value <- 10 + 30 * predictions$.quantile_level
 nc <- tbl_nowcast(predictions = predictions, method = "toy", event_date = "onset_week")
 
 autoplot(nc)
+
+# Zoom on to the corrected weeks without dropping the rows that build the fan.
+autoplot(nc, date_lim = c(as.Date("2020-01-19"), as.Date("2020-02-02")))
 
 }
 \seealso{

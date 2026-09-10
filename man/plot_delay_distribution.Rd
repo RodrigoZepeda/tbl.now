@@ -2,12 +2,31 @@
 % Please edit documentation in R/plot_effects.R
 \name{plot_delay_distribution}
 \alias{plot_delay_distribution}
-\title{Empirical distribution of the reporting delay}
+\title{Empirical distribution of the reporting or revision delay}
 \usage{
-plot_delay_distribution(x, ...)
+plot_delay_distribution(
+  x,
+  axis = c("report", "revision"),
+  by_revision_type = TRUE,
+  ...
+)
 }
 \arguments{
 \item{x}{A \code{\link[=tbl_now]{tbl_now()}} object.}
+
+\item{axis}{Which delay to draw: \code{"report"} (default), the time from the
+event to the report, or \code{"revision"}, the time from the report to its
+resolution. \code{"revision"} needs a revision process (see
+\link[=add]{add_revision_date()}).}
+
+\item{by_revision_type}{Logical (default \code{TRUE}). Split the histogram by how
+each case eventually resolved — \code{confirmed}, \code{pending}, \code{retracted} and
+\code{unknown}, stacked, in the palette's outcome colours (see
+\code{\link[=tbl_now_palette]{tbl_now_palette()}}). Whether a negative result comes back faster than a
+positive one is the question the split exists to answer, and
+\code{\link[=diagnose_revision_delay]{diagnose_revision_delay()}} is the test of it. Ignored on an object with no
+revision axis, and when \code{by_strata = TRUE}, which already uses the fill for
+the strata.}
 
 \item{...}{Further arguments passed to \code{\link[=autoplot.tbl_now]{autoplot.tbl_now()}}, e.g. \code{by_strata},
 \code{strata}, \code{delay_distribution_xlim}, \code{plotly} or \code{palette}.}
@@ -16,21 +35,42 @@ plot_delay_distribution(x, ...)
 A \pkg{ggplot2} object (or a \pkg{plotly} widget when \code{plotly = TRUE}).
 }
 \description{
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
 
 The \code{"delay_distribution"} panel of \code{\link[=autoplot]{autoplot()}}, drawn on its own: a
 case-count weighted histogram of \code{.delay}. For \strong{\code{count-cumulative}} data it
 becomes the \emph{cumulative growth by delay} instead — boxplots, on a log scale,
 of the ratio of each event date's cumulative count at a delay to its count at
 the previous delay.
+
+\code{axis = "revision"} draws the same histogram of \code{.revision_delay}, the time
+from a report to its resolution, in the revision process's colours. A case
+still \code{"pending"} has no resolution, and so no revision delay, and does not
+appear.
 }
 \examples{
 \dontshow{if (requireNamespace("ggplot2", quietly = TRUE)) withAutoprint(\{ # examplesIf}
 data(denguedat)
 dengue_now <- tbl_now(denguedat, onset_week, report_week, verbose = FALSE)
 plot_delay_distribution(dengue_now)
+
+# On the revision axis, split by how each case resolved.
+cases <- data.frame(
+  onset = as.Date("2021-01-04") + rep(0:9, each = 4),
+  visit = as.Date("2021-01-05") + rep(0:9, each = 4),
+  result = as.Date("2021-01-05") + rep(0:9, each = 4) +
+    rep(c(1, 1, 5, 6), times = 10),
+  outcome = rep(c("confirmed", "confirmed", "retracted", "retracted"), times = 10)
+)
+flu <- tbl_now(cases,
+  event_date = onset, report_date = visit,
+  revision_date = result, revision_type = outcome,
+  data_type = "linelist", verbose = FALSE
+)
+plot_delay_distribution(flu, axis = "revision")
 \dontshow{\}) # examplesIf}
 }
 \seealso{
-\code{\link[=autoplot.tbl_now]{autoplot.tbl_now()}}, \code{\link[=plot_delay_profiles]{plot_delay_profiles()}}, \code{\link[=plot_delay_drift]{plot_delay_drift()}}.
+\code{\link[=autoplot.tbl_now]{autoplot.tbl_now()}}, \code{\link[=plot_delay_profiles]{plot_delay_profiles()}}, \code{\link[=plot_delay_drift]{plot_delay_drift()}};
+\code{\link[=diagnose_revision_delay]{diagnose_revision_delay()}} for the test behind the outcome split.
 }

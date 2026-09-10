@@ -58,7 +58,7 @@ When \code{draws} is supplied and \code{predictions} is \code{NULL}, \code{\link
 derives the quantiles from the draws for you.
 }
 \description{
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
 
 The second extension point of the nowcasting framework (see \code{\link[=nowcast_fit]{nowcast_fit()}}).
 It receives the object the modelling package returned and must express its

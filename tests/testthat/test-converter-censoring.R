@@ -4,6 +4,11 @@
 # `.tbl_now_collapse_censoring()` this made the cell non-unique and both
 # baselinenowcast and epinowcast aborted. See #25 follow-up.
 
+# This file fans one scenario out across every converter / engine, which is
+# an integration matrix rather than a unit test: too slow for CRAN, and most
+# of it needs packages that are not on CRAN anyway.
+skip_on_cran()
+
 censored_fixture <- function(type = c("linelist", "count-incidence")) {
   type <- match.arg(type)
   data(denguedat, envir = environment())

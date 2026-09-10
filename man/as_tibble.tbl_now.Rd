@@ -31,7 +31,7 @@ A \code{tibble} (for \code{as_tibble()}) or a \code{data.frame} (for
 \code{compute_temporal_effects = TRUE}.
 }
 \description{
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
 
 \code{\link[tibble:as_tibble]{tibble::as_tibble()}} and \code{\link[=as.data.frame]{as.data.frame()}} methods for \code{tbl_now}. They drop
 the \code{tbl_now} class and metadata, returning a plain \code{tibble} / \code{data.frame}.

@@ -60,6 +60,7 @@ test_that("as_tbl_now is a function", {
 })
 
 test_that("as_tbl_now has correct methods", {
+  skip_on_cran()
   methods_list <- methods("as_tbl_now")
 
   expect_true("as_tbl_now.data.frame" %in% methods_list)
@@ -71,6 +72,7 @@ test_that("as_tbl_now has correct methods", {
 # ============================================================================
 
 test_that("as_tbl_now.data.frame creates tbl_now from data.frame", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   result <- as_tbl_now(
@@ -85,6 +87,7 @@ test_that("as_tbl_now.data.frame creates tbl_now from data.frame", {
 })
 
 test_that("as_tbl_now.data.frame works with tibble", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   result <- as_tbl_now(
@@ -99,6 +102,7 @@ test_that("as_tbl_now.data.frame works with tibble", {
 })
 
 test_that("as_tbl_now.data.frame accepts tbl_now parameters", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   result <- as_tbl_now(
@@ -117,6 +121,7 @@ test_that("as_tbl_now.data.frame accepts tbl_now parameters", {
 })
 
 test_that("as_tbl_now.data.frame works with count data", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   result <- as_tbl_now(
@@ -134,6 +139,7 @@ test_that("as_tbl_now.data.frame works with count data", {
 })
 
 test_that("as_tbl_now.data.frame passes extra arguments to tbl_now", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   result <- as_tbl_now(
@@ -150,6 +156,7 @@ test_that("as_tbl_now.data.frame passes extra arguments to tbl_now", {
 })
 
 test_that("as_tbl_now.data.frame works with quoted column names", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   result <- as_tbl_now(
@@ -164,6 +171,7 @@ test_that("as_tbl_now.data.frame works with quoted column names", {
 })
 
 test_that("as_tbl_now.data.frame works with unquoted column names", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   result <- as_tbl_now(
@@ -178,6 +186,7 @@ test_that("as_tbl_now.data.frame works with unquoted column names", {
 })
 
 test_that("as_tbl_now.data.frame fails with missing event_date", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   expect_error(
@@ -186,6 +195,7 @@ test_that("as_tbl_now.data.frame fails with missing event_date", {
 })
 
 test_that("as_tbl_now.data.frame fails with missing report_date", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   expect_error(
@@ -194,6 +204,7 @@ test_that("as_tbl_now.data.frame fails with missing report_date", {
 })
 
 test_that("as_tbl_now.data.frame fails with non-existent event_date column", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   expect_error(
@@ -207,6 +218,7 @@ test_that("as_tbl_now.data.frame fails with non-existent event_date column", {
 })
 
 test_that("as_tbl_now.data.frame fails with non-existent report_date column", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   expect_error(
@@ -220,6 +232,7 @@ test_that("as_tbl_now.data.frame fails with non-existent report_date column", {
 })
 
 test_that("as_tbl_now.data.frame is equivalent to tbl_now", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   result1 <- as_tbl_now(
@@ -246,6 +259,7 @@ test_that("as_tbl_now.data.frame is equivalent to tbl_now", {
 # ============================================================================
 
 test_that("as_tbl_now.tbl_now changes event_date", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   original <- tbl_now(
@@ -271,6 +285,7 @@ test_that("as_tbl_now.tbl_now changes event_date", {
 })
 
 test_that("as_tbl_now.tbl_now changes report_date", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   original <- tbl_now(
@@ -295,6 +310,7 @@ test_that("as_tbl_now.tbl_now changes report_date", {
 })
 
 test_that("as_tbl_now.tbl_now changes both dates", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   # Create data with multiple date columns
@@ -325,6 +341,7 @@ test_that("as_tbl_now.tbl_now changes both dates", {
 })
 
 test_that("as_tbl_now.tbl_now uses change_event_date internally", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   original <- tbl_now(
@@ -348,6 +365,7 @@ test_that("as_tbl_now.tbl_now uses change_event_date internally", {
 })
 
 test_that("as_tbl_now.tbl_now uses change_report_date internally", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   original <- tbl_now(
@@ -371,6 +389,7 @@ test_that("as_tbl_now.tbl_now uses change_report_date internally", {
 })
 
 test_that("as_tbl_now.tbl_now preserves other attributes", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   original <- tbl_now(
@@ -398,6 +417,7 @@ test_that("as_tbl_now.tbl_now preserves other attributes", {
 })
 
 test_that("as_tbl_now.tbl_now recalculates delay", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   original <- tbl_now(
@@ -423,6 +443,7 @@ test_that("as_tbl_now.tbl_now recalculates delay", {
 })
 
 test_that("as_tbl_now.tbl_now works with count data", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   original <- tbl_now(
@@ -448,6 +469,7 @@ test_that("as_tbl_now.tbl_now works with count data", {
 })
 
 test_that("as_tbl_now.tbl_now fails with non-Date column", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   original <- tbl_now(
@@ -468,6 +490,7 @@ test_that("as_tbl_now.tbl_now fails with non-Date column", {
 # ============================================================================
 
 test_that("as_tbl_now dispatches to correct method for data.frame", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   result <- as_tbl_now(
@@ -481,6 +504,7 @@ test_that("as_tbl_now dispatches to correct method for data.frame", {
 })
 
 test_that("as_tbl_now dispatches to correct method for tibble", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   result <- as_tbl_now(
@@ -494,6 +518,7 @@ test_that("as_tbl_now dispatches to correct method for tibble", {
 })
 
 test_that("as_tbl_now dispatches to correct method for tbl_now", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   original <- tbl_now(
@@ -521,6 +546,7 @@ test_that("as_tbl_now dispatches to correct method for tbl_now", {
 # ============================================================================
 
 test_that("as_tbl_now works in pipe workflow with data.frame", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   result <- test_data$simple_df |>
@@ -538,6 +564,7 @@ test_that("as_tbl_now works in pipe workflow with data.frame", {
 })
 
 test_that("as_tbl_now works in pipe workflow with tbl_now", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   result <- test_data$simple_df |>
@@ -558,6 +585,7 @@ test_that("as_tbl_now works in pipe workflow with tbl_now", {
 })
 
 test_that("as_tbl_now can be chained multiple times", {
+  skip_on_cran()
   df <- data.frame(
     date1 = as.Date(c("2020-07-08", "2020-07-15")),
     date2 = as.Date(c("2020-07-09", "2020-07-16")),
@@ -578,6 +606,7 @@ test_that("as_tbl_now can be chained multiple times", {
 })
 
 test_that("as_tbl_now works with grouped data", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   grouped <- test_data$simple_df |>
@@ -609,6 +638,7 @@ test_that("as_tbl_now works with grouped data", {
 })
 
 test_that("as_tbl_now preserves row order", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   result <- as_tbl_now(
@@ -627,6 +657,7 @@ test_that("as_tbl_now preserves row order", {
 # ============================================================================
 
 test_that("example from documentation works", {
+  skip_on_cran()
   data(denguedat)
 
   result <- as_tbl_now(
@@ -642,6 +673,7 @@ test_that("example from documentation works", {
 })
 
 test_that("converting existing tbl_now works", {
+  skip_on_cran()
   data(denguedat)
 
   # Create initial tbl_now
@@ -672,6 +704,7 @@ test_that("converting existing tbl_now works", {
 # ============================================================================
 
 test_that("as_tbl_now handles single row data.frame", {
+  skip_on_cran()
   single_row <- data.frame(
     onset_week = as.Date("2020-07-08"),
     report_week = as.Date("2020-07-29")
@@ -691,6 +724,7 @@ test_that("as_tbl_now handles single row data.frame", {
 })
 
 test_that("as_tbl_now crashes with empty data.frame", {
+  skip_on_cran()
   empty_df <- data.frame(
     onset_week = as.Date(character(0)),
     report_week = as.Date(character(0))
@@ -710,6 +744,7 @@ test_that("as_tbl_now crashes with empty data.frame", {
 })
 
 test_that("as_tbl_now preserves column types", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   result <- as_tbl_now(
@@ -726,6 +761,7 @@ test_that("as_tbl_now preserves column types", {
 })
 
 test_that("as_tbl_now handles NA values", {
+  skip_on_cran()
   df_with_na <- data.frame(
     onset_week = as.Date(c("2020-07-08", "2020-07-15", NA)),
     report_week = as.Date(c("2020-07-29", "2020-08-05", "2020-08-07")),
@@ -765,6 +801,7 @@ test_that("as_tbl_now handles NA values", {
 })
 
 test_that("as_tbl_now validates result", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   result <- as_tbl_now(

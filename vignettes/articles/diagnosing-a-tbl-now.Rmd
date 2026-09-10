@@ -615,57 +615,6 @@ plot_reporting_hexamap(tn, max_delay = 60)
 ```
 
 
-## Scalograms
-
-::: {.alert .alert-warning}
-The scalogram functions are **very experimental**. We have yet to confirm they work for all batch cases. Feel free to skip to the section on [transport](https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html#sec-transport)
-:::
-
-Scalograms show reductions of cases. For this example, consider the following simulated reporting  process:
-
-```{r, echo = FALSE}
-data(denguedat)
-
-ndata <- tibble(onset_week   = seq(as.Date("2000/01/01"), by = 7, length.out = 200),
-                report_week  = seq(as.Date("2000/01/08"), by = 7, length.out = 200), 
-                n = ceiling(sapply(1:200, \(x) 5*x + 1000*abs(sin(pi*x/52))))) |>
-    tbl_now(
-        event_date = onset_week, report_date = report_week, case_count = n, verbose = FALSE) 
-
-#Smooth for the example
-plot_reporting_process(ndata)
-
-```
-
-
-Its scalogram shows the decreases in the reporting cases as vertical streaks aligned with the minimal date of this decrease:
-
-```{r, echo = FALSE}
-#Smooth for the example
-plot_scalogram(ndata)
-```
-
-One can see the same vertical streaks in the previous reporting process we had been working on corresponding to the dip before the batch:
-
-```{r, eval = FALSE}
-plot_scalogram(ideal)
-```
-
-```{r, echo = FALSE}
-plot_scalogram(ideal, format = "%b") + plot_reporting_process(ideal)
-```
-
-and again the same release dates being the most identified, with additional dates having less of a clear pattern:
-
-```{r, eval = FALSE}
-plot_scalogram(tn)
-```
-
-
-```{r, echo = FALSE}
-plot_scalogram(tn, format = "%b") + plot_reporting_process(tn)
-```
-
 ## Transport vs creation {#sec-transport} 
 
 This is the main tool for detecting batches and surges. Before the plot, we
@@ -925,7 +874,6 @@ seeing the same thing -- reports that were held back and then released together.
 | **Reporting process** | Shows how reports were registered. |
 | **Reporting triangle** | Diagonals show cases with the same report date. |
 | **The reporting V** | Horizontal slices show cases with the same report date. |
-| **Wavelet scalogram** | Bright short-period ridges in the reporting series show _holds_ on the reporting. |
 | **Transport discriminant** | A red dot up-and-left, in the "potential batch region" might indicate a batch. |
 | **`diagnose_batches()`** | Shows the flagged reports in the discriminant as a `data.frame` |
 | **Delay profiles** | Show the delay distribution for each event date. |
