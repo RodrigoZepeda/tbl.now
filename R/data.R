@@ -522,38 +522,29 @@
 #' quantile(iaas_now$.delay, c(0.5, 0.75, 0.9, 0.99), na.rm = TRUE)
 "hai_bucaramanga"
 
-#' #' vectordat: Vector borne reportable diseases from Mexico (Feb-Dec 2024)
-#' #'
-#' #' Surveillance count data provided by Mexico's General Directorate
-#' #' of Epidemiology (Direccion General de Epidemiologia)
-#' #' at https://www.gob.mx/cms/uploads/attachment/file/965318/Datos_abiertos_historicos_etv_2024.pdf.
-#' #' Data comes from the National System of Epidemiologic Surveillance (SINAVE)
-#' #' and was downloaded on May 30th 2025. The dataset includes all suspected
-#' #' vector-borne disease cases for the states of Veracruz, Guerrero and Tabasco.
-#' #' The original dataset was aggregated and pre-processed.
-#' #'
-#' #' @details
-#' #' This is count data with each row representing case counts. The columns are as follows:
-#' #' * `update`: date when the report was first registered on the database.
-#' #' * `symptoms`: date when the patient reported symptoms started.
-#' #' * `sex`: biological sex (either male or female)
-#' #' * `n`: the case count of individuals within those dates for each sex
-#' #' * `state`: state where the report was originated
-#' #'
-#' #' @note Dates are provided as present in the dataset and contain errors.
-#' #' Theoretically no individual should have an `update` after
-#' #' their `symptoms`; however the database does contain cases like that
-#' #' which are close to what practitioners find in the wild.
-#' #'
-#' #' @docType data
-#' #'
-#' #' @usage data(vectordat)
-#' #'
-#' #' @format A data frame.
-#' #'
-#' #' @keywords vector borne diseases Mexico
-#' #'
-#' #' @examples
-#' #' data(vectordat)
-#' #' @md
-#' "vectordat"
+#' sari_bh: Severe Acute Respiratory Illness data from Belo Horizonte (Brazil), 2020-2022
+#'
+#' An anonymized dataset containing cases of Severe Acute Respiratory Illness
+#' (SARI) cases from the Brazilian municipality, Belo Horizonte, with symptom onset
+#' varying from 2019-12-29 to 2022-03-27.
+#'
+#' @format A data frame with 65404 rows and 5 variables:
+#' \describe{
+#'   \item{symptom_onset_date}{Date of onset symptoms, formatted in ISO8601 as YYYY-MM-DD.}
+#'   \item{record_date}{Date the case was recorded in the surveillance system, formatted in ISO8601
+#'     as YYYY-MM-DD. May be \code{NA} when no record date was available.}
+#'   \item{final_classification}{Final classification of the case: one of \code{"Influenza"},
+#'     \code{"Other respiratory virus"}, \code{"Other ethiological agent"},
+#'     \code{"Not specified"}, or \code{"COVID-19"}.}
+#'   \item{case_evolution}{Case evolution outcome: one of \code{"Cured"}, \code{"Dead"},
+#'     \code{"Dead (other causes)"}, \code{"Unknown"}, or \code{"Not in dictionary"}.}
+#'   \item{age_yrs}{Age of the patient in years.}
+#' }
+#' @source \url{https://opendatasus.saude.gov.br/}
+#' @references From the `nowcaster` package.
+#'  Bastos, S L, Economou, Theodoros, Gomes, FC M, Villela, AM D, Coelho, C F, Cruz, G O, Stoner, Oliver, Bailey,
+#'  Trevor, Codeço, T C (2019). “A Modelling approach for correcting reporting delays in disease surveillance
+#'  data.” _Statistics in medicine_, *38*(22), 4363-4377. doi:10.1002/sim.8303 <https://doi.org/10.1002/sim.8303>.
+#' @keywords covid
+#' @md
+"sari_bh"

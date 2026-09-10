@@ -21,7 +21,7 @@ tbl_now_to_epinowcast(
   ...,
   max_delay = NULL,
   timestep = NULL,
-  missing_reference = FALSE,
+  missing_reference = NULL,
   preprocess = TRUE,
   verbose = TRUE,
   quiet = FALSE
@@ -49,7 +49,10 @@ for raw input, any column other than \code{reference_date}, \code{report_date} a
 \item{max_delay}{Maximum delay (in \code{timestep}s) to use when preprocessing.
 If \code{NULL} it is inferred from the data as \code{max(.delay) + 1}. Because \code{.delay}
 is measured in the object's report units, this is only in \code{timestep}s when
-\code{timestep} matches those units — which is what the default infers.}
+\code{timestep} matches those units — which is what the default infers. The cap
+is applied by \code{\link[epinowcast:enw_preprocess_data]{epinowcast::enw_preprocess_data()}} after the full observed
+delay history has been completed, so observations beyond the cap still
+contribute to epinowcast's \code{max_confirm} calculation.}
 
 \item{timestep}{The \pkg{epinowcast} timestep: \code{"day"}, \code{"week"}, or a whole
 number of days. \code{NULL} (default) infers it from the object's report units
@@ -59,9 +62,10 @@ be inferred (\pkg{epinowcast} does not support calendar months) — pass a
 number of days explicitly, e.g. \code{timestep = 28}.}
 
 \item{missing_reference}{Passed to \code{\link[epinowcast:enw_complete_dates]{epinowcast::enw_complete_dates()}}.
-Defaults to \code{FALSE} (unlike epinowcast's own default of \code{TRUE}): a
-\code{tbl_now} never carries reports with a missing \code{reference_date}, so leaving
-this \code{TRUE} would synthesise NA-reference padding rows the data never had.}
+\code{NULL} (default) uses \code{TRUE} when the \code{tbl_now} contains reports with a
+missing event/reference date and \code{FALSE} otherwise. This preserves real
+missing-reference reports without synthesising padding rows when none were
+observed. Supply \code{TRUE} or \code{FALSE} to override the detection.}
 
 \item{preprocess}{If \code{TRUE} (default) returns an \code{enw_preprocess_data}
 object; if \code{FALSE} returns the completed observation \code{data.table}.}

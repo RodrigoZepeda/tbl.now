@@ -6,11 +6,12 @@ If you have any questions or comments regarding the contents of this article ple
 
 ## Learning more
 
-+ End-to-end tutorial on real life surveillance data. Takes you from cleaning to diagnosing errors in the data to nowcasting: [https://rodrigozepeda.github.io/tbl.now/articles/example.html](https://rodrigozepeda.github.io/tbl.now/articles/example.html)
-+ The same tutorial with a **revision process** — the optional third date, where a reported case is later confirmed, retracted or left pending: [https://rodrigozepeda.github.io/tbl.now/articles/example_revisions.html](https://rodrigozepeda.github.io/tbl.now/articles/example_revisions.html)
-+ Introduction vignette: [https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.html](https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.html) for the full anatomy of a `tbl_now`, data types, and temporal effects.
-+ Tutorial on diagnosing your dataset — what is in it, what is structurally wrong with it, and detecting batches and other reporting-delay artifacts: [https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html](https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html)
-+ Using different nowcasting engines for the same dataset: [https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html](https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html)
-+ Ensemble nowcasting across different engines [https://rodrigozepeda.github.io/tbl.now/articles/ensemble-nowcasting.html](https://rodrigozepeda.github.io/tbl.now/articles/ensemble-nowcasting.html)
-+ Adding your own nowcasting model [https://rodrigozepeda.github.io/tbl.now/articles/custom-nowcast-models.html](https://rodrigozepeda.github.io/tbl.now/articles/custom-nowcast-models.html)
++ A **tutorial** on real life surveillance data. Takes you from cleaning to diagnosing errors in the data to nowcasting: [https://rodrigozepeda.github.io/tbl.now/articles/example.html](https://rodrigozepeda.github.io/tbl.now/articles/example.html)
++ The **second part of the tutorial** with a revision process: the optional third date, where a reported case is later confirmed, retracted or left pending: [https://rodrigozepeda.github.io/tbl.now/articles/example_revisions.html](https://rodrigozepeda.github.io/tbl.now/articles/example_revisions.html)
++ The **introduction vignette** which contains a little bit of everything: [https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.html](https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.html).
++ More thoughts on **diagnosing your dataset** with `tbl.now` [https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html](https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html)
++ Detecting reporting  **batches** with `tbl.now` [https://rodrigozepeda.github.io/tbl.now/articles/batches.html](https://rodrigozepeda.github.io/tbl.now/articles/batches.html)
++ How to use different nowcasting engines from `tbl.now`: here you can learn **how it connects to the other nowcasting packages**. [https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html](https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html)
++ How to **nowcast with multiple engines, backtest and ensemble** nowcasts.  [https://rodrigozepeda.github.io/tbl.now/articles/ensemble-nowcasting.html](https://rodrigozepeda.github.io/tbl.now/articles/ensemble-nowcasting.html)
++ Adding your own **custom nowcasting model** [https://rodrigozepeda.github.io/tbl.now/articles/custom-nowcast-models.html](https://rodrigozepeda.github.io/tbl.now/articles/custom-nowcast-models.html)
 + Package reference: [https://rodrigozepeda.github.io/tbl.now/reference/](https://rodrigozepeda.github.io/tbl.now/reference/)

@@ -1,5 +1,22 @@
 # tbl.now (development version)
 
+## Upstream examples now guard converter and fit equivalence
+
+The shipped examples from epinowcast, NobBS, surveillance, EpiNow2 and epidist
+now exercise both halves of each integration: the package-native input is
+compared with the matching `tbl_now_to_*()` result, and a seeded native fit is
+compared with the native fit retained by `run_nowcast()` (or, for epidist, with
+the same delay-model pipeline, since epidist is not a nowcasting engine).
+
+* **Fixed**: `tbl_now_to_epinowcast(max_delay = ...)` no longer applies the
+  modelling delay cap while completing observations. Later observations are
+  retained long enough for `enw_preprocess_data()` to calculate `max_confirm`,
+  matching epinowcast's documented complete-then-preprocess workflow.
+* Missing-reference reports retained by a `tbl_now` now make
+  `tbl_now_to_epinowcast()` select epinowcast's `missing_reference = TRUE`
+  behavior automatically. Ordinary inputs continue to use `FALSE` and do not
+  gain synthetic missing-reference rows.
+
 ## `autoplot()` is now one column per process
 
 The gallery used to flow left to right in two columns, so which process a panel
