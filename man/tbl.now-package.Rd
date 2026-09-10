@@ -4,11 +4,11 @@
 \name{tbl.now-package}
 \alias{tbl.now}
 \alias{tbl.now-package}
-\title{tbl.now: Tidy Data Structures and Workflows for Epidemiological Nowcasting}
+\title{tbl.now: A Tidy Workflow for Epidemiological Nowcasting}
 \description{
 \if{html}{\figure{logo.png}{options: style='float: right' alt='logo' width='120'}}
 
-Defines tidy data structures and package-agnostic workflows for epidemiological nowcasting. The 'tbl_now' class records event, report, and optional revision dates together with strata, covariates, censoring, and reporting-delay metadata while remaining compatible with 'dplyr'. Tools support validation, manipulation, diagnostics, visualization, format conversion, retrospective evaluation, and multiple modelling engines. The 'tbl_nowcast' class standardizes probabilistic predictions for plotting, scoring, comparison, and ensembling.
+Defines tidy data structures and package-agnostic workflows for epidemiological nowcasting. The 'tbl_now' class records event, report, and revision dates alongside strata, covariates, censoring, and reporting-delay metadata while remaining compatible with 'dplyr'. Tools support validation, manipulation, diagnostics, visualization, format conversion, retrospective evaluation, and multiple modelling engines. The 'tbl_nowcast' class standardizes probabilistic predictions for plotting, scoring, comparison, and ensembling.
 }
 \details{
 Surveillance data arrives late. A case that happened on Monday may not reach
@@ -44,21 +44,20 @@ own with \code{\link[=nowcast_fit]{nowcast_fit()}} and \code{\link[=nowcast_tidy
 nowcast was any good; \code{\link[=nowcast_ensemble]{nowcast_ensemble()}} combines several.
 }
 
-\code{vignette("tbl.now")} walks through this end to end. The
+\code{vignette("tbl.now")} walks this end to end, from a raw line list to a scored
+nowcast, and marks the point where you choose between a modelling package's
+native fitting API and the common cross-engine one. The
 \href{https://rodrigozepeda.github.io/tbl.now/}{package website} carries longer
-articles on the modelling packages, batch reporting, ensembles and writing
-your own backend.
-
-See \link{tbl_now_workflows} for the explicit boundary between a modelling
-package's native fitting/diagnostic API and the common cross-engine result,
-plotting, backtesting, scoring, and ensembling API.
+articles on the class itself, the modelling packages, batch reporting,
+ensembles and writing your own backend.
 }
 
 \section{Datasets}{
 
-Six surveillance datasets ship with the package for experimenting:
-\link{denguedat}, \link{mpoxdat}, \link{flusight}, \link{covid_colombia}, \link{covid_us} and
-\link{hai_bucaramanga} -- the last deliberately messy, for the diagnostics.
+Seven surveillance datasets ship with the package for experimenting:
+\link{denguedat}, \link{mpoxdat}, \link{flusight}, \link{covid_colombia}, \link{covid_us},
+\link{sari_bh} and \link{hai_bucaramanga} -- the last deliberately messy, for the
+diagnostics.
 }
 
 \seealso{

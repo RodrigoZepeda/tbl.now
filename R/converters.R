@@ -1491,7 +1491,10 @@
 #' @param max_delay Maximum delay (in `timestep`s) to use when preprocessing.
 #'   If `NULL` it is inferred from the data as `max(.delay) + 1`. Because `.delay`
 #'   is measured in the object's report units, this is only in `timestep`s when
-#'   `timestep` matches those units — which is what the default infers.
+#'   `timestep` matches those units — which is what the default infers. The cap
+#'   is applied by [epinowcast::enw_preprocess_data()] after the full observed
+#'   delay history has been completed, so observations beyond the cap still
+#'   contribute to epinowcast's `max_confirm` calculation.
 #' @param timestep The \pkg{epinowcast} timestep: `"day"`, `"week"`, or a whole
 #'   number of days. `NULL` (default) infers it from the object's report units
 #'   (`"days"` -> `"day"`, `"weeks"` -> `"week"`), which keeps `max_delay` and the
@@ -1499,9 +1502,10 @@
 #'   be inferred (\pkg{epinowcast} does not support calendar months) — pass a
 #'   number of days explicitly, e.g. `timestep = 28`.
 #' @param missing_reference Passed to [epinowcast::enw_complete_dates()].
-#'   Defaults to `FALSE` (unlike epinowcast's own default of `TRUE`): a
-#'   `tbl_now` never carries reports with a missing `reference_date`, so leaving
-#'   this `TRUE` would synthesise NA-reference padding rows the data never had.
+#'   `NULL` (default) uses `TRUE` when the `tbl_now` contains reports with a
+#'   missing event/reference date and `FALSE` otherwise. This preserves real
+#'   missing-reference reports without synthesising padding rows when none were
+#'   observed. Supply `TRUE` or `FALSE` to override the detection.
 #' @param preprocess If `TRUE` (default) returns an `enw_preprocess_data`
 #'   object; if `FALSE` returns the completed observation `data.table`.
 #' @param verbose Logical. Print the choices that were made.
@@ -2556,7 +2560,7 @@ tbl_now_from_tsibble <- function(data, report_date, event_date = NULL,
 #' @export
 tbl_now_to_epinowcast <- function(x, ..., max_delay = NULL,
                                   timestep = NULL,
-                                  missing_reference = FALSE,
+                                  missing_reference = NULL,
                                   preprocess = TRUE, verbose = TRUE,
                                   quiet = FALSE) {
   .assert_tbl_now(x, "tbl_now_to_epinowcast")
@@ -2602,6 +2606,10 @@ tbl_now_to_epinowcast <- function(x, ..., max_delay = NULL,
   count_col   <- get_case_count(x)
   strata_cols <- get_strata(x)
 
+  if (is.null(missing_reference)) {
+    missing_reference <- anyNA(x[[event_col]])
+  }
+
   # epinowcast's schema is reference_date / report_date / confirm (+ grouping);
   # is_censored_report has no place in it. The temporal effects are deliberately *not*
   # carried here: they are added after the dates are completed, so they also
@@ -2616,17 +2624,37 @@ tbl_now_to_epinowcast <- function(x, ..., max_delay = NULL,
     ) |>
     data.table::as.data.table()
 
+  # `enw_preprocess_data(max_delay = ...)` uses observations BEYOND the fitted
+  # delay horizon to determine each reference date's eventually observed total
+  # (`max_confirm`).  Completing with that same cap first discards those later
+  # observations and changes the model input.  This is especially easy to miss
+  # in epinowcast's own Germany example, which completes the full observations
+  # before preprocessing with `max_delay = 20`.
+  #
+  # Keep the two horizons separate: completion represents everything the
+  # `tbl_now` knows, while `max_delay` is the modelling horizon passed to
+  # preprocessing.  When no modelling cap is supplied they coincide, preserving
+  # the existing inferred default.
+  timestep_days <- if (is.numeric(timestep)) {
+    as.numeric(timestep)
+  } else {
+    switch(timestep, day = 1, week = 7)
+  }
+  observed_delay <- as.numeric(
+    observations$report_date - observations$reference_date
+  ) / timestep_days
+  completion_max_delay <-
+    as.integer(ceiling(max(observed_delay, na.rm = TRUE))) + 1L
   if (is.null(max_delay)) {
-    max_delay <- as.integer(max(dplyr::pull(x, ".delay"), na.rm = TRUE)) + 1L
+    max_delay <- completion_max_delay
   }
   grouping <- if (length(strata_cols) > 0) strata_cols else NULL
 
-  # `missing_reference = FALSE` by default: a tbl_now never carries NA-reference
-  # reports (they are dropped on the way in), so the epinowcast default of
-  # synthesising padding rows for them would invent observations the data never
-  # had. See the Round-trip section.
+  # Missing-reference padding is useful only when the source contains genuine
+  # reports without a reference date. Auto-detection above preserves those rows
+  # while avoiding invented observations for ordinary `tbl_now` inputs.
   completed <- epinowcast::enw_complete_dates(
-    observations, by = grouping, max_delay = max_delay,
+    observations, by = grouping, max_delay = completion_max_delay,
     missing_reference = missing_reference, timestep = timestep
   )
   with_effects  <- .epinowcast_temporal_effects(completed, x)

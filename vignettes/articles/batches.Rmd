@@ -1,0 +1,522 @@
+---
+title: "Identifying reporting batches"
+output: rmarkdown::html_vignette
+bibliography: ../references.bib
+link-citations: true
+vignette: >
+  %\VignetteEncoding{UTF-8}
+  %\VignetteIndexEntry{Identifying reporting batches}
+  %\VignetteEngine{knitr::rmarkdown}
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  message = FALSE,
+  warning = FALSE,
+  fig.width = 10,
+  fig.height = 4.5,
+  dpi = 120,
+  cache = TRUE
+)
+options(tibble.width = Inf, width = 160, pillar.width = 160)
+options(pillar.print_max = 5, pillar.print_min = 5,
+        tibble.print_min = 5, dplyr.print_min = 5,
+        tibble.print_max = 5, dplyr.print_max = 5)
+```
+
+```{r setup, message=FALSE, warning=FALSE}
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+library(patchwork)
+library(tbl.now)
+```
+
+
+
+## Batch reporting
+
+Surveillance data does not always arrive smoothly. Sometimes the reporting system
+halts or reduces its output (e.g. a data-system outage, an overwhelmed jurisdiction) and the
+backlog is released later all at once. That release is called a **batch**: a collection of 
+reports from previous periods that were held and reported all at once during a different
+reporting period. Intuivitively one can think of a batch as a collection of reports that 
+--in an ideal scenario-- _should have been reported_ on a previous date but 
+were actually released later. 
+
+```{r, echo = FALSE}
+# --- 1. GENERATE SYNTHETIC SURVEILLANCE DATA ---
+set.seed(42)
+dates  <- seq(as.Date("2026-06-01"), as.Date("2026-06-25"), by = "day")
+n_days <- length(dates)
+
+# Ideal Scenario: A smooth, wave-like curve (e.g., normal distribution)
+ideal_cases <- round(100 * dnorm(seq(-2, 2.5, length.out = n_days)) + 5)
+
+# Create the data frame
+data <- data.frame(
+  date  = dates,
+  ideal = ideal_cases
+)
+
+# Introduce a data-system freeze/backlog:
+# - Days 12, 13, and 14: System breaks down. Reports drop to almost 0.
+# - Day 15: The bottleneck is cleared, releasing all accumulated backlog as a "Batch".
+backlog_days <- c(12, 13, 14)
+batch_day <- 15
+
+# Calculate how many cases were missed during the outage
+backlog_volume <- sum(data$ideal[backlog_days])
+
+# Build the "real" curve with the batch effect
+data <- data |>
+  mutate(
+    real = ideal,
+    # Simulate the reporting drop
+    real = ifelse(row_number() %in% backlog_days, 1, real), 
+    # Add the accumulated backlog to the batch day
+    real = ifelse(row_number() == batch_day, ideal + backlog_volume, real)
+  )
+
+# --- 2. DEFINE CUSTOM PALETTE (From your provided list) ---
+# Main bars: #334335 (Dark green)
+# Ideal curve: #5F7E62 (Muted green)
+# Annotation accent: #B85348 (Coral red for warnings/anomalies)
+# Texts & grid elements: #262626 (Off-black)
+# Grid lines: #A8BFA9 (Soft pale green-gray)
+
+# --- 3. CREATE THE PLOT ---
+ggplot(data, aes(x = date)) +
+  # Real reporting (bars)
+  geom_col(aes(y = real, fill = "Real reporting with batch"), alpha = 0.9, width = 0.8) +
+  # Ideal reporting (smooth line)
+  geom_line(aes(y = ideal, color = "Ideal reporting scenario"), linewidth = 1, linetype = "solid") +
+  
+  # Set Colors
+  scale_fill_manual(values = c("Real reporting with batch" = "#5F7E62")) +
+  scale_color_manual(values = c("Ideal reporting scenario" = "#B85348")) +
+  
+  # --- ANNOTATION 1: The Valley (Where cases should have been reported) ---
+  annotate(
+    "text", 
+    x = dates[mean(backlog_days)], 
+    y = max(data$ideal) * 1.5, 
+    label = "System Outage\n(Ideally, cases should\nhave been reported here)", 
+    color = "black", fontface = "bold", size = 3.5, vjust = 0.5, hjust = 1
+  ) +
+  annotate(
+    "segment", 
+    x = dates[mean(backlog_days)], xend = dates[mean(backlog_days)], 
+    y = max(data$ideal) * 1.35, yend = 5, 
+    arrow = arrow(length = unit(0.2, "cm")), color = "black", linewidth = 0.8
+  ) +
+  
+  # --- ANNOTATION 2: The Batch (The release day) ---
+  annotate(
+    "text", 
+    x = dates[batch_day] + 3.5, 
+    y = data$real[batch_day] - 10, 
+    label = "The Batch!\nBacklog released\nall at once", 
+    color = "black", fontface = "bold", size = 3.8, hjust = 0
+  ) +
+  annotate(
+    "segment", 
+    x = dates[batch_day] + 3.2, xend = dates[batch_day] + 0.3, 
+    y = data$real[batch_day] - 10, yend = data$real[batch_day] - 5, 
+    arrow = arrow(length = unit(0.2, "cm")), color = "black", linewidth = 0.8
+  ) +
+  
+  # Theme and Formatting
+  theme_classic() +
+  theme(
+    plot.title = element_text(face = "bold", size = 16, color = "#262626"),
+    plot.subtitle = element_text(size = 11, color = "#607060", margin = margin(b = 15)),
+    axis.title = element_text(face = "bold", color = "#262626"),
+    axis.text = element_text(color = "#262626"),
+    panel.grid.major = element_line(color = "#A8BFA9", linewidth = 0.2),
+    panel.grid.minor = element_blank(),
+    legend.position = "top",
+    legend.title = element_blank(),
+    legend.text = element_text(size = 10, color = "#262626")
+  ) +
+  labs(
+    title = "Understanding 'Batches' in Public Health Surveillance",
+    x = "Reporting Date",
+    y = "Number of Cases Reported"
+  )
+```
+
+
+A batch is easy to confuse with an epidemic **surge**. The important part is that the batch happens
+on the **reporting date** axis while a surge happens on the **event date** axis. A
+batch just _moves_ reports to a later date not adding new cases while a real
+epidemic surge _adds_ new cases. The tools here are designed to help you visualize that difference. 
+
+> This article shows each plot **twice**: first on a clean, made-up
+outbreak with one obvious batch (so you learn the signature), then on real,
+COVID-19 data from the CDC (see [`covid_us`](https://rodrigozepeda.github.io/tbl.now/reference/covid_us.html)). 
+
+## Two datasets to compare
+
+### The made-up outbreak. 
+
+This simulation consists of a bell-shaped curve over a hundred days, each
+case reported within a few days. For one week near the peak, the reporting
+system slows down with **half** of each day's reports being held back and released days after. 
+That release is the **batch**. 
+
+```{r ideal-data, warning = FALSE}
+set.seed(82495)
+#Simulate a curve
+onset_days <- as.Date("2024-01-01") + 0:99
+bell       <- dnorm(seq(-2.5, 2.5, length.out = 100))
+per_day    <- round(400 * bell / max(bell)) + 8         
+onset      <- rep(onset_days, per_day)
+reported   <- onset + rpois(length(onset), 1.5)         
+
+clean_tn <- tbl_now(tibble(onset = onset, reported = reported),
+                    event_date = onset, report_date = reported,
+                    data_type = "linelist", verbose = FALSE)
+
+# Simulate a batch
+ideal <- simulate_batch(clean_tn,
+  closed_dates  = seq(as.Date("2024-02-19"), by = "day", length.out = 7),
+  held_fraction = 0.5)
+```
+
+We can see the simulated data both from the event-date and the report-date perspectives:
+
+```{r, eval = FALSE}
+plot_epidemic_process(ideal)
+plot_reporting_process(ideal)
+```
+
+```{r, echo = FALSE}
+plot_epidemic_process(ideal) + plot_reporting_process(ideal)
+```
+
+### The real data
+
+`covid_us` comes from the CDC's individual-level
+[COVID-19 Case Surveillance Public Use Data](https://data.cdc.gov/Case-Surveillance/COVID-19-Case-Surveillance-Public-Use-Data/vbim-akqf/about_data).
+It carries three dates. Here we use the first and the last: symptom onset
+(`onset_dt`) as the event, and registration at CDC (`cdc_report_dt`) as the
+report. The middle one, `pos_spec_dt`, is the specimen collection, and it is
+pooled away along with `current_status` and `sex` -- the batch question is about
+when reports *arrived*, not about who they were.
+
+```{r data}
+data(covid_us)
+
+covid_early <- covid_us |>
+  summarise(n = sum(n), .by = c(onset_dt, cdc_report_dt))
+
+tn <- tbl_now(covid_early, event_date = onset_dt,
+              report_date = cdc_report_dt, case_count = n,
+              data_type = "count-incidence", verbose = FALSE)
+```
+
+Half of all cases were reported within a few days, but the tail is long: some cases take weeks or months to surface.
+
+```{r delays}
+stats::quantile(rep(tn$.delay, tn$n), c(0.5, 0.75, 0.9, 0.99))
+```
+
+We can see this dataset again from both the event-date and the report-date perspectives:
+
+```{r, eval = FALSE}
+plot_epidemic_process(tn)
+plot_reporting_process(tn)
+```
+
+```{r, echo = FALSE}
+plot_epidemic_process(tn) + plot_reporting_process(tn)
+```
+
+
+## The reporting process
+
+This plot, which we have previously shown, shows how many reports arrived by date. Batches or surges might correspond to spikes towering over their neighbours. 
+
+```{r, fig.cap="Reporting process of the simulated data"}
+plot_reporting_process(ideal)
+```
+
+On the real data the reporting is spikier; a handful of peaks stick up where smooth
+epidemic reporting should be. Those are reporting artefacts either pure
+backlog releases, or a mix of backlog + a genuine surge (we'll come back to this characterization later). The tallest is a single
+day of about 50K reports on 12 December 2020, sixteen times the 3K that arrive on a
+typical day; 10 June and 5 September are the other conspicuous ones.
+
+```{r proc-covid, fig.cap="Reporting process of the COVID-19 data"}
+plot_reporting_process(tn)
+```
+
+## The reporting triangle
+
+We provide two different visualizations of the reporting triangle. In both
+we plot the three temporal dimensions involved in the process: the event date,
+the reporting date and the delay. We cover the plots in tiles coloured by how many cases
+were registered then. 
+
+
+### The classical reporting triangle
+
+The classical view is given by `plot_reporting_triangle()` where each
+tile is described by _when it happened_ (across) and _how long they took to be 
+reported_ (vertical). The diagonal shows reports that arrive on the same day.  
+An indicator of a batch is **a bright diagonal reaching high up** which
+reporesents many  delayed cases being all reported on the same day.
+
+```{r proc-sim, eval = FALSE}
+plot_reporting_triangle(ideal)
+```
+
+```{r, fig.cap="Classical reporting triangle of the simulated data", echo = FALSE}
+plot_reporting_triangle(ideal) + (plot_reporting_process(ideal))
+```
+
+On COVID-19, the triangle is a broad blue-grey haze (most cases reported over many
+months) crossed by bright diagonals. They correspond to the same
+spikes seen in the reporting process:
+
+```{r tri-covid, eval = FALSE}
+plot_reporting_triangle(tn)
+```
+
+```{r, fig.cap="Classical reporting triangle of the COVID-19 data", echo = FALSE}
+plot_reporting_triangle(tn) + (plot_reporting_process(tn))
+```
+
+### The reporting hexamap
+
+Event date, report date and reporting delay can be seen as an **age-period-cohort** triple
+(`report = event + delay`, exactly `period = cohort + age`), so the reporting
+triangle can be drawn as a hexamap in the style of [Jalal and Burke (2020)](https://doi.org/10.1097/EDE.0000000000001236): each
+`(event, delay)` cell is a point on a hexagonal lattice, coloured by its report
+count, with event date,
+report date and delay running along the three 60-degree axes. Because a batch is a
+happens in the **report date**, it shows up as a  **vertical stripe**; the fast
+reporting bulk sits along the short-delay bottom edge.
+
+```{r hex-sim, eval = TRUE, fig.width = 8, fig.height = 8}
+plot_reporting_hexamap(ideal)
+```
+
+The marks are sized in millimetres while the lattice is sized in data units, so
+no default can suit every combination of cell count and figure size. `size`
+is the knob: raise it until the points nearly touch at the size you are actually
+drawing, and `shape = 15` swaps the circles for squares, which tile more closely.
+
+```{r hex-sim-big, eval = TRUE, fig.width = 8, fig.height = 8}
+plot_reporting_hexamap(ideal, size = 3, shape = 15)
+```
+
+On covid the vertical stripes are the 2020 backlog releases. The
+delay axis is capped with `max_delay` to keep the map to where the reports are.
+
+```{r hex-covid, eval = TRUE, fig.width = 8.5, fig.height = 8}
+plot_reporting_hexamap(tn, max_delay = 60)
+```
+
+
+## Transport vs creation {#sec-transport} 
+
+This is the main tool for detecting batches and surges. Before the plot, we
+will explain the whole idea. Consider a daily outbreak with  reports incoming 
+each day. Three things can change the number of reports:
+
+- a **hold**  -- a reporting office falls behind and some days' reports are withheld;
+- a **batch** -- the day the backlog (hold) is finally released, all at once;
+- a **surge** -- an increase in the epidemic process: more people falling ill and being reported.
+
+We simulate one of each in a clean epidemic and colour every day by its type (grey
+= ordinary day):
+
+```{r tut-data, echo = FALSE}
+tut_cols <- c(Normal = "grey72", Hold = "#4E79A7",
+              Batch = "#B85348", Surge = "#5F7E62")
+
+set.seed(2024)
+# a clean bell-shaped epidemic, reported within a day or two
+tut_ev <- rep(as.Date("2024-01-01") + 0:99,
+              times = round(300 * dnorm(seq(-2.5, 2.5, length.out = 100)) /
+                              max(dnorm(seq(-2.5, 2.5, length.out = 100)))) + 6)
+tut_rp <- tut_ev + rpois(length(tut_ev), 1.5)
+# a SURGE: extra *real* cases in mid-March, reported promptly
+surge_ev <- rep(as.Date("2024-03-11") + 0:2, each = 500)
+tut <- rbind(
+  data.frame(event_date = tut_ev,   report_date = tut_rp),
+  data.frame(event_date = surge_ev, report_date = surge_ev + rpois(length(surge_ev), 1))
+)
+# a HOLD then BATCH: close reporting for a week near the peak; the backlog is
+# released the day the desk catches up
+closed <- seq(as.Date("2024-02-19"), by = "day", length.out = 3)
+tut_tn <- simulate_batch(
+  tbl_now(tut, event_date, report_date, data_type = "linelist", verbose = FALSE),
+  closed_dates = closed, held_fraction = 0.7, verbose = FALSE)
+
+# the two scores per report date, tagged by what we planted
+scores <- transport_discriminant(tut_tn, lookback = 7)
+scores$kind <- factor(dplyr::case_when(
+  scores$report_date %in% closed                          ~ "Hold",
+  scores$report_date == max(closed) + 1                   ~ "Batch",
+  scores$report_date >= as.Date("2024-03-11") &
+    scores$report_date <= as.Date("2024-03-13")           ~ "Surge",
+  TRUE                                                     ~ "Normal"),
+  levels = names(tut_cols))
+ar <- arrow(length = unit(0.15, "cm"))
+
+ggplot(scores, aes(report_date, reported, fill = kind)) +
+  geom_col(width = 1) +
+  scale_fill_manual(values = tut_cols, name = NULL) +
+  annotate("segment", x = as.Date("2024-02-01"), xend = as.Date("2024-02-21"),
+           y = 700, yend = 750, arrow = ar, colour = tut_cols[["Batch"]]) +
+  annotate("text", x = as.Date("2024-01-31"), y = 700, hjust = 1, size = 3,
+           colour = tut_cols[["Batch"]], label = "Batch: the backlog\nreleased in one lump") +
+  annotate("segment", x = as.Date("2024-02-09"), xend = as.Date("2024-02-20"),
+           y = 400, yend = 175, arrow = ar, colour = tut_cols[["Hold"]]) +
+  annotate("text", x = as.Date("2024-02-08"), y = 400, hjust = 1, size = 3,
+           colour = tut_cols[["Hold"]], label = "Hold: reports\nwithheld (a dip)") +
+  annotate("segment", x = as.Date("2024-03-27"), xend = as.Date("2024-03-14"),
+           y = 560, yend = 500, arrow = ar, colour = tut_cols[["Surge"]]) +
+  annotate("text", x = as.Date("2024-03-28"), y = 590, hjust = 0, size = 3,
+           colour = tut_cols[["Surge"]], label = "Surge: genuinely\nmore cases") +
+  coord_cartesian(clip = "off") +
+  labs(x = "Report date", y = "Reports",
+       title = "1. The reporting timeline, coloured by what happened") +
+  theme_minimal(base_size = 12) +
+  theme(legend.position = "top", plot.margin = margin(6, 80, 6, 6))
+```
+
+In the previous plot, every bar is one report date. The **batch** towers 
+where the held reports land together; the **hold** is the small blue dip 
+just before it; the **surge** is a genuine bump of new cases.
+
+The transport discriminant turns each day into **two numbers**:
+
+- A **creation score** -- did this stretch of days genuinely *gain* cases? A larger surge
+implies a larger creation score.
+- A **transport score** -- were the days just before *missing* reports? 
+A backlog release after a hold pushes it up.
+
+We plot every day by those two numbers and observe the directions of the three disturbances:
+
+```{r tut-plane, fig.width = 8, fig.height = 6, warning = FALSE, echo = FALSE}
+zc <- qnorm(0.975)
+ty <- max(scores$transport_z, na.rm = TRUE)
+rx <- max(scores$creation_z,  na.rm = TRUE)
+lx <- min(scores$creation_z,  na.rm = TRUE)
+ggplot(scores, aes(creation_z, transport_z, colour = kind)) +
+  geom_hline(yintercept = zc, linetype = "dashed", colour = "grey85") +
+  geom_vline(xintercept = zc, linetype = "dashed", colour = "grey85") +
+  geom_point(data = ~subset(., kind == "Normal"), size = 1.7, alpha = 0.45, na.rm = TRUE) +
+  geom_point(data = ~subset(., kind != "Normal"), size = 2.8, na.rm = TRUE) +
+  scale_colour_manual(values = tut_cols, name = NULL) +
+  scale_y_continuous(expand = expansion(mult = c(0.05, 0.14))) +
+  scale_x_continuous(expand = expansion(mult = 0.09)) +
+  annotate("text", x = 8, y = ty + 3, size = 3, fontface = "bold",
+           colour = tut_cols[["Batch"]], label = "Batch: shoots UP and RIGHT") +
+  annotate("text", x = 20, y = -5, size = 3, fontface = "bold",
+           colour = tut_cols[["Surge"]], label = "Surge:\nshoots RIGHT") +
+  annotate("text", x = lx * 0.55, y = -10, size = 3, fontface = "bold",
+           colour = tut_cols[["Hold"]], label = "Hold:\ngoes goes DOWN") +
+  labs(x = "Creation score",
+       y = "Transport score",
+       title = "2. Where each day lands in the transport-vs-creation plane") +
+  theme_minimal(base_size = 12) +
+  theme(legend.position = "top")
+```
+
+Identifying any bar with its dot we can conclude:
+
+- A **batch (backlog release, red)** shoots **up and right** -- the days before were
+  depleted (high transport) but not as many new cases were created (right);
+- A **surge (green)** shoots **right** -- cases genuinely appeared (high
+  creation), with apparent preceding hole;
+- A **hold (blue)** drifts **left** -- reports have apparently gone
+missing (transport rising) while the window has *lost* cases (creation negative).
+
+Ordinary days (grey) sit in the cloud through the middle. That is the whole idea
+behind `transport_discriminant()` and `diagnose_batches()`: **a batch is high transport
+with little creation**. 
+
+### The transport discriminant
+
+The previous plot can be done with the `plot_transport_discriminant()` function: 
+
+```{r disc-sim, eval = FALSE}
+plot_transport_discriminant(ideal)
+```
+
+```{r disc-sim2, echo = FALSE}
+plot_transport_discriminant(ideal) + plot_reporting_process(ideal)
+```
+
+Which also works to identify the COVID-19 cases:
+
+```{r disc-covid, eval = FALSE}
+plot_transport_discriminant(tn, period = 7)
+```
+
+```{r disc-covid2, echo = FALSE}
+plot_transport_discriminant(tn, period = 7) +
+  plot_reporting_process(tn)
+```
+
+### Recovering the data
+
+The `diagnose_batches()` function runs the transport test for the batch signature and
+returns, for every report date, the `batch` flag -- a Benjamini-Hochberg-corrected
+verdict that controls the false-discovery rate across all dates (see `?diagnose_batches`
+for the full column reference). Keeping the `batch` rows gives the confirmed
+releases together with their `deficit` (how depleted the days just before were) and
+`delta` (how little the window total actually changed).
+
+```{r screen-sim, eval = FALSE}
+diagnose_batches(ideal) |>
+  filter(batch)
+```
+
+```{r screen-sim2, echo = FALSE}
+diagnose_batches(ideal) |>
+  filter(batch) |>
+  select(report_date, reported, baseline, deficit, delta, p_transport_bh, batch)
+```
+
+On covid we pass `period = 7` to divide out the weekly reporting cadence. Only
+one date survives the Benjamini-Hochberg-corrected `batch` flag: **7 November
+2020**, which reported about twice its baseline *and* was preceded by a matching
+deficit of roughly the same size. That pairing is the whole test -- the taller
+spikes of 12 December and 10 June are not flagged, because nothing was withheld
+beforehand to release, which makes them surges rather than batches:
+
+```{r screen-covid, eval = FALSE}
+diagnose_batches(tn, period = 7) |>
+  filter(batch)
+```
+
+```{r screen-covid2, echo = FALSE}
+diagnose_batches(tn, period = 7) |>
+  filter(batch) |>
+  select(report_date, reported, baseline, deficit, delta, p_transport_bh, batch) |>
+  arrange(desc(reported))
+```
+
+The sensitivity of the batch flag can be adapted with `alpha`. 
+
+
+```{r learning-more, echo=FALSE, results="asis"}
+cat(
+  knitr::knit_child(
+    system.file("fragments", "learning-more.Rmd", package = "tbl.now"),
+    quiet = TRUE
+  ),
+  sep = "\n"
+)
+```

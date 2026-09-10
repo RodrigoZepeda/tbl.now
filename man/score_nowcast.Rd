@@ -174,7 +174,6 @@ epidemic forecasts in an interval format. \emph{PLoS Computational Biology},
 17(2), e1008618.
 }
 \seealso{
-\link{tbl_now_workflows} for the native/common workflow boundary;
 \code{\link[=nowcast_backtest]{nowcast_backtest()}} to score many nowcasts at many \code{now} dates at once;
 \code{\link[=nowcast_weights]{nowcast_weights()}} to turn those scores into ensemble weights;
 \link[=get_latest_first]{get_latest_reported_cases()}, which is how the truth is

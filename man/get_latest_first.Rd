@@ -134,7 +134,5 @@ dengue |>
 \seealso{
 \link[=revised_cases]{get_latest_revised_cases()} and friends for the same idea
 on the revision process; \code{\link[=to_count]{to_count()}} for the underlying data shapes;
-\code{\link[=score_nowcast]{score_nowcast()}}, which uses the latest counts as truth;
-\link[=nowcast_summary_components]{reporting_completeness()} for the same
-information as a proportion.
+\code{\link[=score_nowcast]{score_nowcast()}}, which uses the latest counts as truth.
 }

@@ -59,6 +59,42 @@ navbar:
       href: https://github.com/rodrigozepeda/tbl.now
       aria-label: GitHub
 
+# Naming any `articles:` section makes the index explicit, and pkgdown then
+# fails the build if ANY vignette is missing from it -- including
+# `vignettes/tbl.now.Rmd`, which also has its own "Get started" navbar slot.
+articles:
+- title: Get started
+  desc: >
+    The whole workflow in five minutes.
+  contents:
+  - tbl.now
+
+- title: Tutorials
+  desc: >
+    Start here. Two halves of one real surveillance analysis, and then several
+    models at once.
+  contents:
+  - articles/example
+  - articles/example_revisions
+  - articles/ensemble-nowcasting
+
+- title: Diagnosing and visualizing
+  desc: >
+    What is wrong with the data, and how to see it.
+  contents:
+  - articles/diagnosing-a-tbl-now
+  - articles/batches
+
+- title: Miscellaneous
+  desc: >
+    The class in detail, the modelling packages it speaks to, and how to add
+    your own.
+  contents:
+  - articles/more-on-tbl-now
+  - articles/nowcasting-models
+  - articles/custom-nowcast-models
+
+
 # Every exported topic must appear below or `pkgdown` fails the build. When you
 # export something new, add it here in the same commit.
 reference:
@@ -205,7 +241,4 @@ reference:
   - flusight
   - hai_bucaramanga
   - mpoxdat
-
-- title: Workflows
-  contents:
-  - tbl_now_workflows
+  - sari_bh

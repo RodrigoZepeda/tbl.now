@@ -432,9 +432,8 @@ list_nowcast_methods <- function(installed_only = TRUE) {
 #' @return A [tbl_nowcast] object.
 #'
 #' @seealso
-#' [tbl_now_workflows] for choosing a modelling package's native entry point or
-#' the shared engine interface;
-#' [engine()] and [nowcast_engines] to specify which model to fit and how;
+#' The [*Get started* vignette](https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.html) for where a fit sits in the
+#' workflow; [engine()] and [nowcast_engines] to specify which model to fit and how;
 #' [autoplot()][autoplot.tbl_nowcast] and [tidy()][tidy.tbl_nowcast] to look at
 #' the result; [nowcast_ensemble()] to combine several nowcasts;
 #' [nowcast_backtest()] and [score_nowcast()] to find out whether they are any

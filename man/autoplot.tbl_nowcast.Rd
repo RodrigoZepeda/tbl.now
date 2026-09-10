@@ -70,6 +70,5 @@ autoplot(nc, date_lim = c(as.Date("2020-01-19"), as.Date("2020-02-02")))
 
 }
 \seealso{
-\link{tbl_now_workflows} for the native/common workflow boundary;
 \code{\link[=run_nowcast]{run_nowcast()}}, \code{\link[=nowcast_ensemble]{nowcast_ensemble()}}
 }

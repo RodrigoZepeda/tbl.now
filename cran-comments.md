@@ -1,94 +1,76 @@
-# v0.16.0
+# v1.0.0
 
-This is a resubmission. It addresses the following comments from the CRAN
-reviewer:
+New submission.
 
-## 1. Missing references in the DESCRIPTION field
+## Test environments
 
-> If there are references describing the methods in your package, please
-> add these in the description field of your DESCRIPTION file...
+* local macOS 15.7.3 (x86_64-apple-darwin20), R 4.5.3 -- `R CMD check --as-cran`
+  on a tarball built with vignettes, with `NOT_CRAN` **unset** so
+  `skip_on_cran()` applies exactly as it will on CRAN.
+* GitHub Actions (`r-lib/actions`): ubuntu-latest (release, devel, oldrel-1),
+  macOS-latest (release), windows-latest (release).
+* win-builder (devel and release).
 
-The package does not introduce a new method that needs a top-level citation.
-The handful of diagnostic functions are already
-cited via `@references` on those specific help pages.
-
-## 2. Examples for unexported functions
-
-> You have examples for unexported functions. Please either omit these
-> examples or export these functions.
-
-These examples have been omitted from the documentation using the `@noRd` tag
-
-### Second round: `censor_delays_above()` in `compute_temporal_effects.Rd`,
-### `tbl_now_attributes.Rd`, `tbl_now_coerce.Rd`
-
-Thank you. We have fixed the missing examples checking one by one we
-are correctly exporting all of them. 
-
-## 3. `\dontrun{}` used where not necessary
-
-> `\dontrun{}` should only be used if the example really cannot be
-> executed... Please replace `\dontrun` with `\donttest`... Please unwrap
-> the examples if they are executable in < 5 sec.
-
-We unwrapped them
-
-## 4. `if(FALSE){}` in examples
-
-> Some code lines in examples are wrapped in `if(FALSE){}`. Please never do
-> that.
-
-We use `try()` to catch the intentional error instead of the `if(FALSE){}` now:
-
-```r
-# Validate with errors (wrapped in try() since this intentionally errors)
-try(validate_tbl_now(data.frame(x = 1:3)))
-```
-
-## 5. win-builder pre-test NOTE (new submission)
-
-The automated win-builder pre-test flagged one NOTE on both Windows and
-Debian:
-
-* "Possibly misspelled words in DESCRIPTION" (Nowcasting/nowcasting/nowcasts)
-  — these are standard epidemiological terminology, not typos.
-* "Suggests or Enhances not in mainstream repositories: epidist,
-  epinowcast" — both are already declared with `Additional_repositories`
-  pointing at `https://epinowcast.r-universe.dev`, which the check itself
-  confirms as available.
-
-Neither needs a code change. Windows additionally reported "Overall
-checktime 14 min > 10 min", driven mostly by `testthat.R` (531s). We added
-`skip_on_cran()` to the slower, more exhaustive/edge-case tests, while keeping
-at least one CRAN-visible test or example exercising every exported function
-(verified programmatically against `NAMESPACE`). `testthat.R` now runs in
-**162s** under real CRAN conditions.
+A note for other maintainers reading this: `devtools::check()` and
+`testthat::test_local()` both force `NOT_CRAN=true` internally, which disables
+`skip_on_cran()` and measures the wrong code path. The timings below come from
+`R CMD check` with the variable unset.
 
 ## R CMD check results
 
 0 errors | 0 warnings | 1 note
 
-Checked with `R CMD check --as-cran` on a tarball built with vignettes, with
-`NOT_CRAN` unset so `skip_on_cran()` applies exactly as it will on CRAN. (Note
-for other maintainers reading this: `devtools::check()` forces `NOT_CRAN=true`
-internally, which disables `skip_on_cran()` and hides the real check time.)
+(The local run reports a second NOTE, "checking for future file timestamps ...
+unable to verify current time". That is the check being unable to reach
+`worldclockapi.com` from this machine, not a property of the package.)
 
 The remaining NOTE is the routine new-submission one:
 
-* "New submission"
-* "Suggests or Enhances not in mainstream repositories: epidist, epinowcast,
-  nowcaster".
+```
+New submission
 
-`epidist` and `epinowcast` resolve via the declared `Additional_repositories`
-(the same NOTE confirms both as available).
+Suggests or Enhances not in mainstream repositories:
+  almanac, diseasenowcasting, epidist, epinowcast
+Availability using Additional_repositories specification:
+  almanac             yes   https://davisvaughan.r-universe.dev
+  diseasenowcasting   yes   https://rodrigozepeda.r-universe.dev
+  epidist             yes   https://epinowcast.r-universe.dev
+  epinowcast          yes   https://epinowcast.r-universe.dev
+```
 
-`nowcaster` is distributed only from GitHub
-(<https://github.com/covid19br/nowcaster>); no CRAN-style repository serves it,
-so it cannot be listed in `Additional_repositories`. It is therefore used
-strictly conditionally, and the package builds, checks and works fully without
-it: it is never called at load time or in any code path reached by the tests or
-the vignettes; `tbl_now_to_nowcaster()` guards on `requireNamespace()` and
-aborts with an install hint if it is absent; its example is wrapped in
-`@examplesIf requireNamespace("nowcaster", quietly = TRUE)`; and `tidy()`
-recognises nowcaster *output* by its structure without ever calling the
-package.
+All four resolve through the declared `Additional_repositories`, as the NOTE
+itself confirms. `epidist` and `epinowcast` (and `epinowcast`'s dependency
+`primarycensored`) are published by the epinowcast project's r-universe;
+`almanac` was archived from CRAN and is served from its author's r-universe;
+`diseasenowcasting` is published from the maintainer's own r-universe. Every one
+of them is optional: each is used strictly behind `requireNamespace()`, each
+example that needs one is guarded with `@examplesIf`, and the package builds,
+checks, and works fully without any of them installed.
+
+## Notes on the previous submission round
+
+The reviewer comments from the v0.16.0 round -- references in `DESCRIPTION`,
+examples for unexported functions, `\dontrun{}`, and `if (FALSE) {}` in examples
+-- were all addressed at the time and remain addressed. There are no
+`\dontrun{}` or `if (FALSE) {}` blocks in the examples, and every documented
+example belongs to an exported function.
+
+Windows previously reported "Overall checktime 14 min > 10 min", driven mostly
+by `testthat.R` (531s). The slower, exhaustive and edge-case tests carry
+`skip_on_cran()`, while at least one CRAN-visible test or example still
+exercises every exported function (verified programmatically against
+`NAMESPACE`). Under real CRAN conditions `testthat.R` now runs in well under a
+minute.
+
+## Documentation URLs
+
+Two links in `README.md`, `NEWS.md` and `vignette("tbl.now")` point at articles
+on the package website:
+
+* `https://rodrigozepeda.github.io/tbl.now/articles/batches.html`
+* `https://rodrigozepeda.github.io/tbl.now/articles/more-on-tbl-now.html`
+
+Both articles are new in 1.0.0. The website is rebuilt and deployed from the
+default branch, so these pages go live with the 1.0.0 site deploy that precedes
+this submission; if a pre-test still reports them as 404, the deploy had not yet
+completed and no source change is needed.

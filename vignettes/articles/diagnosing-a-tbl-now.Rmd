@@ -18,9 +18,10 @@ knitr::opts_chunk$set(
   dpi = 120,
   cache = TRUE
 )
-# The summary and diagnose tables are wide, and wrapping them costs more than
-# the horizontal scroll bar does.
 options(tibble.width = Inf, width = 160, pillar.width = 160)
+options(pillar.print_max = 5, pillar.print_min = 5,
+        tibble.print_min = 5, dplyr.print_min = 5,
+        tibble.print_max = 5, dplyr.print_max = 5)
 ```
 
 ```{r setup, message=FALSE, warning=FALSE}
@@ -31,878 +32,271 @@ library(patchwork)
 library(tbl.now)
 ```
 
-> This was written automatically by an AI model. A human has yet to review.
+Three questions frequently appear with every surveillance dataset:
 
-Three questions come up with every new surveillance dataset, and they are
-different questions that want different tools:
+1. **What is structurally wrong with it?**: missing and impossible dates, 
+    data that stops before its own `now`. `diagnose()` answers this.
+    
+2. **What is in it?**: how many cases, over what period, arriving how late,
+   how sparse, how do they vary among strata. `summary()` answers these.
+   
+3. **Are there any changes in the epidemic or the reporting mechanism?** To answer
+  these we look at batches, drifts as well as visualizations of the processes. 
 
-1. **What is in it?** -- how many cases, over what period, arriving how late,
-   how sparse, how concentrated in one stratum. `summary()` answers this.
-2. **What is structurally wrong with it?** -- missing dates, impossible
-   orderings, repeated rows, units that do not line up, data that stops before
-   its own `now`. `diagnose()` answers this, deterministically and with no
-   model.
-3. **What needs a statistical test?** -- has the reporting delay drifted, did
-   reports arrive in batches, is a spike real cases or released backlog.
-   `diagnose()` deliberately refuses these -- answering them means choosing a
-   method, a window and a multiplicity correction -- and leaves them to
-   `diagnose_drift()` and `diagnose_batches()`.
+This article follows the `sari_bh` dataset, a linelist of severe acute respiratory
+illness (SARI) cases from Belo Horizonte (Brazil) from 2020 to 2022:
 
-This article walks the three in order. The first two return a **tibble**, not
-printed text, which is the design decision everything else follows from: an
-answer you can `filter()`, `join()`, plot or assert on in a test is worth far
-more than one you can only read. The third returns test results and figures,
-because a hypothesis test has a p-value and an effect size that a findings row
-has nowhere to put.
 
-```{r dengue-data}
-data(denguedat)
+```{r dengue-data, message=FALSE,warning=FALSE}
+data(sari_bh)
 
-dengue_now <- tbl_now(denguedat,
-  event_date  = "onset_week",
-  report_date = "report_week",
-  strata      = "gender",
-  verbose     = FALSE
+#Create an age category for strata
+sari_bh <- sari_bh |> 
+  mutate(age_cat = cut(age_yrs, breaks = c(0, 20, 40, 60, Inf), include.lowest = TRUE))
+
+sari <- tbl_now(sari_bh,
+  event_date  = symptom_onset_date,
+  report_date = record_date,
+  strata      = age_cat
 )
+
+sari
 ```
 
-# Part 1 — What is in the data: `summary()`
 
-## One table, several blocks
+# 1. Diagnose what is structurally wrong
 
-`summary()` returns a table, and prints it one **component** at a time with the
-columns that component does not populate dropped — the schema is wide because it
-has to hold every block at once, and no single block fills more than a handful
-of it:
+## Linelist data
 
-```{r summary-print}
-summary(dengue_now)
-```
-
-Underneath it is an ordinary tibble, so every `dplyr` verb works on it and
-`tibble::as_tibble()` gives the full schema back. The `component` column says
-which block a row belongs to:
-
-```{r summary-blocks}
-summary(dengue_now) |>
-  count(component)
-```
-
-Every row is one quantity, described by up to eighteen columns. Not every column
-applies to every row — a delay distribution has a `mean` but no `prop`, a
-proportion has a `prop` but no `q90` — so the table is deliberately sparse:
-
-```{r summary-shape}
-summary(dengue_now) |>
-  filter(component == "cases") |>
-  select(component, quantity, stratum, n, total, mean, sd, min, q50, q90, max, prop_zero)
-```
-
-`stratum` is always "which subset of the data does this row describe": `"all"`
-for the pooled rows, or a stratum label. The *category* of a compositional row
-goes in `quantity` instead, which keeps the two ideas from colliding:
-
-```{r summary-composition}
-summary(dengue_now) |>
-  filter(component == "composition") |>
-  select(quantity, stratum, n, total, prop)
-```
-
-## The blocks worth knowing
-
-**`delay`** — the case-weighted reporting delay. Weighted means "equal to what
-you would get by expanding the counts to one row per case", so it needs no
-separate explanation:
-
-```{r summary-delay}
-delay_summary(dengue_now) |>
-  select(quantity, stratum, n, total, mean, sd, q50, q90, max)
-```
-
-**`reporting_completeness()`** — the share of each event date's eventual total
-that had arrived by delay `d`. It says how far back a nowcast has anything left
-to estimate, and it is the one number here that most often changes a decision.
-It is **not** part of `summary()`, and it warns on every call: it was written by
-an AI and has not yet been checked by a human, so read it as a starting point
-rather than as a verified statistic.
-
-```{r summary-completeness}
-reporting_completeness(dengue_now, delays = 0:4) |>
-  filter(stratum == "all") |>
-  select(quantity, n, mean, q50, prop)
-```
-
-Four percent of a week's cases are in by the end of that week, half by the end
-of the next, and 94% by three weeks. Beyond about three weeks there is very
-little missing to reconstruct.
-
-**`zero_run`** — how sparse the series is, measured as runs of consecutive
-zero dates rather than as a simple proportion. A series that is 30% zeros
-scattered at random is a very different modelling problem from one that is 30%
-zeros in three long gaps:
-
-```{r summary-zeroruns}
-zero_run_summary(dengue_now, axis = "event") |>
-  select(quantity, stratum, n, total, mean, q50, max)
-```
-
-**`coverage`** — the reach of the object, including how stale it is:
-
-```{r summary-coverage}
-triangle_occupancy(dengue_now) |>
-  filter(stratum == "all") |>
-  select(quantity, n, value)
-```
-
-## Every block is also a function
-
-`summary()` is exactly the `bind_rows()` of its components, and each one is
-exported, so you can ask a single question without computing the rest:
-
-```{r summary-components}
-prop_strata(dengue_now) |>
-  select(quantity, total, prop)
-```
-
-The full set is `cases_per_date()`, `delay_summary()`, `zero_run_summary()`,
-`prop_censored()`, `prop_revision_type()`, `prop_strata()`,
-`prop_covariate_levels()`, `date_ranges()`, `triangle_occupancy()` and
-`cumulative_growth()`, plus the two unreviewed ones -- `case_autocorrelation()`
-and `reporting_completeness()` -- which share the schema but are not part of
-`summary()`.
-
-<div class="alert alert-info">
-**Quantiles are inverse-ECDF (type 1).** `q50` is the smallest value whose
-cumulative weight reaches 0.5 — for an even number of observations, the upper of
-the two middle values rather than their average. This is the same estimator
-`autoplot()` and `plot_delay_drift()` use, so the table and the figures always
-agree, and for count data it always returns a value that was actually observed.
-A half-case delay is not.
-</div>
-
-# Part 2 — What is structurally wrong: `diagnose()`
-
-## Findings, worst first
-
-`diagnose()` prints as a report: the errors, warnings and notes in full, each
-with its hint, and one line each for the checks that passed, that were
-deliberately not run, and that could not be assessed. `print(x, all = TRUE)`
-spells those out too.
+Once the `tbl_now` is specified, `diagnose()` can be used to print a report: with errors, warnings and notes:
 
 ```{r diagnose-print}
-diagnose(dengue_now)
+diagnose(sari)
 ```
 
-It is a tibble underneath, in the schema the rest of this section reads:
+in our case we have rows with missing report dates which we'll input via censoring (we'll utilize the last value observed):
 
-```{r diagnose-all}
-diagnose(dengue_now) |>
-  count(status)
+```{r, message=FALSE, warning=FALSE}
+sari <- sari |> censor_reports(is.na(record_date))
 ```
 
-`status` is an **ordered factor** — `error` > `warning` > `note` > `ok` >
-`skipped` — so the table sorts itself and filtering to what needs
-acting on is a comparison rather than a set membership test:
+while for the 30 rows where the report date was set before the event we'll drop them as there is no principled way of handling these cases:
 
-```{r diagnose-actionable}
-diagnose(dengue_now) |>
-  filter(status <= "note") |>
-  select(check, scope, stratum, status, n_affected, n_total, message)
+```{r}
+sari <- sari |> filter(record_date >= symptom_onset_date)
 ```
 
-Each finding also carries a `hint` saying what to do about it, and a `rows`
-list-column of the offending row indices, so you can go straight to them:
+The notes can also be reduced. `tbl_now()` aims for the bare minimum for a nowcast hence it complains about the extra columns that are neither covariates nor strata. We can remove them to silence the note:
 
-```{r diagnose-rows}
-finding <- diagnose(dengue_now) |> filter(check == "declarations", status <= "note")
-
-finding$hint
+```{r}
+sari <- sari |> select(-age_yrs, -final_classification, -case_evolution)
 ```
 
-## The five statuses, and why `skipped` is not `ok`
+This now leads to a cleaner diagnose which can be called the same way or printed as a tibble by assigning it to an object:
 
-The distinction that matters most is between a check that **ran and found
-nothing** and one that **could not run**:
-
-```{r diagnose-skipped}
-diagnose(dengue_now) |>
-  filter(status == "skipped") |>
-  select(check, scope, message)
+```{r}
+sari_diagnostic <- diagnose(sari) |> filter(status != "ok" & status != "skipped")
 ```
 
-`dengue_now` is a line list with no revision process, so four checks have
-nothing to work on. None of them is a pass. Reporting them as `ok` would be a
-quiet lie, and this is the single most common way a health check misleads:
-silence that reads as approval.
-
-Note the first row in particular. **`diagnose()` will not look for duplicate
-records in a line list**, because a line list is one row per case — two
-identical rows are two infections, not a repeat. Deduplicating a line list needs
-a key the object does not have (a record id, say), so that check stays yours.
-
-## Structural, never statistical
-
-`diagnose()` runs no statistical tests at all. It is fast, and its answer never
-depends on a random seed or an optional package. The questions that *do* need a
-test are simply not in it: they have their own functions, and you call one when
-you want its answer.
-
-Those calls — `diagnose_drift()`, `diagnose_changepoint()`,
-`diagnose_batches()`, `diagnose_batches2()` — are Part 3 of this article.
-They return their own shapes rather than the findings schema, because a
-hypothesis test has a p-value and an effect size that a findings row has nowhere
-to put.
+<div class="small-table">
+```{r, echo=FALSE}
+sari_diagnostic |> select(-status, -scope, -check, -hint) |> knitr::kable()
+```
+</div>
 
 ## Cumulative data: the revisions
 
-Cumulative counts get revised downwards, and a downward revision becomes a
-**negative increment** the moment the series is de-accumulated. Anything
-consuming incidence has to cope with that, so `diagnose()` counts them.
-FluSight is the standard example:
+Cumulative counts represent at each entry the best estimate of the running total of cases by
+that event-report date. As such, they can get revised downwards, and a downward revision can become a
+**negative 'increment'** the moment the series is de-accumulated. We can see this
+example with the `flusight` dataset: 
 
-```{r flusight}
+```{r flusight, message=FALSE, warning=FALSE}
 data(flusight)
 
 flu_now <- flusight |>
-  filter(location_name %in% c("Alabama", "Alaska", "Arizona"),
-         target_end_date >= as.Date("2023-01-01")) |>
+  filter(location_name == "Alabama", target_end_date >= as.Date("2023-01-01")) |>
   tbl_now(
     event_date  = target_end_date,
     report_date = as_of,
     case_count  = observation,
-    strata      = location_name,
-    data_type   = "count-cumulative",
-    verbose     = FALSE
+    data_type   = "count-cumulative"
   )
 
-diagnose_negatives(flu_now) |>
-  select(scope, stratum, status, n_affected, n_total, message)
+diagnose(flu_now)
 ```
 
-For cumulative data `summary()` also swaps its `delay` block for a `growth`
-one — the ratio of one delay's running total to the previous one's — because a
-cumulative total is not additive across delays and a case-weighted delay
-distribution would be meaningless:
+The first thing to note here is that data is weekly though sometimes reported
+on a Saturday and sometimes on a Wednesday. We can use the `align_weeks()` function
+to set all the days to the same day of the week so that the delays are integer numbers:
 
-```{r flusight-growth}
-cumulative_growth(flu_now, k = 3) |>
-  filter(stratum == "all") |>
-  select(quantity, n, total, mean, q50, max)
+```{r}
+#Day 4 is a wednesday as per wday()
+flu_now <- flu_now |> align_weeks(align_on_day = 4)
 ```
 
-The mean ratio falls below 1 by the third delay, and the totals go negative:
-these series shrink on revision more often than they grow. `delay_summary()`
-refuses to run on this object at all, and says why.
+The remaining notes refer to the distance between today and the now as well as the fact
+that this dataset sometimes gets revised in its number of cases (hence the negative 'increments')
 
-## The same findings, two presentations
+# 2. Summarise what is in the data
 
-`validate_tbl_now()` runs the **same engine** as `diagnose()`. It does not
-return the findings; it re-emits the `error` rows as an abort and the `warning`
-rows as warnings. That is why a malformed object complains the moment you build
-it, and why the two can never drift apart:
+The `summary()` function returns a table, and prints it one **component** at a time:
 
-```{r validate, error=TRUE}
-bad <- denguedat |>
-  mutate(report_week = report_week - 400) |>
-  tbl_now(event_date = "onset_week", report_date = "report_week", verbose = FALSE)
+```{r summary-print}
+summary(sari)
 ```
 
-The warning above and the `ordering` row of `diagnose(bad)` are the same
-finding, formatted for two different audiences: one for a person who is about to
-make a mistake, one for a program that needs to decide what to do.
+We'll discuss each of the blocks individually: 
 
-`note` rows are deliberately never promoted to warnings. `validate_tbl_now()`
-runs on every `dplyr` verb, so a new warning there would turn a quiet
-construction into a noisy one for data that has always been accepted.
+### Delay block
 
+Summarises the distribution of the reporting delay. Here we can see that on average it takes 29 days to
+get reported but some cases took more than 500 days!
 
-# Part 3 — What needs a statistical test: reporting artefacts
+You can also see the reporting delay via its plot:
 
-Everything above is structural: it can be decided by looking at the object, it
-gives the same answer every time, and it costs nothing. The questions Part 2
-would not touch are where that stops. Whether the reporting delay has
-drifted, and whether a spike is released backlog or genuine new cases, are
-statements about a **distribution** — and answering them means picking a method,
-a window and a multiplicity correction, which is not a decision a health check
-should make on your behalf.
-
-So the rest of this article is the other half of the toolkit: the tests and the
-pictures for the questions `diagnose()` refuses to answer.
-
-## Batch reporting
-
-Surveillance data does not always arrive smoothly. Sometimes the reporting system
-halts or reduces its output (e.g. a data-system outage, an overwhelmed jurisdiction) and the
-backlog is released later all at once. That release is called a **batch**: a collection of 
-reports from previous periods that were held and reported all at once during a different
-reporting period. Intuivitively one can think of a batch as a collection of reports that 
---in an ideal scenario-- _should have been reported_ on a previous date but 
-were actually released later. 
-
-```{r, echo = FALSE}
-# --- 1. GENERATE SYNTHETIC SURVEILLANCE DATA ---
-set.seed(42)
-dates  <- seq(as.Date("2026-06-01"), as.Date("2026-06-25"), by = "day")
-n_days <- length(dates)
-
-# Ideal Scenario: A smooth, wave-like curve (e.g., normal distribution)
-ideal_cases <- round(100 * dnorm(seq(-2, 2.5, length.out = n_days)) + 5)
-
-# Create the data frame
-data <- data.frame(
-  date  = dates,
-  ideal = ideal_cases
-)
-
-# Introduce a data-system freeze/backlog:
-# - Days 12, 13, and 14: System breaks down. Reports drop to almost 0.
-# - Day 15: The bottleneck is cleared, releasing all accumulated backlog as a "Batch".
-backlog_days <- c(12, 13, 14)
-batch_day <- 15
-
-# Calculate how many cases were missed during the outage
-backlog_volume <- sum(data$ideal[backlog_days])
-
-# Build the "real" curve with the batch effect
-data <- data |>
-  mutate(
-    real = ideal,
-    # Simulate the reporting drop
-    real = ifelse(row_number() %in% backlog_days, 1, real), 
-    # Add the accumulated backlog to the batch day
-    real = ifelse(row_number() == batch_day, ideal + backlog_volume, real)
-  )
-
-# --- 2. DEFINE CUSTOM PALETTE (From your provided list) ---
-# Main bars: #334335 (Dark green)
-# Ideal curve: #5F7E62 (Muted green)
-# Annotation accent: #B85348 (Coral red for warnings/anomalies)
-# Texts & grid elements: #262626 (Off-black)
-# Grid lines: #A8BFA9 (Soft pale green-gray)
-
-# --- 3. CREATE THE PLOT ---
-ggplot(data, aes(x = date)) +
-  # Real reporting (bars)
-  geom_col(aes(y = real, fill = "Real reporting with batch"), alpha = 0.9, width = 0.8) +
-  # Ideal reporting (smooth line)
-  geom_line(aes(y = ideal, color = "Ideal reporting scenario"), linewidth = 1, linetype = "solid") +
-  
-  # Set Colors
-  scale_fill_manual(values = c("Real reporting with batch" = "#5F7E62")) +
-  scale_color_manual(values = c("Ideal reporting scenario" = "#B85348")) +
-  
-  # --- ANNOTATION 1: The Valley (Where cases should have been reported) ---
-  annotate(
-    "text", 
-    x = dates[mean(backlog_days)], 
-    y = max(data$ideal) * 1.5, 
-    label = "System Outage\n(Ideally, cases should\nhave been reported here)", 
-    color = "black", fontface = "bold", size = 3.5, vjust = 0.5, hjust = 1
-  ) +
-  annotate(
-    "segment", 
-    x = dates[mean(backlog_days)], xend = dates[mean(backlog_days)], 
-    y = max(data$ideal) * 1.35, yend = 5, 
-    arrow = arrow(length = unit(0.2, "cm")), color = "black", linewidth = 0.8
-  ) +
-  
-  # --- ANNOTATION 2: The Batch (The release day) ---
-  annotate(
-    "text", 
-    x = dates[batch_day] + 3.5, 
-    y = data$real[batch_day] - 10, 
-    label = "The Batch!\nBacklog released\nall at once", 
-    color = "black", fontface = "bold", size = 3.8, hjust = 0
-  ) +
-  annotate(
-    "segment", 
-    x = dates[batch_day] + 3.2, xend = dates[batch_day] + 0.3, 
-    y = data$real[batch_day] - 10, yend = data$real[batch_day] - 5, 
-    arrow = arrow(length = unit(0.2, "cm")), color = "black", linewidth = 0.8
-  ) +
-  
-  # Theme and Formatting
-  theme_classic() +
-  theme(
-    plot.title = element_text(face = "bold", size = 16, color = "#262626"),
-    plot.subtitle = element_text(size = 11, color = "#607060", margin = margin(b = 15)),
-    axis.title = element_text(face = "bold", color = "#262626"),
-    axis.text = element_text(color = "#262626"),
-    panel.grid.major = element_line(color = "#A8BFA9", linewidth = 0.2),
-    panel.grid.minor = element_blank(),
-    legend.position = "top",
-    legend.title = element_blank(),
-    legend.text = element_text(size = 10, color = "#262626")
-  ) +
-  labs(
-    title = "Understanding 'Batches' in Public Health Surveillance",
-    x = "Reporting Date",
-    y = "Number of Cases Reported"
-  )
+```{r, fig.width=9, fig.height=4.5}
+plot_delay_distribution(sari)
 ```
 
+Or get that specific table with:
 
-A batch is easy to confuse with an epidemic **surge**. The important part is that the batch happens
-on the **reporting date** axis while a surge happens on the **event date** axis. A
-batch just _moves_ reports to a later date not adding new cases while a real
-epidemic surge _adds_ new cases. The tools here are designed to help you visualize that difference. 
-
-> This article shows each plot **twice**: first on a clean, made-up
-outbreak with one obvious batch (so you learn the signature), then on real,
-COVID-19 data from the CDC (see [`covid_us`](https://rodrigozepeda.github.io/tbl.now/reference/covid_us.html)). 
-
-## Two datasets to compare
-
-### The made-up outbreak. 
-
-This simulation consists of a bell-shaped curve over a hundred days, each
-case reported within a few days. For one week near the peak, the reporting
-system slows down with **half** of each day's reports being held back and released days after. 
-That release is the **batch**. 
-
-```{r ideal-data, warning = FALSE}
-set.seed(82495)
-#Simulate a curve
-onset_days <- as.Date("2024-01-01") + 0:99
-bell       <- dnorm(seq(-2.5, 2.5, length.out = 100))
-per_day    <- round(400 * bell / max(bell)) + 8         
-onset      <- rep(onset_days, per_day)
-reported   <- onset + rpois(length(onset), 1.5)         
-
-clean_tn <- tbl_now(tibble(onset = onset, reported = reported),
-                    event_date = onset, report_date = reported,
-                    data_type = "linelist", verbose = FALSE)
-
-# Simulate a batch
-ideal <- simulate_batch(clean_tn,
-  closed_dates  = seq(as.Date("2024-02-19"), by = "day", length.out = 7),
-  held_fraction = 0.5)
+```{r}
+delay_summary(sari)
 ```
 
-We can see the simulated data both from the event-date and the report-date perspectives:
+## Composition
 
-```{r, eval = FALSE}
-plot_epidemic_process(ideal)
-plot_reporting_process(ideal)
+
+The strata composition (i.e. the proportion of cases by strata) can be accessed with the 
+`prop_strata()` function:
+
+```{r}
+prop_strata(sari)
 ```
 
-```{r, echo = FALSE}
-plot_epidemic_process(ideal) + plot_reporting_process(ideal)
+Here we see that half of the cases occurred in people 60 years or older. 
+
+## Sparcity
+
+The `zero_run_summary` explains  how sparse the series is. It measures a zero-run: a collection of consecutive dates with no cases and quantifies how those runs behave. Here we can see that there is no sparcity (the longest zero runs are of 7 days with most of them lasting 1 day or less). The data is not at all sparse as we can see that if we see a zero, it is very likely the next day there will be cases (in contrast with another 0). 
+
+```{r summary-zeroruns}
+zero_run_summary(sari, axis = "event")
 ```
 
-### The real data
+## Coverage
 
-`covid_us` comes from the CDC's individual-level
-[COVID-19 Case Surveillance Public Use Data](https://data.cdc.gov/Case-Surveillance/COVID-19-Case-Surveillance-Public-Use-Data/vbim-akqf/about_data).
-It carries three dates. Here we use the first and the last: symptom onset
-(`onset_dt`) as the event, and registration at CDC (`cdc_report_dt`) as the
-report. The middle one, `pos_spec_dt`, is the specimen collection, and it is
-pooled away along with `current_status` and `sex` -- the batch question is about
-when reports *arrived*, not about who they were.
+The `date_ranges` show the minimum and maximum for each date per strata to see if there was a lapse in coverage for one: 
 
-```{r data}
-data(covid_us)
-
-covid_early <- covid_us |>
-  summarise(n = sum(n), .by = c(onset_dt, cdc_report_dt))
-
-tn <- tbl_now(covid_early, event_date = onset_dt,
-              report_date = cdc_report_dt, case_count = n,
-              data_type = "count-incidence", verbose = FALSE)
+```{r summary-coverage}
+date_ranges(sari)
 ```
 
-Half of all cases were reported within a few days, but the tail is long: some cases take weeks or months to surface.
+## The epidemic process
 
-```{r delays}
-stats::quantile(rep(tn$.delay, tn$n), c(0.5, 0.75, 0.9, 0.99))
+The `cases_per_date()` function recovers the description of the number of cases
+with the mean number of cases reported per day and its distribution
+
+```{r}
+cases_per_date(sari)
 ```
 
-We can see this dataset again from both the event-date and the report-date perspectives:
+The epidemic process can be seen with a plot too:S
 
-```{r, eval = FALSE}
-plot_epidemic_process(tn)
-plot_reporting_process(tn)
+```{r, fig.width=9, fig.height=4.5}
+plot_epidemic_process(sari)
 ```
 
-```{r, echo = FALSE}
-plot_epidemic_process(tn) + plot_reporting_process(tn)
+(to plot the unstratified one use `remove_strata` on the `tbl_now` before `plot_epidemic_process`)
+
+We can see, for example, the flusight dataset too where we can see that there were no reports for the off-season in 2024. 
+
+```{r, fig.width=9, fig.height=4.5}
+plot_epidemic_process(flu_now)
+``` 
+
+We can use the `complete_zeroes()` function to substitute those values for zeroes and complete the observations:
+
+```{r}
+flu_now <- flu_now |> complete_zeroes(max_delay = 10)
 ```
 
+# 3. Visualizing a `tbl.now` 
 
-## The reporting process
+One can use `autoplot()` to glance at the main properties of a `tbl.now` where we can see that there is an effect of the weekend on the reporting:
 
-This plot, which we have previously shown, shows how many reports arrived by date. Batches or surges might correspond to spikes towering over their neighbours. 
-
-```{r, fig.cap="Reporting process of the simulated data"}
-plot_reporting_process(ideal)
+```{r, fig.width=11, fig.height=13}
+autoplot(sari)
 ```
 
-On the real data the reporting is spikier; a handful of peaks stick up where smooth
-epidemic reporting should be. Those are reporting artefacts either pure
-backlog releases, or a mix of backlog + a genuine surge (we'll come back to this characterization later). The tallest is a single
-day of about 50K reports on 12 December 2020, sixteen times the 3K that arrive on a
-typical day; 10 June and 5 September are the other conspicuous ones.
+with less cases getting reported on Saturday/Sunday. Additional plots help you observe how the reports have changed over time where you can clearly see the emptyness of the weekends:
 
-```{r proc-covid, fig.cap="Reporting process of the COVID-19 data"}
-plot_reporting_process(tn)
+```{r, fig.width=9, fig.height=4.5}
+plot_reporting_process(sari)
 ```
 
-## The reporting triangle
+The reporting triangle shows in the same plot the delays, reports and  event dates
 
-We provide two different visualizations of the reporting triangle. In both
-we plot the three temporal dimensions involved in the process: the event date,
-the reporting date and the delay. We cover the plots in tiles coloured by how many cases
-were registered then. 
-
-
-### The classical reporting triangle
-
-The classical view is given by `plot_reporting_triangle()` where each
-tile is described by _when it happened_ (across) and _how long they took to be 
-reported_ (vertical). The diagonal shows reports that arrive on the same day.  
-An indicator of a batch is **a bright diagonal reaching high up** which
-reporesents many  delayed cases being all reported on the same day.
-
-```{r proc-sim, eval = FALSE}
-plot_reporting_triangle(ideal)
+```{r, fig.width=9, fig.height=4.5}
+sari |> remove_all_strata() |> plot_reporting_triangle()
 ```
 
-```{r, fig.cap="Classical reporting triangle of the simulated data", echo = FALSE}
-plot_reporting_triangle(ideal) + (plot_reporting_process(ideal))
-```
+where we can again see the weekends leaving empty streaks. 
 
-On COVID-19, the triangle is a broad blue-grey haze (most cases reported over many
-months) crossed by bright diagonals. They correspond to the same
-spikes seen in the reporting process:
-
-```{r tri-covid, eval = FALSE}
-plot_reporting_triangle(tn)
-```
-
-```{r, fig.cap="Classical reporting triangle of the COVID-19 data", echo = FALSE}
-plot_reporting_triangle(tn) + (plot_reporting_process(tn))
-```
-
-### The reporting hexamap
-
-Event date, report date and reporting delay can be seen as an **age-period-cohort** triple
-(`report = event + delay`, exactly `period = cohort + age`), so the reporting
-triangle can be drawn as a hexamap in the style of [Jalal and Burke (2020)](https://doi.org/10.1097/EDE.0000000000001236): each
-`(event, delay)` cell is a point on a hexagonal lattice, coloured by its report
-count, with event date,
-report date and delay running along the three 60-degree axes. Because a batch is a
-happens in the **report date**, it shows up as a  **vertical stripe**; the fast
-reporting bulk sits along the short-delay bottom edge.
-
-```{r hex-sim, eval = TRUE, fig.width = 8, fig.height = 8}
-plot_reporting_hexamap(ideal)
-```
-
-The marks are sized in millimetres while the lattice is sized in data units, so
-no default can suit every combination of cell count and figure size. `size`
-is the knob: raise it until the points nearly touch at the size you are actually
-drawing, and `shape = 15` swaps the circles for squares, which tile more closely.
-
-```{r hex-sim-big, eval = TRUE, fig.width = 8, fig.height = 8}
-plot_reporting_hexamap(ideal, size = 3, shape = 15)
-```
-
-On covid the vertical stripes are the 2020 backlog releases. The
-delay axis is capped with `max_delay` to keep the map to where the reports are.
-
-```{r hex-covid, eval = TRUE, fig.width = 8.5, fig.height = 8}
-plot_reporting_hexamap(tn, max_delay = 60)
-```
-
-
-## Transport vs creation {#sec-transport} 
-
-This is the main tool for detecting batches and surges. Before the plot, we
-will explain the whole idea. Consider a daily outbreak with  reports incoming 
-each day. Three things can change the number of reports:
-
-- a **hold**  -- a reporting office falls behind and some days' reports are withheld;
-- a **batch** -- the day the backlog (hold) is finally released, all at once;
-- a **surge** -- an increase in the epidemic process: more people falling ill and being reported.
-
-We simulate one of each in a clean epidemic and colour every day by its type (grey
-= ordinary day):
-
-```{r tut-data, echo = FALSE}
-tut_cols <- c(Normal = "grey72", Hold = "#4E79A7",
-              Batch = "#B85348", Surge = "#5F7E62")
-
-set.seed(2024)
-# a clean bell-shaped epidemic, reported within a day or two
-tut_ev <- rep(as.Date("2024-01-01") + 0:99,
-              times = round(300 * dnorm(seq(-2.5, 2.5, length.out = 100)) /
-                              max(dnorm(seq(-2.5, 2.5, length.out = 100)))) + 6)
-tut_rp <- tut_ev + rpois(length(tut_ev), 1.5)
-# a SURGE: extra *real* cases in mid-March, reported promptly
-surge_ev <- rep(as.Date("2024-03-11") + 0:2, each = 500)
-tut <- rbind(
-  data.frame(event_date = tut_ev,   report_date = tut_rp),
-  data.frame(event_date = surge_ev, report_date = surge_ev + rpois(length(surge_ev), 1))
-)
-# a HOLD then BATCH: close reporting for a week near the peak; the backlog is
-# released the day the desk catches up
-closed <- seq(as.Date("2024-02-19"), by = "day", length.out = 3)
-tut_tn <- simulate_batch(
-  tbl_now(tut, event_date, report_date, data_type = "linelist", verbose = FALSE),
-  closed_dates = closed, held_fraction = 0.7, verbose = FALSE)
-
-# the two scores per report date, tagged by what we planted
-scores <- transport_discriminant(tut_tn, lookback = 7)
-scores$kind <- factor(dplyr::case_when(
-  scores$report_date %in% closed                          ~ "Hold",
-  scores$report_date == max(closed) + 1                   ~ "Batch",
-  scores$report_date >= as.Date("2024-03-11") &
-    scores$report_date <= as.Date("2024-03-13")           ~ "Surge",
-  TRUE                                                     ~ "Normal"),
-  levels = names(tut_cols))
-ar <- arrow(length = unit(0.15, "cm"))
-
-ggplot(scores, aes(report_date, reported, fill = kind)) +
-  geom_col(width = 1) +
-  scale_fill_manual(values = tut_cols, name = NULL) +
-  annotate("segment", x = as.Date("2024-02-01"), xend = as.Date("2024-02-21"),
-           y = 700, yend = 750, arrow = ar, colour = tut_cols[["Batch"]]) +
-  annotate("text", x = as.Date("2024-01-31"), y = 700, hjust = 1, size = 3,
-           colour = tut_cols[["Batch"]], label = "Batch: the backlog\nreleased in one lump") +
-  annotate("segment", x = as.Date("2024-02-09"), xend = as.Date("2024-02-20"),
-           y = 400, yend = 175, arrow = ar, colour = tut_cols[["Hold"]]) +
-  annotate("text", x = as.Date("2024-02-08"), y = 400, hjust = 1, size = 3,
-           colour = tut_cols[["Hold"]], label = "Hold: reports\nwithheld (a dip)") +
-  annotate("segment", x = as.Date("2024-03-27"), xend = as.Date("2024-03-14"),
-           y = 560, yend = 500, arrow = ar, colour = tut_cols[["Surge"]]) +
-  annotate("text", x = as.Date("2024-03-28"), y = 590, hjust = 0, size = 3,
-           colour = tut_cols[["Surge"]], label = "Surge: genuinely\nmore cases") +
-  coord_cartesian(clip = "off") +
-  labs(x = "Report date", y = "Reports",
-       title = "1. The reporting timeline, coloured by what happened") +
-  theme_minimal(base_size = 12) +
-  theme(legend.position = "top", plot.margin = margin(6, 80, 6, 6))
-```
-
-In the previous plot, every bar is one report date. The **batch** towers 
-where the held reports land together; the **hold** is the small blue dip 
-just before it; the **surge** is a genuine bump of new cases.
-
-The transport discriminant turns each day into **two numbers**:
-
-- A **creation score** -- did this stretch of days genuinely *gain* cases? A larger surge
-implies a larger creation score.
-- A **transport score** -- were the days just before *missing* reports? 
-A backlog release after a hold pushes it up.
-
-We plot every day by those two numbers and observe the directions of the three disturbances:
-
-```{r tut-plane, fig.width = 8, fig.height = 6, warning = FALSE, echo = FALSE}
-zc <- qnorm(0.975)
-ty <- max(scores$transport_z, na.rm = TRUE)
-rx <- max(scores$creation_z,  na.rm = TRUE)
-lx <- min(scores$creation_z,  na.rm = TRUE)
-ggplot(scores, aes(creation_z, transport_z, colour = kind)) +
-  geom_hline(yintercept = zc, linetype = "dashed", colour = "grey85") +
-  geom_vline(xintercept = zc, linetype = "dashed", colour = "grey85") +
-  geom_point(data = ~subset(., kind == "Normal"), size = 1.7, alpha = 0.45, na.rm = TRUE) +
-  geom_point(data = ~subset(., kind != "Normal"), size = 2.8, na.rm = TRUE) +
-  scale_colour_manual(values = tut_cols, name = NULL) +
-  scale_y_continuous(expand = expansion(mult = c(0.05, 0.14))) +
-  scale_x_continuous(expand = expansion(mult = 0.09)) +
-  annotate("text", x = 8, y = ty + 3, size = 3, fontface = "bold",
-           colour = tut_cols[["Batch"]], label = "Batch: shoots UP and RIGHT") +
-  annotate("text", x = 20, y = -5, size = 3, fontface = "bold",
-           colour = tut_cols[["Surge"]], label = "Surge:\nshoots RIGHT") +
-  annotate("text", x = lx * 0.55, y = -10, size = 3, fontface = "bold",
-           colour = tut_cols[["Hold"]], label = "Hold:\ngoes goes DOWN") +
-  labs(x = "Creation score",
-       y = "Transport score",
-       title = "2. Where each day lands in the transport-vs-creation plane") +
-  theme_minimal(base_size = 12) +
-  theme(legend.position = "top")
-```
-
-Identifying any bar with its dot we can conclude:
-
-- A **batch (backlog release, red)** shoots **up and right** -- the days before were
-  depleted (high transport) but not as many new cases were created (right);
-- A **surge (green)** shoots **right** -- cases genuinely appeared (high
-  creation), with apparent preceding hole;
-- A **hold (blue)** drifts **left** -- reports have apparently gone
-missing (transport rising) while the window has *lost* cases (creation negative).
-
-Ordinary days (grey) sit in the cloud through the middle. That is the whole idea
-behind `transport_discriminant()` and `diagnose_batches()`: **a batch is high transport
-with little creation**. 
-
-### The transport discriminant
-
-The previous plot can be done with the `plot_transport_discriminant()` function: 
-
-```{r disc-sim, eval = FALSE}
-plot_transport_discriminant(ideal)
-```
-
-```{r disc-sim2, echo = FALSE}
-plot_transport_discriminant(ideal) + plot_reporting_process(ideal)
-```
-
-Which also works to identify the COVID-19 cases:
-
-```{r disc-covid, eval = FALSE}
-plot_transport_discriminant(tn, period = 7)
-```
-
-```{r disc-covid2, echo = FALSE}
-plot_transport_discriminant(tn, period = 7) +
-  plot_reporting_process(tn)
-```
-
-### Recovering the data
-
-The `diagnose_batches()` function runs the transport test for the batch signature and
-returns, for every report date, the `batch` flag -- a Benjamini-Hochberg-corrected
-verdict that controls the false-discovery rate across all dates (see `?diagnose_batches`
-for the full column reference). Keeping the `batch` rows gives the confirmed
-releases together with their `deficit` (how depleted the days just before were) and
-`delta` (how little the window total actually changed).
-
-```{r screen-sim, eval = FALSE}
-diagnose_batches(ideal) |>
-  filter(batch)
-```
-
-```{r screen-sim2, echo = FALSE}
-diagnose_batches(ideal) |>
-  filter(batch) |>
-  select(report_date, reported, baseline, deficit, delta, p_transport_bh, batch)
-```
-
-On covid we pass `period = 7` to divide out the weekly reporting cadence. Only
-one date survives the Benjamini-Hochberg-corrected `batch` flag: **7 November
-2020**, which reported about twice its baseline *and* was preceded by a matching
-deficit of roughly the same size. That pairing is the whole test -- the taller
-spikes of 12 December and 10 June are not flagged, because nothing was withheld
-beforehand to release, which makes them surges rather than batches:
-
-```{r screen-covid, eval = FALSE}
-diagnose_batches(tn, period = 7) |>
-  filter(batch)
-```
-
-```{r screen-covid2, echo = FALSE}
-diagnose_batches(tn, period = 7) |>
-  filter(batch) |>
-  select(report_date, reported, baseline, deficit, delta, p_transport_bh, batch) |>
-  arrange(desc(reported))
-```
-
-The sensitivity of the batch flag can be adapted with `alpha`. 
-
-
-## Delay changes 
+# 4. Identifying delay changes
 
 The reporting delay might change through time. Here we show two different plots 
 for identifying delay problems. 
 
 ### Reporting-delay drift
 
-The typical time from case to report, tracked over the outbreak. Shows the
-overall trend of the delay. Normally it will be steady; a 
-batch can be seen as a **sudden bump upward** on the release day.
+This shows the typical time from event to report as it moved through the outbreak. It shows the
+overall trend of the delay and its quantiles. 
 
-```{r drift-sim}
-plot_delay_drift(ideal)
+```{r drift-covid, fig.width=9, fig.height=4.5}
+plot_delay_drift(sari)
 ```
 
-On covid the delays show extreme variability in the beginning and a trend
-that decreases the delay in time: 
+Here we can see that the first cases took so long to get reported. However, we can also see that after the initial chaos int he first months of 2020 the reporting delay became pretty stable.  The functions `diagnose_drift()` and `diagnose_changepoint()` test 
+for a gradual or abrupt changes in the delay. 
 
-```{r drift-covid}
-plot_delay_drift(tn)
-```
-
-The functions `diagnose_drift()` and `diagnose_changepoint()` test 
-for a gradual or abrupt changes in the delay. We can see, for example, that it correctly identifies the drift in the COVID-19 dataset both for the median (trend) and the spread (see the quantiles getting tighter). On the ideal example this doesn't happen so it does not detect a drift:
+Here we can see that they identify a slight reduction (the delay reduces 0.0105 days per day) and no changes in the intervals
 
 ```{r, warning=FALSE}
-diagnose_drift(tn)
-diagnose_drift(ideal)
+diagnose_drift(sari)
 ```
 
-The change-point function also detects that by early June the COVID-19 delay distribution has completely changed from before. In the case of the ideal example the change is not  long enough to be detected: 
+The change-point function on the other hand looks for changes in the distribution of the delay. The function however has to be used carfully as the changepoint function will **always** look for a changepoint in the data. So one has to first see the delay distribution to detect a possible changepoint before calling the diagnostic. The diagnostic will always find a changepoint no matter what. So here although it gives a very small p value we have decided to conclude there is no changepoint based on the delay plot:
 
 ```{r, warning=FALSE}
-diagnose_changepoint(tn)
-diagnose_changepoint(ideal)
+diagnose_changepoint(sari)
 ```
 
-### Delay profiles
+# Batches
 
-Each faint line is one day's distirbution of reporting delays. Most days report quickly, so
-their lines hug the left and concentrate around the same distribution:
+Reporting batches are an important hurdle in surveillance systems. See [this vignette on batches](https://rodrigozepeda.github.io/tbl.now/articles/batches.html) for how we represent them and how to diagnose them. For the purpose of this tutorial we present two diagnosing functions. The `diagnose_batches()` identifies potential dates that might carry reporting batches:
 
-```{r prof-sim}
-plot_delay_profiles(ideal)
+```{r}
+sari |> remove_all_strata() |> diagnose_batches()
 ```
 
-On COVID-19 a whole spray of lines reaches far to the right days that reported
-cases months later.
+while `diagnose_batches2()` requires you to identify a date to test for batch-reporting:
 
-```{r prof-covid}
-plot_delay_profiles(tn)
+```{r}
+sari |> remove_all_strata() |> diagnose_batches2(at = as.Date("2021/11/11"))
 ```
 
 
-# The whole toolkit, on one page
-
-The structural tools come first because they are cheap and never wrong; the
-statistical ones come second because they cost a choice.
-
-| Tool | Question it answers |
-|---|---|
-| **`summary()`** | What is in the data: counts, delays, sparsity, composition, reach. |
-| **`diagnose()`** | What is structurally wrong: ordering, missingness, duplicates, units, right-truncation. |
-| **`validate_tbl_now()`** | The same findings, raised as errors and warnings instead of returned. |
-
-Everything below needs a statistical choice, and every row is a different way of
-seeing the same thing -- reports that were held back and then released together.
-
-| Plot or test | What to look for |
-|---|---|
-| **Reporting process** | Shows how reports were registered. |
-| **Reporting triangle** | Diagonals show cases with the same report date. |
-| **The reporting V** | Horizontal slices show cases with the same report date. |
-| **Transport discriminant** | A red dot up-and-left, in the "potential batch region" might indicate a batch. |
-| **`diagnose_batches()`** | Shows the flagged reports in the discriminant as a `data.frame` |
-| **Delay profiles** | Show the delay distribution for each event date. |
-| **Reporting-delay drift** | Shows how the delay and its variance change through time. |
-
-Another practical notes from other data we have analyzed:
-
-+ In general, **surges** (real new cases) seem harder to identify of that **batches** (moved reports).
-+ Batches are very difficult to identify in low-incidence scenarios.  
-+ Batches very close to the now are difficult to identify without additional modeling hypotheses.  
 
 
-# Where to go next
+# Summary
 
-* `?tbl_now_summary` and `?nowcast_summary_components` — every column, every
-  block of Part 1.
-* `?diagnose` and `?nowcast_diagnose_components` — every check, every status of
-  Part 2.
-* `?diagnose_drift`, `?diagnose_batches` and `?diagnostic_plot` — the tests and
-  figures of Part 3.
+Here we have shown how to diagnose, summarise and visualize a `tbl.now` to characterize its data. 
+
+
 
 ```{r learning-more, echo=FALSE, results="asis"}
-# The fragment is looked up by ABSOLUTE path via system.file(), never by a
-# relative one. pkgdown/rmarkdown render into an intermediates directory under
-# tempdir() and copy relative resources alongside; a path containing "../.."
-# escapes that directory ("cannot create file '/tmp/RtmpXXX/../../man/...'"),
-# which fails wherever tempdir() sits near the filesystem root -- as it does on
-# CI. `system.file()` also works under pkgload::load_all(), which shims it to
-# find inst/ in the source tree.
 cat(
   knitr::knit_child(
     system.file("fragments", "learning-more.Rmd", package = "tbl.now"),
