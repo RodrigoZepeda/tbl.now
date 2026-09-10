@@ -101,7 +101,7 @@ compute_temporal_effects <- function(x, overwrite = FALSE) {
 
 #' Coerce a `tbl_now` to a tibble or a data frame
 #'
-#' @description `r lifecycle::badge("experimental")`
+#' @description `r lifecycle::badge("stable")`
 #'
 #' [tibble::as_tibble()] and [as.data.frame()] methods for `tbl_now`. They drop
 #' the `tbl_now` class and metadata, returning a plain `tibble` / `data.frame`.

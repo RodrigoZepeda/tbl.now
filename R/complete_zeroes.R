@@ -1,6 +1,6 @@
 #' Fill in the days when nothing was reported
 #'
-#' @description `r lifecycle::badge("experimental")`
+#' @description `r lifecycle::badge("stable")`
 #'
 #' Surveillance data records what happened, not what didn't. If no dengue case
 #' with onset on 3 January was reported on 5 January, there is simply no row for
@@ -42,10 +42,18 @@
 #'   has no effect beyond the `now`: an event date later than the `now` cannot
 #'   carry any report on or before it, so no row would survive for it.
 #'
+#' ## Temporal effects
+#'
+#' If `x` arrived with materialised [temporal_effects()] columns, they are
+#' **recomputed on the completed grid** before the result is returned, so the
+#' rows this function adds carry their own calendar effects rather than `NA`.
+#' A lazy specification that has not been computed yet stays lazy.
+#'
 #' @return A `tbl_now` object with the same columns as `x`, plus the rows that
 #' were implicitly zero, carrying `0` in the `case_count` column. Explicit
 #' missing counts in the input remain `NA`; only cells created by
-#' `complete_zeroes()` are filled. The data type is preserved.
+#' `complete_zeroes()` are filled. The data type is preserved, as are any
+#' computed temporal-effect columns (recomputed over the new rows).
 #'
 #' @seealso
 #' [to_count()] for the data shapes this operates on;
@@ -172,12 +180,11 @@ complete_zeroes <- function(x, max_delay = NULL, until = NULL) {
     )
   }
 
-  # Warn to recalculate temporal effects
-  if (length(get_temporal_effect_cols(x)) > 0) {
-    cli::cli_alert_warning(
-      "Computed temporal-effect columns have been lost. Call {.fn compute_temporal_effects} again after {.fn complete_zeroes}."
-    )
-  }
+  # Materialised temporal effects are a per-ROW property, and this function adds
+  # rows, so whatever the caller computed before is about to become stale (the
+  # new cells join in as `NA`). Recorded here and repaired at the very end, once
+  # the grid is final -- see the recompute just before the return.
+  had_computed_effects <- length(get_temporal_effect_cols(x)) > 0
 
   original_marker <- ".tbl_now_complete_original"
   while (original_marker %in% colnames(x)) {
@@ -348,6 +355,29 @@ complete_zeroes <- function(x, max_delay = NULL, until = NULL) {
         !!as.symbol(get_report_date(x)) <= !!report_bound
     ) |>
     dplyr::select(-dplyr::all_of(c(original_marker, grid_marker)))
+
+  # Repair the temporal effects flagged at the top. The completed rows carry
+  # `NA` in every effect column, so the object would otherwise claim -- through
+  # `computed_temporal_effect_cols` -- to have effects it only half has, and a
+  # model fitted on it would silently read zeros or `NA`s for exactly the cells
+  # this function was called to create. The lazy spec travels with the object,
+  # and the effects are deterministic functions of the calendar date, so the
+  # values are recoverable right here; asking the caller to remember a follow-up
+  # `compute_temporal_effects()` only moved the trap one line downstream.
+  # `overwrite = TRUE` because the stale columns are still in place.
+  if (had_computed_effects) {
+    if (length(get_temporal_effects(x)) > 0) {
+      x <- compute_temporal_effects(x, overwrite = TRUE)
+    } else {
+      # Computed columns but no spec to rebuild them from -- only reachable if
+      # the spec was stripped by hand. Nothing to recompute, so say so.
+      cli::cli_alert_warning(
+        "Computed temporal-effect columns are stale on the rows
+         {.fn complete_zeroes} added, and no {.fn temporal_effects}
+         specification is attached to recompute them from."
+      )
+    }
+  }
 
   return(.tbl_now_regroup(x, group_columns))
 }

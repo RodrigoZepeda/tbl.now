@@ -28,7 +28,7 @@ expressions: a bare column name or a string both work.}
 A \code{tbl_now} (\code{from}) or a \code{data.table} (\code{to}).
 }
 \description{
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
 
 \code{tbl_now_from_data_table()} converts a \code{data.table} into a \code{tbl_now}
 (requires explicit \code{event_date} / \code{report_date} columns).

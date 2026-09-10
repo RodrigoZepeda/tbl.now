@@ -26,6 +26,7 @@ equivalence_pair <- function() {
 }
 
 test_that("baselinenowcast: a linelist matches COMPLETED count-incidence", {
+  skip_on_cran()
   skip_if_not_installed("baselinenowcast")
   pair <- equivalence_pair()
 
@@ -51,6 +52,7 @@ test_that("baselinenowcast: a linelist matches COMPLETED count-incidence", {
 })
 
 test_that("baselinenowcast leaves COUNT input exactly as supplied", {
+  skip_on_cran()
   skip_if_not_installed("baselinenowcast")
   pair <- equivalence_pair()
 
@@ -71,6 +73,7 @@ test_that("baselinenowcast leaves COUNT input exactly as supplied", {
 })
 
 test_that("baselinenowcast: `complete = FALSE` stops at the last observed week", {
+  skip_on_cran()
   skip_if_not_installed("baselinenowcast")
   linelist <- equivalence_linelist()
 
@@ -84,6 +87,7 @@ test_that("baselinenowcast: `complete = FALSE` stops at the last observed week",
 })
 
 test_that("epinowcast: a linelist matches COMPLETED count-incidence", {
+  skip_on_cran()
   skip_if_not_installed("epinowcast")
   pair <- equivalence_pair()
   triangle_of <- function(x) {
@@ -99,6 +103,7 @@ test_that("epinowcast: a linelist matches COMPLETED count-incidence", {
 })
 
 test_that("baselinenowcast triangle_list: linelist matches count-incidence", {
+  skip_on_cran()
   skip_if_not_installed("baselinenowcast")
   linelist <- equivalence_linelist() |> add_strata("gender")
   counts <- to_count(linelist, to = "count-incidence")
@@ -118,6 +123,7 @@ test_that("baselinenowcast triangle_list: linelist matches count-incidence", {
 })
 
 test_that("epinowcast: linelist and count-incidence give the same reporting triangle", {
+  skip_on_cran()
   skip_if_not_installed("epinowcast")
   pair <- equivalence_pair()
 
@@ -135,6 +141,7 @@ test_that("epinowcast: linelist and count-incidence give the same reporting tria
 })
 
 test_that("surveillance: a linelist round-trips to one row per case", {
+  skip_on_cran()
   skip_if_not_installed("surveillance")
   pair <- equivalence_pair()
 
@@ -155,6 +162,7 @@ test_that("surveillance: a linelist round-trips to one row per case", {
 
 
 test_that("every converter accepts LINELIST input without erroring", {
+  skip_on_cran()
   linelist <- equivalence_linelist()
 
   converters <- list(
@@ -239,6 +247,7 @@ gap_pair <- function(n_strata = 0L) {
 }
 
 test_that("baselinenowcast reaches the `now` when the last days are silent", {
+  skip_on_cran()
   skip_if_not_installed("baselinenowcast")
   pair <- gap_pair()
 
@@ -256,6 +265,7 @@ test_that("baselinenowcast reaches the `now` when the last days are silent", {
 })
 
 test_that("epinowcast reaches the `now` when the last days are silent", {
+  skip_on_cran()
   skip_if_not_installed("epinowcast")
   pair <- gap_pair()
 
@@ -276,6 +286,7 @@ test_that("epinowcast reaches the `now` when the last days are silent", {
 })
 
 test_that("EpiNow2 series reach the `now` when the last days are silent", {
+  skip_on_cran()
   skip_if_not_installed("EpiNow2")
 
   # `.epinow2_series_data()` built its series from `get_latest_reported_cases()`
@@ -299,6 +310,7 @@ test_that("EpiNow2 series reach the `now` when the last days are silent", {
 })
 
 test_that("EpiNow2 snapshots reach their own `as_of`", {
+  skip_on_cran()
   skip_if_not_installed("EpiNow2")
 
   # `.epinow2_snapshots()` completes each snapshot with `complete_zeroes()`,
@@ -327,6 +339,7 @@ test_that("EpiNow2 snapshots reach their own `as_of`", {
 })
 
 test_that("EpiNow2 leaves COUNT input exactly as supplied", {
+  skip_on_cran()
   skip_if_not_installed("EpiNow2")
 
   # Count data can distinguish an observed zero from a cell that could not be
@@ -349,6 +362,7 @@ test_that("EpiNow2 leaves COUNT input exactly as supplied", {
 })
 
 test_that("NobBS and surveillance line lists are unchanged by completion", {
+  skip_on_cran()
   # Both take a LINE LIST, and both are handed the `now` by their fit method
   # (`NobBS(now =)`, `get_surveillance_range()`), so the empty periods are the
   # back-end's business rather than the converter's. What must hold is that
@@ -375,6 +389,7 @@ test_that("NobBS and surveillance line lists are unchanged by completion", {
 })
 
 test_that("epidist gets the same delay distribution either way", {
+  skip_on_cran()
   skip_if_not_installed("epidist")
 
   # `epidist` fits a DELAY DISTRIBUTION and has no event grid, so there is

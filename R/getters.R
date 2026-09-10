@@ -1,6 +1,6 @@
 #' @title Read what a `tbl_now` was told about itself
 #'
-#' @description `r lifecycle::badge("experimental")`
+#' @description `r lifecycle::badge("stable")`
 #'
 #' When you build a [tbl_now()] you tell it which column is the event date, which
 #' is the report date, which are strata, and so on. These functions read that

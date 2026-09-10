@@ -25,6 +25,7 @@ make_td_tbl <- function(with_batch = TRUE, seed = 1L) {
 }
 
 test_that("transport_discriminant() returns the documented columns and class", {
+  skip_on_cran()
   td <- quiet_messages(suppressWarnings(transport_discriminant(make_td_tbl()$tbl)))
   expect_s3_class(td, "transport_discriminant")
   expect_true(all(c(
@@ -35,6 +36,7 @@ test_that("transport_discriminant() returns the documented columns and class", {
 })
 
 test_that("a transport discriminant auto-prints through its own formatter", {
+  skip_on_cran()
   # See the twin test in test-batch_screen.R: `capture.output(x)` auto-prints,
   # and the method has to be registered on `base::print` to be found at all.
   td  <- quiet_messages(suppressWarnings(transport_discriminant(make_td_tbl()$tbl)))
@@ -48,6 +50,7 @@ test_that("a transport discriminant auto-prints through its own formatter", {
 })
 
 test_that("a planted transport batch scores high on transport, not creation", {
+  skip_on_cran()
   fixture <- make_td_tbl()
   td      <- quiet_messages(suppressWarnings(transport_discriminant(fixture$tbl)))
 
@@ -61,6 +64,7 @@ test_that("a planted transport batch scores high on transport, not creation", {
 })
 
 test_that("planting a batch flags a release date that clean data does not", {
+  skip_on_cran()
   fixture <- make_td_tbl(with_batch = TRUE)
   batched <- quiet_messages(suppressWarnings(transport_discriminant(fixture$tbl)))
   clean   <- quiet_messages(suppressWarnings(
@@ -73,6 +77,7 @@ test_that("planting a batch flags a release date that clean data does not", {
 })
 
 test_that("the flags agree with diagnose_batches()'s robust null", {
+  skip_on_cran()
   fixture <- make_td_tbl()
   td <- quiet_messages(suppressWarnings(transport_discriminant(fixture$tbl)))
   bs <- quiet_messages(suppressWarnings(
@@ -89,12 +94,14 @@ test_that("transport_discriminant() validates its inputs", {
 })
 
 test_that("print returns the object invisibly", {
+  skip_on_cran()
   td <- quiet_messages(suppressWarnings(transport_discriminant(make_td_tbl()$tbl)))
   expect_output(print(td), "A tibble")
   utils::capture.output(expect_invisible(print(td)))
 })
 
 test_that("a discriminant subset past its own columns prints as a tibble", {
+  skip_on_cran()
   td <- quiet_messages(suppressWarnings(transport_discriminant(make_td_tbl()$tbl)))
 
   # The twin of the `diagnose_batches` case: without the demotion the header

@@ -92,7 +92,7 @@ its elapsed time in seconds, whether it succeeded, and any error text.}
 }
 }
 \description{
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
 
 Walks back through time: for every date in \code{now_dates}, the \code{tbl_now} is
 truncated to the reports that were available then, each method is refitted on

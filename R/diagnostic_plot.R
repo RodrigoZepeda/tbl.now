@@ -76,7 +76,7 @@
 
 #' The epidemic process and the reporting process
 #'
-#' @description `r lifecycle::badge("experimental")`
+#' @description `r lifecycle::badge("stable")`
 #'
 #' The same cases, counted on two different clocks. Comparing the two is the
 #' single most useful thing you can do to tell a real outbreak from a reporting
@@ -107,15 +107,22 @@
 #'   when reports did. Needs a revision process (see
 #'   [add_revision_date()][add]); cases still `"pending"` have no
 #'   revision date and are left out.
+#' @param by_revision_type Logical (default `TRUE`), `plot_reporting_process()`
+#'   only. Stack each bar by how the arrivals it counts eventually resolved --
+#'   `confirmed`, `pending`, `retracted` and `unknown`, in the palette's outcome
+#'   colours (see [tbl_now_palette()]) -- so a day whose reports were mostly
+#'   taken back is visible as such rather than as an ordinary day. Ignored on an
+#'   object with no revision axis. It cannot be taken from
+#'   `count-cumulative` data, which records running totals rather than cases, and
+#'   warns and draws the unsplit bars there.
 #'
 #' @returns A \pkg{ggplot2} object (or a \pkg{plotly} widget when `plotly = TRUE`).
 #'
 #' @seealso
 #' [diagnostic_plot()], which draws these alongside the rest of the
 #' reporting-process gallery; [plot_observed_cases()] for the epidemic process
-#' with the incompleteness cutoff marked; [plot_scalogram()] to separate the two
-#' processes by timescale; [diagnose_batches()] to test a suspicious spike rather
-#' than eyeball it.
+#' with the incompleteness cutoff marked; [diagnose_batches()] to test a
+#' suspicious spike rather than eyeball it.
 #'
 #' @examples
 #' data(denguedat)
@@ -130,13 +137,53 @@
 #' @name plot_epidemic_process
 #' @export
 plot_reporting_process <- function(x, plotly = FALSE, axis = c("report", "revision"),
+                                   by_revision_type = TRUE,
                                    palette = .tbl_now_palette()) {
   axis <- match.arg(axis)
   .diag_check(x)
   .tbl_now_check_palette(palette, "plot_reporting_process")
-  inc <- .batch_report_increments(x, axis = axis)
+  split_by_outcome <- .diag_resolve_outcome_split(x, by_revision_type)
+  inc <- .batch_report_increments(
+    x, axis = axis, keep_revision_type = split_by_outcome
+  )
   ctx <- .diag_context(x, inc, axis = axis)
   .as_plotly(.diag_build_process(inc, ctx, palette, axis = "report"), plotly)
+}
+
+#' Can this object be split by revision outcome, and was it asked for?
+#'
+#' Asking for the split on a two-date object is not an error -- the same call
+#' has to work on both -- so it is dropped silently. Asking for it on a
+#' cumulative stream *is* worth saying out loud: the data could carry outcomes
+#' and this shape of it cannot, which is a fact about the data rather than about
+#' the call.
+#'
+#' @param x A `tbl_now`.
+#' @param by_revision_type The user's argument.
+#'
+#' @return `TRUE` when the panel should be split.
+#'
+#' @keywords internal
+#' @noRd
+.diag_resolve_outcome_split <- function(x, by_revision_type) {
+  if (!rlang::is_bool(by_revision_type)) {
+    cli::cli_abort(
+      "{.arg by_revision_type} must be a single {.val TRUE} or {.val FALSE}."
+    )
+  }
+  if (!isTRUE(by_revision_type) || !has_revision(x)) {
+    return(FALSE)
+  }
+  if (identical(get_data_type(x), "count-cumulative")) {
+    cli::cli_warn(c(
+      "A revision-outcome split needs one row per case, and \
+       {.val count-cumulative} data records running totals.",
+      "i" = "Convert with {.code to_count(x, to = \"count-incidence\")}, or pass \
+             {.code by_revision_type = FALSE} to silence this."
+    ))
+    return(FALSE)
+  }
+  TRUE
 }
 
 #' @rdname plot_epidemic_process
@@ -186,9 +233,22 @@ plot_epidemic_process <- function(x, plotly = FALSE, axis = c("report", "revisio
   fill  <- if (axis == "event") palette[["epidemic"]] else palette[["reporting"]]
   cap   <- NULL
 
+  split_by_outcome <- ".outcome" %in% names(increments)
   totals <- increments |>
-    dplyr::group_by(.data$.stratum, .data[[key]]) |>
+    dplyr::group_by(dplyr::across(dplyr::all_of(
+      c(".stratum", key, if (split_by_outcome) ".outcome")
+    ))) |>
     dplyr::summarise(n = sum(.data$.count), .groups = "drop")
+
+  # The cap below is about how tall the whole bar is, so it is read off the
+  # per-date total rather than off the tallest slice of a stacked one.
+  date_totals <- if (split_by_outcome) {
+    totals |>
+      dplyr::group_by(.data$.stratum, .data[[key]]) |>
+      dplyr::summarise(n = sum(.data$n), .groups = "drop")
+  } else {
+    totals
+  }
 
   # Only when a *pathological* dump dwarfs the whole series (e.g. covid's 1.8M-report
   # day, ~50x the median) does a linear y-axis go mostly empty. There we cap it at
@@ -196,19 +256,37 @@ plot_epidemic_process <- function(x, plotly = FALSE, axis = c("report", "revisio
   # off the top. An ordinary batch spike -- the very thing this plot exists to show,
   # like the made-up example's ~20x release -- is NOT capped, so it towers as it
   # should.
-  y_med  <- stats::median(totals$n, na.rm = TRUE)
-  y_cap  <- stats::quantile(totals$n, 0.99, names = FALSE, na.rm = TRUE)
-  capped <- is.finite(y_med) && y_med > 0 && max(totals$n, na.rm = TRUE) > 30 * y_med
+  y_med  <- stats::median(date_totals$n, na.rm = TRUE)
+  y_cap  <- stats::quantile(date_totals$n, 0.99, names = FALSE, na.rm = TRUE)
+  capped <- is.finite(y_med) && y_med > 0 &&
+    max(date_totals$n, na.rm = TRUE) > 30 * y_med
   if (capped) {
     cap <- paste(cap, "\nThe y-axis is capped at the 99th percentile; a few extreme",
                  "backlog dumps run off the top.")
   }
 
-  panel <- ggplot2::ggplot(totals, ggplot2::aes(.data[[key]], .data$n)) +
-    ggplot2::geom_col(fill = fill, width = ctx$unit_days) +
+  panel <- ggplot2::ggplot(totals, ggplot2::aes(.data[[key]], .data$n))
+  if (split_by_outcome) {
+    # The outline is the ink colour, not the process colour: one of the four
+    # fills is white, and a white bar with a white outline is not a bar.
+    panel <- panel +
+      ggplot2::geom_col(
+        ggplot2::aes(fill = .data$.outcome),
+        width = ctx$unit_days, colour = palette[["ink"]], linewidth = 0.1
+      ) +
+      .tbl_now_revision_type_scale(palette)
+  } else {
+    panel <- panel + ggplot2::geom_col(fill = fill, width = ctx$unit_days)
+  }
+  panel <- panel +
     .diag_comma_axis() +
     ggplot2::labs(x = xlab, y = ylab, title = title, subtitle = sub, caption = cap) +
     .tbl_now_theme(palette)
+  # After the theme, not before: `.tbl_now_theme()` starts from a complete theme
+  # and would put the legend back on the right.
+  if (split_by_outcome) {
+    panel <- panel + ggplot2::theme(legend.position = "top")
+  }
   if (capped) {
     panel <- panel + ggplot2::coord_cartesian(ylim = c(0, y_cap))
   }
@@ -221,7 +299,7 @@ plot_epidemic_process <- function(x, plotly = FALSE, axis = c("report", "revisio
 
 #' Plot the reporting triangle
 #'
-#' @description `r lifecycle::badge("experimental")`
+#' @description `r lifecycle::badge("stable")`
 #'
 #' Tiles over (event date, delay), filled by the reported count. Cells that are
 #' **observable but empty** (a genuine reported zero) are drawn in a muted blue;
@@ -443,7 +521,7 @@ plot_reporting_triangle <- function(x, max_delay = NULL, report_ticks = 6L,
 
 #' Plot the per-date delay profiles
 #'
-#' @description `r lifecycle::badge("experimental")`
+#' @description `r lifecycle::badge("stable")`
 #'
 #' One translucent curve per date (see `by`) giving that date's share of reports
 #' at each delay, coloured by its mean delay. A batch is a lone right-shifted
@@ -539,7 +617,7 @@ plot_delay_profiles <- function(x, by = c("report", "event"), max_delay = NULL,
 
 #' Plot the transport-discriminant plane
 #'
-#' @description `r lifecycle::badge("experimental")`
+#' @description `r lifecycle::badge("stable")`
 #'
 #' Places each report date by its creation score (x) and transport / deficit
 #' score (y) from [transport_discriminant()], shading the region that decides the
@@ -748,7 +826,7 @@ plot_transport_discriminant <- function(x, ..., plotly = FALSE, size = 1,
 
 #' Diagnostic plots of the reporting process
 #'
-#' @description `r lifecycle::badge("experimental")`
+#' @description `r lifecycle::badge("stable")`
 #'
 #' Lays out a gallery of complementary views of a `tbl_now`'s reporting process,
 #' all aimed at spotting reporting artefacts -- especially *batch reporting*. Each
@@ -792,7 +870,7 @@ plot_transport_discriminant <- function(x, ..., plotly = FALSE, size = 1,
 #' [plot_reporting_triangle()] (the full event-by-delay grid),
 #' [plot_delay_profiles()] (each date's delay curve),
 #' [plot_delay_drift()] (whether delays are getting longer),
-#'   [plot_transport_discriminant()], [plot_scalogram()].
+#'   [plot_transport_discriminant()].
 #'
 #' @examplesIf requireNamespace("patchwork", quietly = TRUE)
 #' data(denguedat)

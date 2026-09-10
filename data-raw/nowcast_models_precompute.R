@@ -205,9 +205,7 @@ DISPLAYED <- c(
   NobBS                      = "nobbs_fit",
   NobBS_quantiles            = "nobbs_quantiles",
   surveillance               = "sur_fit",
-  EpiNow2                    = "epinow2_fit",
-  EpiNow2_dist               = "dist_fit",
-  epidist                    = "delay_model"
+  EpiNow2                    = "epinow2_fit"
 )
 
 # The figures need a nowcast per stratum as well as the pooled one. `pooled` is
@@ -288,7 +286,7 @@ for (key in names(TIDY_EXTRAS)) {
 
 covid_now      <- get_object("covid_now")
 covid_seasonal <- get_object("covid_seasonal")
-cutoff         <- get_object("cutoff")
+cutoff         <- as.Date("2021-04-01")
 NOW            <- get_now(covid_now)
 grid           <- sort(unique(covid_now[[get_event_date(covid_now)]]))
 horizon        <- utils::tail(grid, N_HORIZON)

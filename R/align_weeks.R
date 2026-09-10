@@ -1,6 +1,6 @@
 #' Put weekly data on a common weekday
 #'
-#' @description `r lifecycle::badge("experimental")`
+#' @description `r lifecycle::badge("stable")`
 #'
 #' Weekly surveillance data is rarely as tidy as it looks. The same series may be
 #' stamped with a Wednesday one year and a Thursday the next, or event dates may

@@ -5,6 +5,7 @@ library(dplyr, quietly = TRUE, warn.conflicts = FALSE)
 # ============================================================
 
 test_that("tbl_now_from_epinowcast builds a count-cumulative tbl_now", {
+  skip_on_cran()
   skip_if_not_installed("epinowcast")
 
   obs <- head(epinowcast::germany_covid19_hosp, 300)
@@ -50,6 +51,7 @@ test_that("tbl_now_from_epinowcast forwards ... to tbl_now (now)", {
 })
 
 test_that("tbl_now_to_epinowcast returns an enw_preprocess_data object", {
+  skip_on_cran()
   skip_if_not_installed("epinowcast")
 
   obs <- head(epinowcast::germany_covid19_hosp, 200)
@@ -167,6 +169,7 @@ test_that("epinowcast round-trip preserves every observation (no info lost)", {
 # ============================================================
 
 test_that("tbl_now_from_baselinenowcast expands a reporting-triangle matrix", {
+  skip_on_cran()
   skip_if_not_installed("baselinenowcast")
 
   rt <- baselinenowcast::example_reporting_triangle
@@ -201,6 +204,7 @@ test_that("baselinenowcast matrix round-trip preserves NA vs 0 exactly", {
 })
 
 test_that("tbl_now_to_baselinenowcast infers delays_unit from the object units", {
+  skip_on_cran()
   skip_if_not_installed("baselinenowcast")
   data(denguedat)
   weekly <- tbl_now(denguedat[1:2000, ],
@@ -352,6 +356,7 @@ test_that("baselinenowcast round-trip preserves everything", {
 # ============================================================
 
 test_that("tbl_now_from_data_table builds a tbl_now", {
+  skip_on_cran()
   skip_if_not_installed("data.table")
 
   data(denguedat)
@@ -365,6 +370,7 @@ test_that("tbl_now_from_data_table builds a tbl_now", {
 })
 
 test_that("tbl_now_to_data_table returns a data.table and drops tbl_now class", {
+  skip_on_cran()
   skip_if_not_installed("data.table")
 
   data(denguedat)
@@ -423,6 +429,7 @@ test_that("tbl_now_from_data_table forwards ... (strata) to tbl_now", {
 # ============================================================
 
 test_that("tbl_now_from_epidist linelist maps lower bounds to dates", {
+  skip_on_cran()
   ll <- data.frame(
     pdate_lwr = as.Date(c("2020-03-01", "2020-03-02", "2020-03-03")),
     sdate_lwr = as.Date(c("2020-03-05", "2020-03-04", "2020-03-08"))
@@ -465,6 +472,7 @@ test_that("tbl_now_from_epidist errors on missing columns", {
 })
 
 test_that("tbl_now_to_epidist linelist builds an epidist_linelist_data object", {
+  skip_on_cran()
   skip_if_not_installed("epidist")
 
   ll <- data.frame(
@@ -653,6 +661,7 @@ test_that("tbl_now_to_epidist aggregate errors on linelist input", {
 })
 
 test_that("as_epidist_aggregate_data.tbl_now dispatches with counts", {
+  skip_on_cran()
   skip_if_not_installed("epidist")
   ct <- tbl_now(
     dplyr::tibble(ev = as.Date(c("2020-03-01", "2020-03-02")),
@@ -729,6 +738,7 @@ test_that("from_* verbose prints a conversion summary", {
 # ============================================================
 
 test_that("tbl_now_to_tsibble builds a tsibble with the chosen index and key", {
+  skip_on_cran()
   skip_if_not_installed("tsibble")
 
   data(denguedat)
@@ -758,6 +768,7 @@ test_that("tbl_now_to_tsibble index = report_date uses report_date as index", {
 })
 
 test_that("tbl_now_from_tsibble rebuilds a tbl_now and recovers strata", {
+  skip_on_cran()
   skip_if_not_installed("tsibble")
 
   data(denguedat)
@@ -797,6 +808,7 @@ test_that("tbl_now_to_tsibble errors on non-tbl_now", {
 # ============================================================
 
 test_that("as_tbl_now.tbl_ts round-trips a tsibble", {
+  skip_on_cran()
   skip_if_not_installed("tsibble")
 
   data(denguedat)
@@ -824,6 +836,7 @@ test_that("as_tbl_now.tbl_ts errors without report_date", {
 })
 
 test_that("as_tbl_now.enw_preprocess_data round-trips epinowcast", {
+  skip_on_cran()
   skip_if_not_installed("epinowcast")
 
   obs <- head(epinowcast::germany_covid19_hosp, 300)
@@ -840,6 +853,7 @@ test_that("as_tbl_now.enw_preprocess_data round-trips epinowcast", {
 })
 
 test_that("as_tbl_now.reporting_triangle round-trips baselinenowcast", {
+  skip_on_cran()
   skip_if_not_installed("baselinenowcast")
 
   rt <- baselinenowcast::example_reporting_triangle
@@ -849,6 +863,7 @@ test_that("as_tbl_now.reporting_triangle round-trips baselinenowcast", {
 })
 
 test_that("as_tbl_now.epidist_linelist_data round-trips epidist", {
+  skip_on_cran()
   skip_if_not_installed("epidist")
 
   nowobj <- tbl_now(
@@ -865,6 +880,7 @@ test_that("as_tbl_now.epidist_linelist_data round-trips epidist", {
 })
 
 test_that("as_tbl_now.data.table round-trips a data.table", {
+  skip_on_cran()
   skip_if_not_installed("data.table")
 
   data(denguedat)
@@ -1121,6 +1137,7 @@ test_that("tbl_now_to_baselinenowcast can still refuse cumulative input", {
 # })
 
 test_that("tbl_now_to_EpiNow2 builds estimate_secondary streams from revisions", {
+  skip_on_cran()
   skip_if_not_installed("EpiNow2")
 
   converted <- tbl_now_to_EpiNow2(
@@ -1139,6 +1156,7 @@ test_that("tbl_now_to_EpiNow2 builds estimate_secondary streams from revisions",
 })
 
 test_that("tbl_now_to_EpiNow2 estimate_secondary can count other revision types", {
+  skip_on_cran()
   skip_if_not_installed("EpiNow2")
 
   retracted <- tbl_now_to_EpiNow2(
@@ -1174,6 +1192,7 @@ test_that("tbl_now_to_EpiNow2 estimate_secondary needs a revision process", {
 })
 
 test_that("estimate_secondary warns that it is a repurposing of the model", {
+  skip_on_cran()
   skip_if_not_installed("EpiNow2")
 
   # `EpiNow2::estimate_secondary()` was designed for cases and deaths linked by
@@ -1540,12 +1559,14 @@ test_that("tbl_now_to_epidist linelist carries covariates and is_censored_report
 # ============================================================
 
 test_that("as_tsibble.tbl_now dispatches to tbl_now_to_tsibble", {
+  skip_on_cran()
   skip_if_not_installed("tsibble")
   ts <- suppressWarnings(tsibble::as_tsibble(make_rich_now()))
   expect_s3_class(ts, "tbl_ts")
 })
 
 test_that("as.data.table.tbl_now dispatches to tbl_now_to_data_table", {
+  skip_on_cran()
   skip_if_not_installed("data.table")
   dt <- data.table::as.data.table(make_rich_now())
   expect_s3_class(dt, "data.table")
@@ -1553,6 +1574,7 @@ test_that("as.data.table.tbl_now dispatches to tbl_now_to_data_table", {
 })
 
 test_that("as_reporting_triangle.tbl_now dispatches (matrix format)", {
+  skip_on_cran()
   skip_if_not_installed("baselinenowcast")
   rt <- suppressWarnings(suppressMessages(
     baselinenowcast::as_reporting_triangle(make_rich_now(), delays_unit = "weeks",
@@ -1562,6 +1584,7 @@ test_that("as_reporting_triangle.tbl_now dispatches (matrix format)", {
 })
 
 test_that("as_epidist_linelist_data.tbl_now dispatches to tbl_now_to_epidist", {
+  skip_on_cran()
   skip_if_not_installed("epidist")
   ll <- tbl_now(
     dplyr::tibble(ev = as.Date(c("2020-03-01", "2020-03-02")),
@@ -1994,6 +2017,7 @@ make_strata_tbl_now <- function() {
 }
 
 test_that("format = 'triangle_list' returns one triangle per stratum", {
+  skip_on_cran()
   skip_if_not_installed("baselinenowcast")
   x  <- make_strata_tbl_now()
   tl <- suppressWarnings(
@@ -2010,6 +2034,7 @@ test_that("format = 'triangle_list' returns one triangle per stratum", {
 })
 
 test_that("format = 'triangle_list' is length-1 and named 'all' without strata", {
+  skip_on_cran()
   skip_if_not_installed("baselinenowcast")
   x <- remove_all_strata(make_strata_tbl_now())
   tl <- suppressWarnings(
@@ -2023,6 +2048,7 @@ test_that("format = 'triangle_list' is length-1 and named 'all' without strata",
 })
 
 test_that("as_tbl_now() rebuilds a tbl_now from a triangle list, strata and all", {
+  skip_on_cran()
   skip_if_not_installed("baselinenowcast")
   x  <- make_strata_tbl_now()
   tl <- suppressWarnings(
@@ -2048,6 +2074,7 @@ test_that("as_tbl_now() rebuilds a tbl_now from a triangle list, strata and all"
 })
 
 test_that("a weekly reporting triangle survives the round-trip through as_tbl_now()", {
+  skip_on_cran()
   skip_if_not_installed("baselinenowcast")
   # Regression: `delays_unit` was not read from the triangle's own attribute, so
   # weekly delays were expanded as days and `as_tbl_now()` aborted with
@@ -2072,6 +2099,7 @@ test_that("a weekly reporting triangle survives the round-trip through as_tbl_no
 # the converter exists.
 
 test_that("tbl_now_to_nobbs() expands counts to one row per case", {
+  skip_on_cran()
   skip_if_not_installed("NobBS")
   data(denguedat, envir = environment())
   ll <- tbl_now(
@@ -2093,6 +2121,7 @@ test_that("tbl_now_to_nobbs() expands counts to one row per case", {
 })
 
 test_that("tbl_now_to_nobbs() leaves a line list at one row per case", {
+  skip_on_cran()
   skip_if_not_installed("NobBS")
   data(denguedat, envir = environment())
   ll <- tbl_now(
@@ -2107,6 +2136,7 @@ test_that("tbl_now_to_nobbs() leaves a line list at one row per case", {
 })
 
 test_that("tbl_now_to_nobbs() carries strata for a per-stratum loop", {
+  skip_on_cran()
   skip_if_not_installed("NobBS")
   x <- make_strata_tbl_now()
   out <- suppressWarnings(suppressMessages(
@@ -2116,6 +2146,7 @@ test_that("tbl_now_to_nobbs() carries strata for a per-stratum loop", {
 })
 
 test_that("tbl_now_to_nobbs() honours custom column names", {
+  skip_on_cran()
   skip_if_not_installed("NobBS")
   x <- make_strata_tbl_now()
   out <- suppressWarnings(suppressMessages(
@@ -2125,6 +2156,7 @@ test_that("tbl_now_to_nobbs() honours custom column names", {
 })
 
 test_that("tbl_now_to_epidist accepts a grouped tbl_now", {
+  skip_on_cran()
   skip_if_not_installed("epidist")
   df <- data.frame(
     onset = as.Date("2024-01-07") + 7 * rep(0:9, each = 2),

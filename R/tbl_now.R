@@ -1,6 +1,6 @@
 #' Create a `tbl_now` object
 #'
-#' @description `r lifecycle::badge('experimental')`
+#' @description `r lifecycle::badge('stable')`
 #'
 #' Surveillance data arrives late. A case that happened on Monday may only reach
 #' the surveillance system on Thursday, so counts for the most recent days always
@@ -141,9 +141,12 @@
 #' @param force (optional) Logical. Whether to force computation overwriting pre-existing variables.
 #' Default = `FALSE`.
 #'
-#' @param warn_non_uniqueness (optional) Logical. Whether to throw a warning if data
-#' has multiple observations for same event and report date (conditional on covariates
-#' and strata)
+#' @param warn_non_uniqueness (optional) Logical. Whether to throw a warning if
+#' data has several rows on the same full key: the event, report and (when
+#' declared) revision dates, the revision type, the strata, the covariates and
+#' the censoring flags. Rows carrying an `NA` anywhere in that key -- a pending
+#' case has no revision date -- are left out of the comparison, because an
+#' unobserved value cannot be shown to equal another.
 #'
 #' @param align_weeks (optional) Logical. If both event and report units are weeks
 #' and `align_weeks = TRUE` it ensures that all weeks start in a Sunday so that

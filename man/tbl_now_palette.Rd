@@ -13,6 +13,7 @@ tbl_now_palette(
   epidemic_dark = "#334335",
   revision = "#C79800",
   revision_light = "#E6CE80",
+  retracted = "#3E6F9E",
   ink = "#262626",
   ink_muted = "#607060",
   ink_inverse = "#FFFFFF",
@@ -46,9 +47,13 @@ ramp).}
 
 \item{epidemic_dark}{Darkest epidemic colour (dense overplotted curves).}
 
-\item{revision}{Strong colour of the revision process.}
+\item{revision}{Strong colour of the revision process, and of a \code{confirmed}
+outcome on it.}
 
 \item{revision_light}{Attenuated revision colour (box fills).}
+
+\item{retracted}{A report the revision process took back. The counterpart of
+\code{revision}, so that the two resolutions can be told apart at a glance.}
 
 \item{ink}{Body text, axis text and titles.}
 
@@ -60,8 +65,7 @@ ramp).}
 
 \item{surface_muted}{Palest surface: the low end of a sequential ramp.}
 
-\item{surface_dark}{Deep surface for a region with no estimate (the
-scalogram's cone of influence).}
+\item{surface_dark}{Deep surface for a region with no estimate.}
 
 \item{grid_major}{Major gridlines the package draws itself.}
 
@@ -118,6 +122,15 @@ A palette that swaps the two hues is fine; a \emph{plot} that draws delays with 
 
 The remaining roles are furniture — text, gridlines, reference lines and the
 three data states that are not a process (\code{zero}, \code{pending}, \code{observed}).
+}
+
+\section{Revision outcomes}{
+A panel that splits the revision axis by outcome (see the
+\code{by_revision_type} argument of \code{\link[=plot_delay_distribution]{plot_delay_distribution()}} and
+\code{\link[=plot_reporting_process]{plot_reporting_process()}}) draws \code{confirmed} in the \code{revision} colour,
+\code{pending} in \code{surface}, \code{retracted} in \code{retracted} and an unrecorded outcome
+in \code{neutral}. Ochre and blue are the two resolutions, white is the case that
+has not resolved, grey the one whose outcome was never written down.
 }
 
 \examples{

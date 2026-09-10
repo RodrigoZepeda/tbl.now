@@ -78,7 +78,7 @@ the time, and it is always an undercount.
 recent report. This is the current best estimate of what really happened,
 and it is what you score a nowcast against.
 \item \code{get_nth_reported_cases()} -- the count accumulated \strong{within a given
-delay}. \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}} \code{delay = 0} gives the cases
+delay}. \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}} \code{delay = 0} gives the cases
 reported on the event date itself, \code{delay = 1} adds those reported one
 period later, and so on. \code{delay = Inf} is the same as
 \code{get_latest_reported_cases()}.

@@ -12,6 +12,7 @@ make_hex_tbl <- function(seed = 4L) {
 }
 
 test_that("plot_reporting_hexamap builds and validates input", {
+  skip_on_cran()
   tn <- make_hex_tbl()
   p  <- plot_reporting_hexamap(tn)
   expect_s3_class(p, "ggplot")
@@ -29,12 +30,14 @@ mark_layer <- function(p) {
 }
 
 test_that("max_delay caps the delay axis", {
+  skip_on_cran()
   tn    <- make_hex_tbl()
   marks <- mark_layer(plot_reporting_hexamap(tn, max_delay = 3))
   expect_true(is.finite(max(marks$y)))
 })
 
 test_that("the max_cells guard bounds the number of points", {
+  skip_on_cran()
   tn <- make_hex_tbl()
   # a tiny cap must trigger the informational message and still build
   expect_message_quietly(
@@ -46,6 +49,7 @@ test_that("the max_cells guard bounds the number of points", {
 })
 
 test_that("size and shape reach the point layer", {
+  skip_on_cran()
   tn <- make_hex_tbl()
   expect_equal(unique(mark_layer(plot_reporting_hexamap(tn))$size), 1.5)
   big <- mark_layer(plot_reporting_hexamap(tn, size = 4, shape = 15))
@@ -54,6 +58,7 @@ test_that("size and shape reach the point layer", {
 })
 
 test_that("revision hexamaps use revision units for their arrival grid", {
+  skip_on_cran()
   tn <- suppressWarnings(tbl_now(
     data.frame(
       event_date = as.Date("2024-01-01") + 0:5,
@@ -78,6 +83,7 @@ test_that("revision hexamaps use revision units for their arrival grid", {
 })
 
 test_that("hexamap axis titles stay outside the plotted lattice", {
+  skip_on_cran()
   tn <- make_hex_tbl()
   p <- plot_reporting_hexamap(tn, text_size = 3.5)
   build <- ggplot2::ggplot_build(p)$data
@@ -98,6 +104,7 @@ test_that("hexamap axis titles stay outside the plotted lattice", {
 })
 
 test_that("the grid line widths are settable and independent", {
+  skip_on_cran()
   tn <- make_hex_tbl()
   # The minor grid is drawn first, in three families, then the major grid: the
   # first six layers are the two triangular grids this function draws itself.
@@ -115,6 +122,7 @@ test_that("the grid line widths are settable and independent", {
 })
 
 test_that("a size argument is revised", {
+  skip_on_cran()
   tn <- make_hex_tbl()
   expect_error(plot_reporting_hexamap(tn, size = -1), "non-negative")
   expect_error(plot_reporting_hexamap(tn, size = c(1, 2)), "single")

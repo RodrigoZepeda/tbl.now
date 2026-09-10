@@ -106,7 +106,11 @@ when it runs.}
 \code{estimate_dist()} vendors likelihood functions from
 \href{https://primarycensored.epinowcast.org/}{primarycensored}, and its
 help asks that you cite \pkg{primarycensored} alongside \pkg{EpiNow2}
-when using it (\code{citation("primarycensored")}).}
+when using it (\code{citation("primarycensored")}).  Like
+\code{\link[=tbl_now_to_epidist]{tbl_now_to_epidist()}}, this target returns one row per observed delay:
+the revision axis is dropped and undeclared columns are pooled, because
+neither reaches \code{estimate_dist()} and so neither can keep two rows
+apart.}
 }
 
 \code{tbl_now_from_EpiNow2()} inverts the snapshot form: snapshot \emph{k} is the series

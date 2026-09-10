@@ -5,6 +5,7 @@
 # ============================================================================
 
 test_that("temporal_effects creates object with default values", {
+  skip_on_cran()
   t_eff <- temporal_effects()
 
   expect_s3_class(t_eff, "tbl.now::temporal_effects")
@@ -26,6 +27,7 @@ test_that("temporal_effects creates object with default values", {
 })
 
 test_that("temporal_effects creates object with single effect", {
+  skip_on_cran()
   t_eff <- temporal_effects(day_of_week = TRUE)
 
   expect_true(t_eff@day_of_week)
@@ -36,6 +38,7 @@ test_that("temporal_effects creates object with single effect", {
 })
 
 test_that("temporal_effects creates object with multiple effects", {
+  skip_on_cran()
   t_eff <- temporal_effects(
     day_of_week = TRUE,
     weekend = TRUE,
@@ -50,6 +53,7 @@ test_that("temporal_effects creates object with multiple effects", {
 })
 
 test_that("temporal_effects creates object with all effects", {
+  skip_on_cran()
   t_eff <- temporal_effects(
     day_of_week = TRUE,
     weekend = TRUE,
@@ -66,6 +70,7 @@ test_that("temporal_effects creates object with all effects", {
 })
 
 test_that("temporal_effects handles seasons parameter", {
+  skip_on_cran()
   t_eff <- temporal_effects(seasons = 52)
 
   expect_equal(t_eff@seasons, 52)
@@ -73,6 +78,7 @@ test_that("temporal_effects handles seasons parameter", {
 })
 
 test_that("temporal_effects handles multiple seasons", {
+  skip_on_cran()
   t_eff <- temporal_effects(seasons = c(7, 52, 365))
 
   expect_equal(length(t_eff@seasons), 3)
@@ -82,6 +88,7 @@ test_that("temporal_effects handles multiple seasons", {
 })
 
 test_that("temporal_effects removes duplicate seasons", {
+  skip_on_cran()
   t_eff <- temporal_effects(seasons = c(52, 52, 365, 365, 7))
 
   expect_equal(length(t_eff@seasons), 3)
@@ -89,6 +96,7 @@ test_that("temporal_effects removes duplicate seasons", {
 })
 
 test_that("temporal_effects handles empty seasons vector", {
+  skip_on_cran()
   t_eff <- temporal_effects(seasons = integer(0))
 
   expect_equal(length(t_eff@seasons), 0)
@@ -96,6 +104,7 @@ test_that("temporal_effects handles empty seasons vector", {
 })
 
 test_that("temporal_effects handles numeric seasons (coerces to correct type)", {
+  skip_on_cran()
   t_eff <- temporal_effects(seasons = c(7.0, 52.0, 365.0))
 
   expect_true(is.numeric(t_eff@seasons))
@@ -103,6 +112,7 @@ test_that("temporal_effects handles numeric seasons (coerces to correct type)", 
 })
 
 test_that("temporal_effects handles holidays parameter", {
+  skip_on_cran()
   skip_if_not_installed("almanac")
 
   cal <- almanac::rcalendar(almanac::hol_christmas())
@@ -113,6 +123,7 @@ test_that("temporal_effects handles holidays parameter", {
 })
 
 test_that("temporal_effects handles US federal holidays", {
+  skip_on_cran()
   skip_if_not_installed("almanac")
 
   t_eff <- temporal_effects(holidays = almanac::cal_us_federal())
@@ -122,6 +133,7 @@ test_that("temporal_effects handles US federal holidays", {
 })
 
 test_that("temporal_effects handles multiple holidays", {
+  skip_on_cran()
   skip_if_not_installed("almanac")
 
   cal <- almanac::rcalendar(
@@ -145,6 +157,7 @@ test_that("temporal_effects accepts NULL for holidays", {
 # ============================================================================
 
 test_that("temporal_effects fails with non-logical day_of_week", {
+  skip_on_cran()
   expect_error(
     temporal_effects(day_of_week = "TRUE"),
     "must be either.*TRUE.*FALSE"
@@ -157,6 +170,7 @@ test_that("temporal_effects fails with non-logical day_of_week", {
 })
 
 test_that("temporal_effects fails with non-logical weekend", {
+  skip_on_cran()
   expect_error(
     temporal_effects(weekend = "yes"),
     "must be either.*TRUE.*FALSE"
@@ -164,6 +178,7 @@ test_that("temporal_effects fails with non-logical weekend", {
 })
 
 test_that("temporal_effects fails with non-logical day_of_month", {
+  skip_on_cran()
   expect_error(
     temporal_effects(day_of_month = 1),
     "must be either.*TRUE.*FALSE"
@@ -171,6 +186,7 @@ test_that("temporal_effects fails with non-logical day_of_month", {
 })
 
 test_that("temporal_effects fails with non-logical month_of_year", {
+  skip_on_cran()
   expect_error(
     temporal_effects(month_of_year = "TRUE"),
     "must be either.*TRUE.*FALSE"
@@ -178,6 +194,7 @@ test_that("temporal_effects fails with non-logical month_of_year", {
 })
 
 test_that("temporal_effects fails with non-logical week_of_year", {
+  skip_on_cran()
   expect_error(
     temporal_effects(week_of_year = 1),
     "must be either.*TRUE.*FALSE"
@@ -185,6 +202,7 @@ test_that("temporal_effects fails with non-logical week_of_year", {
 })
 
 test_that("temporal_effects fails with invalid holidays object", {
+  skip_on_cran()
   expect_error(
     temporal_effects(holidays = "not_a_calendar"),
     "Invalid.*holidays.*Must be.*almanac::rcalendar"
@@ -197,6 +215,7 @@ test_that("temporal_effects fails with invalid holidays object", {
 })
 
 test_that("temporal_effects fails with multiple logical values", {
+  skip_on_cran()
   expect_error(
     temporal_effects(day_of_week = c(TRUE, FALSE)),
     "must be either.*TRUE.*FALSE"
@@ -208,6 +227,7 @@ test_that("temporal_effects fails with multiple logical values", {
 # ============================================================================
 
 test_that("temporal_effects handles all FALSE values", {
+  skip_on_cran()
   t_eff <- temporal_effects(
     day_of_week = FALSE,
     weekend = FALSE,
@@ -224,6 +244,7 @@ test_that("temporal_effects handles all FALSE values", {
 })
 
 test_that("temporal_effects handles all TRUE values", {
+  skip_on_cran()
   t_eff <- temporal_effects(
     day_of_week = TRUE,
     weekend = TRUE,
@@ -241,6 +262,7 @@ test_that("temporal_effects handles all TRUE values", {
 })
 
 test_that("temporal_effects handles large season values", {
+  skip_on_cran()
   t_eff <- temporal_effects(seasons = c(365, 730, 1095))
 
   expect_equal(length(t_eff@seasons), 3)
@@ -255,6 +277,7 @@ test_that("temporal_effects handles large season values", {
 # method writes to STDOUT; `cli_fmt()` only captures cli *message* output, so it
 # would silently see nothing now that the method uses the `cat_*()` family.
 test_that("print.temporal_effects displays header", {
+  skip_on_cran()
   t_eff <- temporal_effects(day_of_week = TRUE)
 
   output <- capture.output(print(t_eff))
@@ -263,6 +286,7 @@ test_that("print.temporal_effects displays header", {
 })
 
 test_that("print.temporal_effects shows single effect", {
+  skip_on_cran()
   t_eff <- temporal_effects(day_of_week = TRUE)
 
   output <- capture.output(print(t_eff))
@@ -273,6 +297,7 @@ test_that("print.temporal_effects shows single effect", {
 })
 
 test_that("print.temporal_effects shows multiple effects", {
+  skip_on_cran()
   t_eff <- temporal_effects(
     day_of_week = TRUE,
     weekend = TRUE,
@@ -288,6 +313,7 @@ test_that("print.temporal_effects shows multiple effects", {
 })
 
 test_that("print.temporal_effects shows seasons", {
+  skip_on_cran()
   t_eff <- temporal_effects(seasons = c(7, 52, 365))
 
   output <- capture.output(print(t_eff))
@@ -299,6 +325,7 @@ test_that("print.temporal_effects shows seasons", {
 })
 
 test_that("print.temporal_effects shows holidays", {
+  skip_on_cran()
   skip_if_not_installed("almanac")
 
   cal <- almanac::rcalendar(almanac::hol_christmas())
@@ -310,6 +337,7 @@ test_that("print.temporal_effects shows holidays", {
 })
 
 test_that("print.temporal_effects shows US federal holidays", {
+  skip_on_cran()
   skip_if_not_installed("almanac")
 
   t_eff <- temporal_effects(holidays = almanac::cal_us_federal())
@@ -320,6 +348,7 @@ test_that("print.temporal_effects shows US federal holidays", {
 })
 
 test_that("print.temporal_effects shows no effects message", {
+  skip_on_cran()
   t_eff <- temporal_effects()
 
   output <- capture.output(print(t_eff))
@@ -328,6 +357,7 @@ test_that("print.temporal_effects shows no effects message", {
 })
 
 test_that("print.temporal_effects shows all effects", {
+  skip_on_cran()
   skip_if_not_installed("almanac")
 
   t_eff <- temporal_effects(
@@ -356,6 +386,7 @@ test_that("print.temporal_effects shows all effects", {
 # ============================================================================
 
 test_that("temporal_effects has correct S7 properties", {
+  skip_on_cran()
   t_eff <- temporal_effects()
 
   props <- S7::props(t_eff)
@@ -370,6 +401,7 @@ test_that("temporal_effects has correct S7 properties", {
 })
 
 test_that("temporal_effects properties have correct types", {
+  skip_on_cran()
   t_eff <- temporal_effects(day_of_week = TRUE, seasons = 52)
 
   expect_true(is.logical(t_eff@day_of_week))
@@ -378,6 +410,7 @@ test_that("temporal_effects properties have correct types", {
 })
 
 test_that("temporal_effects properties are accessible via @ operator", {
+  skip_on_cran()
   t_eff <- temporal_effects(day_of_week = TRUE, weekend = FALSE, seasons = c(52, 365))
 
   expect_equal(t_eff@day_of_week, TRUE)
@@ -390,6 +423,7 @@ test_that("temporal_effects properties are accessible via @ operator", {
 # ============================================================================
 
 test_that("documentation example 1 works", {
+  skip_on_cran()
   t_eff <- temporal_effects(day_of_week = TRUE, week_of_year = TRUE)
 
   expect_s3_class(t_eff, "tbl.now::temporal_effects")
@@ -398,6 +432,7 @@ test_that("documentation example 1 works", {
 })
 
 test_that("documentation example 2 works", {
+  skip_on_cran()
   skip_if_not_installed("almanac")
 
   cal <- almanac::rcalendar(almanac::hol_christmas())
@@ -414,6 +449,7 @@ test_that("documentation example 2 works", {
 # ============================================================================
 
 test_that("temporal_effects handles very large number of seasons", {
+  skip_on_cran()
   many_seasons <- 1:100
   t_eff <- temporal_effects(seasons = many_seasons)
 
@@ -422,6 +458,7 @@ test_that("temporal_effects handles very large number of seasons", {
 })
 
 test_that("temporal_effects handles fractional seasons (coerces to numeric)", {
+  skip_on_cran()
   t_eff <- temporal_effects(seasons = c(7.5, 52.3, 365.25))
 
   expect_true(is.numeric(t_eff@seasons))
@@ -429,10 +466,12 @@ test_that("temporal_effects handles fractional seasons (coerces to numeric)", {
 })
 
 test_that("temporal_effects rejects zero season", {
+  skip_on_cran()
   expect_error(temporal_effects(seasons = 0), "seasons")
 })
 
 test_that("temporal_effects rejects negative seasons", {
+  skip_on_cran()
   expect_error(temporal_effects(seasons = c(-1, -7, -52)), "seasons")
 })
 
@@ -441,6 +480,7 @@ test_that("temporal_effects rejects negative seasons", {
 # ============================================================================
 
 test_that("get_temporal_effects returns list of specs before computation", {
+  skip_on_cran()
   data(denguedat)
 
   df_now <- denguedat |>
@@ -455,6 +495,7 @@ test_that("get_temporal_effects returns list of specs before computation", {
 })
 
 test_that("get_temporal_effect_cols returns character(0) before computation", {
+  skip_on_cran()
   data(denguedat)
 
   df_now <- denguedat |>
@@ -465,6 +506,7 @@ test_that("get_temporal_effect_cols returns character(0) before computation", {
 })
 
 test_that("get_temporal_effect_cols returns column names after computation", {
+  skip_on_cran()
   data(denguedat)
 
   df_computed <- denguedat |>
@@ -482,6 +524,7 @@ test_that("get_temporal_effect_cols returns column names after computation", {
 # ============================================================================
 
 test_that("remove_temporal_effects clears spec and computed cols", {
+  skip_on_cran()
   data(denguedat)
 
   df_computed <- denguedat |>
@@ -497,6 +540,7 @@ test_that("remove_temporal_effects clears spec and computed cols", {
 })
 
 test_that("replace_temporal_effects replaces spec with new one", {
+  skip_on_cran()
   data(denguedat)
 
   df_now <- denguedat |>
@@ -521,18 +565,21 @@ test_that("replace_temporal_effects replaces spec with new one", {
 # ============================================================================
 
 test_that("season_length defaults to numeric(0) when seasons is empty", {
+  skip_on_cran()
   t_eff <- temporal_effects()
   expect_equal(length(t_eff@season_length), 0L)
   expect_true(is.numeric(t_eff@season_length))
 })
 
 test_that("season_length defaults to 1 for a single season", {
+  skip_on_cran()
   t_eff <- temporal_effects(seasons = 52)
   expect_equal(t_eff@season_length, 1)
   expect_equal(t_eff@seasons, 52)
 })
 
 test_that("season_length = 1 gives period equal to seasons (backward compatible)", {
+  skip_on_cran()
   t_eff <- temporal_effects(seasons = c(7, 52, 365), season_length = 1)
   expect_equal(t_eff@seasons, c(7, 52, 365))
   expect_equal(t_eff@season_length, c(1, 1, 1))
@@ -541,12 +588,14 @@ test_that("season_length = 1 gives period equal to seasons (backward compatible)
 })
 
 test_that("scalar season_length is recycled to match seasons length", {
+  skip_on_cran()
   t_eff <- temporal_effects(seasons = c(52, 4), season_length = 7)
   expect_equal(t_eff@season_length, c(7, 7))
   expect_equal(t_eff@seasons * t_eff@season_length, c(364, 28))
 })
 
 test_that("vector season_length of same length as seasons is stored correctly", {
+  skip_on_cran()
   t_eff <- temporal_effects(seasons = c(52, 4), season_length = c(7, 13))
   expect_equal(t_eff@seasons, c(52, 4))
   expect_equal(t_eff@season_length, c(7, 13))
@@ -554,6 +603,7 @@ test_that("vector season_length of same length as seasons is stored correctly", 
 })
 
 test_that("duplicate periods are removed (season_length deduplication by period)", {
+  skip_on_cran()
   # seasons=52, season_length=7 → period 364; seasons=364, season_length=1 → period 364: duplicate
   t_eff <- temporal_effects(seasons = c(52, 364), season_length = c(7, 1))
   expect_equal(length(t_eff@seasons), 1L)
@@ -561,6 +611,7 @@ test_that("duplicate periods are removed (season_length deduplication by period)
 })
 
 test_that("season_length wrong length errors", {
+  skip_on_cran()
   expect_error(
     temporal_effects(seasons = c(52, 4), season_length = c(7, 7, 1)),
     "season_length"
@@ -568,17 +619,20 @@ test_that("season_length wrong length errors", {
 })
 
 test_that("season_length zero or negative errors", {
+  skip_on_cran()
   expect_error(temporal_effects(seasons = 52, season_length = 0), "season_length")
   expect_error(temporal_effects(seasons = 52, season_length = -7), "season_length")
 })
 
 test_that("seasons zero or negative errors", {
+  skip_on_cran()
   expect_error(temporal_effects(seasons = 0), "seasons")
   expect_error(temporal_effects(seasons = -52), "seasons")
   expect_error(temporal_effects(seasons = c(52, -1)), "seasons")
 })
 
 test_that("add_temporal_effects uses period (seasons * season_length) for column names", {
+  skip_on_cran()
   df <- data.frame(
     date        = as.Date(c("2020-01-01", "2020-07-01")),
     numeric_col = c(0, 26)
@@ -597,6 +651,7 @@ test_that("add_temporal_effects uses period (seasons * season_length) for column
 })
 
 test_that("add_temporal_effects season_length=1 gives same column names as before", {
+  skip_on_cran()
   df <- data.frame(
     date        = as.Date(c("2020-01-01", "2020-07-01")),
     numeric_col = c(0, 26)
@@ -613,6 +668,7 @@ test_that("add_temporal_effects season_length=1 gives same column names as befor
 })
 
 test_that("Fourier values are computed with the correct period", {
+  skip_on_cran()
   df <- data.frame(
     date        = as.Date("2020-01-01"),
     numeric_col = 0

@@ -55,7 +55,7 @@ whole reason two \code{diseasenowcasting} models can be weighted separately.}
 An object of class \code{c(method, "nowcast_engine")}.
 }
 \description{
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
 
 An \strong{engine} is one modelling package plus every argument that package
 needs. It is what \code{\link[=run_nowcast]{run_nowcast()}} and \code{\link[=nowcast_backtest]{nowcast_backtest()}} take, and it is the

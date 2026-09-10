@@ -3,32 +3,22 @@
 \name{revision_delay}
 \alias{revision_delay}
 \alias{diagnose_revision_delay}
-\alias{plot_revision_delay}
 \title{Compare revision delays between confirmed and retracted cases}
 \usage{
 diagnose_revision_delay(x, by = NULL)
-
-plot_revision_delay(x, by = NULL, linewidth = 1, palette = .tbl_now_palette())
 }
 \arguments{
 \item{x}{A \code{tbl_now} with a revision process.}
 
 \item{by}{Optional stratum column to compare within; \code{NULL} (default) pools.}
-
-\item{linewidth}{Multiplier on the box outlines of
-\code{plot_revision_delay()}. Default \code{1} (drawn at \code{0.5}).}
-
-\item{palette}{A named colour palette (see \code{\link[=tbl_now_palette]{tbl_now_palette()}}).}
 }
 \value{
 \code{diagnose_revision_delay()} returns a one-row-per-comparison \code{tibble} with
 \code{stratum}, \code{n_confirmed}, \code{n_retracted}, \code{median_confirmed},
 \code{median_retracted}, \code{difference}, \code{statistic} and \code{p.value}.
-
-\code{plot_revision_delay()} returns a \code{ggplot}.
 }
 \description{
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
 
 A negative result often comes back faster than a positive one -- or slower,
 if positives are prioritised. Either way the delay from report to resolution
@@ -37,7 +27,7 @@ assumes it is will be wrong about how many pending cases are still to be
 confirmed.
 
 \code{diagnose_revision_delay()} compares the two delay distributions;
-\code{plot_revision_delay()} shows them.
+\code{\link[=plot_delay_distribution]{plot_delay_distribution()}} with \code{axis = "revision"} shows them.
 }
 \section{The test}{
 
@@ -77,14 +67,16 @@ flu <- tbl_now(cases,
 diagnose_revision_delay(flu)
 
 # The same comparison as a picture.
-plot_revision_delay(flu)
+plot_delay_distribution(flu, axis = "revision")
 
 }
 \seealso{
 \link[=add]{add_revision_date()} to attach a revision process;
 \link[=censoring]{censor_revision_delays_above()} for resolutions that
 never arrive; \link{revised_cases} for counting the outcomes;
-\code{\link[=diagnose_drift]{diagnose_drift()}} for the same question about the \emph{reporting} delay over time.
+\code{\link[=plot_delay_distribution]{plot_delay_distribution()}} with \code{axis = "revision"} for the picture of the
+same comparison; \code{\link[=diagnose_drift]{diagnose_drift()}} for the same question about the
+\emph{reporting} delay over time.
 The \href{https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html}{\emph{Diagnosing a tbl_now} article}
 puts this alongside the other checks.
 }

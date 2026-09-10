@@ -1,0 +1,377 @@
+---
+title: "The nowcasting workflow 2: COVID-19 case surveillance with revisions in the United States"
+output: rmarkdown::html_vignette
+bibliography: ../references.bib
+link-citations: true
+vignette: >
+  %\VignetteEncoding{UTF-8}
+  %\VignetteIndexEntry{The nowcasting workflow 2: COVID-19 case surveillance with revisions in the United States}
+  %\VignetteEngine{knitr::rmarkdown}
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  out.width = "100%",
+  dpi = 150,
+  fig.align = "center"
+)
+options(tibble.width = Inf, width = 160, pillar.width = 160)
+options(pillar.print_max = 5, pillar.print_min = 5,
+        tibble.print_min = 5, dplyr.print_min = 5,
+        tibble.print_max = 5, dplyr.print_max = 5)
+
+has <- function(pkg) requireNamespace(pkg, quietly = TRUE)
+```
+
+This article is the sequel to [the nowcasting
+workflow](https://rodrigozepeda.github.io/tbl.now/articles/example.html).
+That one used **two** dates: the `event_date` for when a case happened, and the
+`report_date` for when it was registered in the system. This one adds the **third**
+`revision_date` for cases that can be revised to be either confirmed or rejected.
+
+In surveillance contexts, a record might arrive before anybody knows whether it is
+real case. A specimen might be collected, a case registered in the system, and only later
+does a laboratory settle it. Maybe additional information comes along that causes the patient
+to be de-registered (for example the case was registered twice or it did not belong to the population of interest). 
+`tbl.now` calls that third date the **revision date**, and models the following process
+
+$$
+\texttt{event} \to \texttt{report} \to \texttt{revision}
+$$
+
+A case that has not been settled yet is called `"pending"`: it has been reported,
+but may still need to be confirmed (and/or retracted).  **Pending cases are the reason the revision axis exists.** as it allows for a nowcast to _decrease_ based on how many we expect to be retracted. 
+
+For this tutorial, we assume you have read the [previous one](https://rodrigozepeda.github.io/tbl.now/articles/example.html) which included how to
+build a `tbl_now()`, `diagnose()`, and `summarise()`. We'll move through those sections quickly here
+while focusing only on specific methods for the third date. 
+
+```{r setup, message=FALSE, warning=FALSE}
+library(dplyr)
+library(lubridate)
+library(ggplot2)
+library(tbl.now)
+```
+
+## 1. The data
+
+`covid_us` is an aggregation of the U.S. CDC's individual-level COVID-19
+case surveillance database for 2020. Each row is a unique combination of
+three dates, a status and a sex, with the number of cases `n`.
+
+```{r load-data}
+data(covid_us)
+```
+
+```{r, eval = FALSE}
+covid_us
+```
+
+```{r, echo = FALSE}
+covid_us |> tail()
+```
+
+The three dates are the following:
+
+-   `onset_dt` — the **`event_date`**: symptoms begin.
+-   `pos_spec_dt` — the **`report_date`**: when the surveillance system first saw the case.
+-   `cdc_report_dt` — the **`revision_date``**: when the status as probable or confirmed
+was sent to the Center for Disease Control (CDC).
+
+The data also includes a `current_status` as the outcome that revision carries:
+
+```{r}
+covid_us |> count(current_status)
+```
+
+For our nowcast we will model as if we were standing on the first day of October 2020: `2020-10-01`. To do so we get all of those with reports before that date and we recode the cases that were confirmed after then as `Probable Case` (the confirmation would have not yet arrived by that date if they were confirmed later):s
+
+```{r}
+covid <- covid_us |>
+  filter(cdc_report_dt <= ymd("2020-10-01") & 
+         onset_dt      <= ymd("2020-10-01")) |> 
+  mutate(current_status = if_else(
+    cdc_report_dt >= ymd("2020-10-01"), "Probable Case", current_status))
+```
+
+## 2. Pending means *no settled revision*
+
+Here is the one rule that has no counterpart in the two-date workflow. 
+
+::: {.alert .alert-warning}
+A row is `"pending"` **because its revision has not yet given a confirmed or retracted result**, so a
+pending row must have a **missing** revision date.
+:::
+
+CDC's `"Probable Case"` is a case that met the clinical and
+epidemiological criteria without ever meeting the laboratory-confirmed
+definition. In this package's vocabulary those will be the `"pending"`. 
+
+Because the pending corresponds to the final confirmation and the probable
+cases have yet to be confirmed we will remove their report dates as the **final**
+confirmation has not happened for them and they have not settled yet as **Laboratory-confirmed** or not. 
+
+
+
+```{r}
+covid <- covid |>
+  mutate(cdc_report_dt = 
+           if_else(current_status == "Probable Case", NA_Date_, cdc_report_dt)) 
+```
+
+
+## 3. Building the `tbl_now`
+
+In the `tbl_now` we add the  `revision_date` and `revision_type`. Furthermore
+we will utilize `revision_levels` to translate the source's vocabulary into this package's:
+
+```{r build}
+covid <- covid |>
+  tbl_now(
+    event_date      = onset_dt,
+    report_date     = pos_spec_dt,
+    revision_date   = cdc_report_dt,
+    revision_type   = current_status,
+    revision_levels = c(
+      "Laboratory-confirmed case" = "confirmed",
+      "Probable Case"             = "pending"
+    ),
+    case_count = n,
+    strata     = sex,
+    data_type  = "count-incidence"
+  )
+```
+
+```{r}
+covid
+```
+
+The `tbl_now` now also has a `.revision_num` and `.revision_delay`.
+
+
+3. ## Diagnosing
+
+The `diagnose()` function runs the same structural checks as before with some additional checks
+for the third date.
+
+```{r diagnose}
+diagnose(covid)
+```
+
+Specifically we can see that Other, Missing and Unknown aren't very frequent strata. Hence we'll collapse them into a strata call "Other". To do so we use `mutate` to generate the new `sex_category` variable and then `change_strata()` to that so that `tbl.now` recognizes the new one:
+
+```{r}
+#You can see that the strata is sex
+get_strata(covid)
+
+#Create the new sex category column
+covid <- covid |> 
+  mutate(sex_category = if_else(sex %in% c("Female","Male"), sex, "Other"))
+
+#Substitute as the strata
+covid <- covid |> 
+  change_strata(sex_category)
+
+#and now is sex category
+get_strata(covid)
+```
+
+As we get no warnings from `diagnose()` we can conclude that the data is in good shape. 
+
+## 4. Describing the revision process
+
+Here we analyze some of the decision-process specific summaries. The other  diagnostic summaries are [already in the previous example](https://rodrigozepeda.github.io/tbl.now/articles/example.html) 
+
+### How much is still pending?
+
+The `prop_revision_type()` function splits the cases by outcome, overall and by stratum:
+
+```{r prop-revision}
+prop_revision_type(covid)
+```
+
+About 3% of cases are still pending, and the share barely moves between
+the two strata (which is a good sign, we don't want the confirmation to vary by sex!). 
+
+This same idea can be visualized with  `plot_revision_status()` which 
+shows how the confirmation has varied by time:
+
+```{r revision-status, fig.width=9, fig.height=4.5, fig.alt="Share of cases confirmed versus pending by report date, showing pending cases concentrating in the most recent weeks."}
+plot_revision_status(covid, by = "sex_category")
+```
+
+### How long does a case take to resolve?
+
+The `plot_delay_profiles()` draws the distributions of the delays between revision and report:
+
+```{r revision-delay, fig.width=9, fig.height=4.5, fig.alt="Distribution of the report-to-revision delay."}
+plot_delay_distribution(covid, axis = "revision")
+```
+
+### Does the outcome change the delay?
+
+The `diagnose_revision_delay()` function checks whether the revision-delay
+changes between "confirmed" and "retracted" cases. In our case because 
+we don't have retracted cases this function returns `NA`. However, its
+usefulness is to be able to diangose whether our models require just one 
+revision-delay distirbution or two (one for confirmed and one for retracted cases).
+
+```{r revision-delay-test, warning=FALSE}
+diagnose_revision_delay(covid)
+```
+
+
+### Getting the cases that survived the revision
+
+The `*_revised_cases()` getters give you a slice of
+the latest confirmed cases:
+
+```{r revised-cases}
+get_latest_revised_cases(covid, type = "confirmed") 
+```
+
+
+## 6. Looking at the data
+
+`autoplot()` draws the usual grid, in green for the **epidemic** process
+and red for the **reporting** one and yellow for the **revision**:
+
+```{r autoplot, fig.width=11, fig.height=13, message=FALSE, warning=FALSE, fig.alt="A diagnostic grid of the weekly COVID-19 data: delay distribution, epidemic curve, calendar effects and periodograms."}
+autoplot(covid)
+```
+
+
+## 7. Nowcasting
+
+The 
+[`diseasenowcasting`](https://rodrigozepeda.github.io/diseasenowcasting/) package
+includes functions for revised data with its `revision_process()`
+
+```{r engine, eval = has("diseasenowcasting"), message=FALSE}
+library(diseasenowcasting)
+
+covid_fit <- covid |> 
+  run_nowcast(engine = engine_diseasenowcasting(label = "hsgp"))
+```
+
+We can see the results with `autoplot()` which shows a more
+conservative nowcast of the overall confirmed vs the total number of observed:
+
+```{r fit-plot, eval = has("diseasenowcasting"), message=FALSE, warning=FALSE, fig.width=9, fig.height=4.5, fig.alt="Nowcast by sex: grey reported columns with a green prediction fan over the final weeks."}
+autoplot(covid_fit, date_lim = c(ymd("2020-08-01"), ymd("2020-10-05")))
+```
+
+`tidy()` gives the same thing as a table:
+
+```{r, eval=FALSE}
+tidy(covid_fit)
+```
+
+```{r fit-tidy, echo = FALSE, eval = has("diseasenowcasting")}
+tidy(covid_fit) |> arrange(event_date) |> tail()
+```
+
+## 8. Backtesting
+
+`nowcast_backtest()` walks back through time: for each past date it
+truncates the data to what was known **then**, refits every engine, and
+scores the result against what the series eventually reached.
+
+We will compare our model against a second `diseasenowcasting` configuration.
+Both carry the same confirmation-only revision process; they differ in the
+**epidemic** components  with the new one being an autorregresive model:
+
+```{r engine2, eval = has("diseasenowcasting")}
+engine_ar <- engine_diseasenowcasting(
+  model = model(
+    epidemic = ar1_epidemic(),
+  ),
+  label = "ar1" #We add the label for the backtest
+) 
+```
+
+
+```{r fit2, eval = has("diseasenowcasting"), message=FALSE, warning=FALSE}
+covid_fit_ar <- covid |> run_nowcast(engine = engine_ar)
+```
+
+```{r backtest, eval = has("diseasenowcasting"), message=FALSE, warning=FALSE}
+covid_backtest <- covid |>
+  nowcast_backtest(
+    engine_diseasenowcasting(label = "hsgp"),
+    engine_ar,
+    now_dates = ymd(c("2020-08-16", "2020-08-30", "2020-09-13")),
+    seed      = 20260909
+  )
+```
+
+Printing it gives the weighted interval score (`wis`), the median absolute
+error (`ae_median`) and the coverage of the nominal intervals:
+
+```{r backtest-print, eval = has("diseasenowcasting")}
+covid_backtest
+```
+
+
+## 9. Ensembling
+
+An ensemble averages models, on the theory that no single one is right.
+The members here are the two fits, and the backtest supplies the weights:
+
+```{r ensemble, eval = has("diseasenowcasting"), message=FALSE, warning=FALSE}
+covid_ensemble <- nowcast_ensemble(
+  covid_fit,
+  covid_fit_ar,
+  weights  = "inverse_score",
+  backtest = covid_backtest
+)
+```
+
+`weights = "inverse_score"` gives each member a weight inversely
+proportional to its backtest score, so the members are matched to their
+scores:
+
+```{r ensemble-plot, eval = has("diseasenowcasting"), message=FALSE, warning=FALSE, fig.width=9, fig.height=4.5, fig.alt="The ensemble nowcast: grey reported columns with a green prediction fan."}
+autoplot(covid_ensemble, date_lim = c(ymd("2020-08-01"), ymd("2020-10-05")))
+```
+
+For ensembles of more than two models, and for what the different
+weighting schemes do, see the article on [ensemble
+nowcasting](https://rodrigozepeda.github.io/tbl.now/articles/ensemble-nowcasting.html).
+
+## Summary
+
+What the third date added to the workflow:
+
+1.  **A declaration**: `revision_date`, `revision_type` and
+    `revision_levels` in the `tbl_now()` call.
+
+2.  **A rule**: a `"pending"` row carries **no** revision date. Anything
+    that does carry one is settled, and its outcome must be `"confirmed"`
+    or `"retracted"`.
+
+3.  **Descriptions**: `prop_revision_type()`, `plot_revision_status()`,
+    `plot_delay_distribution(axis = "revision")` and the `*_revised_cases()`
+    getters.
+
+4.  **A test**: `diagnose_revision_delay()`, which asks whether the
+    outcome changes how long a case takes to settle.
+
+Everything else is the same as it was with two dates.
+
+```{r learning-more, echo=FALSE, results="asis"}
+# The fragment is looked up by ABSOLUTE path via system.file(), never by a
+# relative one. See the note in `example.Rmd` for why.
+cat(
+  knitr::knit_child(
+    system.file("fragments", "learning-more.Rmd", package = "tbl.now"),
+    quiet = TRUE
+  ),
+  sep = "\n"
+)
+```

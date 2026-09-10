@@ -59,7 +59,7 @@ A \link{tbl_nowcast} whose \code{fit} property is the list of member nowcasts
 and whose \code{metadata} holds the \code{weights} and the combination \code{type}.
 }
 \description{
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
 
 Takes the nowcasts produced by different modelling packages on the \emph{same}
 \code{tbl_now} and combines them into a single \link{tbl_nowcast}. Ensembles are

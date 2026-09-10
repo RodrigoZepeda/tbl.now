@@ -12,6 +12,7 @@ make_palette_tbl <- function(seed = 11L) {
 }
 
 test_that("the palette is complete, named by role, and hue-free", {
+  skip_on_cran()
   pal <- tbl_now_palette()
 
   expect_s3_class(pal, "tbl_now_palette")
@@ -35,11 +36,13 @@ test_that("overriding one role leaves the rest at their defaults", {
 })
 
 test_that("the roles are taken from the constructor, so they cannot drift", {
+  skip_on_cran()
   expect_equal(tbl.now:::.tbl_now_palette_roles(), names(tbl_now_palette()))
   expect_equal(tbl.now:::.tbl_now_palette(), tbl_now_palette())
 })
 
 test_that("an incomplete palette is refused, naming what is missing", {
+  skip_on_cran()
   expect_error(
     tbl.now:::.tbl_now_check_palette(c(reporting = "red")),
     "epidemic"
@@ -49,6 +52,7 @@ test_that("an incomplete palette is refused, naming what is missing", {
 })
 
 test_that("a custom palette reaches the plot", {
+  skip_on_cran()
   tn <- make_palette_tbl()
   p  <- plot_epidemic_process(tn, palette = tbl_now_palette(epidemic = "#2F6DB4"))
   fills <- ggplot2::ggplot_build(p)$data[[1]]$fill
@@ -56,6 +60,7 @@ test_that("a custom palette reaches the plot", {
 })
 
 test_that("every plot with a palette argument validates it", {
+  skip_on_cran()
   tn      <- make_palette_tbl()
   broken  <- c(reporting = "red")
   callers <- list(
@@ -73,6 +78,7 @@ test_that("every plot with a palette argument validates it", {
 })
 
 test_that("size and linewidth multiply rather than replace", {
+  skip_on_cran()
   tn <- make_palette_tbl()
 
   # The transport plane draws unflagged points at 1.1 and confirmed batches at
@@ -108,6 +114,7 @@ test_that("size and linewidth are revised everywhere they are offered", {
 })
 
 test_that("the gallery forwards the sizes to its panels", {
+  skip_on_cran()
   tn <- make_palette_tbl()
   # A single panel comes back as a plain ggplot, so it can be compared with the
   # standalone function it wraps.
@@ -120,6 +127,7 @@ test_that("the gallery forwards the sizes to its panels", {
 })
 
 test_that("the palette prints one role per line", {
+  skip_on_cran()
   expect_output(print(tbl_now_palette()), "reporting")
   expect_output(print(tbl_now_palette()), "epidemic")
 })

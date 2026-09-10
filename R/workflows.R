@@ -29,21 +29,25 @@
 #' the extension point for additional metrics, summaries, pairwise comparisons,
 #' and relative skill.
 #'
+#' @return `NULL`, invisibly. This page documents workflow choices rather than
+#'   a callable object.
+#'
 #' @examples
-#' \dontrun{
-#' fit <- run_nowcast(data, engine_diseasenowcasting())
+#' data(denguedat)
+#' recent <- subset(denguedat, onset_week >= as.Date("2010-06-01"))
+#' dengue <- tbl_now(recent,
+#'   event_date = onset_week, report_date = report_week, verbose = FALSE
+#' )
+#' fit <- run_nowcast(dengue, example_engine())
 #' autoplot(fit)
 #'
 #' bt <- nowcast_backtest(
-#'   data,
-#'   engine_diseasenowcasting(label = "structural"),
-#'   engine_epinowcast(label = "renewal")
+#'   dengue,
+#'   example_engine(label = "carry forward"),
+#'   now_dates = as.Date(c("2010-10-04", "2010-11-15")),
+#'   verbose = FALSE
 #' )
-#' relative <- bt |>
-#'   scoringutils::as_forecast_quantile() |>
-#'   scoringutils::score() |>
-#'   scoringutils::add_relative_skill(metric = "wis")
-#' }
+#' head(bt$scores)
 #'
 #' @name tbl_now_workflows
 NULL

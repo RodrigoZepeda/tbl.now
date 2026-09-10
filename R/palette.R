@@ -47,6 +47,15 @@
 #' The remaining roles are furniture — text, gridlines, reference lines and the
 #' three data states that are not a process (`zero`, `pending`, `observed`).
 #'
+#' # Revision outcomes
+#'
+#' A panel that splits the revision axis by outcome (see the
+#' `by_revision_type` argument of [plot_delay_distribution()] and
+#' [plot_reporting_process()]) draws `confirmed` in the `revision` colour,
+#' `pending` in `surface`, `retracted` in `retracted` and an unrecorded outcome
+#' in `neutral`. Ochre and blue are the two resolutions, white is the case that
+#' has not resolved, grey the one whose outcome was never written down.
+#'
 #' @param reporting Strong colour of the reporting process (bars, medians,
 #'   flagged points).
 #' @param reporting_light Attenuated reporting colour (box fills, wide
@@ -56,15 +65,17 @@
 #' @param epidemic_mid Mid-tone epidemic colour (the middle stop of the count
 #'   ramp).
 #' @param epidemic_dark Darkest epidemic colour (dense overplotted curves).
-#' @param revision Strong colour of the revision process.
+#' @param revision Strong colour of the revision process, and of a `confirmed`
+#'   outcome on it.
 #' @param revision_light Attenuated revision colour (box fills).
+#' @param retracted A report the revision process took back. The counterpart of
+#'   `revision`, so that the two resolutions can be told apart at a glance.
 #' @param ink Body text, axis text and titles.
 #' @param ink_muted Secondary text: subtitles, captions, immature-region shading.
 #' @param ink_inverse Text drawn *on top of* a filled label.
 #' @param surface Fill of a label or a highlight drawn over the data.
 #' @param surface_muted Palest surface: the low end of a sequential ramp.
-#' @param surface_dark Deep surface for a region with no estimate (the
-#'   scalogram's cone of influence).
+#' @param surface_dark Deep surface for a region with no estimate.
 #' @param grid_major Major gridlines the package draws itself.
 #' @param grid_minor Minor gridlines the package draws itself.
 #' @param guide Weak reference lines (a zero line, the low end of a count ramp).
@@ -106,6 +117,7 @@ tbl_now_palette <- function(
   epidemic_dark   = "#334335",
   revision      = "#C79800",
   revision_light = "#E6CE80",
+  retracted       = "#3E6F9E",
   ink             = "#262626",
   ink_muted       = "#607060",
   ink_inverse     = "#FFFFFF",
@@ -131,6 +143,7 @@ tbl_now_palette <- function(
     epidemic_dark   = epidemic_dark,
     revision      = revision,
     revision_light = revision_light,
+    retracted       = retracted,
     ink             = ink,
     ink_muted       = ink_muted,
     ink_inverse     = ink_inverse,
@@ -268,6 +281,89 @@ print.tbl_now_palette <- function(x, ...) {
       subtitle = "Epidemic (event-date) process"
     )
   }
+}
+
+#' The canonical revision outcomes, and the colours they are drawn in
+#'
+#' The four levels are fixed and in resolution order, so a panel that shows only
+#' `confirmed` and `retracted` still puts them the same way round as one that
+#' also has pending cases in it.
+#'
+#' @return A character vector of the four outcome levels.
+#'
+#' @keywords internal
+#' @noRd
+.tbl_now_revision_type_levels <- function() {
+  c("confirmed", "pending", "retracted", "unknown")
+}
+
+#' Fill colours for the revision outcomes
+#'
+#' Ochre and blue are the two resolutions -- `confirmed` shares the colour of
+#' the revision process it belongs to, `retracted` is its counterpart. White is
+#' a case that has not resolved at all, grey one whose outcome was never
+#' recorded. Every one of them is a palette role, so the scale re-themes with
+#' the rest of the package.
+#'
+#' @param palette A named colour palette (see [tbl_now_palette()]).
+#'
+#' @return A named character vector, one colour per level of
+#'   `.tbl_now_revision_type_levels()`.
+#'
+#' @keywords internal
+#' @noRd
+.tbl_now_revision_type_fills <- function(palette) {
+  c(
+    confirmed = palette[["revision"]],
+    pending   = palette[["surface"]],
+    retracted = palette[["retracted"]],
+    unknown   = palette[["neutral"]]
+  )
+}
+
+#' The `scale_fill_manual()` for a revision-outcome split
+#'
+#' Unused levels are dropped from the legend -- a `pending` case has no
+#' resolution date and so no revision delay, and a legend key that can never
+#' appear in the panel is furniture. The values are named, so the colours stay
+#' attached to their outcomes whichever of them are present.
+#'
+#' @param palette A named colour palette (see [tbl_now_palette()]).
+#'
+#' @return A \pkg{ggplot2} fill scale.
+#'
+#' @keywords internal
+#' @noRd
+.tbl_now_revision_type_scale <- function(palette) {
+  ggplot2::scale_fill_manual(
+    name = NULL,
+    values = .tbl_now_revision_type_fills(palette),
+    drop = TRUE
+  )
+}
+
+#' Recode a revision-type column onto the four canonical outcome levels
+#'
+#' A missing outcome is two different things depending on whether the case has
+#' a resolution date: without one it is still `"pending"`, with one it resolved
+#' in a way the source never wrote down, which is `"unknown"`. Collapsing both
+#' to `NA` would report an unrecorded outcome as an unresolved case.
+#'
+#' @param type A character or factor vector of revision types.
+#' @param has_date Logical vector, `TRUE` where a revision date is present.
+#'
+#' @return A factor with the levels of `.tbl_now_revision_type_levels()`.
+#'
+#' @keywords internal
+#' @noRd
+.tbl_now_revision_type_factor <- function(type, has_date) {
+  outcome <- as.character(type)
+  levels <- .tbl_now_revision_type_levels()
+  outcome[!outcome %in% levels] <- NA_character_
+  outcome[is.na(outcome)] <- ifelse(
+    has_date[is.na(outcome)], "unknown", "pending"
+  )
+  factor(outcome, levels = levels)
 }
 
 #' Shared ggplot2 theme for the diagnostic panels

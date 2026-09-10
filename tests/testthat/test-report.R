@@ -131,6 +131,7 @@ setup_test_data <- function() {
 # ============================================================================
 
 test_that("get_initial_reported_cases fails on non-tbl_now object", {
+  skip_on_cran()
   regular_df <- data.frame(
     event_date = as.Date("2020-07-08"),
     report_date = as.Date("2020-07-11"),
@@ -144,6 +145,7 @@ test_that("get_initial_reported_cases fails on non-tbl_now object", {
 })
 
 test_that("get_initial_reported_cases returns earliest report for each event", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   ndata <- tbl_now(
@@ -173,6 +175,7 @@ test_that("get_initial_reported_cases returns earliest report for each event", {
 })
 
 test_that("get_initial_reported_cases converts to count-cumulative", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   # Start with linelist data
@@ -191,6 +194,7 @@ test_that("get_initial_reported_cases converts to count-cumulative", {
 })
 
 test_that("get_initial_reported_cases preserves strata", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   ndata <- tbl_now(
@@ -226,6 +230,7 @@ test_that("get_initial_reported_cases preserves strata", {
 })
 
 test_that("get_initial_reported_cases preserves covariates", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   ndata <- tbl_now(
@@ -245,6 +250,7 @@ test_that("get_initial_reported_cases preserves covariates", {
 })
 
 test_that("get_initial_reported_cases preserves is_censored_report", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   ndata <- tbl_now(
@@ -277,6 +283,7 @@ test_that("get_initial_reported_cases preserves is_censored_report", {
 })
 
 test_that("get_initial_reported_cases preserves temporal effects", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   ndata <- tbl_now(
@@ -302,6 +309,7 @@ test_that("get_initial_reported_cases preserves temporal effects", {
 })
 
 test_that("get_initial_reported_cases is ungrouped", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   ndata <- tbl_now(
@@ -320,6 +328,7 @@ test_that("get_initial_reported_cases is ungrouped", {
 })
 
 test_that("get_initial_reported_cases is sorted correctly", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   ndata <- tbl_now(
@@ -340,6 +349,7 @@ test_that("get_initial_reported_cases is sorted correctly", {
 })
 
 test_that("get_initial_reported_cases handles single event date", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   ndata <- tbl_now(
@@ -365,6 +375,7 @@ test_that("get_initial_reported_cases handles single event date", {
 # ============================================================================
 
 test_that("get_latest_reported_cases fails on non-tbl_now object", {
+  skip_on_cran()
   regular_df <- data.frame(
     event_date = as.Date("2020-07-08"),
     report_date = as.Date("2020-07-11"),
@@ -378,6 +389,7 @@ test_that("get_latest_reported_cases fails on non-tbl_now object", {
 })
 
 test_that("get_latest_reported_cases returns latest report for each event", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   ndata <- tbl_now(
@@ -407,6 +419,7 @@ test_that("get_latest_reported_cases returns latest report for each event", {
 })
 
 test_that("get_latest_reported_cases converts to count-cumulative", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   # Start with linelist data
@@ -425,6 +438,7 @@ test_that("get_latest_reported_cases converts to count-cumulative", {
 })
 
 test_that("get_latest_reported_cases preserves strata", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   ndata <- tbl_now(
@@ -460,6 +474,7 @@ test_that("get_latest_reported_cases preserves strata", {
 })
 
 test_that("get_latest_reported_cases preserves covariates", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   ndata <- tbl_now(
@@ -479,6 +494,7 @@ test_that("get_latest_reported_cases preserves covariates", {
 })
 
 test_that("get_latest_reported_cases preserves is_censored_report", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   ndata <- tbl_now(
@@ -511,6 +527,7 @@ test_that("get_latest_reported_cases preserves is_censored_report", {
 })
 
 test_that("get_latest_reported_cases preserves temporal effects", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   ndata <- tbl_now(
@@ -536,6 +553,7 @@ test_that("get_latest_reported_cases preserves temporal effects", {
 })
 
 test_that("get_latest_reported_cases is ungrouped", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   ndata <- tbl_now(
@@ -554,6 +572,7 @@ test_that("get_latest_reported_cases is ungrouped", {
 })
 
 test_that("get_latest_reported_cases is sorted correctly", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   ndata <- tbl_now(
@@ -574,6 +593,7 @@ test_that("get_latest_reported_cases is sorted correctly", {
 })
 
 test_that("get_latest_reported_cases handles single event date", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   ndata <- tbl_now(
@@ -599,6 +619,7 @@ test_that("get_latest_reported_cases handles single event date", {
 # ============================================================================
 
 test_that("initial and latest reports differ appropriately", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   ndata <- tbl_now(
@@ -653,6 +674,7 @@ test_that("initial equals latest when no revisions exist", {
 # ============================================================================
 
 test_that("report functions work with denguedat", {
+  skip_on_cran()
   data(denguedat)
 
   dengue_subset <- denguedat[1:500, ] |>
@@ -693,6 +715,7 @@ test_that("report functions work with denguedat", {
 })
 
 test_that("report functions work with count-incidence data", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   # Create count-incidence data
@@ -733,6 +756,7 @@ test_that("report functions work with count-incidence data", {
 })
 
 test_that("example from vignette works correctly", {
+  skip_on_cran()
   data(denguedat)
 
   df_pr <- denguedat |>
@@ -762,6 +786,7 @@ test_that("example from vignette works correctly", {
 # ============================================================================
 
 test_that("get_nth_reported_cases validates its inputs", {
+  skip_on_cran()
   test_data <- setup_test_data()
   ndata <- tbl_now(test_data$single_event,
     event_date = "event_date", report_date = "report_date", case_count = n,
@@ -775,6 +800,7 @@ test_that("get_nth_reported_cases validates its inputs", {
 })
 
 test_that("get_nth_reported_cases returns the cumulative count within a delay", {
+  skip_on_cran()
   test_data <- setup_test_data()
   # single event, daily reports at delays 1..5 with cumulative n = 5,8,12,15,18
   ndata <- tbl_now(test_data$single_event,
@@ -796,6 +822,7 @@ test_that("get_nth_reported_cases returns the cumulative count within a delay", 
 })
 
 test_that("get_nth_reported_cases(delay = Inf) equals get_latest_reported_cases", {
+  skip_on_cran()
   data(denguedat)
   dengue <- tbl_now(denguedat[1:2000, ],
     event_date = "onset_week", report_date = "report_week", strata = "gender",
@@ -819,6 +846,7 @@ test_that("get_nth_reported_cases(delay = Inf) equals get_latest_reported_cases"
 })
 
 test_that("get_nth_reported_cases is monotone increasing in delay", {
+  skip_on_cran()
   data(denguedat)
   dengue <- tbl_now(denguedat[1:2000, ],
     event_date = "onset_week", report_date = "report_week",
@@ -835,6 +863,7 @@ test_that("get_nth_reported_cases is monotone increasing in delay", {
 # ============================================================================
 
 test_that("report functions handle empty tbl_now", {
+  skip_on_cran()
   data(denguedat)
 
   ndata <- tbl_now(

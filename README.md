@@ -23,9 +23,11 @@ dates, report dates, strata, temporal covariates, and related metadata
 in a shape compatible with many frameworks, including
 [diseasenowcasting](https://rodrigozepeda.github.io/diseasenowcasting/),
 [epinowcast](https://package.epinowcast.org/),
-[NobBS](https://cran.r-project.org/web/packages/NobBS/index.html),
-[surveillance](https://cran.r-project.org/web/packages/surveillance/index.html),
-[EpiNow2](https://epiforecasts.io/EpiNow2/), and more.
+[NobBS](https://CRAN.R-project.org/package=NobBS),
+[surveillance](https://CRAN.R-project.org/package=surveillance),
+[EpiNow2](https://epiforecasts.io/EpiNow2/), and more. Finally, it also
+standardizes the prediction engines and their results for plotting,
+scoring, comparing, and ensembling models.
 
 A `tbl_now` keeps track of the attributes needed for a nowcasting
 exercise, so `dplyr` transformations preserve the relevant nowcasting
@@ -129,36 +131,16 @@ An optional third date indicating when the report was resolved (see
 
 <td align="left">
 
-<code>revision_type</code>
+<code>revision_type</code>, <code>revision_levels</code>
 </td>
 
 <td align="left">
 
 What the revision date resolved to. Only <code>confirmed</code>,
 <code>retracted</code>, <code>pending</code> or <code>NA</code> are ever
-stored; use <code>revision_levels</code> for data recorded in other
-words. <em>Optional</em>.
-</td>
-
-</tr>
-
-<tr>
-
-<td align="center">
-
-<img src="man/figures/revision_type.svg" height="80" style="height:80px;width:auto;max-width:80px;" alt="revision_levels">
-</td>
-
-<td align="left">
-
-<code>revision_levels</code>
-</td>
-
-<td align="left">
-
-A named dictionary translating the labels in <code>revision_type</code>
-into those four, e.g. <code>c(positive = “confirmed”)</code>.
-<em>Optional</em>.
+stored; set <code>revision_levels</code> as a named dictionary mapping
+the data’s labels into those four ( e.g. <code>c(positive =
+“confirmed”)</code>). <em>Optional</em>.
 </td>
 
 </tr>
@@ -297,33 +279,14 @@ The time grid each date lives on: <code>days</code>, <code>weeks</code>,
 
 <td align="left">
 
-<code>is_censored_report</code>
+<code>is_censored_report</code>,<code>is_censored_revision</code>
 </td>
 
 <td align="left">
 
-Flags report dates that are only an upper bound, e.g. a batch or
-back-fill dump. <em>Optional</em>.
-</td>
-
-</tr>
-
-<tr>
-
-<td align="center">
-
-<img src="man/figures/censoring.svg" height="80" style="height:80px;width:auto;max-width:80px;" alt="is_censored_revision">
-</td>
-
-<td align="left">
-
-<code>is_censored_revision</code>
-</td>
-
-<td align="left">
-
-The same on the revision axis: flags rows whose <em>revision</em> delay
-is a bound rather than a measurement. <em>Optional</em>.
+Flags dates from either the report or the revision axis that are only an
+upper bound, i.e. the true report happened <i>before</i> the date given
+in the database. <em>Optional</em>.
 </td>
 
 </tr>
@@ -371,6 +334,25 @@ denguedat <- denguedat |>
     event_date = onset_week,
     strata = gender
   ) 
+
+#Which is just a tibble with extra attributes
+denguedat
+#> # A tibble:  1,652 × 6
+#> # Data type: "linelist"
+#> # Frequency: Event: `weeks` | Report: `weeks`
+#>   onset_week   report_week   gender   .event_num .report_num .delay
+#>   <date>       <date>        <chr>         <dbl>       <dbl>  <dbl>
+#>   [event_date] [report_date] [strata]      [...]       [...]  [...]
+#> 1 2005-01-03   2005-01-17    Male              0           2      2
+#> 2 2005-01-03   2005-01-10    Female            0           1      1
+#> 3 2005-01-03   2005-01-10    Female            0           1      1
+#> 4 2005-01-03   2005-01-10    Male              0           1      1
+#> 5 2005-01-03   2005-01-10    Male              0           1      1
+#> # ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+#> # Now: 2005-09-26 | Event date: "onset_week" | Report date: "report_week"
+#> # Strata: "gender"
+#> # ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+#> # ℹ 1,647 more rows
 ```
 
 Once transformed, it can help you diagnose data problems (see [this
@@ -385,7 +367,7 @@ autoplot(denguedat)
 
 And it can be used to run any of multiple nowcast libraries through the
 `engine()` and `run_nowcast` specifications (see [this
-article](https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html).
+article](https://rodrigozepeda.github.io/tbl.now/articles/nowcasting-models.html)).
 For example, [baselinenowcast](https://baselinenowcast.epinowcast.org/):
 
 ``` r
@@ -419,7 +401,7 @@ article](https://rodrigozepeda.github.io/tbl.now/articles/ensemble-nowcasting.ht
 
 ``` r
 dengue_ensemble <- nowcast_ensemble(
-  baselinenowcast  = dengue_nowcast_1,
+  baselinenowcast   = dengue_nowcast_1,
   diseasenowcasting = dengue_nowcast_2
 )
 ```
@@ -431,11 +413,10 @@ autoplot(dengue_ensemble)
 <img src="man/figures/README-unnamed-chunk-9-1.png" alt="" width="100%" class="r-plt" />
 
 If this seems as exciting to you as it is to us, install the development
-version from [GitHub](https://github.com/):
+version from [R universe](https://rodrigozepeda.r-universe.dev/tbl.now):
 
 ``` r
-install.packages("tbl.now", repos = c("https://rodrigozepeda.r-universe.dev",
-getOption("repos")))
+install.packages("tbl.now", repos = c("https://rodrigozepeda.r-universe.dev", getOption("repos")))
 ```
 
 and checkout our articles starting with the
@@ -443,14 +424,26 @@ and checkout our articles starting with the
 
 <!-- Single source for "Learning more"; pulled in as a knitr child by README.Rmd and every article. Edit on `learning.more.Rmd`.-->
 
+<div class="alert alert-info">
+
+If you have any questions or comments regarding the contents of this
+article please [open an issue on
+Github](https://github.com/RodrigoZepeda/tbl.now/issues/new).
+
+</div>
+
 ## Learning more
 
+- End-to-end tutorial on real life surveillance data. Takes you from
+  cleaning to diagnosing errors in the data to nowcasting:
+  <https://rodrigozepeda.github.io/tbl.now/articles/example.html>
+- The same tutorial with a **revision process** — the optional third
+  date, where a reported case is later confirmed, retracted or left
+  pending:
+  <https://rodrigozepeda.github.io/tbl.now/articles/example_revisions.html>
 - Introduction vignette:
   <https://rodrigozepeda.github.io/tbl.now/articles/tbl.now.html> for
   the full anatomy of a `tbl_now`, data types, and temporal effects.
-- End-to-end tutorial on real, messy surveillance data — cleaning,
-  diagnostics and nowcasting:
-  <https://rodrigozepeda.github.io/tbl.now/articles/example.html>
 - Tutorial on diagnosing your dataset — what is in it, what is
   structurally wrong with it, and detecting batches and other
   reporting-delay artifacts:

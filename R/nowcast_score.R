@@ -349,7 +349,7 @@
 
 #' Score a nowcast against observed data
 #'
-#' @description `r lifecycle::badge('experimental')`
+#' @description `r lifecycle::badge('stable')`
 #'
 #' A nowcast is a claim about numbers that are not in yet. Once the late reports
 #' arrive you can ask how good the claim was.
@@ -357,11 +357,14 @@
 #' * `score_nowcast()` scores it here: the **weighted interval score** (WIS,
 #'   lower is better), the absolute error of the median, and whether the truth
 #'   fell inside the 50% and 90% intervals -- one row per event date and stratum.
-#' * `as_forecast_point()` hands the median prediction and the same truth to
-#'   \pkg{scoringutils}, so you can use its point-score functions and plots.
+#' * `scoringutils::as_forecast_point()` hands the median prediction and the
+#'   same truth to \pkg{scoringutils}, so you can use its point-score functions
+#'   and plots.
 #' * `scoringutils::as_forecast_quantile()` and
-#'   `scoringutils::as_forecast_sample()` also accept these objects directly
-#'   when \pkg{scoringutils} is installed.
+#'   `scoringutils::as_forecast_sample()` accept the same objects directly.
+#'
+#' All three are \pkg{scoringutils} generics; this package only supplies the
+#' methods, so call them qualified (or after `library(scoringutils)`).
 #'
 #' In each case `truth` is a `tbl_now` seen *later*, after the information the
 #' nowcast was predicting has arrived. The observed counts are computed from
@@ -370,8 +373,7 @@
 #' `truth_axis = "revision"` uses [get_latest_revised_cases()]. There is no
 #' observed column to name; the count column is read from the `tbl_now`.
 #'
-#' @param x For `score_nowcast()`, a [tbl_nowcast]. For `as_forecast_point()`, a
-#'   [tbl_nowcast] (including an ensemble) or a [nowcast_backtest()].
+#' @param x A [tbl_nowcast].
 #' @param truth The `tbl_now` the nowcast is scored against -- normally the
 #'   *full* object, still holding the reports or revisions that arrived after
 #'   the nowcast's `now`. Its observed counts per event date are worked out from
@@ -397,21 +399,13 @@
 #' columns, and the columns `.observed`, `wis`, `ae_median`, `coverage_50` and
 #' `coverage_90` -- one row per event date and stratum.
 #'
-#' `as_forecast_point()` accepts either a single [tbl_nowcast] (including one
-#' returned by [nowcast_ensemble()]) or a [nowcast_backtest()]. It returns a
-#' `forecast_point` object from \pkg{scoringutils}, using the nowcast's median
-#' quantile as `predicted` and the resolved truth as `observed`.
-#'
 #' The `scoringutils::as_forecast_*()` methods return the corresponding
 #' `forecast_quantile`, `forecast_sample` or `forecast_point` object from
-#' \pkg{scoringutils}.
-#'
-#' When \pkg{scoringutils} is installed, calling its coercion generic directly
-#' is equivalent: `scoringutils::as_forecast_quantile(x, truth = truth)` and
-#' `scoringutils::as_forecast_point(x, truth = truth)` work for a
-#' [tbl_nowcast], an ensemble, and a [nowcast_backtest()]. A backtest already
-#' carries the truth it was scored against, so its `truth` can normally be
-#' omitted.
+#' \pkg{scoringutils}. Each accepts a [tbl_nowcast], an ensemble and a
+#' [nowcast_backtest()]; `scoringutils::as_forecast_point()` keeps the nowcast's
+#' median quantile as `predicted` and the resolved truth as `observed`. A
+#' backtest already carries the truth it was scored against, so its `truth` can
+#' normally be omitted.
 #'
 #' [scoringutils::as_forecast_sample()] also accepts those objects when they
 #' carry posterior draws. Draws are retained by a `linear_pool` ensemble, but
@@ -462,7 +456,7 @@
 #'
 #' # The same comparison handed to scoringutils as a point forecast.
 #' if (requireNamespace("scoringutils", quietly = TRUE)) {
-#'   as_forecast_point(nc, truth = truth)
+#'   scoringutils::as_forecast_point(nc, truth = truth)
 #' }
 #'
 #' # With a real model, `truth` is the full object and the nowcast is fitted to
@@ -517,7 +511,7 @@ score_nowcast <- function(x, truth = NULL, truth_axis = c("report", "revision"),
 
 #' Refit several methods at past `now` dates and score them
 #'
-#' @description `r lifecycle::badge('experimental')`
+#' @description `r lifecycle::badge('stable')`
 #'
 #' Walks back through time: for every date in `now_dates`, the `tbl_now` is
 #' truncated to the reports that were available then, each method is refitted on
@@ -722,26 +716,28 @@ nowcast_backtest <- function(x, ..., now_dates = NULL, horizon = 4,
         set.seed(.backtest_seed(seed, label, now_date))
       }
 
-      fit_error <- NULL
       started <- proc.time()[["elapsed"]]
-      nowcast <- tryCatch(
-        run_nowcast(snapshot, this_engine, verbose = FALSE),
+      attempt <- tryCatch(
+        list(
+          nowcast = run_nowcast(snapshot, this_engine, verbose = FALSE),
+          error = NULL
+        ),
         error = function(e) {
-          fit_error <<- conditionMessage(e)
           message <- c(
             "Engine {.val {label}} failed at {.val {now_date}}.",
             "x" = conditionMessage(e)
           )
           if (on_error == "abort") cli::cli_abort(message) else cli::cli_warn(message)
-          NULL
+          list(nowcast = NULL, error = conditionMessage(e))
         }
       )
+      nowcast <- attempt$nowcast
       timings[[length(timings) + 1L]] <- dplyr::tibble(
         .method = label,
         .now = now_date,
         elapsed_seconds = unname(proc.time()[["elapsed"]] - started),
         success = !is.null(nowcast),
-        error = fit_error %||% NA_character_
+        error = attempt$error %||% NA_character_
       )
       if (is.null(nowcast)) next
 
@@ -1029,7 +1025,7 @@ print.nowcast_backtest <- function(x, ...) {
 
 #' Ensemble weights from a backtest
 #'
-#' @description `r lifecycle::badge('experimental')`
+#' @description `r lifecycle::badge('stable')`
 #'
 #' Turns the retrospective scores of a [nowcast_backtest()] into a vector of
 #' weights for [nowcast_ensemble()].
@@ -1262,21 +1258,6 @@ nowcast_weights <- function(backtest, type = c("inverse_score", "optim", "equal"
   }
 
   stats::setNames(weights / sum(weights), methods)
-}
-
-#' @rdname score_nowcast
-#' @export
-as_forecast_point <- function(x, truth = NULL,
-                              truth_axis = c("report", "revision"),
-                              truth_type = "total",
-                              ...) {
-  .need_pkg("scoringutils")
-  scoringutils::as_forecast_point(
-    as.data.frame(.as_scoringutils_point(
-      x, truth = truth, truth_axis = truth_axis, truth_type = truth_type
-    )),
-    ...
-  )
 }
 
 #' Build the long quantile frame understood by scoringutils

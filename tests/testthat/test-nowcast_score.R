@@ -3,6 +3,7 @@
 # a backtest from the same pieces rather than growing a second copy.
 
 test_that(".wis() is zero for a perfect point prediction and grows with error", {
+  skip_on_cran()
   levels <- c(0.25, 0.5, 0.75)
 
   expect_equal(tbl.now:::.wis(10, levels, rep(10, 3)), 0)
@@ -21,6 +22,7 @@ test_that(".wis() is zero for a perfect point prediction and grows with error", 
 })
 
 test_that(".covered() checks the right pair of quantiles", {
+  skip_on_cran()
   levels <- c(0.05, 0.25, 0.5, 0.75, 0.95)
   predicted <- c(1, 4, 5, 6, 9)
 
@@ -32,6 +34,7 @@ test_that(".covered() checks the right pair of quantiles", {
 })
 
 test_that("score_nowcast() returns one row per target", {
+  skip_on_cran()
   predictions <- tidyr::expand_grid(
     event_date = as.Date("2020-01-06") + c(0, 7),
     .quantile_level = c(0.25, 0.5, 0.75)
@@ -60,6 +63,7 @@ test_that("score_nowcast() returns one row per target", {
 })
 
 test_that("score_nowcast() needs a truth it can find", {
+  skip_on_cran()
   nowcast <- tbl_nowcast(
     predictions = data.frame(
       event_date = as.Date("2020-01-06"), .quantile_level = 0.5, .value = 1
@@ -82,6 +86,7 @@ test_that("score_nowcast() needs a truth it can find", {
 })
 
 test_that("the truth's observed column is read off the object, line list included", {
+  skip_on_cran()
   # The point of dropping `observed_col`: a line list has NO count column, and a
   # count object names its own. Both must score identically, because they are
   # the same data.
@@ -128,6 +133,7 @@ test_that("missing truth inside the tbl_now grid is scored as zero", {
 })
 
 test_that("targets outside the truth grid warn and are not scored", {
+  skip_on_cran()
   dates <- as.Date("2020-01-06") + 7 * 0:3
   predictions <- tidyr::expand_grid(
     event_date = dates, .quantile_level = c(0.25, 0.5, 0.75)
@@ -169,6 +175,7 @@ revision_truth_tbl_now <- function() {
 }
 
 test_that("truth_axis and truth_type control reported and revised scoring", {
+  skip_on_cran()
   truth <- revision_truth_tbl_now()
   nowcast <- tbl_nowcast(
     predictions = data.frame(
@@ -209,6 +216,7 @@ test_that("truth_axis and truth_type control reported and revised scoring", {
 })
 
 test_that("revision truth is refused without a revision process", {
+  skip_on_cran()
   truth <- truth_tbl_now(as.Date("2020-01-01"), 20)
   nowcast <- tbl_nowcast(
     predictions = data.frame(
@@ -230,6 +238,7 @@ test_that("revision truth is refused without a revision process", {
 })
 
 test_that("a snapshot only keeps the reports available at that date", {
+  skip_on_cran()
   x <- score_tbl_now()
   cutoff <- as.Date("2020-03-02")
   snapshot <- tbl.now:::.nowcast_snapshot(x, cutoff)
@@ -240,6 +249,7 @@ test_that("a snapshot only keeps the reports available at that date", {
 })
 
 test_that("backtest snapshots mask future revisions before fitting", {
+  skip_on_cran()
   register_spytoy()
   data <- data.frame(
     event_date = as.Date(c("2020-01-01", "2020-01-01", "2020-01-08")),
@@ -269,6 +279,7 @@ test_that("backtest snapshots mask future revisions before fitting", {
 })
 
 test_that("nowcast_backtest() scores every method at every date", {
+  skip_on_cran()
   register_scoretoy()
   x <- score_tbl_now()
   dates <- as.Date(c("2020-06-01", "2020-06-08"))
@@ -292,6 +303,7 @@ test_that("nowcast_backtest() scores every method at every date", {
 })
 
 test_that("nowcast_backtest() validates its inputs", {
+  skip_on_cran()
   x <- score_tbl_now()
   expect_error(nowcast_backtest(mtcars, engine("scoretoy")), "tbl_now")
   expect_error(nowcast_backtest(x), "at least one engine")
@@ -329,6 +341,7 @@ test_that("nowcast_backtest() validates its inputs", {
 })
 
 test_that("a failing method is skipped with a warning, or aborts on request", {
+  skip_on_cran()
   register_scoretoy()
   registerS3method("nowcast_fit", "brokentoy",
     function(method, x, ..., quantile_levels, verbose = TRUE) stop("nope"),
@@ -361,6 +374,7 @@ test_that("a failing method is skipped with a warning, or aborts on request", {
 })
 
 test_that("weights reward the better model", {
+  skip_on_cran()
   register_scoretoy()
   x <- score_tbl_now()
   dates <- as.Date(c("2020-06-01", "2020-06-08", "2020-06-15"))
@@ -387,6 +401,7 @@ test_that("weights reward the better model", {
 })
 
 test_that("nowcast_weights() excludes the current origin by default when supplied", {
+  skip_on_cran()
   register_scoretoy()
   x <- score_tbl_now()
   dates <- as.Date(c("2020-06-01", "2020-06-08"))
@@ -427,6 +442,7 @@ test_that("nowcast_weights() rejects anything that is not a backtest", {
 })
 
 test_that("performance weights flow into nowcast_ensemble()", {
+  skip_on_cran()
   register_scoretoy()
   x <- score_tbl_now()
   dates <- as.Date(c("2020-06-01", "2020-06-08"))
@@ -452,6 +468,7 @@ test_that("performance weights flow into nowcast_ensemble()", {
 })
 
 test_that("performance-weighted ensembles hold out member now dates", {
+  skip_on_cran()
   register_scoretoy()
   x <- score_tbl_now()
   dates <- c(as.Date("2020-06-01"), get_now(x))
@@ -476,6 +493,7 @@ test_that("performance-weighted ensembles hold out member now dates", {
 })
 
 test_that(".as_scoringutils() produces the expected column names", {
+  skip_on_cran()
   predictions <- data.frame(
     event_date = as.Date("2020-01-06"),
     .quantile_level = c(0.25, 0.5, 0.75), .value = c(8, 10, 13)
@@ -497,6 +515,7 @@ test_that(".as_scoringutils() produces the expected column names", {
 })
 
 test_that(".as_scoringutils() ignores grouping on a tbl_now truth", {
+  skip_on_cran()
   predictions <- data.frame(
     event_date = as.Date("2020-01-06"),
     .quantile_level = c(0.25, 0.5, 0.75), .value = c(8, 10, 13)
@@ -513,6 +532,7 @@ test_that(".as_scoringutils() ignores grouping on a tbl_now truth", {
 })
 
 test_that(".as_scoringutils() converts a backtest with its stored truth", {
+  skip_on_cran()
   register_scoretoy()
   x <- score_tbl_now()
   dates <- as.Date(c("2020-06-01", "2020-06-08"))
@@ -534,7 +554,7 @@ test_that(".as_scoringutils() converts a backtest with its stored truth", {
   expect_equal(nrow(exported), nrow(backtest$predictions))
 })
 
-test_that("as_forecast_point() converts median predictions", {
+test_that("scoringutils::as_forecast_point() converts median predictions", {
   skip_if_not_installed("scoringutils")
   register_scoretoy()
   truth <- score_tbl_now()
@@ -542,7 +562,7 @@ test_that("as_forecast_point() converts median predictions", {
     truth, engine("scoretoy", bias = 0), verbose = FALSE
   )
 
-  converted <- as_forecast_point(nowcast, truth = truth)
+  converted <- scoringutils::as_forecast_point(nowcast, truth = truth)
 
   expect_s3_class(converted, "forecast_point")
   expect_true(all(
@@ -556,7 +576,19 @@ test_that("as_forecast_point() converts median predictions", {
   )
 })
 
+test_that("the scoringutils coercion generics are not masked", {
+  skip_if_not_installed("scoringutils")
+
+  # `as_forecast_*()` are scoringutils generics; this package supplies methods
+  # for them and must not export functions of the same name. An exported
+  # `as_forecast_point()` masked the generic for every other class as soon as
+  # tbl.now was attached after scoringutils.
+  exported <- getNamespaceExports("tbl.now")
+  expect_false(any(grepl("^as_forecast_", exported)))
+})
+
 test_that("scoringutils directly coerces nowcasts, ensembles and backtests", {
+  skip_on_cran()
   skip_if_not_installed("scoringutils")
   register_scoretoy()
   truth <- score_tbl_now()
@@ -593,6 +625,7 @@ test_that("scoringutils directly coerces nowcasts, ensembles and backtests", {
 })
 
 test_that("scoringutils directly coerces draw-based nowcasts and ensembles", {
+  skip_on_cran()
   skip_if_not_installed("scoringutils", minimum_version = "2.0.0")
   register_sampletoy()
   truth <- score_tbl_now()
@@ -624,6 +657,7 @@ test_that("scoringutils directly coerces draw-based nowcasts and ensembles", {
 })
 
 test_that("sample coercion of a backtest requires retained draws from every fit", {
+  skip_on_cran()
   skip_if_not_installed("scoringutils", minimum_version = "2.0.0")
   register_scoretoy()
   register_sampletoy()
@@ -669,6 +703,7 @@ test_that("sample coercion of a backtest requires retained draws from every fit"
 # implementations agreeing is worth more than either alone.
 
 test_that(".wis(), ae_median and coverage agree with scoringutils", {
+  skip_on_cran()
   skip_if_not_installed("scoringutils")
 
   set.seed(20260824)
@@ -713,6 +748,7 @@ test_that(".wis(), ae_median and coverage agree with scoringutils", {
 })
 
 test_that("score_nowcast() agrees with scoringutils end to end", {
+  skip_on_cran()
   skip_if_not_installed("scoringutils")
 
   set.seed(20260824)
@@ -778,6 +814,7 @@ simulate_calibration <- function(seed = 20260824, n = 400) {
 }
 
 test_that("a well-specified nowcast has close to nominal empirical coverage", {
+  skip_on_cran()
   sim <- simulate_calibration()
   scores <- score_nowcast(sim$member(1, "truth_model"), truth = sim$truth)
 
@@ -788,6 +825,7 @@ test_that("a well-specified nowcast has close to nominal empirical coverage", {
 })
 
 test_that("the ensemble restores the calibration its members have lost", {
+  skip_on_cran()
   sim <- simulate_calibration()
   low <- sim$member(0.9, "low")
   high <- sim$member(1.1, "high")
@@ -823,6 +861,7 @@ test_that("the ensemble restores the calibration its members have lost", {
 # Weight properties -----------------------------------------------------------
 
 test_that("every weighting rule returns non-negative weights summing to 1", {
+  skip_on_cran()
   register_scoretoy()
   x <- score_tbl_now()
   backtest <- nowcast_backtest(
@@ -841,6 +880,7 @@ test_that("every weighting rule returns non-negative weights summing to 1", {
 })
 
 test_that("the optim weights are reproducible", {
+  skip_on_cran()
   register_scoretoy()
   x <- score_tbl_now()
   backtest <- nowcast_backtest(
@@ -859,6 +899,7 @@ test_that("the optim weights are reproducible", {
 })
 
 test_that("an optimiser that fails falls back to equal weights, not NA", {
+  skip_on_cran()
   register_scoretoy()
   x <- score_tbl_now()
   backtest <- nowcast_backtest(
@@ -882,6 +923,7 @@ test_that("an optimiser that fails falls back to equal weights, not NA", {
 })
 
 test_that("a method with WIS = 0 does not produce infinite weights", {
+  skip_on_cran()
   # Built by hand rather than fitted: a backend only ever sees the SNAPSHOT, so
   # no toy model scored against the eventual truth can reach a WIS of exactly
   # zero -- and zero is the whole point, because 1/0 is what the guard exists
@@ -917,6 +959,7 @@ test_that("a method with WIS = 0 does not produce infinite weights", {
 })
 
 test_that("a backtest whose scores are all missing is refused, not averaged", {
+  skip_on_cran()
   backtest <- structure(
     list(
       scores = dplyr::tibble(

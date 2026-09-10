@@ -69,7 +69,7 @@ touch \code{is_censored_revision} and the revision date. Neither rewrites
 \code{revision_type}, and nothing is ever deleted.
 }
 \description{
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
 
 Surveillance data is full of dates that are not really dates. A case with
 onset in March turns up in December; a report date is missing altogether; a

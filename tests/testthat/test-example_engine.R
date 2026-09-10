@@ -25,6 +25,7 @@ test_that("example_engine() builds an engine run_nowcast() accepts", {
 })
 
 test_that("it is deterministic and leaves the RNG stream alone", {
+  skip_on_cran()
   x <- make_data()
   set.seed(1)
   before <- .Random.seed
@@ -36,6 +37,7 @@ test_that("it is deterministic and leaves the RNG stream alone", {
 })
 
 test_that("`spread` widens the interval, and 0 collapses it", {
+  skip_on_cran()
   x <- make_data()
   wide <- tibble::as_tibble(run_nowcast(x, example_engine(spread = 0.5), verbose = FALSE))
   narrow <- tibble::as_tibble(run_nowcast(x, example_engine(spread = 0.1), verbose = FALSE))
@@ -47,6 +49,7 @@ test_that("`spread` widens the interval, and 0 collapses it", {
 })
 
 test_that("it carries strata through", {
+  skip_on_cran()
   nc <- run_nowcast(make_data(strata = TRUE), example_engine(), verbose = FALSE)
   out <- tibble::as_tibble(nc)
   expect_true("gender" %in% names(out))
@@ -54,6 +57,7 @@ test_that("it carries strata through", {
 })
 
 test_that("predictions are non-negative and ordered by quantile level", {
+  skip_on_cran()
   out <- tibble::as_tibble(run_nowcast(make_data(), example_engine(), verbose = FALSE))
   expect_true(all(out$.value >= 0))
   one <- out[out[[1]] == out[[1]][1], ]
@@ -62,6 +66,7 @@ test_that("predictions are non-negative and ordered by quantile level", {
 })
 
 test_that("it works in a backtest, and the labels come through", {
+  skip_on_cran()
   bt <- nowcast_backtest(make_data(),
     example_engine(spread = 0.2, label = "narrow"),
     example_engine(spread = 0.5, label = "wide"),
@@ -76,6 +81,7 @@ test_that("it works in a backtest, and the labels come through", {
 })
 
 test_that("a bad `spread` is refused", {
+  skip_on_cran()
   expect_error(example_engine(spread = -1), "spread")
   expect_error(example_engine(spread = c(1, 2)), "spread")
   expect_error(example_engine(spread = "wide"), "spread")

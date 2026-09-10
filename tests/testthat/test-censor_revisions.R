@@ -26,12 +26,14 @@ revised <- function() {
 # ---- Wrong inputs -----------------------------------------------------------
 
 test_that("the revision verbs refuse a non-tbl_now", {
+  skip_on_cran()
   df <- data.frame(a = 1)
   expect_error(censor_revisions(df, a > 0), "must be a <tbl_now>")
   expect_error(censor_revision_delays(df, a > 0), "must be a <tbl_now>")
 })
 
 test_that("the revision verbs need a revision process", {
+  skip_on_cran()
   plain <- tbl_now(
     data.frame(
       onset = as.Date("2020-01-01") + 0:3,
@@ -46,6 +48,7 @@ test_that("the revision verbs need a revision process", {
 })
 
 test_that("the condition is required and must be logical", {
+  skip_on_cran()
   x <- revised()
   expect_error(censor_revisions(x), "condition")
   expect_error(censor_revision_delays(x), "condition")
@@ -54,6 +57,7 @@ test_that("the condition is required and must be logical", {
 })
 
 test_that("a replacement of the wrong type or length is refused", {
+  skip_on_cran()
   x <- revised()
   expect_error(
     censor_revisions(x, is.na(result), to_revision = 100),
@@ -74,6 +78,7 @@ test_that("a replacement of the wrong type or length is refused", {
 # ---- The pending rule -------------------------------------------------------
 
 test_that("censor_revisions skips pending cases and says so", {
+  skip_on_cran()
   x <- revised()
 
   quiet_messages(expect_warning(
@@ -113,6 +118,7 @@ test_that("flagging without a replacement does not skip pending cases", {
 })
 
 test_that("censor_revision_delays skips pending cases too", {
+  skip_on_cran()
   x <- revised()
   quiet_messages(expect_warning(
     out <- censor_revision_delays(x, TRUE, to_delay = 1),
@@ -123,6 +129,7 @@ test_that("censor_revision_delays skips pending cases too", {
 })
 
 test_that("a selection with no pending rows warns about nothing", {
+  skip_on_cran()
   x <- revised()
   expect_no_warning(
     censor_revisions(x, !is.na(result) & result > as.Date("2021-03-01"),
@@ -134,6 +141,7 @@ test_that("a selection with no pending rows warns about nothing", {
 # ---- Results worked out by hand ---------------------------------------------
 
 test_that("censor_revision_delays caps the turnaround from the REPORT date", {
+  skip_on_cran()
   x <- revised()
   # Row 4: reported 2021-01-08, resolved 2021-04-10 -> 92 days.
   expect_equal(x$.revision_delay[4], 92)
@@ -152,6 +160,7 @@ test_that("censor_revision_delays caps the turnaround from the REPORT date", {
 })
 
 test_that("censor_revisions defaults the replacement to `now`", {
+  skip_on_cran()
   x <- revised()
   out <- suppressWarnings(
     censor_revisions(x, is.na(result), verbose = FALSE)
@@ -160,6 +169,7 @@ test_that("censor_revisions defaults the replacement to `now`", {
 })
 
 test_that("a replacement after `now` drags `now` forward, never back", {
+  skip_on_cran()
   x <- revised()
   out <- suppressWarnings(censor_revisions(x, is.na(result),
     to_revision = as.Date("2022-01-01"), verbose = FALSE
@@ -173,6 +183,7 @@ test_that("a replacement after `now` drags `now` forward, never back", {
 })
 
 test_that("existing revision flags are merged, never cleared", {
+  skip_on_cran()
   x <- quiet_messages(censor_revision_delays_above(revised(), 10))
   already <- x[[".is_censored_revision"]]
   expect_true(any(already))
@@ -198,6 +209,7 @@ test_that("the two censoring axes stay independent", {
 })
 
 test_that("revision censoring leaves the report axis untouched", {
+  skip_on_cran()
   x <- revised()
   out <- censor_revision_delays(x, .revision_delay > 10,
     to_delay = 10, verbose = FALSE
@@ -210,6 +222,7 @@ test_that("revision censoring leaves the report axis untouched", {
 # ---- Grouped objects --------------------------------------------------------
 
 test_that("censor_revisions works on a grouped tbl_now", {
+  skip_on_cran()
   x <- revised()
   ungrouped <- suppressWarnings(
     censor_revisions(x, is.na(result), verbose = FALSE)
@@ -225,6 +238,7 @@ test_that("censor_revisions works on a grouped tbl_now", {
 })
 
 test_that("censor_revision_delays works on a grouped tbl_now", {
+  skip_on_cran()
   x <- revised()
   ungrouped <- censor_revision_delays(x, .revision_delay > 10,
     to_delay = 10, verbose = FALSE
@@ -249,6 +263,7 @@ test_that("censor_revision_delays works on a grouped tbl_now", {
 # ---- Messages ---------------------------------------------------------------
 
 test_that("the revision verbs report what they did unless silenced", {
+  skip_on_cran()
   x <- revised()
   expect_message_quietly(
     censor_revision_delays(x, .revision_delay > 10, verbose = TRUE),

@@ -45,7 +45,7 @@ and \code{revision_units} updated for the axes that were aggregated, and \code{n
 moved onto the new grid.
 }
 \description{
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
 
 Daily surveillance data is often too sparse to nowcast: most (event date,
 report date) cells hold a zero or a one, and the delay distribution is mostly

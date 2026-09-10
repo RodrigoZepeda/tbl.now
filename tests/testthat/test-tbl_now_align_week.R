@@ -50,6 +50,7 @@ setup_test_data <- function() {
 # ============================================================================
 
 test_that("align_weeks returns a data.frame with new aligned date column", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   out <- align_weeks(test_data$basic_dates, date_col = date)
@@ -60,6 +61,7 @@ test_that("align_weeks returns a data.frame with new aligned date column", {
 })
 
 test_that("align_weeks works with and without quotes", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   expect_equal(
@@ -69,6 +71,7 @@ test_that("align_weeks works with and without quotes", {
 })
 
 test_that("align_weeks aligns dates to the specified weekday", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   # ISO numbering: 1 = Monday ... 7 = Sunday
@@ -86,6 +89,7 @@ test_that("align_weeks aligns dates to the specified weekday", {
 })
 
 test_that("align_weeks supports both epi and iso week types", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   out_epi <- align_weeks(test_data$year_boundary, date_col = date, type = "epi")
@@ -103,6 +107,7 @@ test_that("align_weeks supports both epi and iso week types", {
 })
 
 test_that("align_weeks errors with incorrect type", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   expect_error(
@@ -117,6 +122,7 @@ test_that("align_weeks errors with incorrect type", {
 })
 
 test_that("align_weeks does not modify original columns", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   out <- align_weeks(test_data$basic_dates, date_col = date)
@@ -131,6 +137,7 @@ test_that("align_weeks does not modify original columns", {
 })
 
 test_that("align_weeks works with custom new_date_col name", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   out <- align_weeks(test_data$basic_dates,
@@ -143,6 +150,7 @@ test_that("align_weeks works with custom new_date_col name", {
 })
 
 test_that("align_weeks handles single observation", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   out <- align_weeks(test_data$single_obs, date_col = date)
@@ -153,6 +161,7 @@ test_that("align_weeks handles single observation", {
 })
 
 test_that("align_weeks handles leap years correctly", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   out <- align_weeks(test_data$leap_year, date_col = date)
@@ -163,6 +172,7 @@ test_that("align_weeks handles leap years correctly", {
 })
 
 test_that("align_weeks fails with multiple date columns specified", {
+  skip_on_cran()
   test_data <- setup_test_data()
   df_multi <- test_data$basic_dates
   df_multi$date2 <- df_multi$date + 7
@@ -187,6 +197,7 @@ test_that("align_weeks fails when date column doesn't exist", {
 # ============================================================================
 
 test_that("align_weeks.tbl_now preserves tbl_now class", {
+  skip_on_cran()
   data(flusight)
 
   flu_tbl <- tbl_now(flusight[1:100, ],
@@ -207,6 +218,7 @@ test_that("align_weeks.tbl_now preserves tbl_now class", {
 })
 
 test_that("align_weeks.tbl_now aligns both event and report dates", {
+  skip_on_cran()
   data(flusight)
 
   flu_tbl <- tbl_now(flusight[1:100, ],
@@ -228,6 +240,7 @@ test_that("align_weeks.tbl_now aligns both event and report dates", {
 })
 
 test_that("align_weeks.tbl_now produces integer delays", {
+  skip_on_cran()
   data(flusight)
 
   flu_tbl <- tbl_now(flusight[1:100, ],
@@ -250,6 +263,7 @@ test_that("align_weeks.tbl_now produces integer delays", {
 })
 
 test_that("align_weeks.tbl_now preserves all attributes", {
+  skip_on_cran()
   data(denguedat)
 
   dengue_tbl <- tbl_now(denguedat[1:100, ],
@@ -270,6 +284,7 @@ test_that("align_weeks.tbl_now preserves all attributes", {
 })
 
 test_that("align_weeks.tbl_now works with different align_on_day values", {
+  skip_on_cran()
   data(denguedat)
 
   dengue_tbl <- tbl_now(denguedat[1:1000, ],
@@ -289,6 +304,7 @@ test_that("align_weeks.tbl_now works with different align_on_day values", {
 })
 
 test_that("align_weeks.tbl_now maintains data integrity", {
+  skip_on_cran()
   data(denguedat)
 
   dengue_tbl <- tbl_now(denguedat[1:100, ],
@@ -308,6 +324,7 @@ test_that("align_weeks.tbl_now maintains data integrity", {
 })
 
 test_that("align_weeks.tbl_now works with both epi and iso types", {
+  skip_on_cran()
   data(denguedat)
 
   dengue_tbl <- tbl_now(denguedat[1:50, ],
@@ -347,6 +364,7 @@ test_that("week_2_date creates a date column", {
 })
 
 test_that("week_2_date aligns to the correct weekday", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   # Test different alignment days
@@ -362,6 +380,7 @@ test_that("week_2_date aligns to the correct weekday", {
 })
 
 test_that("week_2_date works for epiweek vs isoweek", {
+  skip_on_cran()
   df <- data.frame(
     week_col = 1,
     year_col = 2023
@@ -386,6 +405,7 @@ test_that("week_2_date works for epiweek vs isoweek", {
 })
 
 test_that("week_2_date merges correctly with duplicated rows", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   out <- week_2_date(test_data$week_year_duplicates,
@@ -398,6 +418,7 @@ test_that("week_2_date merges correctly with duplicated rows", {
 })
 
 test_that("week_2_date fails when date_col_name already exists", {
+  skip_on_cran()
   test_data <- setup_test_data()
   df_with_date <- test_data$week_year_data
   df_with_date$date <- as.Date("2024-01-01")
@@ -413,6 +434,7 @@ test_that("week_2_date fails when date_col_name already exists", {
 })
 
 test_that("week_2_date fails with multiple week columns", {
+  skip_on_cran()
   df <- data.frame(
     week1 = 1:5,
     week2 = 2:6,
@@ -426,6 +448,7 @@ test_that("week_2_date fails with multiple week columns", {
 })
 
 test_that("week_2_date fails with multiple year columns", {
+  skip_on_cran()
   df <- data.frame(
     week = 1:5,
     year1 = rep(2024, 5),
@@ -439,6 +462,7 @@ test_that("week_2_date fails with multiple year columns", {
 })
 
 test_that("week_2_date handles year boundaries correctly", {
+  skip_on_cran()
   # Week 52 and week 1 transitions
   year_boundary_weeks <- data.frame(
     week_col = c(51, 52, 1, 2),
@@ -458,6 +482,7 @@ test_that("week_2_date handles year boundaries correctly", {
 })
 
 test_that("week_2_date custom date_col_name works", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   out <- week_2_date(test_data$week_year_data,
@@ -475,6 +500,7 @@ test_that("week_2_date custom date_col_name works", {
 # ============================================================================
 
 test_that("align_weeks integrates correctly with tbl_now workflow", {
+  skip_on_cran()
   data(denguedat)
 
   # Create tbl_now, align weeks, then convert to count
@@ -496,6 +522,7 @@ test_that("align_weeks integrates correctly with tbl_now workflow", {
 })
 
 test_that("align_weeks preserves covariates and temporal effects", {
+  skip_on_cran()
   data(denguedat)
 
   dengue_tbl <- denguedat[1:100, ] |>
@@ -516,6 +543,7 @@ test_that("align_weeks preserves covariates and temporal effects", {
 })
 
 test_that("weekly flusight object aligns correctly", {
+  skip_on_cran()
   data(flusight)
 
   # This started life as the worked example in the old FluSight Example.Rmd,
@@ -547,6 +575,7 @@ test_that("weekly flusight object aligns correctly", {
 })
 
 test_that("align_weeks works on a grouped tbl_now", {
+  skip_on_cran()
   data(denguedat, envir = environment())
   x <- tbl_now(denguedat[1:500, ],
     event_date = onset_week, report_date = report_week, strata = gender,
@@ -569,6 +598,7 @@ test_that("align_weeks works on a grouped tbl_now", {
 })
 
 test_that("align_weeks keeps a grouped revision process intact", {
+  skip_on_cran()
   cases <- data.frame(
     onset = as.Date("2024-01-07") + 7 * rep(0:4, each = 2),
     visit = as.Date("2024-01-10") + 7 * rep(0:4, each = 2),

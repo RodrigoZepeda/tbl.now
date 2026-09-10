@@ -11,6 +11,7 @@
   by_strata = FALSE,
   strata = NULL,
   measure = c("percent", "normalized"),
+  by_revision_type = FALSE,
   level = 0.95,
   plotly = FALSE,
   size = 1,
@@ -72,6 +73,15 @@ is two days in seven — so a share would mostly report how the calendar is
 built rather than how the data behave: "29\% of cases at the weekend" is
 average, not low.}
 
+\item{by_revision_type}{Logical (default \code{FALSE}). When \code{TRUE}, the two
+delay-distribution panels are split by how each case eventually resolved:
+\code{confirmed}, \code{pending}, \code{retracted} and \code{unknown}, stacked, in the palette's
+outcome colours (see \code{\link[=tbl_now_palette]{tbl_now_palette()}}). Ignored on an object with no
+revision axis, and when \code{by_strata = TRUE}, which already spends the fill on
+the strata. It defaults to \code{FALSE} here because the gallery is read as a
+grid of shapes, and to \code{TRUE} in \code{\link[=plot_delay_distribution]{plot_delay_distribution()}}, where the
+panel is the whole plot.}
+
 \item{level}{Completeness level used for the incompleteness line in the
 \code{"epidemic"} panel (and to trim the delay panels). The line is drawn at
 \code{now - q}, where \code{q} is the \code{level} quantile of the delay distribution. With
@@ -100,16 +110,26 @@ own range. For \code{event_date_xlim} pass \code{Date}s; the others take numeric
 limits.}
 }
 \value{
-A \pkg{patchwork} object combining the selected panels, or — when a
-single panel is selected — that panel as a \pkg{ggplot2} object.
+A \pkg{patchwork} object combining the selected panels, one column per
+process, or — when a single panel is selected — that panel as a
+\pkg{ggplot2} object.
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 
 Produces a multi-panel diagnostic overview of a \code{tbl_now} using
-\code{\link[ggplot2:ggplot]{ggplot2::ggplot()}} and \pkg{patchwork}. Two families of panels are available
-— one describing the \strong{case counts} and one describing the \strong{reporting
-delay} — and you choose which to draw with the \code{panels} argument.
+\code{\link[ggplot2:ggplot]{ggplot2::ggplot()}} and \pkg{patchwork}. The gallery is a \strong{matrix with one
+column per process}: the \strong{case counts} on the left, the \strong{reporting
+delay} next to them, and — when the object declares a revision axis — the
+\strong{revision process} on the right. Each row asks the same question of every
+process, so an object with two dates comes out two columns wide and one with
+three dates three columns wide. You choose which panels to draw with the
+\code{panels} argument, and the number of columns follows: a selection covering
+one family only (\code{panels = "calendar"}) is one column.
+
+A row a process cannot answer — weekly data has no day-of-week panel — leaves
+that cell empty rather than closing the gap, so the columns keep their
+meaning all the way down.
 
 \strong{Case-count panels}
 \itemize{
@@ -161,6 +181,18 @@ much changes how long they take to be reported.
 \item \code{"delay_seasonality"} — a \strong{cycles} periodogram of the mean-delay series,
 whose peak marks a cycle in the reporting delay (e.g. a weekly reporting
 rhythm).
+}
+
+\strong{Revision-process panels} (only when the object declares a revision axis)
+\itemize{
+\item \code{"revision_distribution"} — the reporting-delay histogram's twin on the
+revision axis: a (case-count weighted) histogram of \code{.revision_delay}, the
+time from a report to its resolution. A case still \code{"pending"} has no
+resolution and so no revision delay, and does not appear.
+\item \code{"revision_weekday"}, \code{"revision_week"}, \code{"revision_month"},
+\code{"revision_holiday"}, \code{"revision_holiday_lag"}, \code{"revision_seasonality"} —
+the same calendar and periodogram questions asked of the dates resolutions
+arrived on.
 }
 
 Every panel is colour-coded by the process it describes — \strong{red} for the

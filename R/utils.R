@@ -2,7 +2,7 @@
 #'
 #' Checks if attribute exists in object and returns `default` if not
 #'
-#' @description `r lifecycle::badge('experimental')`
+#' @description `r lifecycle::badge('stable')`
 #'
 #' @param x An object with attribute `name`
 #' @param name The name of the attribute in `x`

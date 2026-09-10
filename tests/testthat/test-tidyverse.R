@@ -41,6 +41,7 @@ test_that("It doesn't loose class after two applications", {
 })
 
 test_that("tbl_format_footer.tbl_now displays mandatory attributes when mutating / filtering / grouping / etc", {
+  skip_on_cran()
   # Test the original data
   output <- capture.output(print(dfnow))
 

@@ -204,7 +204,7 @@ from a bad model afterwards. Pin it with
 A \code{nowcast_engine}, as \code{\link[=engine]{engine()}} returns.
 }
 \description{
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
 
 One constructor per supported modelling package. Each is \code{\link[=engine]{engine()}} with the
 arguments of that package's own entry point spelled out, so the ones that

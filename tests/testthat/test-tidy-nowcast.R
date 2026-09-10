@@ -20,6 +20,7 @@ nowcast_at <- function(levels, values, method = "toy",
 }
 
 test_that("tidy() returns the package's standard nowcast frame", {
+  skip_on_cran()
   nowcast <- nowcast_at(c(0.025, 0.5, 0.975), c(5, 10, 18))
 
   tidied <- tidy(nowcast)
@@ -39,6 +40,7 @@ test_that("tidy() returns the package's standard nowcast frame", {
 })
 
 test_that("`engine` is the method, including the ensemble's own name", {
+  skip_on_cran()
   a <- nowcast_at(c(0.1, 0.5, 0.9), c(1, 2, 3), method = "a")
   b <- nowcast_at(c(0.1, 0.5, 0.9), c(3, 4, 5), method = "b")
 
@@ -52,6 +54,7 @@ test_that("`engine` is the method, including the ensemble's own name", {
 })
 
 test_that("`level` is read off the quantiles stored, never assumed", {
+  skip_on_cran()
   # The default hub levels give a 95% band...
   default <- nowcast_at(nowcast_quantile_levels(), seq_len(9))
   expect_equal(unique(tidy(default)$level), 0.95)
@@ -71,6 +74,7 @@ test_that("`level` is read off the quantiles stored, never assumed", {
 })
 
 test_that("an asymmetric set of levels gives NA bounds and an NA level", {
+  skip_on_cran()
   lopsided <- nowcast_at(c(0.25, 0.5, 0.9), c(7, 10, 16))
 
   tidied <- tidy(lopsided)
@@ -83,6 +87,7 @@ test_that("an asymmetric set of levels gives NA bounds and an NA level", {
 })
 
 test_that("`estimate` is NA when the nowcast carries no median", {
+  skip_on_cran()
   no_median <- nowcast_at(c(0.05, 0.95), c(2, 20))
 
   tidied <- tidy(no_median)
@@ -93,10 +98,12 @@ test_that("`estimate` is NA when the nowcast carries no median", {
 })
 
 test_that("stratum is 'all' only when the nowcast declares no strata", {
+  skip_on_cran()
   expect_equal(unique(tidy(nowcast_at(c(0.1, 0.5, 0.9), 1:3))$stratum), "all")
 })
 
 test_that("strata are labelled and paired with their own values", {
+  skip_on_cran()
   # The two strata differ by two orders of magnitude, so a mispairing is
   # arithmetically unmistakable rather than a plausible-looking table.
   dates <- as.Date("2020-01-05") + c(0, 7)
@@ -122,6 +129,7 @@ test_that("strata are labelled and paired with their own values", {
 })
 
 test_that("several strata columns are pasted ' | '-separated", {
+  skip_on_cran()
   predictions <- tidyr::expand_grid(
     event_date = as.Date("2020-01-05"),
     sex = c("F", "M"), region = c("north", "south"),
@@ -143,6 +151,7 @@ test_that("several strata columns are pasted ' | '-separated", {
 })
 
 test_that("probs are honoured from draws, and per stratum", {
+  skip_on_cran()
   set.seed(20260824)
   dates <- as.Date("2020-01-05") + c(0, 7)
   draws <- tidyr::expand_grid(
@@ -170,6 +179,7 @@ test_that("probs are honoured from draws, and per stratum", {
 })
 
 test_that("probs are refused when the nowcast keeps no draws", {
+  skip_on_cran()
   quantiles_only <- nowcast_at(nowcast_quantile_levels(), seq_len(9))
 
   expect_error(tidy(quantiles_only, probs = 0.3), "does not keep posterior draws")
@@ -189,6 +199,7 @@ test_that("tidy() of an empty nowcast is an empty standard frame", {
 })
 
 test_that("tidy() of a backtest gives one row per method, now date and target", {
+  skip_on_cran()
   register_scoretoy()
   x <- score_tbl_now()
   dates <- as.Date(c("2020-06-01", "2020-06-08"))
@@ -225,6 +236,7 @@ test_that("tidy() of a backtest gives one row per method, now date and target", 
 })
 
 test_that("tidy() of a backtest carries the predictions, not just the truth (#70)", {
+  skip_on_cran()
   register_scoretoy()
   x <- score_tbl_now()
   dates <- as.Date(c("2020-06-01", "2020-06-08"))
@@ -269,6 +281,7 @@ test_that("tidy() of a backtest carries the predictions, not just the truth (#70
 })
 
 test_that("tidy() of a backtest keys the predictions on the strata, not the date", {
+  skip_on_cran()
   x <- score_tbl_now_strata()
 
   backtest <- nowcast_backtest(
@@ -292,6 +305,7 @@ test_that("tidy() of a backtest keys the predictions on the strata, not the date
 })
 
 test_that("tidy() of a backtest reports NA where the levels cannot support a bound", {
+  skip_on_cran()
   register_scoretoy()
   x <- score_tbl_now()
 

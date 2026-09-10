@@ -30,6 +30,7 @@ one_member <- function(dates, value, method, draws = FALSE) {
 WEEKS <- as.Date("2010-09-06") + c(0, 7, 14, 21)
 
 test_that("a target only one member covers is dropped, not averaged", {
+  skip_on_cran()
   a <- one_member(WEEKS, 100, "A")
   b <- one_member(c(WEEKS, max(WEEKS) + 7), 10, "B")
 
@@ -49,6 +50,7 @@ test_that("a target only one member covers is dropped, not averaged", {
 })
 
 test_that("the linear pool drops uncovered targets too", {
+  skip_on_cran()
   a <- one_member(WEEKS, 100, "A", draws = TRUE)
   b <- one_member(c(WEEKS, max(WEEKS) + 7), 10, "B", draws = TRUE)
 
@@ -63,6 +65,7 @@ test_that("the linear pool drops uncovered targets too", {
 })
 
 test_that("members that agree on their targets are untouched and silent", {
+  skip_on_cran()
   a <- one_member(WEEKS, 100, "A")
   b <- one_member(WEEKS, 10, "B")
 

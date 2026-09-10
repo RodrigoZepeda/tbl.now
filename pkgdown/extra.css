@@ -352,6 +352,24 @@
   opacity: 0.85;
 }
 
+/* The package version. pkgdown renders it as
+   `<small class="nav-text text-muted">`, and Bootstrap 5.3 defines
+   `.text-muted` as `color: var(--bs-secondary-color) !important`, a token that
+   changes with the theme -- so the version was the ONE navbar item that shifted
+   colour when the light switch was flipped while the brand and the links stayed
+   white. Pin it to the brand's colour in both themes.
+
+   `.text-muted` carries `!important`, so the override needs `!important` too;
+   the `.navbar` ancestor supplies the extra specificity. */
+.navbar .nav-text,
+.navbar .nav-text.text-muted,
+.navbar small.text-muted,
+[data-bs-theme="dark"] .navbar .nav-text,
+[data-bs-theme="dark"] .navbar .nav-text.text-muted,
+[data-bs-theme="dark"] .navbar small.text-muted {
+  color: white !important;
+}
+
 a {
   color: var(--tn-green-strong);
 }

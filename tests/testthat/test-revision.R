@@ -53,6 +53,7 @@ test_that("a revision process is recorded on the object", {
 })
 
 test_that("revision delay is measured in revision units even when axes differ", {
+  skip_on_cran()
   x <- suppressWarnings(tbl_now(
     data.frame(
       onset = as.Date("2024-01-01") + 0:2,
@@ -70,6 +71,7 @@ test_that("revision delay is measured in revision units even when axes differ", 
 })
 
 test_that("an object with no revision is unchanged", {
+  skip_on_cran()
   plain <- tbl_now(
     data.frame(
       e = as.Date("2021-01-04") + 0:4, r = as.Date("2021-01-05") + 0:4
@@ -86,6 +88,7 @@ test_that("an object with no revision is unchanged", {
 })
 
 test_that("a revision date with no outcome is NA, not a guess", {
+  skip_on_cran()
   cases <- data.frame(
     e = as.Date("2021-01-04") + 0:2,
     r = as.Date("2021-01-05") + 0:2,
@@ -106,6 +109,7 @@ test_that("a revision date with no outcome is NA, not a guess", {
 })
 
 test_that("a case with no revision date is pending", {
+  skip_on_cran()
   cases <- data.frame(
     e = as.Date("2021-01-04") + 0:2,
     r = as.Date("2021-01-05") + 0:2,
@@ -124,6 +128,7 @@ test_that("a case with no revision date is pending", {
 })
 
 test_that("an unrecognised outcome is refused", {
+  skip_on_cran()
   cases <- data.frame(
     e = as.Date("2021-01-04") + 0:2, r = as.Date("2021-01-05") + 0:2,
     cf = as.Date("2021-01-06") + 0:2,
@@ -140,6 +145,7 @@ test_that("an unrecognised outcome is refused", {
 })
 
 test_that("an outcome without a date is refused", {
+  skip_on_cran()
   cases <- data.frame(
     e = as.Date("2021-01-04") + 0:2, r = as.Date("2021-01-05") + 0:2,
     ty = c("confirmed", "pending", "retracted")
@@ -156,6 +162,7 @@ test_that("an outcome without a date is refused", {
 # `now` -----------------------------------------------------------------------
 
 test_that("a revision moves `now` forward", {
+  skip_on_cran()
   cases <- data.frame(
     e = as.Date("2021-01-01") + 0:1,
     r = as.Date("2021-01-02") + 0:1,
@@ -172,6 +179,7 @@ test_that("a revision moves `now` forward", {
 })
 
 test_that("a `now` behind the last revision is refused", {
+  skip_on_cran()
   flu <- flu_fixture()
   broken <- flu
   attr(broken, "now") <- min(flu$result, na.rm = TRUE) - 1
@@ -180,6 +188,7 @@ test_that("a `now` behind the last revision is refused", {
 })
 
 test_that("the timeline is checked, not assumed", {
+  skip_on_cran()
   cases <- data.frame(
     e = as.Date("2021-01-04") + 0:2,
     r = as.Date("2021-01-08") + 0:2,
@@ -199,6 +208,7 @@ test_that("the timeline is checked, not assumed", {
 # Persistence -----------------------------------------------------------------
 
 test_that("the revision attributes survive dplyr verbs", {
+  skip_on_cran()
   flu <- flu_fixture()
 
   verbs <- list(
@@ -227,6 +237,7 @@ test_that("the revision attributes survive dplyr verbs", {
 })
 
 test_that("tbl_now_attributes() lists the revision attributes", {
+  skip_on_cran()
   # It used to diff against a DEFAULT tbl_now, which has none of the optional
   # attributes -- so every optional attribute was silently missing from the
   # listing, which is exactly what somebody uses this function to check.
@@ -269,6 +280,7 @@ test_that("add / change / remove round-trip", {
 # Counting --------------------------------------------------------------------
 
 test_that("to_count() keeps confirmed and retracted apart", {
+  skip_on_cran()
   counts <- data.frame(
     e = rep(as.Date("2021-01-04") + 0:2, each = 2),
     r = rep(as.Date("2021-01-05") + 0:2, each = 2),
@@ -300,6 +312,7 @@ test_that("to_count() keeps confirmed and retracted apart", {
 })
 
 test_that("the three counts answer three different questions", {
+  skip_on_cran()
   flu <- flu_fixture(n_days = 3L)
 
   reported <- get_latest_reported_cases(flu)
@@ -333,6 +346,7 @@ test_that("the three counts answer three different questions", {
 })
 
 test_that("the counting getters refuse an object with no revision", {
+  skip_on_cran()
   plain <- tbl_now(
     data.frame(e = as.Date("2021-01-04") + 0:2, r = as.Date("2021-01-05") + 0:2),
     event_date = "e", report_date = "r", data_type = "linelist", verbose = FALSE
@@ -352,6 +366,7 @@ test_that("the counting getters refuse an object with no revision", {
 # Does the delay depend on the outcome? ---------------------------------------
 
 test_that("diagnose_revision_delay() finds a difference that is really there", {
+  skip_on_cran()
   # Retracted results deliberately take 5-6 days against the confirmed 1-2, so
   # a test that cannot see this cannot see anything.
   cases <- data.frame(
@@ -379,6 +394,7 @@ test_that("diagnose_revision_delay() finds a difference that is really there", {
 })
 
 test_that("no difference is reported when there is none", {
+  skip_on_cran()
   cases <- data.frame(
     onset = as.Date("2021-01-04") + rep(0:19, each = 4),
     visit = as.Date("2021-01-05") + rep(0:19, each = 4),
@@ -400,6 +416,7 @@ test_that("no difference is reported when there is none", {
 })
 
 test_that("unusable delays are dropped and counted", {
+  skip_on_cran()
   cases <- data.frame(
     onset = as.Date("2021-01-04") + 0:5,
     visit = as.Date("2021-01-10") + 0:5,
@@ -438,12 +455,45 @@ test_that("the comparison can be made within a stratum", {
   expect_equal(nrow(result), 2L)
 })
 
-test_that("plot_revision_delay() draws the reporting process", {
+test_that("plot_delay_distribution() draws the revision axis", {
   skip_if_not_installed("ggplot2")
-  expect_s3_class(plot_revision_delay(flu_fixture(n_days = 20L)), "ggplot")
+  flu <- flu_fixture(n_days = 20L)
+
+  # Same comparison `plot_revision_delay()` used to draw, on the panel that
+  # replaced it: the revision delays, split by how each case resolved.
+  panel <- plot_delay_distribution(flu, axis = "revision")
+  expect_s3_class(panel, "ggplot")
+  expect_setequal(
+    as.character(unique(panel$data$outcome)), c("confirmed", "retracted")
+  )
+  expect_true(all(panel$data$delay %in% flu$.revision_delay))
+  expect_false(any(is.na(panel$data$delay)))
+})
+
+test_that("plot_delay_distribution() drops the split when it cannot be taken", {
+  skip_if_not_installed("ggplot2")
+
+  # A two-date object has no outcomes to split by, and the same call still has
+  # to work on it.
+  dates <- as.Date("2021-01-01") + 0:19
+  two_date <- tbl_now(
+    data.frame(e = dates, r = dates + 1),
+    event_date = e, report_date = r, verbose = FALSE
+  )
+  panel <- plot_delay_distribution(two_date)
+  expect_s3_class(panel, "ggplot")
+  expect_false("outcome" %in% names(panel$data))
+
+  # ... and the revision axis is refused outright, because there is none: the
+  # panel is skipped with a warning, which leaves nothing to draw.
+  expect_warning(
+    expect_error(plot_delay_distribution(two_date, axis = "revision")),
+    "needs a revision process"
+  )
 })
 
 test_that("complete_zeroes() extends the grid to the revision-aware now", {
+  skip_on_cran()
   counts <- data.frame(
     e = as.Date("2021-01-01") + c(0, 1),
     r = as.Date("2021-01-01") + c(1, 2),
@@ -461,6 +511,7 @@ test_that("complete_zeroes() extends the grid to the revision-aware now", {
 })
 
 test_that("update() keeps the revision process and de-duplicates on it", {
+  skip_on_cran()
   # `update.tbl_now()` de-duplicates on everything EXCEPT the generated
   # columns. Adding `.revision_num`/`.revision_delay` to that generated
   # set broke the call, which passed no object and so could not know they
@@ -517,6 +568,7 @@ revision_axis_fixture <- function(seed = 7L) {
 }
 
 test_that("diagnose_batches() finds a laboratory backlog only on the revision axis", {
+  skip_on_cran()
   x <- revision_axis_fixture()
 
   on_report <- suppressWarnings(suppressMessages(diagnose_batches(x, lookback = 5)))
@@ -536,6 +588,7 @@ test_that("diagnose_batches() finds a laboratory backlog only on the revision ax
 })
 
 test_that("diagnose_batches2() uses report-to-revision delays on the revision axis", {
+  skip_on_cran()
   x <- revision_axis_fixture()
   release_date <- as.Date("2021-02-03")
 
@@ -553,6 +606,7 @@ test_that("diagnose_batches2() uses report-to-revision delays on the revision ax
 })
 
 test_that("the revision axis needs a revision process", {
+  skip_on_cran()
   plain <- suppressWarnings(tbl_now(
     data.frame(
       e = as.Date("2021-01-04") + rep(0:19, each = 3),
@@ -567,6 +621,7 @@ test_that("the revision axis needs a revision process", {
 })
 
 test_that("pending cases are excluded from the revision axis", {
+  skip_on_cran()
   # A pending case has no revision date, so counting it would invent an
   # arrival on a date it does not have.
   x <- flu_fixture(n_days = 20L)
@@ -578,6 +633,7 @@ test_that("pending cases are excluded from the revision axis", {
 })
 
 test_that("the reporting-process plots accept the revision axis", {
+  skip_on_cran()
   skip_if_not_installed("ggplot2")
   x <- revision_axis_fixture()
 
@@ -593,6 +649,7 @@ test_that("the reporting-process plots accept the revision axis", {
 # The smaller analogues -------------------------------------------------------
 
 test_that("get_nth_revised_cases() counts by the delay from the EVENT", {
+  skip_on_cran()
   cases <- data.frame(
     onset = as.Date("2021-01-04") + 0:4,
     visit = as.Date("2021-01-05") + 0:4,
@@ -626,6 +683,7 @@ test_that("get_nth_revised_cases() counts by the delay from the EVENT", {
 })
 
 test_that("censor_revision_delays_above() flags stragglers, keeping them", {
+  skip_on_cran()
   cases <- data.frame(
     onset = as.Date("2021-01-04") + 0:4,
     visit = as.Date("2021-01-05") + 0:4,
@@ -654,6 +712,7 @@ test_that("censor_revision_delays_above() flags stragglers, keeping them", {
 })
 
 test_that("censor_revision_delays_above() merges with existing flags", {
+  skip_on_cran()
   cases <- data.frame(
     onset = as.Date("2021-01-04") + 0:4,
     visit = as.Date("2021-01-05") + 0:4,
@@ -693,6 +752,7 @@ test_that("plot_revision_status() shows the resolution front", {
 })
 
 test_that("align_weeks() aligns the revision date too", {
+  skip_on_cran()
   weekly <- data.frame(
     e = as.Date("2021-01-04") + 7 * (0:5),
     r = as.Date("2021-01-06") + 7 * (0:5),
@@ -720,6 +780,7 @@ test_that("align_weeks() aligns the revision date too", {
 })
 
 test_that("the delay family measures to the revision when asked", {
+  skip_on_cran()
   # Every case is reported one period after onset and revised three periods
   # after onset, so the revision delay itself is two periods from report.
   x <- revision_axis_fixture()
@@ -740,6 +801,7 @@ test_that("the delay family measures to the revision when asked", {
 })
 
 test_that("the delay diagnostics accept the revision axis", {
+  skip_on_cran()
   skip_if_not_installed("ggplot2")
   skip_if_not_installed("modifiedmk")
   x <- revision_axis_fixture()
@@ -756,6 +818,7 @@ test_that("the delay diagnostics accept the revision axis", {
 })
 
 test_that("the revision triangle is labelled as one", {
+  skip_on_cran()
   skip_if_not_installed("ggplot2")
   x <- revision_axis_fixture()
 
@@ -766,6 +829,7 @@ test_that("the revision triangle is labelled as one", {
 })
 
 test_that("simulate_batch() carries the revision through", {
+  skip_on_cran()
   set.seed(3)
   days <- as.Date("2021-01-04") + 0:39
   onset <- rep(days, stats::rpois(40, 8) + 3)

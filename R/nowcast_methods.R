@@ -40,14 +40,15 @@
   # them along with the progress chatter. `withCallingHandlers()` collects
   # warnings before they queue, so they can be re-signalled outside the
   # capture and reach the caller.
-  captured <- list()
+  captured <- new.env(parent = emptyenv())
+  captured$warnings <- list()
   out <- NULL
   utils::capture.output(
     utils::capture.output(
       withCallingHandlers(
         out <- suppressMessages(force(expr)),
         warning = function(w) {
-          captured[[length(captured) + 1L]] <<- w
+          captured$warnings[[length(captured$warnings) + 1L]] <- w
           invokeRestart("muffleWarning")
         }
       ),
@@ -55,7 +56,7 @@
     ),
     type = "output"
   )
-  for (w in captured) warning(conditionMessage(w), call. = FALSE)
+  for (w in captured$warnings) warning(conditionMessage(w), call. = FALSE)
   out
 }
 

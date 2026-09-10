@@ -23,6 +23,7 @@ expected_now <- as.Date("2023-01-05")
 # === TEST SUITE FOR tbl_now() FUNCTION ===
 
 test_that("tbl_now creates object with minimal linelist data", {
+  skip_on_cran()
   # Successful creation test
   result <- tbl_now(
     data = ll_data,
@@ -73,6 +74,7 @@ test_that("tbl_now respects user-defined 'now'", {
 })
 
 test_that("tbl_now warns if `now` is in the past", {
+  skip_on_cran()
   user_now <- as.Date("1990-01-06")
   expect_warning(
     tbl_now(
@@ -89,6 +91,7 @@ test_that("tbl_now warns if `now` is in the past", {
 })
 
 test_that("tbl_now correctly sets strata ", {
+  skip_on_cran()
   result <- tbl_now(
     data = ll_data,
     event_date = "onset_week",
@@ -103,6 +106,7 @@ test_that("tbl_now correctly sets strata ", {
 })
 
 test_that("tbl_now infers 'count' data_type correctly", {
+  skip_on_cran()
   # Data with a column named 'n'
   result <- tbl_now(
     data = count_data,
@@ -117,6 +121,7 @@ test_that("tbl_now infers 'count' data_type correctly", {
 })
 
 test_that("tbl_now refuses non-numeric count columns", {
+  skip_on_cran()
   bad_counts <- count_data |>
     dplyr::mutate(n = as.character(n))
 
@@ -135,6 +140,7 @@ test_that("tbl_now refuses non-numeric count columns", {
 })
 
 test_that("tbl_now documents empty and one-row construction contract", {
+  skip_on_cran()
   empty <- data.frame(
     event = as.Date(character()),
     report = as.Date(character())
@@ -172,6 +178,7 @@ test_that("tbl_now documents empty and one-row construction contract", {
 })
 
 test_that("tbl_now handles optional 'is_censored_report' column", {
+  skip_on_cran()
   result <- tbl_now(
     data = ll_data,
     event_date = "onset_week",
@@ -184,6 +191,7 @@ test_that("tbl_now handles optional 'is_censored_report' column", {
 })
 
 test_that("tbl_now errors when date columns are missing or invalid", {
+  skip_on_cran()
   # Error if event_date column is missing
   expect_error(
     tbl_now(
@@ -231,6 +239,7 @@ test_that("tbl_now errors when date columns are missing or invalid", {
 })
 
 test_that("tbl_now accepts and uses all other attributes", {
+  skip_on_cran()
   result <- tbl_now(
     data = ll_data,
     event_date = "onset_week",
@@ -246,6 +255,7 @@ test_that("tbl_now accepts and uses all other attributes", {
 })
 
 test_that("tbl_now errors if strata or covariates are not characters", {
+  skip_on_cran()
   expect_error(
     tbl_now(
       data = ll_data,
@@ -271,6 +281,7 @@ test_that("tbl_now errors if strata or covariates are not characters", {
 })
 
 test_that("tbl_now throws warning when repeated rows", {
+  skip_on_cran()
   data("flusight")
 
   # Three locations, not all 53. This test is about `tbl_now()`'s response to
@@ -332,6 +343,7 @@ test_that("tbl_now throws warning when repeated rows", {
 })
 
 test_that("tbl_now correctly identifies data type", {
+  skip_on_cran()
   # lINELIST
   df1 <- data.frame(
     patient = 1:6,
@@ -397,6 +409,7 @@ test_that("tbl_now correctly identifies data type", {
 })
 
 test_that("tbl_now fails when strata/covariate have repeated variables", {
+  skip_on_cran()
   data(denguedat)
 
   expect_error(

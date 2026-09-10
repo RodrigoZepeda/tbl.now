@@ -51,7 +51,7 @@ Default \code{0.3}; the \code{mark_batches} stripes are drawn a third heavier.}
 A \pkg{ggplot2} object (or a \pkg{plotly} widget when \code{plotly = TRUE}).
 }
 \description{
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
 
 Tiles over (event date, delay), filled by the reported count. Cells that are
 \strong{observable but empty} (a genuine reported zero) are drawn in a muted blue;

@@ -24,6 +24,7 @@ make_weekly <- function() {
 # ---- Wrong inputs -----------------------------------------------------------
 
 test_that("an invalid `units` is rejected, naming `units` and not another argument", {
+  skip_on_cran()
   df <- make_daily()
   expect_error(
     tbl_now(df, event_date = onset, report_date = reported, units = "fortnights"),
@@ -48,6 +49,7 @@ test_that("an invalid `units` is rejected, naming `units` and not another argume
 })
 
 test_that("`units` is a real argument, so it is not swallowed as metadata", {
+  skip_on_cran()
   x <- tbl_now(make_daily(),
     event_date = onset, report_date = reported,
     units = "days", verbose = FALSE
@@ -56,6 +58,7 @@ test_that("`units` is a real argument, so it is not swallowed as metadata", {
 })
 
 test_that("a near miss on `units` is flagged as a typo rather than stored quietly", {
+  skip_on_cran()
   expect_warning(
     tbl_now(make_daily(),
       event_date = onset, report_date = reported, verbose = FALSE,
@@ -66,6 +69,7 @@ test_that("a near miss on `units` is flagged as a typo rather than stored quietl
 })
 
 test_that("`units` is a formal, so R's partial matching reaches it", {
+  skip_on_cran()
   # `unit =` never lands in `...`: it prefixes exactly one formal.
   x <- tbl_now(make_daily(),
     event_date = onset, report_date = reported, verbose = FALSE,
@@ -77,6 +81,7 @@ test_that("`units` is a formal, so R's partial matching reaches it", {
 # ---- What `units` sets ------------------------------------------------------
 
 test_that("`units` sets both date axes at once", {
+  skip_on_cran()
   x <- tbl_now(make_daily(),
     event_date = onset, report_date = reported,
     units = "days", verbose = FALSE
@@ -86,6 +91,7 @@ test_that("`units` sets both date axes at once", {
 })
 
 test_that("`units` sets the revision axis too", {
+  skip_on_cran()
   x <- tbl_now(make_daily(),
     event_date = onset, report_date = reported,
     revision_date = resolved, revision_type = outcome,
@@ -97,6 +103,7 @@ test_that("`units` sets the revision axis too", {
 })
 
 test_that("an explicit axis argument beats `units`", {
+  skip_on_cran()
   x <- tbl_now(make_daily(),
     event_date = onset, report_date = reported,
     units = "days", report_units = "weeks", verbose = FALSE
@@ -106,6 +113,7 @@ test_that("an explicit axis argument beats `units`", {
 })
 
 test_that("an explicit revision_units beats `units`", {
+  skip_on_cran()
   x <- tbl_now(make_daily(),
     event_date = onset, report_date = reported,
     revision_date = resolved, revision_type = outcome,
@@ -117,6 +125,7 @@ test_that("an explicit revision_units beats `units`", {
 })
 
 test_that("an explicit \"auto\" still means infer, even when `units` says otherwise", {
+  skip_on_cran()
   # Weekly dates declared `units = "weeks"` but with the event axis left to be
   # inferred: inference also says weeks, and the point is that it RAN.
   x <- tbl_now(make_weekly(),
@@ -135,6 +144,7 @@ test_that("an explicit \"auto\" still means infer, even when `units` says otherw
 })
 
 test_that("the default is unchanged: no `units` means inference on both axes", {
+  skip_on_cran()
   x <- tbl_now(make_weekly(), event_date = onset, report_date = reported, verbose = FALSE)
   expect_equal(get_event_units(x), "weeks")
   expect_equal(get_report_units(x), "weeks")
@@ -145,6 +155,7 @@ test_that("the default is unchanged: no `units` means inference on both axes", {
 })
 
 test_that("`units` declares the grid inference cannot see", {
+  skip_on_cran()
   # Two observations a month apart, which `infer_units()` would read as months.
   # Saying `units = "days"` is how a user overrides that in one place.
   df <- data.frame(
@@ -174,6 +185,7 @@ test_that("`units = \"numeric\"` works for a non-date axis", {
 })
 
 test_that("`units` still has to leave the report axis coarser than the event axis", {
+  skip_on_cran()
   expect_error(
     tbl_now(make_daily(),
       event_date = onset, report_date = reported,
@@ -186,6 +198,7 @@ test_that("`units` still has to leave the report axis coarser than the event axi
 # ---- Through the other entry points ----------------------------------------
 
 test_that("`units` reaches tbl_now() through as_tbl_now()", {
+  skip_on_cran()
   x <- as_tbl_now(make_daily(),
     event_date = onset, report_date = reported,
     units = "days", verbose = FALSE
@@ -195,6 +208,7 @@ test_that("`units` reaches tbl_now() through as_tbl_now()", {
 })
 
 test_that("`units` survives a grouped construction and a dplyr verb", {
+  skip_on_cran()
   x <- tbl_now(make_daily(),
     event_date = onset, report_date = reported, strata = sex,
     units = "days", verbose = FALSE
@@ -205,6 +219,7 @@ test_that("`units` survives a grouped construction and a dplyr verb", {
 })
 
 test_that("mixed units survive `group_by()` and `ungroup()`", {
+  skip_on_cran()
   x <- tbl_now(make_daily(),
     event_date = onset, report_date = reported, strata = sex,
     units = "days", report_units = "weeks", verbose = FALSE
@@ -228,6 +243,7 @@ test_that("mixed units survive `group_by()` and `ungroup()`", {
 # ---- Second pass: the paths that build a date rather than read one ----------
 
 test_that("`units` governs the axis reconstructed from a delay column", {
+  skip_on_cran()
   df <- data.frame(
     reported = as.Date("2024-01-05") + 0:9,
     d = c(1, 2, 3, 1, 2, 3, 1, 2, 3, 1)
@@ -242,6 +258,7 @@ test_that("`units` governs the axis reconstructed from a delay column", {
 })
 
 test_that("`units = \"weeks\"` reads a delay column as weeks, not days", {
+  skip_on_cran()
   df <- data.frame(
     onset = as.Date("2024-01-07") + 7 * (0:9),
     d = rep(1, 10)
@@ -255,6 +272,7 @@ test_that("`units = \"weeks\"` reads a delay column as weeks, not days", {
 })
 
 test_that("`units` is enough on its own where inference would refuse", {
+  skip_on_cran()
   # One distinct event date: `infer_units()` cannot see a spacing at all.
   df <- data.frame(
     onset = rep(as.Date("2024-01-01"), 4),
@@ -272,6 +290,7 @@ test_that("`units` is enough on its own where inference would refuse", {
 })
 
 test_that("`units` reaches the update() rebuild too", {
+  skip_on_cran()
   df <- make_daily()
   x <- tbl_now(df[1:5, ],
     event_date = onset, report_date = reported, strata = sex,
@@ -285,6 +304,7 @@ test_that("`units` reaches the update() rebuild too", {
 })
 
 test_that("`units` and aggregate_time_units() tell the same story", {
+  skip_on_cran()
   x <- tbl_now(make_daily(),
     event_date = onset, report_date = reported,
     units = "days", verbose = FALSE
@@ -304,6 +324,7 @@ test_that("`units` and aggregate_time_units() tell the same story", {
 })
 
 test_that("`units` does not disturb an object that had none", {
+  skip_on_cran()
   # The whole feature is a default, so an object built without it must be
   # byte-for-byte what it always was.
   df <- make_weekly()

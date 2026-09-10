@@ -23,7 +23,7 @@
 
 #' Specify a nowcasting model and its arguments
 #'
-#' @description `r lifecycle::badge('experimental')`
+#' @description `r lifecycle::badge('stable')`
 #'
 #' An **engine** is one modelling package plus every argument that package
 #' needs. It is what [run_nowcast()] and [nowcast_backtest()] take, and it is the
@@ -262,7 +262,7 @@ print.nowcast_engine <- function(x, ...) {
 
 #' Is this an engine?
 #'
-#' @description `r lifecycle::badge('experimental')`
+#' @description `r lifecycle::badge('stable')`
 #'
 #' Tests whether an object is a nowcasting engine -- the specification built by
 #' [engine()] that says which modelling package to use and how to configure it.
@@ -356,7 +356,7 @@ is_nowcast_engine <- function(x) {
 
 #' Engines for the built-in nowcasting packages
 #'
-#' @description `r lifecycle::badge('experimental')`
+#' @description `r lifecycle::badge('stable')`
 #'
 #' One constructor per supported modelling package. Each is [engine()] with the
 #' arguments of that package's own entry point spelled out, so the ones that

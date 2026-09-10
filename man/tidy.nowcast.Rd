@@ -50,7 +50,7 @@ produced. Only used by the \pkg{NobBS} branch (see \code{level} under \emph{Valu
 A tibble, as described above.
 }
 \description{
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
 
 Every nowcasting package returns its answer in its own shape -- a matrix of
 posterior draws, an \code{stsNC} object, a Stan fit, an INLA summary, a bare list.

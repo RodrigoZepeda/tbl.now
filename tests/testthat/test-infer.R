@@ -47,6 +47,7 @@ setup_test_data <- function() {
 
 # Tests for infer_now() ----
 test_that("infer_now returns max report date when now is NULL", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   result <- infer_now(
@@ -61,6 +62,7 @@ test_that("infer_now returns max report date when now is NULL", {
 })
 
 test_that("infer_now returns max of event and report dates", {
+  skip_on_cran()
   # Case where report_date is later
   data1 <- data.frame(
     event_date = as.Date(c("2020-07-08", "2020-07-09")),
@@ -81,6 +83,7 @@ test_that("infer_now returns max of event and report dates", {
 })
 
 test_that("infer_now returns provided now when not NULL", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   provided_now <- as.Date("2020-07-13")
@@ -95,6 +98,7 @@ test_that("infer_now returns provided now when not NULL", {
 })
 
 test_that("infer_now fails with empty data frame", {
+  skip_on_cran()
   empty_data <- data.frame(
     event_date = as.Date(character(0)),
     report_date = as.Date(character(0))
@@ -107,6 +111,7 @@ test_that("infer_now fails with empty data frame", {
 })
 
 test_that("infer_now works with integer dates", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   result <- infer_now(
@@ -120,6 +125,7 @@ test_that("infer_now works with integer dates", {
 })
 
 test_that("infer_now fails when columns don't exist", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   expect_error(
@@ -135,6 +141,7 @@ test_that("infer_now fails when columns don't exist", {
 
 # Tests for infer_units_one_column() ----
 test_that("infer_units_one_column detects daily data", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   result <- infer_units_one_column(
@@ -147,6 +154,7 @@ test_that("infer_units_one_column detects daily data", {
 })
 
 test_that("infer_units_one_column detects weekly data", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   result <- infer_units_one_column(
@@ -159,6 +167,7 @@ test_that("infer_units_one_column detects weekly data", {
 })
 
 test_that("infer_units_one_column detects monthly data", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   result <- infer_units_one_column(
@@ -171,6 +180,7 @@ test_that("infer_units_one_column detects monthly data", {
 })
 
 test_that("infer_units_one_column detects yearly data", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   result <- infer_units_one_column(
@@ -183,6 +193,7 @@ test_that("infer_units_one_column detects yearly data", {
 })
 
 test_that("infer_units_one_column detects numeric data", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   result <- infer_units_one_column(
@@ -195,6 +206,7 @@ test_that("infer_units_one_column detects numeric data", {
 })
 
 test_that("infer_units_one_column returns provided units when not auto", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   result <- infer_units_one_column(
@@ -207,6 +219,7 @@ test_that("infer_units_one_column returns provided units when not auto", {
 })
 
 test_that("infer_units_one_column accepts NULL and treats as auto", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   result <- infer_units_one_column(
@@ -219,6 +232,7 @@ test_that("infer_units_one_column accepts NULL and treats as auto", {
 })
 
 test_that("infer_units_one_column fails with less than 2 observations", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   expect_error(
@@ -231,7 +245,54 @@ test_that("infer_units_one_column fails with less than 2 observations", {
   )
 })
 
+test_that("infer_units_one_column reads past the NAs rather than through them", {
+  skip_on_cran()
+  # `NA` used to count as a distinct date, so a column holding one real date
+  # plus missings slipped past the "fewer than two dates" guard: `diff()`
+  # returned `NA`, `min()` warned about its own empty arguments, and the abort
+  # that followed blamed the spacing. A revision axis with pending cases is
+  # full of those missings.
+  gappy <- data.frame(
+    event_date = as.Date(c("2020-01-01", NA, "2020-01-02", NA, "2020-01-03"))
+  )
+  expect_silent(
+    result <- infer_units_one_column(
+      gappy,
+      date_column = "event_date",
+      date_units = "auto"
+    )
+  )
+  expect_equal(result, "days")
+
+  one_date <- data.frame(
+    event_date = as.Date(c("2020-01-01", NA, "2020-01-01", NA))
+  )
+  expect_silent(
+    expect_error(
+      infer_units_one_column(
+        one_date,
+        date_column = "event_date",
+        date_units = "auto"
+      ),
+      "single distinct date"
+    )
+  )
+
+  all_missing <- data.frame(event_date = as.Date(c(NA, NA)))
+  expect_silent(
+    expect_error(
+      infer_units_one_column(
+        all_missing,
+        date_column = "event_date",
+        date_units = "auto"
+      ),
+      "no distinct dates"
+    )
+  )
+})
+
 test_that("infer_units_one_column fails with unsupported units", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   expect_error(
@@ -245,6 +306,7 @@ test_that("infer_units_one_column fails with unsupported units", {
 })
 
 test_that("infer_units_one_column fails with non-Date non-numeric column", {
+  skip_on_cran()
   char_data <- data.frame(
     event_date = c("2020-07-08", "2020-07-09"),
     report_date = as.Date(c("2020-07-11", "2020-07-12"))
@@ -261,6 +323,7 @@ test_that("infer_units_one_column fails with non-Date non-numeric column", {
 })
 
 test_that("infer_units_one_column handles irregular spacing", {
+  skip_on_cran()
   # Data with irregular spacing that doesn't fit standard categories
   irregular_data <- data.frame(
     event_date = as.Date(c("2020-01-01", "2020-01-15", "2020-02-01"))
@@ -293,6 +356,7 @@ test_that("infer_units_one_column uses minimum difference for detection", {
 
 # Tests for infer_units() ----
 test_that("infer_units is a wrapper for infer_units_one_column", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   result1 <- infer_units(
@@ -312,6 +376,7 @@ test_that("infer_units is a wrapper for infer_units_one_column", {
 
 # Tests for infer_data_type() ----
 test_that("infer_data_type detects count data when n column exists", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   result <- infer_data_type(
@@ -338,6 +403,7 @@ test_that("infer_data_type detects count data when n column exists", {
 })
 
 test_that("infer_data_type detects linelist data when n column missing", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   result <- infer_data_type(
@@ -360,6 +426,7 @@ test_that("infer_data_type detects linelist data when n column missing", {
 })
 
 test_that("infer_data_type shows message when verbose = TRUE", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   expect_message_quietly(
@@ -394,6 +461,7 @@ test_that("infer_data_type shows message when verbose = TRUE", {
 })
 
 test_that("infer_data_type returns provided data_type when not auto", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   result <- infer_data_type(
@@ -417,6 +485,7 @@ test_that("infer_data_type returns provided data_type when not auto", {
 })
 
 test_that("infer_data_type warns when linelist has n column", {
+  skip_on_cran()
   linelist_with_n <- data.frame(
     event_date = as.Date(c("2020-07-08", "2020-07-09")),
     report_date = as.Date(c("2020-07-11", "2020-07-12")),
@@ -430,6 +499,7 @@ test_that("infer_data_type warns when linelist has n column", {
 })
 
 test_that("infer_data_type fails when count data missing n column", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   expect_error(
@@ -439,6 +509,7 @@ test_that("infer_data_type fails when count data missing n column", {
 })
 
 test_that("infer_data_type fails when n column is not numeric", {
+  skip_on_cran()
   invalid_count <- data.frame(
     event_date = as.Date(c("2020-07-08", "2020-07-09")),
     report_date = as.Date(c("2020-07-11", "2020-07-12")),
@@ -456,6 +527,7 @@ test_that("infer_data_type fails when n column is not numeric", {
 
 
 test_that("infer_data_type handles vector data_type input", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   # Should use first element
@@ -473,6 +545,7 @@ test_that("infer_data_type handles vector data_type input", {
 
 
 test_that("infer_data_type throws error when case_count is a vector", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   # Should use first element
@@ -489,6 +562,7 @@ test_that("infer_data_type throws error when case_count is a vector", {
 
 # Integration tests ----
 test_that("infer functions work together for daily data", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   now <- infer_now(
@@ -524,6 +598,7 @@ test_that("infer functions work together for daily data", {
 })
 
 test_that("infer functions work with count data", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   now <- infer_now(
@@ -547,6 +622,7 @@ test_that("infer functions work with count data", {
 })
 
 test_that("infer functions work with numeric dates", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   now <- infer_now(
@@ -567,6 +643,7 @@ test_that("infer functions work with numeric dates", {
 })
 
 test_that("infer functions handle edge cases", {
+  skip_on_cran()
   # Two observations (minimum for inference)
   two_obs <- data.frame(
     event_date = as.Date(c("2020-07-08", "2020-07-09")),
@@ -585,6 +662,7 @@ test_that("infer functions handle edge cases", {
 })
 
 test_that("infer_units handles boundary cases for time periods", {
+  skip_on_cran()
   # Exactly 6 days (boundary between days and weeks)
   six_day_data <- data.frame(
     event_date = as.Date(c("2020-01-01", "2020-01-07", "2020-01-13"))

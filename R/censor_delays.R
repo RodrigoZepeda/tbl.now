@@ -1,6 +1,6 @@
 #' Record a report or a delay as a bound rather than a fact
 #'
-#' @description `r lifecycle::badge("experimental")`
+#' @description `r lifecycle::badge("stable")`
 #'
 #' Surveillance data is full of dates that are not really dates. A case with
 #' onset in March turns up in December; a report date is missing altogether; a

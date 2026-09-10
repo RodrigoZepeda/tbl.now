@@ -31,6 +31,7 @@ revision_fixture <- function() {
 }
 
 test_that("change_now() moves `now` backwards past a revision (#51)", {
+  skip_on_cran()
   flu <- revision_fixture()
   expect_equal(get_now(flu), as.Date("2021-01-17"))
 
@@ -44,6 +45,7 @@ test_that("change_now() moves `now` backwards past a revision (#51)", {
 })
 
 test_that("change_now() masks revisions dated after the new `now`", {
+  skip_on_cran()
   flu <- revision_fixture()
   earlier <- suppressMessages(suppressWarnings(
     change_now(flu, as.Date("2021-01-10"))
@@ -68,6 +70,7 @@ test_that("change_now() masks revisions dated after the new `now`", {
 })
 
 test_that("the re-censored object is valid, and the counts follow", {
+  skip_on_cran()
   flu <- revision_fixture()
   earlier <- suppressMessages(suppressWarnings(
     change_now(flu, as.Date("2021-01-10"))
@@ -89,6 +92,7 @@ test_that("the re-censored object is valid, and the counts follow", {
 })
 
 test_that("a whole backtest walk never errors (#51 regression guard)", {
+  skip_on_cran()
   flu <- revision_fixture()
 
   # The loop the issue says users will write. Every one of these dates is
@@ -107,6 +111,7 @@ test_that("a whole backtest walk never errors (#51 regression guard)", {
 })
 
 test_that("masking is idempotent and only ever looks backwards", {
+  skip_on_cran()
   flu <- revision_fixture()
   once <- suppressMessages(suppressWarnings(change_now(flu, as.Date("2021-01-10"))))
   twice <- suppressMessages(suppressWarnings(change_now(once, as.Date("2021-01-10"))))
@@ -128,6 +133,7 @@ test_that("update_now() does not mask -- a revision is an observation", {
 })
 
 test_that("masking reports what it did, and `verbose = FALSE` silences it", {
+  skip_on_cran()
   flu <- revision_fixture()
 
   expect_message_quietly(
@@ -142,6 +148,7 @@ test_that("masking reports what it did, and `verbose = FALSE` silences it", {
 })
 
 test_that("change_now() still works on an object with no revision", {
+  skip_on_cran()
   plain <- tbl_now(
     data.frame(
       onset = as.Date("2021-01-04") + 0:9,
@@ -157,6 +164,7 @@ test_that("change_now() still works on an object with no revision", {
 })
 
 test_that("change_now() masks count data too, and resets the censoring flag", {
+  skip_on_cran()
   cases <- data.frame(
     onset   = as.Date("2021-01-04") + rep(0:4, each = 2),
     visit   = as.Date("2021-01-05") + rep(0:4, each = 2),

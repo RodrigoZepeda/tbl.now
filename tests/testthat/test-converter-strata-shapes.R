@@ -52,6 +52,7 @@ awkward_strata_totals <- function() {
 # --- triangle_list: labels must stay attached to their own counts -------------
 
 test_that("triangle_list pairs each label with its own stratum's counts", {
+  skip_on_cran()
   skip_if_not_installed("baselinenowcast")
   x  <- awkward_strata_tbl_now()
   tl <- q(tbl_now_to_baselinenowcast(x, format = "triangle_list",
@@ -66,6 +67,7 @@ test_that("triangle_list pairs each label with its own stratum's counts", {
 })
 
 test_that("triangle_list keeps strata VALUES, not just the pasted label", {
+  skip_on_cran()
   skip_if_not_installed("baselinenowcast")
   x  <- awkward_strata_tbl_now()
   tl <- q(tbl_now_to_baselinenowcast(x, format = "triangle_list",
@@ -84,6 +86,7 @@ test_that("triangle_list keeps strata VALUES, not just the pasted label", {
 })
 
 test_that("a factor level with no rows produces no triangle", {
+  skip_on_cran()
   skip_if_not_installed("baselinenowcast")
   x  <- awkward_strata_tbl_now()
   tl <- q(tbl_now_to_baselinenowcast(x, format = "triangle_list",
@@ -97,6 +100,7 @@ test_that("a factor level with no rows produces no triangle", {
 })
 
 test_that("the triangle_list round trip preserves every stratum's total", {
+  skip_on_cran()
   skip_if_not_installed("baselinenowcast")
   x    <- awkward_strata_tbl_now()
   tl   <- q(tbl_now_to_baselinenowcast(x, format = "triangle_list",
@@ -121,6 +125,7 @@ test_that("the triangle_list round trip preserves every stratum's total", {
 # --- pooling for the single matrix -------------------------------------------
 
 test_that("pooling several strata into one matrix keeps the grand total", {
+  skip_on_cran()
   skip_if_not_installed("baselinenowcast")
   x <- awkward_strata_tbl_now()
   expect_warning(
@@ -136,6 +141,7 @@ test_that("pooling several strata into one matrix keeps the grand total", {
 # --- the other back-ends carry both columns ----------------------------------
 
 test_that("every column back-end carries both stratifying columns", {
+  skip_on_cran()
   x <- awkward_strata_tbl_now()
   total_cases <- sum(awkward_strata_totals()$total)
 
@@ -170,6 +176,7 @@ test_that("every column back-end carries both stratifying columns", {
 # This is the case the test above does NOT cover, and did not catch.
 
 test_that("tbl_now_to_nobbs emits the single column NobBS.strat takes", {
+  skip_on_cran()
   skip_if_not_installed("NobBS")
   x  <- awkward_strata_tbl_now()
   nb <- q(tbl_now_to_nobbs(x, verbose = FALSE))
@@ -182,6 +189,7 @@ test_that("tbl_now_to_nobbs emits the single column NobBS.strat takes", {
 })
 
 test_that("tbl_now_to_surveillance emits a column to split the line list on", {
+  skip_on_cran()
   skip_if_not_installed("surveillance")
   x   <- awkward_strata_tbl_now()
   sur <- q(tbl_now_to_surveillance(x, verbose = FALSE))
@@ -195,6 +203,7 @@ test_that("tbl_now_to_surveillance emits a column to split the line list on", {
 })
 
 test_that("linelist_list pairs each line list with its own stratum's cases", {
+  skip_on_cran()
   skip_if_not_installed("surveillance")
   x      <- awkward_strata_tbl_now()
   pieces <- q(tbl_now_to_surveillance(x, format = "linelist_list",
@@ -217,6 +226,7 @@ test_that("linelist_list pairs each line list with its own stratum's cases", {
 })
 
 test_that("linelist_list is a length-one list when there are no strata", {
+  skip_on_cran()
   skip_if_not_installed("surveillance")
   x <- q(remove_all_strata(awkward_strata_tbl_now()))
   pieces <- q(tbl_now_to_surveillance(x, format = "linelist_list",
@@ -229,6 +239,7 @@ test_that("linelist_list is a length-one list when there are no strata", {
 })
 
 test_that("linelist_list round-trips back to a tbl_now with its strata", {
+  skip_on_cran()
   skip_if_not_installed("surveillance")
   x      <- awkward_strata_tbl_now()
   pieces <- q(tbl_now_to_surveillance(x, format = "linelist_list",
@@ -249,6 +260,7 @@ test_that("linelist_list round-trips back to a tbl_now with its strata", {
 })
 
 test_that("tbl_now_to_EpiNow2 emits the single `region` regional_epinow takes", {
+  skip_on_cran()
   skip_if_not_installed("EpiNow2")
   x   <- awkward_strata_tbl_now()
   reg <- q(tbl_now_to_EpiNow2(x, target = "regional_epinow",
@@ -262,6 +274,7 @@ test_that("tbl_now_to_EpiNow2 emits the single `region` regional_epinow takes", 
 })
 
 test_that("the pasted separator is user-chosen", {
+  skip_on_cran()
   skip_if_not_installed("NobBS")
   skip_if_not_installed("surveillance")
   x <- awkward_strata_tbl_now()
@@ -281,6 +294,7 @@ test_that("the pasted separator is user-chosen", {
 })
 
 test_that("a stratum value holding the separator aborts rather than mispastes", {
+  skip_on_cran()
   skip_if_not_installed("NobBS")
   d <- data.frame(
     ev = as.Date("2024-01-01") + c(0, 1),
@@ -302,6 +316,7 @@ test_that("a stratum value holding the separator aborts rather than mispastes", 
 })
 
 test_that("the pasted column refuses to overwrite an existing one", {
+  skip_on_cran()
   skip_if_not_installed("NobBS")
   d <- data.frame(
     ev     = as.Date("2024-01-01") + c(0, 1),
@@ -377,6 +392,7 @@ test_that("epinowcast gets one group per observed strata combination", {
 })
 
 test_that("a tsibble key round-trips several strata", {
+  skip_on_cran()
   skip_if_not_installed("tsibble")
   x  <- awkward_strata_tbl_now()
   ts <- q(tbl_now_to_tsibble(x, verbose = FALSE))
@@ -394,6 +410,7 @@ test_that("a tsibble key round-trips several strata", {
 # --- the label helper `tidy()` uses ------------------------------------------
 
 test_that(".epinowcast_stratum pastes several `by` columns and ignores others", {
+  skip_on_cran()
   # `summary()` carries columns that are NOT in `by` (`location` on the shipped
   # example). Only the `by` columns may become the label.
   summary_table <- data.frame(

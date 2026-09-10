@@ -86,6 +86,7 @@ test_that("every tbl_now_to_* converter is accounted for in the registry", {
 })
 
 test_that("the registered coercion methods exist and dispatch on tbl_now", {
+  skip_on_cran()
   for (entry in COERCION_REGISTRY) {
     if (is.na(entry$generic)) next
     skip_if_not_installed(entry$package)
@@ -102,6 +103,7 @@ test_that("the registered coercion methods exist and dispatch on tbl_now", {
 })
 
 test_that("each coercion method is a wrapper, not a second implementation", {
+  skip_on_cran()
   x <- registry_tbl_now()
 
   for (entry in COERCION_REGISTRY) {
@@ -133,6 +135,7 @@ test_that("each coercion method is a wrapper, not a second implementation", {
 })
 
 test_that("packages without a coercion generic really have none", {
+  skip_on_cran()
   # The `reason` fields are a claim about another package. Claims rot, so check
   # them: if a package GAINS a coercion verb, this fails and we go and use it.
   coercion_like <- function(package) {

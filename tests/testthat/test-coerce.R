@@ -13,6 +13,7 @@ make_spec_now <- function() {
 }
 
 test_that("as_tibble() is lazy by default (does not materialise temporal effects)", {
+  skip_on_cran()
   x <- make_spec_now()
 
   tb <- tibble::as_tibble(x)
@@ -35,6 +36,7 @@ test_that("as.data.frame() is lazy by default", {
 })
 
 test_that("as_tibble(compute_temporal_effects = TRUE) materialises the spec", {
+  skip_on_cran()
   x <- make_spec_now()
 
   tb <- tibble::as_tibble(x, compute_temporal_effects = TRUE)
@@ -46,6 +48,7 @@ test_that("as_tibble(compute_temporal_effects = TRUE) materialises the spec", {
 })
 
 test_that("as.data.frame(compute_temporal_effects = TRUE) materialises the spec", {
+  skip_on_cran()
   x <- make_spec_now()
 
   df <- as.data.frame(x, compute_temporal_effects = TRUE)
@@ -56,6 +59,7 @@ test_that("as.data.frame(compute_temporal_effects = TRUE) materialises the spec"
 })
 
 test_that("coercion works on a grouped_tbl_now", {
+  skip_on_cran()
   x <- make_spec_now() |> dplyr::group_by(gender)
 
   # lazy by default
@@ -69,6 +73,7 @@ test_that("coercion works on a grouped_tbl_now", {
 })
 
 test_that("coercion of a tbl_now without a temporal spec keeps the same columns", {
+  skip_on_cran()
   data(denguedat)
   x <- tbl_now(denguedat, event_date = "onset_week", report_date = "report_week",
                verbose = FALSE)
@@ -80,6 +85,7 @@ test_that("coercion of a tbl_now without a temporal spec keeps the same columns"
 })
 
 test_that("dplyr verbs on a spec-carrying tbl_now stay lazy and do not recurse", {
+  skip_on_cran()
   # Regression test: group_by() / to_count() / get_*_reported_cases() call
   # as_tibble()/as.data.frame() on the tbl_now internally (via dplyr's
   # compute_groups() and data mask). These must stay cheap declassers, otherwise

@@ -355,12 +355,19 @@ diagnose_batches <- function(x,
 #'   increment attached to a report date is the change the report announced,
 #'   which may be negative when a report revises a total downward.
 #'
+#' @param keep_revision_type Whether to carry a canonical `.outcome` factor
+#'   (`confirmed` / `pending` / `retracted` / `unknown`) alongside the counts,
+#'   so a caller can split arrivals by how each case eventually resolved. Only
+#'   the plotting callers ask for it; the batch tests never do, because an
+#'   arrival is an arrival whatever it later turned into.
+#'
 #' @returns A data frame with `.event_date`, `.report_date`, `.delay`, `.count`,
-#'   `.stratum`.
+#'   `.stratum`, and `.outcome` when `keep_revision_type = TRUE`.
 #' @keywords internal
 #' @noRd
 .batch_report_increments <- function(data, axis = c("report", "revision"),
-                                     drop_censored = FALSE) {
+                                     drop_censored = FALSE,
+                                     keep_revision_type = FALSE) {
   axis <- match.arg(axis)
   observations <- as.data.frame(data)
   event_col    <- get_event_date(data)
@@ -430,6 +437,21 @@ diagnose_batches <- function(x,
     .stratum     = .batch_stratum_label(observations, strata_cols)
   )
 
+  if (isTRUE(keep_revision_type)) {
+    # De-accumulation differences one running total per (event, stratum); it has
+    # no per-case outcome to carry, and splitting a level into outcomes would
+    # invent one. The caller checks for this and says so before asking.
+    if (identical(data_type, "count-cumulative")) {
+      cli::cli_abort(
+        "A revision-outcome split cannot be taken from {.val count-cumulative} data."
+      )
+    }
+    observations$.outcome <- .tbl_now_revision_type_factor(
+      observations[[get_revision_type(data)]],
+      !is.na(observations[[get_revision_date(data)]])
+    )
+  }
+
   # Reports can never precede the event they describe.
   observations <- dplyr::filter(observations, .data$.report_date >= .data$.event_date)
   if (nrow(observations) == 0L) {
@@ -442,6 +464,7 @@ diagnose_batches <- function(x,
   } else {
     group_cols <- c(
       ".event_date", ".report_date", ".stratum",
+      if (isTRUE(keep_revision_type)) ".outcome",
       if (identical(axis, "revision")) ".revision_delay"
     )
     observations <- observations |>

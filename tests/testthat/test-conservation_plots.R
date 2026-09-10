@@ -16,6 +16,7 @@ make_cons_tbl <- function(seed = 5L) {
 }
 
 test_that(".conservation_prep returns standardised creation/transport scores", {
+  skip_on_cran()
   tn   <- make_cons_tbl()
   prep <- tbl.now:::.conservation_prep(tn, lookback = 6L)
   expect_true(all(c("transport_z", "creation_z") %in% names(prep$reg)))

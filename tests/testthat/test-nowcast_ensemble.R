@@ -30,6 +30,7 @@ fake_draws_nowcast <- function(method, centre, n = 500,
 }
 
 test_that("the quantile ensemble averages the members level by level", {
+  skip_on_cran()
   a <- fake_nowcast("a", c(1, 2, 3, 4, 5))
   b <- fake_nowcast("b", c(3, 4, 5, 6, 7))
 
@@ -45,6 +46,7 @@ test_that("the quantile ensemble averages the members level by level", {
 })
 
 test_that("an ensemble can be a member of another ensemble", {
+  skip_on_cran()
   hsgp <- fake_nowcast("hsgp", c(1, 2, 3, 4, 5))
   ar <- fake_nowcast("ar", c(3, 4, 5, 6, 7))
   rw <- fake_nowcast("rw", c(5, 6, 7, 8, 9))
@@ -65,6 +67,7 @@ test_that("an ensemble can be a member of another ensemble", {
 })
 
 test_that("a draw-based ensemble can be nested in a linear pool", {
+  skip_on_cran()
   first <- fake_draws_nowcast("first", 10)
   second <- fake_draws_nowcast("second", 20)
   third <- fake_draws_nowcast("third", 30)
@@ -83,6 +86,7 @@ test_that("a draw-based ensemble can be nested in a linear pool", {
 })
 
 test_that("unequal weights shift the ensemble towards the heavier member", {
+  skip_on_cran()
   a <- fake_nowcast("a", c(1, 2, 3, 4, 5))
   b <- fake_nowcast("b", c(3, 4, 5, 6, 7))
 
@@ -99,6 +103,7 @@ test_that("unequal weights shift the ensemble towards the heavier member", {
 })
 
 test_that("weights are revised", {
+  skip_on_cran()
   a <- fake_nowcast("a", c(1, 2, 3, 4, 5))
   b <- fake_nowcast("b", c(3, 4, 5, 6, 7))
 
@@ -125,6 +130,7 @@ test_that("weights are revised", {
 })
 
 test_that("an ensemble needs at least two compatible members", {
+  skip_on_cran()
   a <- fake_nowcast("a", c(1, 2, 3, 4, 5))
   expect_error(nowcast_ensemble(a, verbose = FALSE), "at least two")
   expect_error(nowcast_ensemble(a, mtcars, verbose = FALSE), "tbl_nowcast")
@@ -147,6 +153,7 @@ test_that("members can be passed as a single list, and are named uniquely", {
 })
 
 test_that("mismatched quantile levels fall back to the shared ones", {
+  skip_on_cran()
   a <- fake_nowcast("a", c(1, 2, 3), levels = c(0.25, 0.5, 0.75))
   b <- fake_nowcast("b", c(1, 2, 3, 4, 5), levels = c(0.1, 0.25, 0.5, 0.75, 0.9))
 
@@ -163,6 +170,7 @@ test_that("mismatched quantile levels fall back to the shared ones", {
 })
 
 test_that("the linear pool needs draws and produces them", {
+  skip_on_cran()
   a <- fake_nowcast("a", c(1, 2, 3, 4, 5))
   b <- fake_draws_nowcast("b", 10)
 
@@ -182,6 +190,7 @@ test_that("the linear pool needs draws and produces them", {
 })
 
 test_that("the linear pool validates n_draws", {
+  skip_on_cran()
   b <- fake_draws_nowcast("b", 10)
   c_member <- fake_draws_nowcast("c", 20)
 
@@ -197,6 +206,7 @@ test_that("the linear pool validates n_draws", {
 })
 
 test_that("the linear pool splits draws according to the weights", {
+  skip_on_cran()
   b <- fake_draws_nowcast("b", 10)
   c_member <- fake_draws_nowcast("c", 20)
 
@@ -213,6 +223,7 @@ test_that("the linear pool splits draws according to the weights", {
 })
 
 test_that(".allocate_draws() splits exactly n_draws", {
+  skip_on_cran()
   weights <- c(a = 1 / 3, b = 1 / 3, c = 1 / 3)
   allocated <- tbl.now:::.allocate_draws(weights, 100)
 
@@ -222,6 +233,7 @@ test_that(".allocate_draws() splits exactly n_draws", {
 })
 
 test_that("differing now dates warn but still combine", {
+  skip_on_cran()
   a <- fake_nowcast("a", c(1, 2, 3, 4, 5))
   b <- fake_nowcast("b", c(3, 4, 5, 6, 7))
   b@now <- as.Date("2020-01-20")
@@ -230,6 +242,7 @@ test_that("differing now dates warn but still combine", {
 })
 
 test_that("duplicate member prediction keys are refused", {
+  skip_on_cran()
   duplicate <- dplyr::bind_rows(
     tidyr::expand_grid(
       event_date = as.Date("2020-01-06"),
@@ -251,6 +264,7 @@ test_that("duplicate member prediction keys are refused", {
 })
 
 test_that("duplicate member draw keys are refused", {
+  skip_on_cran()
   a <- fake_draws_nowcast("a", 10, dates = as.Date("2020-01-06"))
   b <- fake_draws_nowcast("b", 20, dates = as.Date("2020-01-06"))
   b@draws <- dplyr::bind_rows(b@draws, dplyr::slice(b@draws, 1))
@@ -276,6 +290,7 @@ quantile_values <- function(nowcast, level) {
 }
 
 test_that("the combined quantiles are monotone in the quantile level", {
+  skip_on_cran()
   a <- fake_nowcast("a", c(1, 2, 3, 4, 5))
   b <- fake_nowcast("b", c(0, 10, 20, 30, 40))
 
@@ -301,6 +316,7 @@ test_that("the combined quantiles are monotone in the quantile level", {
 })
 
 test_that("an equally weighted ensemble sits between its members at every level", {
+  skip_on_cran()
   a <- fake_nowcast("a", c(1, 2, 3, 4, 5))
   b <- fake_nowcast("b", c(0, 10, 20, 30, 40))
 
@@ -318,6 +334,7 @@ test_that("an equally weighted ensemble sits between its members at every level"
 })
 
 test_that("increasing a member's weight moves the ensemble towards it, monotonically", {
+  skip_on_cran()
   a <- fake_nowcast("a", c(1, 2, 3, 4, 5))
   b <- fake_nowcast("b", c(0, 10, 20, 30, 40))
 
@@ -335,6 +352,7 @@ test_that("increasing a member's weight moves the ensemble towards it, monotonic
 })
 
 test_that("combining a nowcast with itself returns that nowcast", {
+  skip_on_cran()
   a <- fake_nowcast("a", c(1, 2, 3, 4, 5))
   copy <- fake_nowcast("a_copy", c(1, 2, 3, 4, 5))
 
@@ -365,6 +383,7 @@ test_that("combining a nowcast with itself returns that nowcast", {
 })
 
 test_that("no member is silently dropped when the levels differ", {
+  skip_on_cran()
   a <- fake_nowcast("a", c(1, 2, 3), levels = c(0.25, 0.5, 0.75))
   b <- fake_nowcast("b", c(1, 2, 3, 4, 5), levels = c(0.1, 0.25, 0.5, 0.75, 0.9))
 
@@ -384,6 +403,7 @@ test_that("no member is silently dropped when the levels differ", {
 })
 
 test_that("the quantile ensemble is narrower than the linear pool", {
+  skip_on_cran()
   # The textbook contrast: averaging quantiles pulls the tails in, pooling draws
   # turns between-model disagreement into extra spread.
   set.seed(20260824)

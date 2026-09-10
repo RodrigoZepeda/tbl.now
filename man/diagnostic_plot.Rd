@@ -59,7 +59,7 @@ A \pkg{patchwork} object, or a single plot when one panel is selected
 (or a \pkg{plotly} widget when \code{plotly = TRUE}).
 }
 \description{
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
 
 Lays out a gallery of complementary views of a \code{tbl_now}'s reporting process,
 all aimed at spotting reporting artefacts -- especially \emph{batch reporting}. Each
@@ -82,5 +82,5 @@ Every panel is also a function of its own:
 \code{\link[=plot_reporting_triangle]{plot_reporting_triangle()}} (the full event-by-delay grid),
 \code{\link[=plot_delay_profiles]{plot_delay_profiles()}} (each date's delay curve),
 \code{\link[=plot_delay_drift]{plot_delay_drift()}} (whether delays are getting longer),
-\code{\link[=plot_transport_discriminant]{plot_transport_discriminant()}}, \code{\link[=plot_scalogram]{plot_scalogram()}}.
+\code{\link[=plot_transport_discriminant]{plot_transport_discriminant()}}.
 }

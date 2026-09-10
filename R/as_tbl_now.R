@@ -1,6 +1,6 @@
 #' Transform an object into a `tbl_now`
 #'
-#' @description  `r lifecycle::badge("experimental")`
+#' @description  `r lifecycle::badge("stable")`
 #'
 #' Convert a supported object into a [tbl_now]. For a plain `data.frame` /
 #' `data.table` (or an existing `tbl_now`) you supply the `event_date` and

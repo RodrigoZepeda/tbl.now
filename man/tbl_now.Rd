@@ -145,9 +145,12 @@ or a character vector with the names of the columns containing the temporal effe
 \item{force}{(optional) Logical. Whether to force computation overwriting pre-existing variables.
 Default = \code{FALSE}.}
 
-\item{warn_non_uniqueness}{(optional) Logical. Whether to throw a warning if data
-has multiple observations for same event and report date (conditional on covariates
-and strata)}
+\item{warn_non_uniqueness}{(optional) Logical. Whether to throw a warning if
+data has several rows on the same full key: the event, report and (when
+declared) revision dates, the revision type, the strata, the covariates and
+the censoring flags. Rows carrying an \code{NA} anywhere in that key -- a pending
+case has no revision date -- are left out of the comparison, because an
+unobserved value cannot be shown to equal another.}
 
 \item{align_weeks}{(optional) Logical. If both event and report units are weeks
 and \code{align_weeks = TRUE} it ensures that all weeks start in a Sunday so that
@@ -169,7 +172,7 @@ strata, covariates and so on, plus the \code{now} of the nowcast. List them with
 \code{\link[=tbl_now_attributes]{tbl_now_attributes()}}.
 }
 \description{
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
 
 Surveillance data arrives late. A case that happened on Monday may only reach
 the surveillance system on Thursday, so counts for the most recent days always

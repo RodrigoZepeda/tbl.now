@@ -82,7 +82,7 @@ Default \code{0.4}.}
 A \pkg{ggplot2} object.
 }
 \description{
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
 
 Draws the reporting triangle as a hexagonal age-period-cohort map, using the
 projection of Jalal and Burke (2020). Event date, report date and reporting

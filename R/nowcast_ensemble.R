@@ -11,7 +11,7 @@
 
 #' Combine several nowcasts into an ensemble
 #'
-#' @description `r lifecycle::badge('experimental')`
+#' @description `r lifecycle::badge('stable')`
 #'
 #' Takes the nowcasts produced by different modelling packages on the *same*
 #' `tbl_now` and combines them into a single [tbl_nowcast]. Ensembles are

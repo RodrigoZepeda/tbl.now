@@ -11,7 +11,7 @@ A numeric vector of nine probabilities in \verb{(0, 1)}, sorted
 increasingly.
 }
 \description{
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
 
 The quantile levels \code{\link[=run_nowcast]{run_nowcast()}} summarises a nowcast at by default: nine
 probabilities, symmetric about the median, spanning the 50\%, 80\%, 90\% and 95\%
@@ -51,5 +51,5 @@ engine("baselinenowcast", quantile_levels = hub_levels)
 \seealso{
 \code{\link[=engine]{engine()}}, whose \code{quantile_levels} argument this is the default for;
 \code{\link[=run_nowcast]{run_nowcast()}} and \code{\link[=nowcast_backtest]{nowcast_backtest()}}, which report at these levels;
-\code{\link[=score_nowcast]{score_nowcast()}} and \code{\link[=as_forecast_point]{as_forecast_point()}}, which score them.
+\code{\link[=score_nowcast]{score_nowcast()}} and \code{\link[scoringutils:as_forecast_point]{scoringutils::as_forecast_point()}}, which score them.
 }

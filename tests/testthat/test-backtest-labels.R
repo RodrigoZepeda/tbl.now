@@ -19,6 +19,7 @@ backtest_tbl_now <- function() {
 }
 
 test_that("engine labels reach the scores, the predictions and the weights", {
+  skip_on_cran()
   skip_if_not_installed("baselinenowcast")
   x <- backtest_tbl_now()
   dates <- get_now(x) - c(2, 1)
@@ -43,6 +44,7 @@ test_that("engine labels reach the scores, the predictions and the weights", {
 })
 
 test_that("an argument name overrides the engine's own label", {
+  skip_on_cran()
   skip_if_not_installed("baselinenowcast")
   x <- backtest_tbl_now()
 
@@ -55,6 +57,7 @@ test_that("an argument name overrides the engine's own label", {
 })
 
 test_that("an unlabelled engine is labelled by its own method", {
+  skip_on_cran()
   skip_if_not_installed("baselinenowcast")
   x <- backtest_tbl_now()
 
@@ -67,6 +70,7 @@ test_that("an unlabelled engine is labelled by its own method", {
 })
 
 test_that("a list of engines is accepted as well as loose arguments", {
+  skip_on_cran()
   skip_if_not_installed("baselinenowcast")
   x <- backtest_tbl_now()
 
@@ -82,6 +86,7 @@ test_that("a list of engines is accepted as well as loose arguments", {
 })
 
 test_that("duplicate labels abort rather than collapsing two models into one", {
+  skip_on_cran()
   skip_if_not_installed("baselinenowcast")
   x <- backtest_tbl_now()
 
@@ -119,10 +124,43 @@ test_that("engines reporting different quantile levels are refused", {
 })
 
 test_that("nowcast_backtest() refuses a bare method name", {
+  skip_on_cran()
   x <- backtest_tbl_now()
   expect_error(
     nowcast_backtest(x, "baselinenowcast", now_dates = get_now(x) - 1),
     "engine_baselinenowcast"
   )
   expect_error(nowcast_backtest(x, now_dates = get_now(x) - 1), "at least one engine")
+})
+
+test_that("run_nowcast() records the engine label, so `inverse_score` can find it", {
+  x <- backtest_tbl_now()
+
+  # `example_engine()` needs no modelling package and is deterministic, so this
+  # is about the labelling and nothing else.
+  tight <- example_engine(spread = 0.1, label = "tight")
+  wide <- example_engine(spread = 0.8, label = "wide")
+
+  fit_tight <- run_nowcast(x, tight, verbose = FALSE)
+  fit_wide <- run_nowcast(x, wide, verbose = FALSE)
+
+  # The regression: the fit recorded the PACKAGE while the backtest scored the
+  # LABEL, so two configurations of one backend were indistinguishable here and
+  # `nowcast_ensemble()` aborted with "the backtest has no scores for method".
+  expect_equal(fit_tight@method, "tight")
+  expect_equal(fit_wide@method, "wide")
+
+  bt <- nowcast_backtest(
+    x, tight, wide, now_dates = get_now(x) - c(2, 1), verbose = FALSE
+  )
+  ensemble <- nowcast_ensemble(
+    fit_tight, fit_wide, weights = "inverse_score", backtest = bt
+  )
+  expect_true(is_tbl_nowcast(ensemble))
+  expect_setequal(names(ensemble@metadata$weights), c("tight", "wide"))
+})
+
+test_that("an unlabelled engine still records its package as the method", {
+  x <- backtest_tbl_now()
+  expect_equal(run_nowcast(x, example_engine(), verbose = FALSE)@method, "example")
 })

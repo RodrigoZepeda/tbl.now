@@ -53,6 +53,7 @@ make_revised <- function() {
 # ---- Wrong inputs -----------------------------------------------------------
 
 test_that("aggregate_time_units refuses anything that is not a tbl_now", {
+  skip_on_cran()
   expect_error(
     aggregate_time_units(data.frame(a = 1)),
     "must be a <tbl_now>"
@@ -61,6 +62,7 @@ test_that("aggregate_time_units refuses anything that is not a tbl_now", {
 })
 
 test_that("aggregate_time_units refuses an unknown `to`", {
+  skip_on_cran()
   x <- make_daily_linelist()
   expect_error(aggregate_time_units(x, to = "fortnights"), "Invalid")
   expect_error(aggregate_time_units(x, to = "numeric"), "Invalid")
@@ -70,6 +72,7 @@ test_that("aggregate_time_units refuses an unknown `to`", {
 })
 
 test_that("aggregate_time_units refuses an unknown axis, and says `to` is the unit", {
+  skip_on_cran()
   x <- make_daily_linelist()
   expect_error(aggregate_time_units(x, axes = "onset"), "Unknown")
   # The confusable case: `axes` takes an axis name, not a time unit.
@@ -79,12 +82,14 @@ test_that("aggregate_time_units refuses an unknown axis, and says `to` is the un
 })
 
 test_that("aggregate_time_units refuses an unknown `label` and a non-logical verbose", {
+  skip_on_cran()
   x <- make_daily_linelist()
   expect_error(aggregate_time_units(x, label = "middle"), "must be one of")
   expect_error(aggregate_time_units(x, verbose = "yes"), "verbose")
 })
 
 test_that("aggregation never refines: weeks cannot go back to days", {
+  skip_on_cran()
   weekly <- aggregate_time_units(make_daily_linelist(), to = "weeks", verbose = FALSE)
   expect_error(
     aggregate_time_units(weekly, to = "days"),
@@ -95,6 +100,7 @@ test_that("aggregation never refines: weeks cannot go back to days", {
 })
 
 test_that("a numeric axis has no calendar to aggregate on", {
+  skip_on_cran()
   df <- data.frame(event = 1:10, report = 1:10 + 2L, n = 1:10)
   x <- tbl_now(df,
     event_date = event, report_date = report, case_count = n,
@@ -104,6 +110,7 @@ test_that("a numeric axis has no calendar to aggregate on", {
 })
 
 test_that("aggregating only the event axis is refused with a usable hint", {
+  skip_on_cran()
   expect_error(
     aggregate_time_units(make_daily_linelist(), to = "weeks", axes = "event"),
     "coarser than the report axis"
@@ -113,6 +120,7 @@ test_that("aggregating only the event axis is refused with a usable hint", {
 # ---- Columns that are not in the data ---------------------------------------
 
 test_that("the revision axis needs a revision process", {
+  skip_on_cran()
   x <- make_daily_linelist()
   expect_false(has_revision(x))
   expect_error(
@@ -126,6 +134,7 @@ test_that("the revision axis needs a revision process", {
 })
 
 test_that("`axes = \"all\"` simply skips the revision axis when there is none", {
+  skip_on_cran()
   out <- aggregate_time_units(make_daily_linelist(), to = "weeks", verbose = FALSE)
   expect_true(is_tbl_now(out))
   expect_null(get_revision_units(out))
@@ -134,6 +143,7 @@ test_that("`axes = \"all\"` simply skips the revision axis when there is none", 
 # ---- Results worked out by hand ---------------------------------------------
 
 test_that("a daily line list lands on the right epi weeks", {
+  skip_on_cran()
   out <- aggregate_time_units(make_daily_linelist(), to = "weeks", verbose = FALSE)
 
   # Onsets Jan 1, 2, 4 -> week of 2023-12-31; Jan 9, 10 -> 2024-01-07;
@@ -159,6 +169,7 @@ test_that("a daily line list lands on the right epi weeks", {
 })
 
 test_that("`label = \"end\"` names the period by its last day", {
+  skip_on_cran()
   out <- aggregate_time_units(
     make_daily_linelist(),
     to = "weeks", label = "end", verbose = FALSE
@@ -179,6 +190,7 @@ test_that("`label = \"end\"` names the period by its last day", {
 })
 
 test_that("`label = \"end\"` is what makes a report-only aggregation usable", {
+  skip_on_cran()
   x <- make_daily_linelist()
 
   # Named by the week START, a report lands before its own event.
@@ -199,6 +211,7 @@ test_that("`label = \"end\"` is what makes a report-only aggregation usable", {
 })
 
 test_that("count-incidence cells are summed, and the total is preserved", {
+  skip_on_cran()
   x <- make_daily_counts("count-incidence")
   total <- sum(x$n)
 
@@ -217,6 +230,7 @@ test_that("count-incidence cells are summed, and the total is preserved", {
 })
 
 test_that("count-cumulative is de-accumulated before it is summed", {
+  skip_on_cran()
   x <- make_daily_counts("count-cumulative")
   out <- aggregate_time_units(x, to = "weeks", verbose = FALSE)
 
@@ -228,6 +242,7 @@ test_that("count-cumulative is de-accumulated before it is summed", {
 })
 
 test_that("aggregating to the unit an object already has is a no-op", {
+  skip_on_cran()
   weekly <- aggregate_time_units(make_daily_linelist(), to = "weeks", verbose = FALSE)
   expect_message_quietly(
     again <- aggregate_time_units(weekly, to = "weeks"),
@@ -245,6 +260,7 @@ test_that("aggregating to the unit an object already has is a no-op", {
 })
 
 test_that("the revision axis moves with the others, NAs included", {
+  skip_on_cran()
   x <- make_revised()
   out <- aggregate_time_units(x, to = "weeks", verbose = FALSE)
 
@@ -259,6 +275,7 @@ test_that("the revision axis moves with the others, NAs included", {
 })
 
 test_that("aggregating the revision axis alone leaves the other two alone", {
+  skip_on_cran()
   x <- make_revised()
   out <- suppressWarnings(
     aggregate_time_units(x, to = "weeks", axes = "revision", verbose = FALSE)
@@ -272,6 +289,7 @@ test_that("aggregating the revision axis alone leaves the other two alone", {
 # ---- Grouped objects --------------------------------------------------------
 
 test_that("a grouped tbl_now comes back grouped, with the same numbers", {
+  skip_on_cran()
   x <- make_daily_linelist()
   ungrouped <- aggregate_time_units(x, to = "weeks", verbose = FALSE)
 
@@ -292,6 +310,7 @@ test_that("a grouped tbl_now comes back grouped, with the same numbers", {
 })
 
 test_that("grouping does not change what a count aggregation computes", {
+  skip_on_cran()
   x <- make_daily_counts("count-incidence")
   ungrouped <- aggregate_time_units(x, to = "weeks", verbose = FALSE)
   grouped <- aggregate_time_units(
@@ -303,6 +322,7 @@ test_that("grouping does not change what a count aggregation computes", {
 })
 
 test_that("a stratified count aggregation keeps every stratum's total", {
+  skip_on_cran()
   df <- data.frame(
     event = rep(as.Date("2024-01-01") + c(0, 1, 8), each = 2),
     report = rep(as.Date("2024-01-03") + c(0, 1, 8), each = 2),
@@ -326,6 +346,7 @@ test_that("a stratified count aggregation keeps every stratum's total", {
 # ---- Attributes that must survive ------------------------------------------
 
 test_that("covariates, censoring and a user-set `now` survive the aggregation", {
+  skip_on_cran()
   df <- data.frame(
     onset = as.Date("2024-01-01") + c(0, 1, 3, 8),
     reported = as.Date("2024-01-01") + c(2, 2, 5, 9),
@@ -348,6 +369,7 @@ test_that("covariates, censoring and a user-set `now` survive the aggregation", 
 })
 
 test_that("materialised temporal-effect columns are dropped", {
+  skip_on_cran()
   x <- make_daily_linelist() |>
     add_temporal_effects(t_effects = temporal_effects(week_of_year = TRUE)) |>
     compute_temporal_effects()
@@ -376,6 +398,7 @@ spec_effects <- function(x, i = 1) {
 }
 
 test_that("day-level effects are dropped from the spec by any coarsening", {
+  skip_on_cran()
   x <- make_daily_linelist() |>
     add_temporal_effects(t_effects = temporal_effects(
       day_of_week = TRUE, weekend = TRUE, day_of_month = TRUE,
@@ -403,6 +426,7 @@ test_that("day-level effects are dropped from the spec by any coarsening", {
 })
 
 test_that("week- and month-of-year effects survive only their own grid", {
+  skip_on_cran()
   x <- make_daily_linelist() |>
     add_temporal_effects(t_effects = temporal_effects(
       week_of_year = TRUE, month_of_year = TRUE
@@ -422,6 +446,7 @@ test_that("week- and month-of-year effects survive only their own grid", {
 })
 
 test_that("Fourier periods are rescaled, and the too-short ones dropped", {
+  skip_on_cran()
   x <- make_daily_linelist() |>
     add_temporal_effects(t_effects = temporal_effects(seasons = c(7, 365)))
 
@@ -444,6 +469,7 @@ test_that("Fourier periods are rescaled, and the too-short ones dropped", {
 })
 
 test_that("the holiday calendar is kept, and its column becomes a share", {
+  skip_on_cran()
   skip_if_not_installed("almanac")
 
   df <- data.frame(
@@ -473,6 +499,7 @@ test_that("the holiday calendar is kept, and its column becomes a share", {
 })
 
 test_that("the holiday column is still a 0/1 indicator on a daily grid", {
+  skip_on_cran()
   skip_if_not_installed("almanac")
 
   df <- data.frame(
@@ -492,6 +519,7 @@ test_that("the holiday column is still a 0/1 indicator on a daily grid", {
 })
 
 test_that("each spec is coarsened against its OWN axis", {
+  skip_on_cran()
   x <- make_daily_linelist() |>
     add_temporal_effects(t_effects = temporal_effects(day_of_week = TRUE)) |>
     add_temporal_effects(
@@ -524,6 +552,7 @@ test_that("an unchanged axis keeps its specification untouched", {
 })
 
 test_that("aggregate_time_units reports what it dropped and rescaled", {
+  skip_on_cran()
   x <- make_daily_linelist() |>
     add_temporal_effects(t_effects = temporal_effects(
       day_of_week = TRUE, seasons = 365
@@ -540,6 +569,7 @@ test_that("aggregate_time_units reports what it dropped and rescaled", {
 })
 
 test_that("the spec is coarsened on a grouped tbl_now too", {
+  skip_on_cran()
   x <- make_daily_linelist() |>
     add_temporal_effects(t_effects = temporal_effects(
       day_of_week = TRUE, week_of_year = TRUE
@@ -556,6 +586,7 @@ test_that("the spec is coarsened on a grouped tbl_now too", {
 })
 
 test_that("`type` and `align_on_day` mean what they mean in align_weeks()", {
+  skip_on_cran()
   x <- make_daily_linelist()
 
   iso <- aggregate_time_units(
@@ -570,6 +601,7 @@ test_that("`type` and `align_on_day` mean what they mean in align_weeks()", {
 })
 
 test_that("years aggregate as well as weeks and months", {
+  skip_on_cran()
   df <- data.frame(
     onset = as.Date(c("2022-03-01", "2022-11-30", "2023-02-01")),
     reported = as.Date(c("2022-03-05", "2022-12-04", "2023-02-06")),
@@ -591,6 +623,7 @@ test_that("years aggregate as well as weeks and months", {
 })
 
 test_that("the result is still a valid tbl_now a model could be handed", {
+  skip_on_cran()
   out <- aggregate_time_units(make_daily_counts(), to = "weeks", verbose = FALSE)
   expect_silent(validate_tbl_now(out))
   expect_true(all(out$.delay >= 0))
@@ -599,6 +632,7 @@ test_that("the result is still a valid tbl_now a model could be handed", {
 })
 
 test_that("aggregate_time_units reports what it did unless silenced", {
+  skip_on_cran()
   x <- make_daily_linelist()
   expect_message_quietly(aggregate_time_units(x, to = "weeks"), "Aggregated")
   expect_silent(aggregate_time_units(x, to = "weeks", verbose = FALSE))
@@ -607,6 +641,7 @@ test_that("aggregate_time_units reports what it did unless silenced", {
 # ---- Second pass: invariants, real data, and the neighbouring verbs ---------
 
 test_that("aggregating is idempotent", {
+  skip_on_cran()
   once <- aggregate_time_units(make_daily_linelist(), to = "weeks", verbose = FALSE)
   twice <- suppressMessages(aggregate_time_units(once, to = "weeks"))
 
@@ -616,6 +651,7 @@ test_that("aggregating is idempotent", {
 })
 
 test_that("aggregating then counting equals counting then aggregating", {
+  skip_on_cran()
   x <- make_daily_linelist()
 
   count_first <- aggregate_time_units(
@@ -636,6 +672,7 @@ test_that("aggregating then counting equals counting then aggregating", {
 })
 
 test_that("aggregating in steps is NOT the same as aggregating in one go", {
+  skip_on_cran()
   x <- make_daily_counts("count-incidence")
   direct <- aggregate_time_units(x, to = "months", verbose = FALSE)
   stepped <- aggregate_time_units(
@@ -658,6 +695,7 @@ test_that("aggregating in steps is NOT the same as aggregating in one go", {
 })
 
 test_that("an NA count is not silently turned into a zero", {
+  skip_on_cran()
   df <- data.frame(
     event = as.Date("2024-01-01") + c(0, 1, 2, 8),
     report = as.Date("2024-01-03") + c(0, 1, 2, 8),
@@ -676,6 +714,7 @@ test_that("an NA count is not silently turned into a zero", {
 })
 
 test_that("an undeclared column is pooled away, as to_count() documents", {
+  skip_on_cran()
   df <- data.frame(
     event = as.Date("2024-01-01") + c(0, 1),
     report = as.Date("2024-01-03") + c(0, 1),
@@ -699,6 +738,7 @@ test_that("an undeclared column is pooled away, as to_count() documents", {
 })
 
 test_that("a `now` set beyond the data still moves onto the new grid", {
+  skip_on_cran()
   x <- make_daily_linelist() |>
     change_now(as.Date("2024-03-15"))
   out <- aggregate_time_units(x, to = "months", verbose = FALSE)
@@ -708,6 +748,7 @@ test_that("a `now` set beyond the data still moves onto the new grid", {
 })
 
 test_that("`now` is never dragged below a date the aggregation left alone", {
+  skip_on_cran()
   x <- make_revised()
   original_now <- get_now(x)
   out <- suppressWarnings(
@@ -720,6 +761,7 @@ test_that("`now` is never dragged below a date the aggregation left alone", {
 })
 
 test_that("an object built from a delay column aggregates like any other", {
+  skip_on_cran()
   df <- data.frame(
     reported = as.Date("2024-01-05") + 0:9,
     d = c(1, 2, 3, 1, 2, 3, 1, 2, 3, 1)
@@ -734,12 +776,14 @@ test_that("an object built from a delay column aggregates like any other", {
 })
 
 test_that("summary() and diagnose() still run on an aggregated object", {
+  skip_on_cran()
   out <- aggregate_time_units(make_daily_counts(), to = "weeks", verbose = FALSE)
   expect_s3_class(summary(out), "tbl_df")
   expect_s3_class(diagnose(out), "tbl_df")
 })
 
 test_that("complete_zeroes() fills the coarser grid", {
+  skip_on_cran()
   out <- aggregate_time_units(make_daily_counts(), to = "weeks", verbose = FALSE)
   filled <- complete_zeroes(out)
 
@@ -749,6 +793,7 @@ test_that("complete_zeroes() fills the coarser grid", {
 })
 
 test_that("a real, messy daily line list aggregates to weeks without losing cases", {
+  skip_on_cran()
   data(hai_bucaramanga, envir = environment())
   x <- suppressWarnings(tbl_now(hai_bucaramanga,
     event_date = specimen_date, report_date = report_date, strata = sex,
@@ -765,6 +810,7 @@ test_that("a real, messy daily line list aggregates to weeks without losing case
 })
 
 test_that("a weekly shipped dataset aggregates up to months and years", {
+  skip_on_cran()
   data(denguedat, envir = environment())
   x <- tbl_now(denguedat,
     event_date = onset_week, report_date = report_week, strata = gender,
@@ -784,6 +830,7 @@ test_that("a weekly shipped dataset aggregates up to months and years", {
 })
 
 test_that("aggregation makes a sparse daily grid denser, which is the point", {
+  skip_on_cran()
   set.seed(1)
   df <- data.frame(
     event = as.Date("2024-01-01") + sample(0:120, 200, replace = TRUE)
@@ -804,6 +851,7 @@ test_that("aggregation makes a sparse daily grid denser, which is the point", {
 })
 
 test_that("aggregation composes with censoring in either order", {
+  skip_on_cran()
   x <- make_daily_counts("count-incidence")
 
   censored_first <- aggregate_time_units(
@@ -827,6 +875,7 @@ test_that("aggregation composes with censoring in either order", {
 # ---- Third pass: the cells that must stay apart ----------------------------
 
 test_that("a censoring flag keeps cells apart instead of being pooled away", {
+  skip_on_cran()
   df <- data.frame(
     event = as.Date("2024-01-01") + c(0, 1, 2),
     report = as.Date("2024-01-03") + c(0, 1, 2),
@@ -848,6 +897,7 @@ test_that("a censoring flag keeps cells apart instead of being pooled away", {
 })
 
 test_that("a revision outcome keeps cells apart, so a retraction is not netted", {
+  skip_on_cran()
   df <- data.frame(
     event = as.Date("2024-01-01") + c(0, 0, 1),
     report = as.Date("2024-01-02") + c(0, 0, 1),
@@ -869,6 +919,7 @@ test_that("a revision outcome keeps cells apart, so a retraction is not netted",
 })
 
 test_that("a stratified cumulative series accumulates within each stratum", {
+  skip_on_cran()
   df <- data.frame(
     event = rep(as.Date("2024-01-01") + c(0, 8), each = 4),
     report = as.Date("2024-01-01") + c(0, 1, 0, 1, 8, 9, 8, 9),
@@ -897,6 +948,7 @@ test_that("a stratified cumulative series accumulates within each stratum", {
 # ---- The attributes 0.29.0 added --------------------------------------------
 
 test_that("revision_levels and is_censored_revision survive aggregation", {
+  skip_on_cran()
   cases <- data.frame(
     onset = as.Date("2021-01-04") + 0:9,
     visit = as.Date("2021-01-05") + 0:9,

@@ -147,7 +147,7 @@ the only thing \code{\link[=nowcast_tidy]{nowcast_tidy()}} is given besides the 
 put whatever the tidying step will need into it.
 }
 \description{
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
 
 \code{nowcast_fit()} and \code{\link[=nowcast_tidy]{nowcast_tidy()}} are the two extension points of the
 nowcasting framework. Together they teach \code{\link[=run_nowcast]{run_nowcast()}} about a new

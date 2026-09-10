@@ -28,6 +28,7 @@ pooled_fixture <- function(n_sex = 2, cases_per_row = 10L) {
 }
 
 test_that("an undeclared column is reported, and named, at construction", {
+  skip_on_cran()
   expect_warning(
     x <- tbl_now(
       data.frame(
@@ -61,6 +62,7 @@ test_that("an undeclared column is reported, and named, at construction", {
 })
 
 test_that("genuine duplicates are still told to use distinct()", {
+  skip_on_cran()
   duplicated_rows <- data.frame(
     event_date = as.Date("2020-01-06") + c(0, 0, 1),
     report_date = as.Date("2020-01-06") + c(0, 0, 1),
@@ -93,6 +95,7 @@ test_that("declaring the column removes the warning entirely", {
 })
 
 test_that("baselinenowcast pools an undeclared column, preserving the total", {
+  skip_on_cran()
   skip_if_not_installed("baselinenowcast")
 
   x <- pooled_fixture()
@@ -109,6 +112,7 @@ test_that("baselinenowcast pools an undeclared column, preserving the total", {
 })
 
 test_that("tsibble pools an undeclared column, preserving the total", {
+  skip_on_cran()
   skip_if_not_installed("tsibble")
 
   x <- pooled_fixture()
@@ -122,6 +126,7 @@ test_that("tsibble pools an undeclared column, preserving the total", {
 })
 
 test_that("three undeclared levels pool as readily as two", {
+  skip_on_cran()
   skip_if_not_installed("baselinenowcast")
 
   x <- pooled_fixture(n_sex = 3)
@@ -131,6 +136,7 @@ test_that("three undeclared levels pool as readily as two", {
 })
 
 test_that("a declared stratum is NOT pooled away", {
+  skip_on_cran()
   skip_if_not_installed("baselinenowcast")
 
   x <- pooled_fixture() |> add_strata(sex)
@@ -147,6 +153,7 @@ test_that("a declared stratum is NOT pooled away", {
 })
 
 test_that("line lists are left alone: one row is already one case", {
+  skip_on_cran()
   linelist <- suppressWarnings(tbl_now(
     data.frame(
       event_date = as.Date("2020-01-06") + c(0, 0, 1, 1),
@@ -161,6 +168,7 @@ test_that("line lists are left alone: one row is already one case", {
 })
 
 test_that("the pooling is announced under verbose and silent otherwise", {
+  skip_on_cran()
   x <- pooled_fixture()
 
   expect_message_quietly(
@@ -172,9 +180,145 @@ test_that("the pooling is announced under verbose and silent otherwise", {
   )
 })
 
+# --- the delay-distribution front ends ---------------------------------------
+#
+# epidist and `EpiNow2::estimate_dist()` are the two converters that keep the
+# report-censoring flag, so they were also the two that never pooled. Neither
+# carries an undeclared column onto its result, so the extra rows arrived as
+# duplicates that no downstream code could tell apart: `covid_colombia` filtered
+# to 90 days came back as 3456 epidist rows covering 1898 distinct delays.
+
+test_that("epidist pools an undeclared column, preserving the total", {
+  skip_on_cran()
+  skip_if_not_installed("epidist")
+
+  x <- pooled_fixture()
+  converted <- suppressWarnings(suppressMessages(
+    tbl_now_to_epidist(x, verbose = FALSE, quiet = TRUE)
+  ))
+
+  expect_equal(sum(converted$n), sum(x$n))
+  expect_equal(nrow(converted), nrow(dplyr::distinct(dplyr::as_tibble(x),
+    .data$event_date, .data$report_date
+  )))
+})
+
+test_that("EpiNow2 estimate_dist pools an undeclared column too", {
+  skip_on_cran()
+  skip_if_not_installed("EpiNow2")
+
+  x <- pooled_fixture()
+  converted <- suppressWarnings(suppressMessages(
+    tbl_now_to_EpiNow2(x, target = "estimate_dist", verbose = FALSE, quiet = TRUE)
+  ))
+
+  expect_equal(sum(converted$n), sum(x$n))
+  expect_equal(nrow(converted), nrow(dplyr::distinct(dplyr::as_tibble(x),
+    .data$event_date, .data$report_date
+  )))
+})
+
+test_that("every epidist row is a distinct delay observation", {
+  skip_on_cran()
+  skip_if_not_installed("epidist")
+
+  # Everything at once: an undeclared column, a revision axis (dropped, so its
+  # columns cannot separate rows either) and a censored report inside its own
+  # event period (whose window is widened onto the uncensored one's).
+  data <- tidyr::expand_grid(
+    event_date = as.Date("2020-01-06") + 0:9,
+    delay = 0:2,
+    sex = c("F", "M"),
+    outcome = c("confirmed", "retracted")
+  ) |>
+    dplyr::mutate(
+      report_date = .data$event_date + .data$delay,
+      revision_date = .data$report_date + 2L,
+      censored = .data$delay == 0 & .data$sex == "F",
+      n = 1L
+    )
+
+  x <- suppressWarnings(tbl_now(data,
+    event_date = "event_date", report_date = "report_date",
+    revision_date = "revision_date", revision_type = "outcome",
+    is_censored_report = "censored", case_count = "n",
+    data_type = "count-incidence", units = "days", verbose = FALSE
+  ))
+
+  converted <- suppressWarnings(suppressMessages(
+    tbl_now_to_epidist(x, verbose = FALSE, quiet = TRUE)
+  ))
+
+  # No case is lost, and no row is a duplicate of another.
+  expect_equal(sum(converted$n), sum(data$n))
+  expect_equal(
+    nrow(dplyr::distinct(dplyr::as_tibble(converted))), nrow(converted)
+  )
+})
+
+test_that("a declared stratum survives the epidist pooling as a covariate", {
+  skip_on_cran()
+  skip_if_not_installed("epidist")
+
+  x <- pooled_fixture() |> add_strata(sex)
+  converted <- suppressWarnings(suppressMessages(
+    tbl_now_to_epidist(x, verbose = FALSE, quiet = TRUE)
+  ))
+
+  # Declaring the column is how you ask epidist to model it; it must stay.
+  expect_true("sex" %in% names(converted))
+  expect_equal(nrow(converted), nrow(x))
+  expect_equal(sum(converted$n), sum(x$n))
+})
+
+test_that("an epidist line list is not pooled: one row is one case", {
+  skip_on_cran()
+  skip_if_not_installed("epidist")
+
+  linelist <- suppressWarnings(tbl_now(
+    data.frame(
+      event_date = as.Date("2020-01-06") + c(0, 0, 1, 1),
+      report_date = as.Date("2020-01-07") + c(0, 0, 1, 1),
+      sex = c("F", "M", "F", "M")
+    ),
+    event_date = "event_date", report_date = "report_date",
+    data_type = "linelist", verbose = FALSE
+  ))
+
+  converted <- suppressWarnings(suppressMessages(
+    tbl_now_to_epidist(linelist, verbose = FALSE, quiet = TRUE)
+  ))
+  expect_equal(nrow(converted), 4L)
+})
+
+test_that("removing the revision process keeps the `now`", {
+  skip_on_cran()
+  # `remove_revision_date()` rebuilt without passing `now`, so the constructor
+  # re-inferred it from the dates that were left -- and the revision axis is the
+  # one that usually holds the latest of them. `tbl_now_to_epidist()` turns `now`
+  # into `obs_date`, epidist's right-truncation clock, so the loss was silent
+  # and material.
+  x <- suppressWarnings(tbl_now(
+    data.frame(
+      event = as.Date("2024-01-01") + 0:3,
+      report = as.Date("2024-01-04") + 0:3,
+      revision = as.Date("2024-01-06") + 0:3,
+      outcome = "confirmed",
+      n = 1L
+    ),
+    event_date = "event", report_date = "report",
+    revision_date = "revision", revision_type = "outcome",
+    case_count = "n", data_type = "count-incidence", units = "days",
+    now = as.Date("2024-02-01"), verbose = FALSE
+  ))
+
+  expect_equal(get_now(remove_revision_date(x)), as.Date("2024-02-01"))
+})
+
 # max_delay -------------------------------------------------------------------
 
 test_that("max_delay counts delay periods the way epinowcast does", {
+  skip_on_cran()
   skip_if_not_installed("baselinenowcast")
 
   x <- pooled_fixture() # delays 0..3
@@ -196,6 +340,7 @@ test_that("max_delay counts delay periods the way epinowcast does", {
 })
 
 test_that("max_delay is revised", {
+  skip_on_cran()
   x <- pooled_fixture()
 
   expect_error(tbl.now:::.cap_max_delay(x, 0, "f"), "at least 1")
@@ -209,6 +354,7 @@ test_that("max_delay is revised", {
 })
 
 test_that("a max_delay beyond the data is a no-op rather than an error", {
+  skip_on_cran()
   x <- pooled_fixture()
   expect_equal(nrow(tbl.now:::.cap_max_delay(x, 500, "f", verbose = FALSE)), nrow(x))
 })

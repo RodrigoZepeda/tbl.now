@@ -1200,6 +1200,99 @@
   pooled
 }
 
+#' Reduce a `tbl_now` to one row per observed delay
+#'
+#' The delay-distribution front ends -- [tbl_now_to_epidist()] and
+#' `tbl_now_to_EpiNow2(target = "estimate_dist")` -- hand the target package one
+#' row per observation: a `[pdate_lwr, pdate_upr]` window, an
+#' `[sdate_lwr, sdate_upr]` window, the columns they carry, and (for count data)
+#' a weight `n`. Two things break that one-row-per-observation contract, and
+#' neither is visible in the built object:
+#'
+#' * **A column the object was never told about.** `sex` in [covid_colombia] is
+#'   the motivating case: an object built without `strata = sex` has two rows per
+#'   `(notification_date, diagnosis_date)` cell, the column is not carried onto
+#'   the delay data, and the two rows arrive as indistinguishable duplicates.
+#' * **The revision process.** epidist and `estimate_dist()` model ONE delay, so
+#'   `revision_date`, `revision_type` and `is_censored_revision` cannot travel
+#'   with the data -- yet `.revision_group_cols()` keeps them in the cell key, so
+#'   pooling alone would leave the rows they separate split. Removing the process
+#'   first turns those columns into undeclared ones, which is exactly what
+#'   `.pool_undeclared()` sums over; the result is the `"total"` case count, which
+#'   is the right denominator for a report-delay distribution (every case has one
+#'   outcome, so no case is counted twice).
+#'
+#' Everything the delay data DOES carry -- strata, covariates, materialised
+#' temporal-effect columns -- stays in the cell key, and the report-censoring
+#' flag stays too because it moves the window bounds. Line lists are returned
+#' untouched: one row is already one case.
+#'
+#' Callers are responsible for saying that the revision process is dropped;
+#' this helper only makes the drop consistent with the pooling.
+#'
+#' @param x A `tbl_now` object.
+#' @param fn Name of the calling converter, for the message.
+#' @param verbose Logical.
+#'
+#' @return A `tbl_now` with no revision process and no undeclared columns.
+#'
+#' @keywords internal
+#' @noRd
+.delay_model_pool <- function(x, fn, verbose = TRUE) {
+  if (has_revision(x)) {
+    x <- remove_revision_date(x)
+  }
+  .pool_undeclared(x, fn, verbose = verbose)
+}
+
+#' Sum the weights of delay rows that are byte-identical
+#'
+#' `.delay_model_pool()` removes every dimension the delay data cannot carry, but
+#' one collision survives it: `.delay_censoring_windows()` widens a censored
+#' report that lands in its own event period up to `[event, event + win)`, which
+#' is the window an UNCENSORED report in that period already has. The two rows
+#' are then the same observation written twice, so the last step of building an
+#' aggregate delay frame is to add their weights together.
+#'
+#' This applies to the aggregate/count shape only. A line list row is a case, not
+#' a weight, and collapsing identical cases would delete them.
+#'
+#' @param data A `data.frame` of delay rows carrying a count column.
+#' @param count_col Name of the weight column (`"n"`).
+#' @param fn Name of the calling converter, for the message.
+#' @param verbose Logical.
+#'
+#' @return `data` with one row per distinct combination of the other columns.
+#'
+#' @keywords internal
+#' @noRd
+.collapse_delay_cells <- function(data, count_col, fn, verbose = TRUE) {
+  keys <- setdiff(colnames(data), count_col)
+  if (length(keys) == 0L) {
+    return(data)
+  }
+
+  collapsed <- data |>
+    dplyr::summarise(
+      !!count_col := sum(.data[[count_col]]),
+      .by = dplyr::all_of(keys)
+    ) |>
+    # `.by` puts the keys first; the target packages read columns by name, but a
+    # reordered frame is a gratuitous difference in what the caller gets back.
+    dplyr::relocate(dplyr::all_of(colnames(data)))
+
+  if (isTRUE(verbose) && nrow(collapsed) < nrow(data)) {
+    cli::cli_inform(c(
+      "i" = cli::format_inline(paste0(
+        "{.fn {fn}}: summed rows describing the same delay observation; ",
+        "{nrow(data)} rows -> {nrow(collapsed)}."
+      ))
+    ))
+  }
+
+  collapsed
+}
+
 #' Collapse the censoring indicator before a conversion
 #'
 #' A censoring flag that is a per-case property rather than a function of the
@@ -1362,7 +1455,7 @@
 
 #' Convert between `tbl_now` and \pkg{epinowcast}
 #'
-#' @description `r lifecycle::badge("experimental")`
+#' @description `r lifecycle::badge("stable")`
 #'
 #' \pkg{epinowcast} represents the same observations in several shapes:
 #'
@@ -1570,7 +1663,7 @@ tbl_now_from_epinowcast <- function(data, ...,
 #' Convert between `tbl_now` and \pkg{baselinenowcast}
 #'
 #'
-#' @description `r lifecycle::badge("experimental")`
+#' @description `r lifecycle::badge("stable")`
 #'
 #' `tbl_now_from_baselinenowcast()` accepts either the long `data.frame`
 #' (`reference_date`, `report_date`, `count`) or a `reporting_triangle`
@@ -1831,7 +1924,7 @@ tbl_now_from_baselinenowcast <- function(data, ...,
 
 #' Convert between `tbl_now` and \pkg{data.table}
 #'
-#' @description `r lifecycle::badge("experimental")`
+#' @description `r lifecycle::badge("stable")`
 #'
 #' `tbl_now_from_data_table()` converts a `data.table` into a `tbl_now`
 #' (requires explicit `event_date` / `report_date` columns).
@@ -1948,6 +2041,28 @@ tbl_now_from_data_table <- function(data, event_date, report_date, ...,
 #' are carried onto the epidist data unchanged, so the strata are available as
 #' covariates in an epidist model formula (epidist has no separate grouping
 #' argument).
+#'
+#' @section One row, one observed delay:
+#'
+#' Every row of the result is a distinct delay observation, and for the
+#' aggregate shape `n` is its weight. Two things would otherwise break that, and
+#' `tbl_now_to_epidist()` resolves both before building the object:
+#'
+#' * **Columns the object was never told about.** [covid_colombia] carries
+#'   `sex`, so an object built without `strata = sex` has two rows per
+#'   `(notification_date, diagnosis_date)` cell. `sex` is not carried onto the
+#'   epidist data, so those rows would arrive as indistinguishable duplicates;
+#'   they are pooled instead, exactly as [tbl_now_to_baselinenowcast()] and
+#'   [tbl_now_to_tsibble()] do. Declare the column with [add_strata()] to keep it
+#'   as a model covariate rather than pool it away.
+#' * **The revision axis**, which is dropped (see below) and therefore cannot
+#'   keep two rows apart either. Pooling over it gives the `"total"` case count:
+#'   every case has exactly one outcome, so no case is counted twice.
+#'
+#' Line lists are left alone -- one row is already one case -- and declared
+#' strata, covariates, materialised temporal-effect columns and the
+#' `is_censored_report` flag all keep rows apart, because all of them reach the
+#' epidist object (the flag through the censoring windows).
 #'
 #' @param data A `data.frame`, `epidist_linelist_data` or
 #'   `epidist_aggregate_data` of \pkg{epidist} delay data.
@@ -2079,7 +2194,9 @@ tbl_now_from_data_table <- function(data, event_date, report_date, ...,
 #' `revision_type`, `is_censored_revision` and the revision dates are
 #' **dropped** from the epidist object. `tbl_now_to_epidist()` warns once when
 #' it drops them, so a user who declared a revision process is told the
-#' converter is not surfacing it.
+#' converter is not surfacing it. Count rows that differed only in their
+#' revision date or outcome are then pooled, so the drop does not leave
+#' duplicate rows behind.
 #'
 #' @seealso
 #' [add] and [revision_delay], since \pkg{epidist} is about
@@ -2205,7 +2322,7 @@ tbl_now_from_epidist <- function(data, ..., format = c("auto", "interval"),
 
 #' Convert between `tbl_now` and \pkg{tsibble}
 #'
-#' @description `r lifecycle::badge("experimental")`
+#' @description `r lifecycle::badge("stable")`
 #'
 #' A [tsibble::tsibble()] has a single time `index` and a `key` identifying each
 #' series. Nowcasting needs two time indices, so the conversion keeps both date
@@ -2944,7 +3061,11 @@ tbl_now_to_baselinenowcast <- function(x, ...,
 #'     `estimate_dist()` vendors likelihood functions from
 #'     [primarycensored](https://primarycensored.epinowcast.org/), and its
 #'     help asks that you cite \pkg{primarycensored} alongside \pkg{EpiNow2}
-#'     when using it (`citation("primarycensored")`).}
+#'     when using it (`citation("primarycensored")`).  Like
+#'     [tbl_now_to_epidist()], this target returns one row per observed delay:
+#'     the revision axis is dropped and undeclared columns are pooled, because
+#'     neither reaches `estimate_dist()` and so neither can keep two rows
+#'     apart.}
 #' }
 #'
 #' `tbl_now_from_EpiNow2()` inverts the snapshot form: snapshot *k* is the series
@@ -3113,6 +3234,12 @@ tbl_now_to_EpiNow2 <- function( # nolint: object_name_linter.
 #' @keywords internal
 #' @noRd
 .epinow2_dist_data <- function(x, verbose = TRUE) {
+  # One row is one observed delay here too, so the revision process goes and the
+  # undeclared columns are pooled away -- the same reduction `tbl_now_to_epidist()`
+  # makes, for the same reason. `.warn_lossy_conversion()` in the caller has
+  # already said that columns may be dropped.
+  x <- .delay_model_pool(x, "tbl_now_to_EpiNow2", verbose = verbose)
+
   data_type <- get_data_type(x)
   is_count  <- data_type %in% c("count-incidence", "count-cumulative")
 
@@ -3172,6 +3299,14 @@ tbl_now_to_EpiNow2 <- function( # nolint: object_name_linter.
   carry_cols <- c(get_strata(x), get_covariates(x), temporal_cols)
   if (length(carry_cols) > 0) {
     out <- dplyr::bind_cols(out, dplyr::select(obs, dplyr::all_of(carry_cols)))
+  }
+
+  # Close the one collision `.delay_model_pool()` cannot: a censored report in
+  # its own event period ends up with the window an uncensored one already has.
+  if (is_count) {
+    out <- .collapse_delay_cells(
+      out, "n", "tbl_now_to_EpiNow2", verbose = verbose
+    )
   }
 
   if (verbose) {
@@ -3591,7 +3726,7 @@ tbl_now_to_EpiNow2 <- function( # nolint: object_name_linter.
 
 #' Snapshots of one series, as \pkg{EpiNow2} estimates truncation from
 #'
-#' @description `r lifecycle::badge("experimental")`
+#' @description `r lifecycle::badge("stable")`
 #'
 #' The object returned by
 #' `tbl_now_to_EpiNow2(x, target = "estimate_truncation")`: a list of
@@ -3851,6 +3986,20 @@ tbl_now_to_epidist <- function(x, ...,
   # one -- rather than silently ignore it (DEVELOPMENT_SKILL Definition of Done).
   .warn_epidist_revision_dropped(x, quiet)
 
+  # One epidist row is one observed delay. Drop the revision process (which the
+  # warning above just announced) and pool over the columns epidist is never
+  # handed, so two rows it cannot tell apart do not arrive as duplicates. This
+  # has to run BEFORE `.materialize_temporal_effects()`: `remove_revision_date()`
+  # keeps the lazy specs but discards materialised columns, so materialising
+  # first would throw the columns away again.
+  #
+  # The legacy `"interval"` branch is deliberately excluded: its bound columns
+  # are named by the caller and may well be undeclared, so pooling would sum
+  # away the very columns it is about to read.
+  if (format != "interval") {
+    x <- .delay_model_pool(x, "tbl_now_to_epidist", verbose = verbose)
+  }
+
   # Materialise the lazy temporal-effect columns so they are carried as extra
   # covariate columns on the epidist data.
   materialised   <- .materialize_temporal_effects(x)
@@ -3996,6 +4145,13 @@ tbl_now_to_epidist <- function(x, ...,
   if (format == "aggregate") {
     epidist_data[["n"]] <- obs[[count_col]]
     constructor_args$n <- "n"
+    # `.delay_model_pool()` above removed every dimension epidist cannot carry;
+    # this closes the one collision that survives it (a censored report inside
+    # its own event period gets the same window as an uncensored one), so every
+    # row of the result is a distinct delay observation.
+    epidist_data <- .collapse_delay_cells(
+      epidist_data, "n", "tbl_now_to_epidist", verbose = verbose
+    )
   }
 
   if (verbose) {
@@ -4258,7 +4414,7 @@ tbl_now_to_tsibble <- function(x, ..., index = c("event_date", "report_date"),
 
 #' Convert a `tbl_now` into the line list \pkg{NobBS} nowcasts from
 #'
-#' @description `r lifecycle::badge("experimental")`
+#' @description `r lifecycle::badge("stable")`
 #'
 #' [NobBS::NobBS()] counts **rows**: it takes an individual-level line list with
 #' one column for the event date and one for the report date, and treats each row
@@ -4398,7 +4554,7 @@ tbl_now_to_nobbs <- function(x, ..., event_col = "onset_date",
 
 #' Convert a `tbl_now` into the line list \pkg{surveillance} nowcasts from
 #'
-#' @description `r lifecycle::badge("experimental")`
+#' @description `r lifecycle::badge("stable")`
 #'
 #' [surveillance::nowcast()] works from an individual-level line list with one
 #' column holding the event date and another the report date, named by its
@@ -4627,7 +4783,7 @@ tbl_now_to_surveillance <- function(x, ..., event_col = "dHospital",
 
 #' The date grids [surveillance::nowcast()] needs
 #'
-#' @description `r lifecycle::badge("experimental")`
+#' @description `r lifecycle::badge("stable")`
 #'
 #' [surveillance::nowcast()] takes three dates and two date *grids*, and none of
 #' them have defaults you can rely on. These two helpers build the grids from the
@@ -4763,7 +4919,7 @@ get_surveillance_range <- function(x, ..., from = NULL, to = NULL, by = NULL) {
 
 #' One reporting triangle per stratum
 #'
-#' @description `r lifecycle::badge("experimental")`
+#' @description `r lifecycle::badge("stable")`
 #'
 #' The object returned by
 #' `tbl_now_to_baselinenowcast(x, format = "triangle_list")`: a list of
@@ -4908,7 +5064,7 @@ as_tbl_now.tbl_now_triangle_list <- function(object, ...) {
 
 #' One \pkg{surveillance} line list per stratum
 #'
-#' @description `r lifecycle::badge("experimental")`
+#' @description `r lifecycle::badge("stable")`
 #'
 #' The object returned by
 #' `tbl_now_to_surveillance(x, format = "linelist_list")`: one individual-level
@@ -5068,7 +5224,7 @@ as_tbl_now.tbl_now_surveillance_list <- function(object, ...) {
 
 #' Coerce a `tbl_now` with another package's generic
 #'
-#' @description `r lifecycle::badge("experimental")`
+#' @description `r lifecycle::badge("stable")`
 #'
 #' These S3 methods make each supported package's own coercion verb accept a
 #' `tbl_now`. They are thin wrappers around the matching `tbl_now_to_*()`

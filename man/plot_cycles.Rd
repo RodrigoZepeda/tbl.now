@@ -18,16 +18,13 @@ plot_cycles(x, type = c("epidemic", "report", "revision"), ...)
 A \pkg{ggplot2} object (or a \pkg{plotly} widget when \code{plotly = TRUE}).
 }
 \description{
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
 
 The \code{"seasonality"} / \code{"delay_seasonality"} panels of \code{\link[=autoplot]{autoplot()}}, drawn on
 their own: a periodogram whose dominant peak is marked. For
 \code{type = "epidemic"} (green) the peak suggests a Fourier season length to pass
 to \code{\link[=temporal_effects]{temporal_effects()}}; for \code{type = "report"} (red) it marks a cycle in the
 reporting delay itself, such as a weekly reporting rhythm.
-
-For a \emph{time-resolved} view — which cycles are strong \strong{when} — see
-\code{\link[=plot_scalogram]{plot_scalogram()}}.
 }
 \examples{
 \dontshow{if (requireNamespace("ggplot2", quietly = TRUE)) withAutoprint(\{ # examplesIf}
@@ -37,5 +34,5 @@ plot_cycles(dengue_now)
 \dontshow{\}) # examplesIf}
 }
 \seealso{
-\code{\link[=autoplot.tbl_now]{autoplot.tbl_now()}}, \code{\link[=plot_scalogram]{plot_scalogram()}}, \link{calendar_effect_plots}.
+\code{\link[=autoplot.tbl_now]{autoplot.tbl_now()}}, \link{calendar_effect_plots}.
 }

@@ -19,7 +19,7 @@ quantile.}
 A tibble, as described in \emph{Value}.
 }
 \description{
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
 
 Turns a \link{tbl_nowcast} into the same table every other \code{tidy()} method in this
 package returns, so a nowcast produced through \code{\link[=run_nowcast]{run_nowcast()}} and one

@@ -3,6 +3,10 @@
 \name{tbl_now_workflows}
 \alias{tbl_now_workflows}
 \title{Native and cross-engine nowcasting workflows}
+\value{
+\code{NULL}, invisibly. This page documents workflow choices rather than
+a callable object.
+}
 \description{
 \code{tbl.now} owns the data declaration and common result grammar; modelling
 packages own their statistical models and fit-specific diagnostics. Choose
@@ -38,19 +42,20 @@ and relative skill.
 }
 
 \examples{
-\dontrun{
-fit <- run_nowcast(data, engine_diseasenowcasting())
+data(denguedat)
+recent <- subset(denguedat, onset_week >= as.Date("2010-06-01"))
+dengue <- tbl_now(recent,
+  event_date = onset_week, report_date = report_week, verbose = FALSE
+)
+fit <- run_nowcast(dengue, example_engine())
 autoplot(fit)
 
 bt <- nowcast_backtest(
-  data,
-  engine_diseasenowcasting(label = "structural"),
-  engine_epinowcast(label = "renewal")
+  dengue,
+  example_engine(label = "carry forward"),
+  now_dates = as.Date(c("2010-10-04", "2010-11-15")),
+  verbose = FALSE
 )
-relative <- bt |>
-  scoringutils::as_forecast_quantile() |>
-  scoringutils::score() |>
-  scoringutils::add_relative_skill(metric = "wis")
-}
+head(bt$scores)
 
 }

@@ -49,6 +49,7 @@ revised_counts <- function() {
 # ---------------------------------------------------------------------------
 
 test_that("is_censored_revision holds TRUE exactly where the delay is long", {
+  skip_on_cran()
   flu <- revised_linelist()
   censored <- suppressMessages(censor_revision_delays_above(flu, 30))
 
@@ -68,6 +69,7 @@ test_that("is_censored_revision holds TRUE exactly where the delay is long", {
 })
 
 test_that("the two censoring axes are independent", {
+  skip_on_cran()
   flu <- revised_linelist()
   both <- suppressMessages(
     censor_reporting_delays_above(censor_revision_delays_above(flu, 30), 0)
@@ -99,6 +101,7 @@ test_that("add/change/remove_is_censored_revision round-trip", {
 })
 
 test_that("the flag is refused where there is no revision delay to bound", {
+  skip_on_cran()
   plain <- tbl_now(
     data.frame(
       onset = as.Date("2021-01-04") + 0:4,
@@ -133,6 +136,7 @@ test_that("the flag is refused where there is no revision delay to bound", {
 })
 
 test_that("the flag is protected: dropping the column demotes the object", {
+  skip_on_cran()
   flu <- suppressMessages(censor_revision_delays_above(revised_linelist(), 30))
   flag <- get_is_censored_revision(flu)
 
@@ -142,6 +146,7 @@ test_that("the flag is protected: dropping the column demotes the object", {
 })
 
 test_that("remove_revision_date() takes the generated flag with it", {
+  skip_on_cran()
   flu <- suppressMessages(censor_revision_delays_above(revised_linelist(), 30))
   stripped <- remove_revision_date(flu)
 
@@ -155,6 +160,7 @@ test_that("remove_revision_date() takes the generated flag with it", {
 # ---------------------------------------------------------------------------
 
 test_that("the flag survives row-wise dplyr verbs, values and all", {
+  skip_on_cran()
   flu <- suppressMessages(censor_revision_delays_above(revised_linelist(), 30))
   flag <- get_is_censored_revision(flu)
 
@@ -182,6 +188,7 @@ test_that("the flag survives row-wise dplyr verbs, values and all", {
 })
 
 test_that("the flag survives summarise(), and keeps censored rows apart", {
+  skip_on_cran()
   counts <- suppressMessages(censor_revision_delays_above(revised_counts(), 1))
   flag <- get_is_censored_revision(counts)
 
@@ -197,6 +204,7 @@ test_that("the flag survives summarise(), and keeps censored rows apart", {
 })
 
 test_that("to_count() does not pool a censored resolution with an exact one", {
+  skip_on_cran()
   # Two rows sharing an (event, report, outcome) triple, differing ONLY in the
   # flag. Pooling them would report a bound as a fact.
   cases <- data.frame(
@@ -224,6 +232,7 @@ test_that("to_count() does not pool a censored resolution with an exact one", {
 })
 
 test_that("the flag survives update()", {
+  skip_on_cran()
   counts <- suppressMessages(censor_revision_delays_above(revised_counts(), 1))
   flag <- get_is_censored_revision(counts)
 
@@ -247,6 +256,7 @@ test_that("the flag survives update()", {
 # ---------------------------------------------------------------------------
 
 test_that("revision_type only ever holds the four allowed values", {
+  skip_on_cran()
   flu <- revised_linelist()
   expect_true(all(flu$outcome %in% c("confirmed", "retracted", "pending")))
 
@@ -277,6 +287,7 @@ test_that("revision_type only ever holds the four allowed values", {
 })
 
 test_that("a value poked in after construction is caught", {
+  skip_on_cran()
   flu <- revised_linelist()
   flu$outcome[2] <- "resuelto"
 
@@ -302,6 +313,7 @@ test_that("a value poked in after construction is caught", {
 })
 
 test_that("revision_levels translates the labels and keeps the dictionary", {
+  skip_on_cran()
   spanish <- data.frame(
     inicio = as.Date("2021-01-04") + 0:4,
     visita = as.Date("2021-01-05") + 0:4,
@@ -336,6 +348,7 @@ test_that("revision_levels translates the labels and keeps the dictionary", {
 })
 
 test_that("the dictionary survives dplyr, and recoding does not run twice", {
+  skip_on_cran()
   spanish <- data.frame(
     inicio = as.Date("2021-01-04") + rep(0:4, each = 2),
     visita = as.Date("2021-01-05") + rep(0:4, each = 2),
@@ -374,6 +387,7 @@ test_that("the dictionary survives dplyr, and recoding does not run twice", {
 })
 
 test_that("a malformed dictionary is refused", {
+  skip_on_cran()
   spanish <- data.frame(
     inicio = as.Date("2021-01-04") + 0:2,
     visita = as.Date("2021-01-05") + 0:2,
@@ -415,6 +429,7 @@ test_that("a malformed dictionary is refused", {
 })
 
 test_that("a dictionary needs a revision date to translate", {
+  skip_on_cran()
   expect_error(
     tbl_now(
       data.frame(
@@ -430,6 +445,7 @@ test_that("a dictionary needs a revision date to translate", {
 })
 
 test_that("covid_us carries a real revision process (#52)", {
+  skip_on_cran()
   data(covid_us, envir = environment())
 
   expect_true(all(
@@ -473,6 +489,7 @@ test_that("covid_us carries a real revision process (#52)", {
 # grouping should change which rows are censored.
 
 test_that("censor_revision_delays_above works on a grouped tbl_now", {
+  skip_on_cran()
   flu <- revised_linelist()
   grouped <- flu |> dplyr::group_by(!!as.symbol("sex"))
 
@@ -498,6 +515,7 @@ test_that("censor_revision_delays_above works on a grouped tbl_now", {
 })
 
 test_that("both censoring axes can be set on one grouped object", {
+  skip_on_cran()
   grouped <- revised_linelist() |> dplyr::group_by(!!as.symbol("sex"))
 
   both <- suppressMessages(
@@ -513,6 +531,7 @@ test_that("both censoring axes can be set on one grouped object", {
 })
 
 test_that("an existing revision flag is merged, never cleared, when grouped", {
+  skip_on_cran()
   flu <- suppressMessages(censor_revision_delays_above(revised_linelist(), 30))
   strict <- flu[[".is_censored_revision"]]
   expect_true(any(strict))

@@ -11,7 +11,7 @@
 
 #' Default quantile levels for a nowcast
 #'
-#' @description `r lifecycle::badge('experimental')`
+#' @description `r lifecycle::badge('stable')`
 #'
 #' The quantile levels [run_nowcast()] summarises a nowcast at by default: nine
 #' probabilities, symmetric about the median, spanning the 50%, 80%, 90% and 95%
@@ -44,7 +44,7 @@
 #' @seealso
 #' [engine()], whose `quantile_levels` argument this is the default for;
 #' [run_nowcast()] and [nowcast_backtest()], which report at these levels;
-#' [score_nowcast()] and [as_forecast_point()], which score them.
+#' [score_nowcast()] and [scoringutils::as_forecast_point()], which score them.
 #'
 #' @examples
 #' nowcast_quantile_levels()
@@ -63,7 +63,7 @@ nowcast_quantile_levels <- function() {
 
 #' A nowcast produced by [run_nowcast()]
 #'
-#' @description `r lifecycle::badge('experimental')`
+#' @description `r lifecycle::badge('stable')`
 #'
 #' An S7 object holding a nowcast in a package-agnostic shape. It is what
 #' [run_nowcast()] returns and what [nowcast_ensemble()] and [score_nowcast()]
@@ -157,7 +157,7 @@ tbl_nowcast <- S7::new_class(
 
 #' Is this object a `tbl_nowcast`?
 #'
-#' @description `r lifecycle::badge('experimental')`
+#' @description `r lifecycle::badge('stable')`
 #'
 #' Tests whether an object is a fitted nowcast -- the thing [run_nowcast()]
 #' returns -- rather than the data a nowcast is fitted to (for which see
@@ -365,7 +365,7 @@ S7::method(print, tbl_nowcast) <- function(x, ..., n = 6) {
 
 #' Coerce a `tbl_nowcast` into a `tibble`
 #'
-#' @description `r lifecycle::badge('experimental')`
+#' @description `r lifecycle::badge('stable')`
 #'
 #' @details
 #' Registered in `.onLoad()` rather than assigned with

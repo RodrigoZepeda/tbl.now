@@ -21,7 +21,7 @@ empty report.}
 \code{x}, invisibly.
 }
 \description{
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
 
 Prints the findings \code{\link[=diagnose]{diagnose()}} returned as a report: the errors, warnings
 and notes in full, each with its hint, and the checks that passed and that

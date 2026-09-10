@@ -406,7 +406,14 @@ add_temporal_effects.data.frame <- function(x, t_effects = NULL, overwrite = FAL
         # Create column name from the actual period
         season_name <- paste0(name_prefix, "_season_", period)
 
-        if ((paste0(season_name, "_cos") %in% colnames(x)) || (paste0(season_name, "_sin") %in% colnames(x)) && !overwrite) {
+        # Both halves of the pair are checked together. Written without the
+        # outer parentheses this read as `cos_exists || (sin_exists &&
+        # !overwrite)`, because `&&` binds tighter than `||` -- so an existing
+        # `_cos` column aborted even when the caller had asked to overwrite,
+        # and `compute_temporal_effects(x, overwrite = TRUE)` could never
+        # refresh a seasonal effect.
+        season_cols <- paste0(season_name, c("_cos", "_sin"))
+        if (any(season_cols %in% colnames(x)) && !overwrite) {
           cli::cli_abort(
             "At least one of the columns: {.val {season_name}_cos} or {.val {season_name}_sin} already exist in data. Set `overwrite = TRUE` to overwrite them."
           )

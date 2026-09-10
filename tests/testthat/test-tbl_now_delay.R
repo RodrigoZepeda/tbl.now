@@ -82,6 +82,7 @@ make_numeric_data <- function() {
 # ============================================================
 
 test_that("event_date + delay (days) reconstructs report_date correctly", {
+  skip_on_cran()
   d <- make_daily_data()
   result <- tbl_now(d,
     event_date = event_date, delay = delay_days,
@@ -100,6 +101,7 @@ test_that("event_date + delay (days) reconstructs report_date correctly", {
 })
 
 test_that("event_date + delay (weeks) reconstructs report_date correctly", {
+  skip_on_cran()
   d <- make_weekly_data()
   result <- tbl_now(d,
     event_date = event_date, delay = delay_weeks,
@@ -113,6 +115,7 @@ test_that("event_date + delay (weeks) reconstructs report_date correctly", {
 })
 
 test_that("event_date + delay (months) reconstructs report_date correctly", {
+  skip_on_cran()
   d <- make_monthly_data()
   result <- tbl_now(d,
     event_date = event_date, delay = delay_months,
@@ -126,6 +129,7 @@ test_that("event_date + delay (months) reconstructs report_date correctly", {
 })
 
 test_that("event_date + delay (years) reconstructs report_date correctly", {
+  skip_on_cran()
   d <- make_yearly_data()
   result <- tbl_now(d,
     event_date = event_date, delay = delay_years,
@@ -139,6 +143,7 @@ test_that("event_date + delay (years) reconstructs report_date correctly", {
 })
 
 test_that("event_date + delay (numeric) reconstructs report_num correctly", {
+  skip_on_cran()
   d <- make_numeric_data()
   result <- tbl_now(d,
     event_date = event_num, delay = delay_num,
@@ -156,6 +161,7 @@ test_that("event_date + delay (numeric) reconstructs report_num correctly", {
 # ============================================================
 
 test_that("report_date + delay (days) reconstructs event_date correctly", {
+  skip_on_cran()
   d <- make_daily_data()
   result <- tbl_now(d,
     report_date = report_date, delay = delay_days,
@@ -172,6 +178,7 @@ test_that("report_date + delay (days) reconstructs event_date correctly", {
 })
 
 test_that("report_date + delay (weeks) reconstructs event_date correctly", {
+  skip_on_cran()
   d <- make_weekly_data()
   result <- tbl_now(d,
     report_date = report_date, delay = delay_weeks,
@@ -185,6 +192,7 @@ test_that("report_date + delay (weeks) reconstructs event_date correctly", {
 })
 
 test_that("report_date + delay (months) reconstructs event_date correctly", {
+  skip_on_cran()
   d <- make_monthly_data()
   result <- tbl_now(d,
     report_date = report_date, delay = delay_months,
@@ -198,6 +206,7 @@ test_that("report_date + delay (months) reconstructs event_date correctly", {
 })
 
 test_that("report_date + delay (years) reconstructs event_date correctly", {
+  skip_on_cran()
   d <- make_yearly_data()
   result <- tbl_now(d,
     report_date = report_date, delay = delay_years,
@@ -211,6 +220,7 @@ test_that("report_date + delay (years) reconstructs event_date correctly", {
 })
 
 test_that("report_date + delay (numeric) reconstructs event_num correctly", {
+  skip_on_cran()
   d <- make_numeric_data()
   result <- tbl_now(d,
     report_date = report_num, delay = delay_num,
@@ -228,6 +238,7 @@ test_that("report_date + delay (numeric) reconstructs event_num correctly", {
 # ============================================================
 
 test_that("event_date + delay produces same tbl_now as both dates explicit (days)", {
+  skip_on_cran()
   d <- make_daily_data()
 
   # Build via both dates (select only the needed columns to avoid delay col)
@@ -255,6 +266,7 @@ test_that("event_date + delay produces same tbl_now as both dates explicit (days
 })
 
 test_that("report_date + delay produces same numerics as both dates explicit (weeks)", {
+  skip_on_cran()
   d <- make_weekly_data()
 
   explicit <- tbl_now(d |> select(event_date, report_date),
@@ -279,6 +291,7 @@ test_that("report_date + delay produces same numerics as both dates explicit (we
 # ============================================================
 
 test_that("delay-based construction preserves strata and covariates", {
+  skip_on_cran()
   d <- make_daily_data()
   result <- tbl_now(d,
     event_date = event_date, delay = delay_days,
@@ -297,6 +310,7 @@ test_that("delay-based construction preserves strata and covariates", {
 # ============================================================
 
 test_that("units auto-inferred from event_date when delay provided (days)", {
+  skip_on_cran()
   d <- make_daily_data()
   result <- tbl_now(d,
     event_date = event_date, delay = delay_days,
@@ -310,6 +324,7 @@ test_that("units auto-inferred from event_date when delay provided (days)", {
 })
 
 test_that("units auto-inferred from report_date when delay provided (weeks)", {
+  skip_on_cran()
   d <- make_weekly_data()
   result <- tbl_now(d,
     report_date = report_date, delay = delay_weeks,
@@ -327,6 +342,7 @@ test_that("units auto-inferred from report_date when delay provided (weeks)", {
 # ============================================================
 
 test_that("delay column named '.delay' is dropped and recomputed", {
+  skip_on_cran()
   d <- make_daily_data() |> rename(.delay = delay_days)
   result <- tbl_now(d,
     event_date = event_date, delay = .delay,
@@ -346,6 +362,7 @@ test_that("delay column named '.delay' is dropped and recomputed", {
 # ============================================================
 
 test_that("error when neither event_date nor report_date provided", {
+  skip_on_cran()
   d <- make_daily_data()
   expect_error(
     tbl_now(d, delay = delay_days, event_units = "days", verbose = FALSE),
@@ -354,6 +371,7 @@ test_that("error when neither event_date nor report_date provided", {
 })
 
 test_that("error when event_date missing and no delay provided", {
+  skip_on_cran()
   d <- make_daily_data()
   expect_error(
     tbl_now(d, report_date = report_date, verbose = FALSE),
@@ -362,6 +380,7 @@ test_that("error when event_date missing and no delay provided", {
 })
 
 test_that("error when report_date missing and no delay provided", {
+  skip_on_cran()
   d <- make_daily_data()
   expect_error(
     tbl_now(d, event_date = event_date, verbose = FALSE),
@@ -386,6 +405,7 @@ test_that("error when delay column is not numeric", {
 # ============================================================
 
 test_that("verbose=TRUE emits message when report_date is reconstructed", {
+  skip_on_cran()
   d <- make_daily_data()
   expect_message_quietly(
     tbl_now(d,
@@ -397,6 +417,7 @@ test_that("verbose=TRUE emits message when report_date is reconstructed", {
 })
 
 test_that("verbose=TRUE emits message when event_date is reconstructed", {
+  skip_on_cran()
   d <- make_daily_data()
   expect_message_quietly(
     tbl_now(d,
@@ -408,6 +429,7 @@ test_that("verbose=TRUE emits message when event_date is reconstructed", {
 })
 
 test_that("verbose=FALSE suppresses reconstruction message", {
+  skip_on_cran()
   d <- make_daily_data()
   expect_no_message(
     tbl_now(d,

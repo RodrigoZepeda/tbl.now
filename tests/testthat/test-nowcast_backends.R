@@ -174,6 +174,7 @@ test_that("two baselinenowcast fits can be ensembled", {
 # NobBS -----------------------------------------------------------------------
 
 test_that("NobBS is handed one row per CASE, not one row per count row", {
+  skip_on_cran()
   skip_if_not_installed("NobBS")
 
   x <- counts_tbl_now()
@@ -202,6 +203,7 @@ test_that("NobBS is handed one row per CASE, not one row per count row", {
 })
 
 test_that("NobBS is told the quantile levels that were asked for", {
+  skip_on_cran()
   skip_if_not_installed("NobBS")
 
   x <- counts_tbl_now()
@@ -236,6 +238,7 @@ test_that("NobBS is told the quantile levels that were asked for", {
 })
 
 test_that("a single stratum routes NobBS through NobBS.strat()", {
+  skip_on_cran()
   skip_if_not_installed("NobBS")
 
   x <- counts_tbl_now(strata = TRUE)
@@ -271,6 +274,7 @@ test_that("a single stratum routes NobBS through NobBS.strat()", {
 })
 
 test_that("NobBS refuses a grid it cannot model", {
+  skip_on_cran()
   skip_if_not_installed("NobBS")
 
   monthly <- tbl_now(
@@ -289,6 +293,7 @@ test_that("NobBS refuses a grid it cannot model", {
 # surveillance ----------------------------------------------------------------
 
 test_that("surveillance gets a line list and a grid that reaches `now`", {
+  skip_on_cran()
   skip_if_not_installed("surveillance")
 
   x <- counts_tbl_now()
@@ -315,6 +320,7 @@ test_that("surveillance gets a line list and a grid that reaches `now`", {
 })
 
 test_that("surveillance is fitted once per stratum", {
+  skip_on_cran()
   skip_if_not_installed("surveillance")
 
   x <- counts_tbl_now(strata = TRUE)
@@ -375,6 +381,7 @@ test_that("surveillance's predictions come from tidy(), keeping its own width", 
 })
 
 test_that("a backend that reports one interval says what it cannot report", {
+  skip_on_cran()
   skip_if_not_installed("surveillance")
 
   x <- counts_tbl_now()
@@ -412,6 +419,7 @@ test_that("a backend that reports one interval says what it cannot report", {
 # EpiNow2 ---------------------------------------------------------------------
 
 test_that("EpiNow2 uses estimate_infections(), and regional_epinow() for strata", {
+  skip_on_cran()
   skip_if_not_installed("EpiNow2")
 
   x <- counts_tbl_now()
@@ -479,6 +487,7 @@ test_that("EpiNow2 engine surfaces censored-report handling", {
 })
 
 test_that("EpiNow2 engine maps supported report temporal effects to obs_opts", {
+  skip_on_cran()
   skip_if_not_installed("EpiNow2")
 
   x <- counts_tbl_now() |>
@@ -501,6 +510,7 @@ test_that("EpiNow2 engine maps supported report temporal effects to obs_opts", {
 })
 
 test_that("EpiNow2 engine does not overwrite an explicit obs option", {
+  skip_on_cran()
   skip_if_not_installed("EpiNow2")
 
   x <- counts_tbl_now() |>
@@ -525,6 +535,7 @@ test_that("EpiNow2 engine does not overwrite an explicit obs option", {
 })
 
 test_that("EpiNow2 engine warns when explicit obs shadows a declared week effect", {
+  skip_on_cran()
   skip_if_not_installed("EpiNow2")
 
   # A declared report-date `day_of_week` effect is normally applied through
@@ -567,6 +578,7 @@ test_that("EpiNow2 engine warns when explicit obs shadows a declared week effect
 # / JAGS / cat()-progress) do not chatter, but warnings must survive.
 
 test_that(".epinow2_unwrap reaches the fit without tripping defunct `$estimates`", {
+  skip_on_cran()
   # EpiNow2 1.9.0 made `epinow()$estimates` DEFUNCT and made the `epinow`
   # object inherit from `estimate_infections`, so `x$estimates %||% x` --
   # which was the pre-existing idiom -- errors on the LHS before `%||%` can
@@ -612,6 +624,7 @@ test_that(".epinow2_unwrap reaches the fit without tripping defunct `$estimates`
 })
 
 test_that(".quietly_if(verbose = FALSE) re-emits warnings from wrapped code", {
+  skip_on_cran()
   saw <- character()
   withCallingHandlers(
     tbl.now:::.quietly_if(warning("divergent transitions"), verbose = FALSE),
@@ -624,6 +637,7 @@ test_that(".quietly_if(verbose = FALSE) re-emits warnings from wrapped code", {
 })
 
 test_that(".quietly_if(verbose = FALSE) still swallows messages and stdout", {
+  skip_on_cran()
   # Messages -- would otherwise show under `verbose = FALSE`.
   expect_message(
     tbl.now:::.quietly_if(message("progress"), verbose = FALSE), NA
@@ -638,6 +652,7 @@ test_that(".quietly_if(verbose = FALSE) still swallows messages and stdout", {
 })
 
 test_that("EpiNow2 engine warns for unavailable temporal effects", {
+  skip_on_cran()
   skip_if_not_installed("EpiNow2")
 
   x <- counts_tbl_now() |>
@@ -662,6 +677,7 @@ test_that("EpiNow2 engine warns for unavailable temporal effects", {
 })
 
 test_that("EpiNow2's predictions come from tidy(), keeping its own width", {
+  skip_on_cran()
   skip_if_not_installed("EpiNow2")
 
   x <- counts_tbl_now()
@@ -698,6 +714,7 @@ test_that("EpiNow2's predictions come from tidy(), keeping its own width", {
 # The catalogue ---------------------------------------------------------------
 
 test_that("every built-in method has both extension methods registered", {
+  skip_on_cran()
   builtin <- c(
     "diseasenowcasting", "baselinenowcast", "epinowcast", "surveillance",
     "EpiNow2", "NobBS"
@@ -716,6 +733,7 @@ test_that("every built-in method has both extension methods registered", {
 })
 
 test_that("built-in method names are matched case-insensitively", {
+  skip_on_cran()
   expect_equal(engine("epinow2")$name, "EpiNow2")
   expect_equal(engine("EPINOW2")$name, "EpiNow2")
   expect_equal(engine("Surveillance")$name, "surveillance")
@@ -728,6 +746,7 @@ test_that("built-in method names are matched case-insensitively", {
 # Left in, it reaches `nowcast_ensemble()` as a target no other member predicted.
 
 test_that("predictions after `now` are dropped, with a message naming them", {
+  skip_on_cran()
   x <- counts_tbl_now()
   now <- get_now(x)
   event_col <- get_event_date(x)
@@ -759,6 +778,7 @@ test_that("predictions after `now` are dropped, with a message naming them", {
 })
 
 test_that("an engine that stops at `now` is left alone and stays silent", {
+  skip_on_cran()
   x <- counts_tbl_now()
   now <- get_now(x)
 

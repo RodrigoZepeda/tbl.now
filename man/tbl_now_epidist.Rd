@@ -119,6 +119,31 @@ are carried onto the epidist data unchanged, so the strata are available as
 covariates in an epidist model formula (epidist has no separate grouping
 argument).
 }
+\section{One row, one observed delay}{
+
+
+Every row of the result is a distinct delay observation, and for the
+aggregate shape \code{n} is its weight. Two things would otherwise break that, and
+\code{tbl_now_to_epidist()} resolves both before building the object:
+\itemize{
+\item \strong{Columns the object was never told about.} \link{covid_colombia} carries
+\code{sex}, so an object built without \code{strata = sex} has two rows per
+\verb{(notification_date, diagnosis_date)} cell. \code{sex} is not carried onto the
+epidist data, so those rows would arrive as indistinguishable duplicates;
+they are pooled instead, exactly as \code{\link[=tbl_now_to_baselinenowcast]{tbl_now_to_baselinenowcast()}} and
+\code{\link[=tbl_now_to_tsibble]{tbl_now_to_tsibble()}} do. Declare the column with \code{\link[=add_strata]{add_strata()}} to keep it
+as a model covariate rather than pool it away.
+\item \strong{The revision axis}, which is dropped (see below) and therefore cannot
+keep two rows apart either. Pooling over it gives the \code{"total"} case count:
+every case has exactly one outcome, so no case is counted twice.
+}
+
+Line lists are left alone -- one row is already one case -- and declared
+strata, covariates, materialised temporal-effect columns and the
+\code{is_censored_report} flag all keep rows apart, because all of them reach the
+epidist object (the flag through the censoring windows).
+}
+
 \section{Delays of zero, and the lognormal}{
 
 
@@ -200,7 +225,9 @@ way to represent the revision axis, so \code{has_revision(x)},
 \code{revision_type}, \code{is_censored_revision} and the revision dates are
 \strong{dropped} from the epidist object. \code{tbl_now_to_epidist()} warns once when
 it drops them, so a user who declared a revision process is told the
-converter is not surfacing it.
+converter is not surfacing it. Count rows that differed only in their
+revision date or outcome are then pooled, so the drop does not leave
+duplicate rows behind.
 }
 
 \examples{

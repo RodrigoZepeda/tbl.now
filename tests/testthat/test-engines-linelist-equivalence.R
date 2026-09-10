@@ -16,6 +16,11 @@
 # is the count object carrying the same information -- and the whole point is
 # that a user must not have to know to call it.
 
+# This file fans one scenario out across every converter / engine, which is
+# an integration matrix rather than a unit test: too slow for CRAN, and most
+# of it needs packages that are not on CRAN anyway.
+skip_on_cran()
+
 q <- function(expr) suppressWarnings(suppressMessages(expr))
 
 #' A daily line list whose last three event days carry no reports at all

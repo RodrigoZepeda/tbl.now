@@ -1,4 +1,5 @@
 test_that("update keeps everything similar when nothing new is observed", {
+  skip_on_cran()
   data(denguedat)
 
   initial_data <- denguedat[1:500, ]
@@ -145,6 +146,7 @@ test_that("update.tbl_now fails with non-data.frame new_data", {
 })
 
 test_that("update.tbl_now combines data correctly", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   initial_tbl <- tbl_now(
@@ -632,6 +634,7 @@ test_that("update.tbl_now doesn't remove duplicates for linelist data", {
 # ============================================================================
 
 test_that("update.tbl_now works when new_data is tbl_now", {
+  skip_on_cran()
   test_data <- setup_test_data()
 
   initial_tbl <- tbl_now(

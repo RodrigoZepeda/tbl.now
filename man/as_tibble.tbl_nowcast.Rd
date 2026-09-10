@@ -18,7 +18,7 @@ stratum and quantile level, with the quantile level in \code{.quantile_level} an
 the predicted count in \code{.value}. For \code{type = "draws"}, one row per draw.
 }
 \description{
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
 
 Turns a fitted nowcast into an ordinary \code{tibble} you can plot, join or write
 out: one row per event date and quantile level by default, or one row per

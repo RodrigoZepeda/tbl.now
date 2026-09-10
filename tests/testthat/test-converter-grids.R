@@ -36,6 +36,7 @@ numeric_grid_tbl_now <- function() {
 # --- numeric grid -------------------------------------------------------------
 
 test_that("a numeric grid stays an integer index where it is carried through", {
+  skip_on_cran()
   x <- numeric_grid_tbl_now()
   expect_equal(get_event_units(x), "numeric")
 
@@ -58,6 +59,7 @@ test_that("a numeric grid stays an integer index where it is carried through", {
 })
 
 test_that("the date-based back-ends refuse a numeric grid by name", {
+  skip_on_cran()
   x <- numeric_grid_tbl_now()
 
   # Each of these needs a calendar grid. Refusing is the point: coercing the
@@ -99,6 +101,7 @@ test_that("no converter turns a numeric index into a 1970 date", {
 # --- unit resolution on the calendar grids -----------------------------------
 
 test_that("the line-list back-ends translate units into their own vocabulary", {
+  skip_on_cran()
   # `NobBS::NobBS()` takes `units` as "1 day"/"1 week" and
   # `surveillance::linelist2sts()` takes `aggregate.by` from a fixed set of
   # strings. Neither accepts the object's own "days"/"weeks", so the converters
@@ -152,6 +155,7 @@ test_that("the line-list back-ends translate units into their own vocabulary", {
 # --- delays: zero, negative, very long ---------------------------------------
 
 test_that("an all-zero-delay series gives a one-column triangle", {
+  skip_on_cran()
   skip_if_not_installed("baselinenowcast")
   x <- tbl_now(
     data.frame(
@@ -172,6 +176,7 @@ test_that("an all-zero-delay series gives a one-column triangle", {
 })
 
 test_that("a zero delay still gets a strictly positive epidist window", {
+  skip_on_cran()
   skip_if_not_installed("epidist")
   x <- tbl_now(
     data.frame(
@@ -203,6 +208,7 @@ negative_delay_tbl_now <- function() {
 }
 
 test_that("a NEGATIVE delay is dropped by the triangle back-ends, not by all", {
+  skip_on_cran()
   # A report BEFORE its event has no slot in a reporting triangle: the delay
   # axis starts at 0. This records what each target does with it, because the
   # answers differ.
@@ -292,6 +298,7 @@ test_that("the delay-indexed converters warn about the cases they drop", {
 # --- epidist needs n >= 1 ----------------------------------------------------
 
 test_that("tbl_now_to_epidist() drops the counts epidist cannot hold", {
+  skip_on_cran()
   skip_if_not_installed("epidist")
   # De-accumulating cumulative totals gives a 0 wherever a report added nothing.
   # epidist asserts `n >= 1`, so before this every realistic cumulative series
@@ -317,6 +324,7 @@ test_that("tbl_now_to_epidist() drops the counts epidist cannot hold", {
 })
 
 test_that("a downward revision warns before its negative count is dropped", {
+  skip_on_cran()
   skip_if_not_installed("epidist")
   revised <- tbl_now(
     data.frame(
@@ -335,6 +343,7 @@ test_that("a downward revision warns before its negative count is dropped", {
 })
 
 test_that("tbl_now_to_epidist() aborts when no count is usable", {
+  skip_on_cran()
   skip_if_not_installed("epidist")
   empty <- tbl_now(
     data.frame(
@@ -375,6 +384,7 @@ test_that("flusight converts to epidist now that empty cells are dropped", {
 })
 
 test_that("one long straggler sets the width of the delay axis", {
+  skip_on_cran()
   skip_if_not_installed("baselinenowcast")
   x <- tbl_now(
     data.frame(
@@ -401,6 +411,7 @@ test_that("one long straggler sets the width of the delay axis", {
 # --- completeness: gaps and a trailing empty period --------------------------
 
 test_that("`complete` decides whether a gap in the event grid is filled", {
+  skip_on_cran()
   skip_if_not_installed("baselinenowcast")
   # 2024-01-02 and -03 have no rows at all, and the `now` is 2024-01-05.
   x <- tbl_now(
@@ -439,6 +450,7 @@ test_that("`complete` decides whether a gap in the event grid is filled", {
 })
 
 test_that("a line list is completed to the `now` under `complete = 'auto'`", {
+  skip_on_cran()
   skip_if_not_installed("baselinenowcast")
   # A line list cannot express a zero -- an event period with no cases has no
   # rows -- so "auto" completes it, which is the asymmetry with count data.

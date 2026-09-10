@@ -468,6 +468,11 @@ remove_revision_date <- function(x) {
     case_count = get_case_count(x), strata = get_strata(x),
     covariates = get_covariates(x), is_censored_report = get_is_censored_report(x),
     data_type = get_data_type(x),
+    # Carry the `now` across explicitly. Letting the constructor re-infer it
+    # reads the latest date of what is LEFT, so dropping the revision axis --
+    # the axis that usually holds the latest dates -- silently moved `now`
+    # backwards, and an explicit as-of `now` was lost outright.
+    now = get_now(x),
     event_units = get_event_units(x), report_units = get_report_units(x),
     verbose = FALSE, warn_non_uniqueness = FALSE
   )
@@ -545,7 +550,7 @@ remove_revision_date <- function(x) {
 
 #' Compare revision delays between confirmed and retracted cases
 #'
-#' @description `r lifecycle::badge("experimental")`
+#' @description `r lifecycle::badge("stable")`
 #'
 #' A negative result often comes back faster than a positive one -- or slower,
 #' if positives are prioritised. Either way the delay from report to resolution
@@ -554,7 +559,7 @@ remove_revision_date <- function(x) {
 #' confirmed.
 #'
 #' `diagnose_revision_delay()` compares the two delay distributions;
-#' `plot_revision_delay()` shows them.
+#' [plot_delay_distribution()] with `axis = "revision"` shows them.
 #'
 #' @param x A `tbl_now` with a revision process.
 #' @param by Optional stratum column to compare within; `NULL` (default) pools.
@@ -563,8 +568,6 @@ remove_revision_date <- function(x) {
 #' `diagnose_revision_delay()` returns a one-row-per-comparison `tibble` with
 #' `stratum`, `n_confirmed`, `n_retracted`, `median_confirmed`,
 #' `median_retracted`, `difference`, `statistic` and `p.value`.
-#'
-#' `plot_revision_delay()` returns a `ggplot`.
 #'
 #' @section The test:
 #'
@@ -587,13 +590,11 @@ remove_revision_date <- function(x) {
 #' [add_revision_date()][add] to attach a revision process;
 #' [censor_revision_delays_above()][censoring] for resolutions that
 #' never arrive; [revised_cases] for counting the outcomes;
-#' [diagnose_drift()] for the same question about the *reporting* delay over time.
+#' [plot_delay_distribution()] with `axis = "revision"` for the picture of the
+#' same comparison; [diagnose_drift()] for the same question about the
+#' *reporting* delay over time.
 #' The [*Diagnosing a tbl_now* article](https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html)
 #' puts this alongside the other checks.
-#'
-#' @param linewidth Multiplier on the box outlines of
-#'   `plot_revision_delay()`. Default `1` (drawn at `0.5`).
-#' @param palette A named colour palette (see [tbl_now_palette()]).
 #'
 #' @examples
 #' cases <- data.frame(
@@ -614,7 +615,7 @@ remove_revision_date <- function(x) {
 #' diagnose_revision_delay(flu)
 #'
 #' # The same comparison as a picture.
-#' plot_revision_delay(flu)
+#' plot_delay_distribution(flu, axis = "revision")
 #'
 #' @name revision_delay
 NULL
@@ -652,43 +653,6 @@ diagnose_revision_delay <- function(x, by = NULL) {
   out <- dplyr::bind_rows(results)
   attr(out, "dropped") <- attr(delays, "dropped")
   out
-}
-
-#' @rdname revision_delay
-#' @export
-plot_revision_delay <- function(x, by = NULL, linewidth = 1,
-                                  palette = .tbl_now_palette()) {
-  if (!requireNamespace("ggplot2", quietly = TRUE)) {
-    cli::cli_abort("Package {.pkg ggplot2} is required for {.fn plot_revision_delay}.")
-  }
-  .tbl_now_check_palette(palette, "plot_revision_delay")
-  .tbl_now_check_size(linewidth, "linewidth")
-  delays <- .revision_delay_table(x, by, "plot_revision_delay")
-
-  ggplot2::ggplot(
-    delays,
-    ggplot2::aes(
-      x = .data$.revision_delay, y = .data$outcome, fill = .data$outcome
-    )
-  ) +
-    ggplot2::geom_boxplot(outlier.alpha = 0.25, width = 0.6,
-                          linewidth = 0.5 * linewidth) +
-    ggplot2::facet_wrap("stratum", scales = "free_y") +
-    # RED: this is the reporting process -- when we found out -- not the
-    # epidemic process.
-    ggplot2::scale_fill_manual(
-      values = c(
-        confirmed = palette[["reporting_light"]], retracted = palette[["reporting"]]
-      ),
-      guide = "none"
-    ) +
-    ggplot2::labs(
-      x = paste0("Revision delay (", get_revision_units(x), ")"),
-      y = NULL,
-      title = "Time from report to resolution",
-      subtitle = "Reporting delay process"
-    ) +
-    .tbl_now_theme(palette)
 }
 
 #' The revision delays, tidied for comparison
@@ -830,7 +794,7 @@ censor_revision_delays_above <- function(x, max_delay, verbose = TRUE) {
 
 #' How much of each day has been resolved
 #'
-#' @description `r lifecycle::badge("experimental")`
+#' @description `r lifecycle::badge("stable")`
 #'
 #' The share of each event date's cases that are **confirmed**, **retracted** or
 #' still **pending**, as of the object's `now`.

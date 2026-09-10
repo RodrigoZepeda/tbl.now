@@ -4,11 +4,11 @@
 \name{tbl.now-package}
 \alias{tbl.now}
 \alias{tbl.now-package}
-\title{tbl.now: Tidy Extension for Nowcasting}
+\title{tbl.now: Tidy Data Structures and Workflows for Epidemiological Nowcasting}
 \description{
 \if{html}{\figure{logo.png}{options: style='float: right' alt='logo' width='120'}}
 
-Provides a 'tbl_now' class for temporal data for performing nowcasts. The 'tbl_now' allows for easy manipulation of event dates, report dates, strata and covariates for implementing different nowcasting models while at the same time permitting ease of use with 'dplyr' functions. It also provides a grammar to systematize nowcasting across several frameworks and produce ensemble nowcasts.
+Defines tidy data structures and package-agnostic workflows for epidemiological nowcasting. The 'tbl_now' class records event, report, and optional revision dates together with strata, covariates, censoring, and reporting-delay metadata while remaining compatible with 'dplyr'. Tools support validation, manipulation, diagnostics, visualization, format conversion, retrospective evaluation, and multiple modelling engines. The 'tbl_nowcast' class standardizes probabilistic predictions for plotting, scoring, comparison, and ensembling.
 }
 \details{
 Surveillance data arrives late. A case that happened on Monday may not reach
@@ -83,7 +83,7 @@ Authors:
 Other contributors:
 \itemize{
   \item Teresa Yamana (\href{https://orcid.org/0000-0001-8349-3151}{ORCID}) [contributor]
-  \item Jeffrey Shaman [contributor]
+  \item Jeffrey Shaman (\href{https://orcid.org/0000-0002-7216-7809}{ORCID}) [contributor]
   \item Columbia University in the City of New York [copyright holder, funder]
 }
 

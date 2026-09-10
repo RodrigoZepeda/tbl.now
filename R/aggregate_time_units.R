@@ -1,6 +1,6 @@
 #' Coarsen a `tbl_now` onto a bigger time unit
 #'
-#' @description `r lifecycle::badge("experimental")`
+#' @description `r lifecycle::badge("stable")`
 #'
 #' Daily surveillance data is often too sparse to nowcast: most (event date,
 #' report date) cells hold a zero or a one, and the delay distribution is mostly

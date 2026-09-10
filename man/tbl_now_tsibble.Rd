@@ -51,7 +51,7 @@ tsibble index.}
 A \code{tbl_now} (\code{from}) or a \code{tbl_ts} (\code{to}).
 }
 \description{
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
 
 A \code{\link[tsibble:tsibble]{tsibble::tsibble()}} has a single time \code{index} and a \code{key} identifying each
 series. Nowcasting needs two time indices, so the conversion keeps both date

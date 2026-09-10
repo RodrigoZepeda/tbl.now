@@ -9,6 +9,7 @@ plot_reporting_process(
   x,
   plotly = FALSE,
   axis = c("report", "revision"),
+  by_revision_type = TRUE,
   palette = .tbl_now_palette()
 )
 
@@ -32,6 +33,15 @@ when reports did. Needs a revision process (see
 \link[=add]{add_revision_date()}); cases still \code{"pending"} have no
 revision date and are left out.}
 
+\item{by_revision_type}{Logical (default \code{TRUE}), \code{plot_reporting_process()}
+only. Stack each bar by how the arrivals it counts eventually resolved --
+\code{confirmed}, \code{pending}, \code{retracted} and \code{unknown}, in the palette's outcome
+colours (see \code{\link[=tbl_now_palette]{tbl_now_palette()}}) -- so a day whose reports were mostly
+taken back is visible as such rather than as an ordinary day. Ignored on an
+object with no revision axis. It cannot be taken from
+\code{count-cumulative} data, which records running totals rather than cases, and
+warns and draws the unsplit bars there.}
+
 \item{palette}{A named colour palette (see \code{\link[=tbl_now_palette]{tbl_now_palette()}}). These two
 panels draw bars and nothing else, so they take no \code{size} or \code{linewidth}.}
 }
@@ -39,7 +49,7 @@ panels draw bars and nothing else, so they take no \code{size} or \code{linewidt
 A \pkg{ggplot2} object (or a \pkg{plotly} widget when \code{plotly = TRUE}).
 }
 \description{
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
 
 The same cases, counted on two different clocks. Comparing the two is the
 single most useful thing you can do to tell a real outbreak from a reporting
@@ -74,7 +84,6 @@ plot_reporting_process(dn)
 \seealso{
 \code{\link[=diagnostic_plot]{diagnostic_plot()}}, which draws these alongside the rest of the
 reporting-process gallery; \code{\link[=plot_observed_cases]{plot_observed_cases()}} for the epidemic process
-with the incompleteness cutoff marked; \code{\link[=plot_scalogram]{plot_scalogram()}} to separate the two
-processes by timescale; \code{\link[=diagnose_batches]{diagnose_batches()}} to test a suspicious spike rather
-than eyeball it.
+with the incompleteness cutoff marked; \code{\link[=diagnose_batches]{diagnose_batches()}} to test a
+suspicious spike rather than eyeball it.
 }
