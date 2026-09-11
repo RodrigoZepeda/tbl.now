@@ -163,17 +163,32 @@
 #' # Zoom on to the corrected weeks without dropping the rows that build the fan.
 #' autoplot(nc, date_lim = c(as.Date("2020-01-19"), as.Date("2020-02-02")))
 #'
+#' @details
+#' A named function registered in `.onLoad()`, like the neighbouring `tidy()`
+#' and `as_tibble()` methods and for the same two reasons.
+#'
+#' `S7::method(autoplot, tbl_nowcast) <- ` would be shorter, but `method<-` is a
+#' replacement function, so R rewrites the call as an assignment back to
+#' `autoplot` and leaves a **copy of \pkg{ggplot2}'s generic in this
+#' namespace**. That copy is what `R CMD check` sees when it decides `autoplot`
+#' is a generic this package owns and exports, which in turn makes every
+#' `autoplot.*` function here look like an S3 method that was never registered.
+#' Plain registration copies nothing.
+#'
+#' The function is also *named* for the method it implements, rather than being
+#' assigned anonymously into the generic, so that `R CMD check` can resolve this
+#' topic's usage section back to an object that exists.
+#'
 #' @name autoplot.tbl_nowcast
 #' @usage \method{autoplot}{tbl_nowcast}(object, ..., levels = NULL,
 #'   show_reported = TRUE, colour = NULL, linewidth = 1, date_lim = NULL,
 #'   ylim = NULL, palette = .tbl_now_palette())
 #' @importFrom ggplot2 autoplot
-#' @export
-S7::method(autoplot, tbl_nowcast) <- function(object, ..., levels = NULL,
-                                              show_reported = TRUE,
-                                              colour = NULL, linewidth = 1,
-                                              date_lim = NULL, ylim = NULL,
-                                              palette = .tbl_now_palette()) {
+autoplot.tbl_nowcast <- function(object, ..., levels = NULL,
+                                 show_reported = TRUE,
+                                 colour = NULL, linewidth = 1,
+                                 date_lim = NULL, ylim = NULL,
+                                 palette = .tbl_now_palette()) {
   if (!requireNamespace("ggplot2", quietly = TRUE)) {
     cli::cli_abort("Package {.pkg ggplot2} is required for {.fn autoplot}.")
   }

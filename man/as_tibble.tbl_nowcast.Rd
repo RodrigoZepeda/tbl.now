@@ -2,7 +2,6 @@
 % Please edit documentation in R/nowcast_class.R
 \name{as_tibble.tbl_nowcast}
 \alias{as_tibble.tbl_nowcast}
-\alias{as_tibble_tbl_nowcast}
 \title{Coerce a \code{tbl_nowcast} into a \code{tibble}}
 \usage{
 \method{as_tibble}{tbl_nowcast}(x, ..., type = c("quantiles", "draws"))
@@ -40,6 +39,11 @@ default argument -- so the copy makes \verb{R CMD check} report \pkg{pkgconfig} 
 an undeclared \code{::} import of a package this one never uses. Plain S3
 registration dispatches on \code{class(x)}, which for an S7 object is
 \code{"tbl.now::tbl_nowcast"}, and copies nothing.
+
+The registered class string cannot be spelled as a method name -- there is no
+writable \code{as_tibble.tbl.now::tbl_nowcast} -- but the function itself is still
+\emph{named} for the method it implements, so that \verb{R CMD check} can resolve this
+topic's usage section back to an object that exists.
 }
 \examples{
 predictions <- data.frame(

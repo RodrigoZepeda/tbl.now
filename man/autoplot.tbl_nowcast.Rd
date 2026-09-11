@@ -66,6 +66,22 @@ columns, one shaded band per central prediction interval over them, and the
 median as a line, so that the size of the correction the model is applying is
 visible as the gap between the bars and the fan.
 }
+\details{
+A named function registered in \code{.onLoad()}, like the neighbouring \code{tidy()}
+and \code{as_tibble()} methods and for the same two reasons.
+
+\verb{S7::method(autoplot, tbl_nowcast) <- } would be shorter, but \verb{method<-} is a
+replacement function, so R rewrites the call as an assignment back to
+\code{autoplot} and leaves a \strong{copy of \pkg{ggplot2}'s generic in this
+namespace}. That copy is what \verb{R CMD check} sees when it decides \code{autoplot}
+is a generic this package owns and exports, which in turn makes every
+\verb{autoplot.*} function here look like an S3 method that was never registered.
+Plain registration copies nothing.
+
+The function is also \emph{named} for the method it implements, rather than being
+assigned anonymously into the generic, so that \verb{R CMD check} can resolve this
+topic's usage section back to an object that exists.
+}
 \examples{
 predictions <- tidyr::expand_grid(
   onset_week = as.Date("2020-01-05") + seq(0, 28, by = 7),
