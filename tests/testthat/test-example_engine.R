@@ -86,3 +86,57 @@ test_that("a bad `spread` is refused", {
   expect_error(example_engine(spread = c(1, 2)), "spread")
   expect_error(example_engine(spread = "wide"), "spread")
 })
+
+test_that("a covariate is pooled, not left as a repeated prediction key", {
+  skip_on_cran()
+  # `get_latest_reported_cases()` answers by the covariate too, but a
+  # `tbl_nowcast` is keyed by event date and stratum alone -- so the counts have
+  # to come back down to that key rather than arrive twice per date.
+  df <- data.frame(
+    onset = as.Date("2024-01-07") + c(0, 0, 7, 7),
+    report = as.Date("2024-01-07") + c(0, 7, 7, 14),
+    gender = c("F", "F", "M", "M"),
+    hospital = c("A", "B", "A", "B")
+  )
+  x <- tbl_now(df,
+    event_date = onset, report_date = report, strata = "gender",
+    covariates = "hospital", data_type = "linelist", verbose = FALSE
+  )
+
+  nc <- run_nowcast(x, example_engine(), verbose = FALSE)
+  keys <- as.data.frame(nc@predictions)[c("onset", "gender", ".quantile_level")]
+  expect_false(anyDuplicated(keys) > 0)
+
+  # Both hospitals' cases are counted, not one of them.
+  medians <- tidy(nc)
+  expect_equal(medians$estimate, c(2, 2))
+})
+
+test_that("censored and uncensored arrivals in one cell give one prediction row", {
+  skip_on_cran()
+  # `get_latest_reported_cases()` answers by the censoring flag as well, so a
+  # cell holding both an exact and a bounded arrival arrives as two rows. They
+  # are one nowcast target, and passing both on put duplicate keys into
+  # `predictions` -- which surfaced as a recycling error in `tidy()` and a
+  # list-column crash in `autoplot()`.
+  df <- data.frame(
+    onset = as.Date("2024-01-07") + c(0, 0, 7),
+    report = as.Date("2024-01-07") + c(0, 14, 14),
+    gender = c("F", "F", "F")
+  )
+  x <- tbl_now(df,
+    event_date = onset, report_date = report, strata = "gender",
+    data_type = "linelist", units = "weeks", verbose = FALSE
+  )
+  x <- suppressMessages(censor_reports(x, report == as.Date("2024-01-21")))
+  # The fixture is only meaningful if the getter really does split that cell.
+  expect_equal(nrow(suppressWarnings(get_latest_reported_cases(x))), 3L)
+
+  nc <- run_nowcast(x, example_engine(), verbose = FALSE)
+  keys <- as.data.frame(nc@predictions)[c("onset", "gender", ".quantile_level")]
+  expect_false(anyDuplicated(keys) > 0)
+
+  # Both arrivals are counted, not one of them.
+  expect_equal(tidy(nc)$estimate, c(2, 1))
+  expect_no_error(ggplot2::ggplot_build(autoplot(nc)))
+})

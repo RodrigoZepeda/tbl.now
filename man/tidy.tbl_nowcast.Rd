@@ -2,8 +2,10 @@
 % Please edit documentation in R/tidy_nowcast.R
 \name{tidy.tbl_nowcast}
 \alias{tidy.tbl_nowcast}
-\alias{tidy_tbl_nowcast}
 \title{Tidy a nowcast produced by \code{run_nowcast()} or \code{nowcast_ensemble()}}
+\usage{
+\method{tidy}{tbl_nowcast}(x, probs = NULL, ...)
+}
 \arguments{
 \item{x}{A \link{tbl_nowcast}.}
 
@@ -24,6 +26,15 @@ A tibble, as described in \emph{Value}.
 Turns a \link{tbl_nowcast} into the same table every other \code{tidy()} method in this
 package returns, so a nowcast produced through \code{\link[=run_nowcast]{run_nowcast()}} and one
 produced by calling a modelling package by hand are read the same way.
+}
+\details{
+Registered by hand in \code{.onLoad()}. The S7 class name is
+\code{tbl.now::tbl_nowcast}, so the S3 method dispatch actually looks up is
+\code{tidy.tbl.now::tbl_nowcast} -- not a writable R name, and beyond what
+\verb{@exportS3Method} can express. The function is nonetheless \emph{named} for the
+method it implements, because \verb{R CMD check} resolves this topic's usage
+section back to an object of that name; a helper called something else would
+leave the help page documenting a function that does not exist.
 }
 \section{Value}{
 

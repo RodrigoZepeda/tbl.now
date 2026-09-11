@@ -98,6 +98,16 @@ nowcast_tidy.example <- function(engine, fit, x, ..., quantile_levels) {
   predictions <- dplyr::as_tibble(as.data.frame(counts)[, c(keep, count_col), drop = FALSE])
   names(predictions)[names(predictions) == count_col] <- ".point"
 
+  # A `tbl_nowcast` is indexed by event date and stratum, and nothing else. The
+  # counts can arrive split by a dimension this engine does not model -- a
+  # declared covariate, most obviously -- so they are pooled back down to the
+  # shared schema's key rather than handed on as repeated rows.
+  predictions <- dplyr::summarise(
+    predictions,
+    .point = sum(.data$.point, na.rm = TRUE),
+    .by = dplyr::all_of(keep)
+  )
+
   # A deterministic band around the point estimate: level 0.5 returns it
   # unchanged, and the outermost levels sit at (1 -/+ spread) times it.
   predictions <- predictions |>

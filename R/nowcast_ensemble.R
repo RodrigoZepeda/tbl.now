@@ -140,7 +140,11 @@ nowcast_ensemble <- function(..., type = c("quantile", "linear_pool"),
 #' @keywords internal
 #' @noRd
 .collect_nowcasts <- function(...) {
-  members <- list(...)
+  # `list2()` rather than `list()`: a trailing comma -- which every `dplyr` verb
+  # accepts, so a reader has no reason to expect otherwise -- makes `list()`
+  # abort with "argument is missing, with no default", an error that names
+  # neither the argument nor the call it came from.
+  members <- rlang::list2(...)
   if (length(members) == 1 && is.list(members[[1]]) && !is_tbl_nowcast(members[[1]])) {
     members <- members[[1]]
   }

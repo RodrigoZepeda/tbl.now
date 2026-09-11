@@ -378,6 +378,11 @@ S7::method(print, tbl_nowcast) <- function(x, ..., n = 6) {
 #' registration dispatches on `class(x)`, which for an S7 object is
 #' `"tbl.now::tbl_nowcast"`, and copies nothing.
 #'
+#' The registered class string cannot be spelled as a method name -- there is no
+#' writable `as_tibble.tbl.now::tbl_nowcast` -- but the function itself is still
+#' *named* for the method it implements, so that `R CMD check` can resolve this
+#' topic's usage section back to an object that exists.
+#'
 #' @description
 #' Turns a fitted nowcast into an ordinary `tibble` you can plot, join or write
 #' out: one row per event date and quantile level by default, or one row per
@@ -409,8 +414,8 @@ S7::method(print, tbl_nowcast) <- function(x, ..., n = 6) {
 #' tibble::as_tibble(nc)
 #'
 #' @name as_tibble.tbl_nowcast
-#' @usage NULL
-as_tibble_tbl_nowcast <- function(x, ..., type = c("quantiles", "draws")) {
+#' @usage \method{as_tibble}{tbl_nowcast}(x, ..., type = c("quantiles", "draws"))
+as_tibble.tbl_nowcast <- function(x, ..., type = c("quantiles", "draws")) {
   type <- match.arg(type)
   if (type == "draws") {
     if (is.null(x@draws)) {

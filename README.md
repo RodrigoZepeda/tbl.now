@@ -7,13 +7,13 @@
 
 [![Codecov test
 coverage](https://codecov.io/gh/RodrigoZepeda/tbl.now/graph/badge.svg)](https://app.codecov.io/gh/RodrigoZepeda/tbl.now)
-[![Lifecycle:
-experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
 [![CRAN
 status](https://www.r-pkg.org/badges/version/tbl.now)](https://CRAN.R-project.org/package=tbl.now)
 [![R-CMD-check](https://github.com/RodrigoZepeda/tbl.now/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/RodrigoZepeda/tbl.now/actions/workflows/R-CMD-check.yaml)
 [![R-universe
 version](https://RodrigoZepeda.r-universe.dev/tbl.now/badges/version)](https://RodrigoZepeda.r-universe.dev/tbl.now)
+[![Lifecycle:
+stable](https://img.shields.io/badge/lifecycle-stable-brightgreen.svg)](https://lifecycle.r-lib.org/articles/stages.html#stable)
 <!-- badges: end -->
 
 [`tbl.now`](https://rodrigozepeda.github.io/tbl.now/) extends
@@ -337,7 +337,7 @@ denguedat <- denguedat |>
 
 #Which is just a tibble with extra attributes
 denguedat
-#> # A tibble:  1,652 x 6
+#> # A tibble:  1,652 × 6
 #> # Data type: "linelist"
 #> # Frequency: Event: `weeks` | Report: `weeks`
 #>   onset_week   report_week   gender   .event_num .report_num .delay
@@ -348,11 +348,11 @@ denguedat
 #> 3 2005-01-03   2005-01-10    Female            0           1      1
 #> 4 2005-01-03   2005-01-10    Male              0           1      1
 #> 5 2005-01-03   2005-01-10    Male              0           1      1
-#> # ----------------------------------------------------------------------------------------------------------------------------------------------------------------
+#> # ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 #> # Now: 2005-09-26 | Event date: "onset_week" | Report date: "report_week"
 #> # Strata: "gender"
-#> # ----------------------------------------------------------------------------------------------------------------------------------------------------------------
-#> # i 1,647 more rows
+#> # ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+#> # ℹ 1,647 more rows
 ```
 
 Once transformed, it can help you diagnose data problems (see [this

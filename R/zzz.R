@@ -46,7 +46,7 @@
   # method name. Nothing else can own this one, so it is registered
   # unconditionally.
   registerS3method(
-    "tidy", "tbl.now::tbl_nowcast", tidy_tbl_nowcast,
+    "tidy", "tbl.now::tbl_nowcast", tidy.tbl_nowcast,
     envir = asNamespace("generics")
   )
 
@@ -55,8 +55,22 @@
   # namespace, and its `rownames = pkgconfig::get_config(...)` default then reads
   # to `R CMD check` as an undeclared dependency on a package we never use.
   registerS3method(
-    "as_tibble", "tbl.now::tbl_nowcast", as_tibble_tbl_nowcast,
+    "as_tibble", "tbl.now::tbl_nowcast", as_tibble.tbl_nowcast,
     envir = asNamespace("tibble")
+  )
+
+  # `autoplot()` for the same class, and registered by hand for a second reason
+  # on top of the unwritable name: `S7::method(autoplot, tbl_nowcast) <- ` is a
+  # replacement function, so it evaluates as
+  # `autoplot <- S7::`method<-`(autoplot, ...)` and leaves a copy of ggplot2's
+  # generic in this namespace. `R CMD check` then reads that copy as a generic
+  # this package owns and exports, and every `autoplot.*` function here becomes
+  # an "apparent method for an exported generic not registered". Same shape as
+  # the `as_tibble()` note above: assigning an S7 method onto an imported
+  # generic copies it, and the copy is what gets checked.
+  registerS3method(
+    "autoplot", "tbl.now::tbl_nowcast", autoplot.tbl_nowcast,
+    envir = asNamespace("ggplot2")
   )
 
   # `scoringutils` is optional, so do not load it just to register a method.

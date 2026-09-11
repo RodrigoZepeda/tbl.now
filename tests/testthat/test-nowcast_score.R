@@ -979,3 +979,18 @@ test_that("a backtest whose scores are all missing is refused, not averaged", {
     "missing score"
   )
 })
+
+test_that("nowcast_backtest() tolerates a trailing comma in its engines", {
+  skip_on_cran()
+  x <- suppressMessages(tbl_now(denguedat,
+    event_date = "onset_week", report_date = "report_week", verbose = FALSE
+  ))
+  x <- x[x$onset_week >= get_now(x) - 200, ]
+
+  # Same `list()`-versus-`list2()` trap as `nowcast_ensemble()`: the trailing
+  # comma used to abort with "argument is missing, with no default".
+  expect_no_error(suppressWarnings(suppressMessages(nowcast_backtest(
+    x, example_engine(label = "a"), example_engine(spread = 0.4, label = "b"),
+    n_dates = 1, seed = 1, verbose = FALSE,
+  ))))
+})

@@ -4660,7 +4660,7 @@ tbl_now_to_nobbs <- function(x, ..., event_col = "onset_date",
 #' pieces <- tbl_now_to_surveillance(x, format = "linelist_list", verbose = FALSE)
 #' fits <- lapply(pieces, function(piece) {
 #'   surveillance::nowcast(
-#'     now = get_now(x), when = get_surveillance_when(x),
+#'     now = max(get_surveillance_range(x)), when = get_surveillance_when(x),
 #'     data = piece, dEventCol = "dHospital", dReportCol = "dReport",
 #'     control = list(dRange = get_surveillance_range(x))
 #'   )
@@ -4746,7 +4746,10 @@ tbl_now_to_surveillance <- function(x, ..., event_col = "dHospital",
     cli::cli_li("{.arg dEventCol} <- {.val {event_col}}")
     cli::cli_li("{.arg dReportCol} <- {.val {report_col}}")
     cli::cli_li("{.arg aggregate.by} <- {.val {aggregate_by}}")
-    cli::cli_li("{.arg now} <- {.val {as.character(get_now(x))}}")
+    # The epoch-aligned value, because that is the one `nowcast()` accepts:
+    # printing the object's own `now` would be telling the reader to make the
+    # call that aborts with "needs to be at the first of each epoch".
+    cli::cli_li("{.arg now} <- {.val {as.character(.surveillance_epoch_start(get_now(x), aggregate_by))}}")
     if (stratified) {
       cli::cli_li(
         "{.field {strata_col}} <- {.val {strata_cols}}, \\
@@ -4821,11 +4824,13 @@ tbl_now_to_surveillance <- function(x, ..., event_col = "dHospital",
 #' * `get_surveillance_when()` -- the dates you want **estimated**, passed as
 #'   `when`. The most recent `length` steps up to and including [get_now()].
 #' * `get_surveillance_range()` -- the **whole** time axis the model is laid on,
-#'   passed as `control$dRange`. Every step from the first event to `now`.
+#'   passed as `control$dRange`. Every step from the first event to `now`. Its
+#'   last element is also what `now` itself should be: [get_now()] can fall
+#'   mid-epoch, and [surveillance::nowcast()] refuses that (see below).
 #'
 #' ```r
 #' sur_fit <- surveillance::nowcast(
-#'   now  = get_now(x),
+#'   now  = max(get_surveillance_range(x)),
 #'   when = get_surveillance_when(x, length = 30),
 #'   data = tbl_now_to_surveillance(x, verbose = FALSE),
 #'   dEventCol = "dHospital", dReportCol = "dReport",
@@ -4847,6 +4852,16 @@ tbl_now_to_surveillance <- function(x, ..., event_col = "dHospital",
 #'
 #' This is also why [complete_zeroes()] is no help here: it can only add zero
 #' *counts*, and a line list has no count column to put a zero in.
+#'
+#' @section Which weekday the grid lands on:
+#'
+#' [surveillance::nowcast()] refuses a grid that does not sit at the **first day
+#' of an epoch**: a Monday for `"1 week"`, the first of the month for
+#' `"1 month"`. Epidemiological weeks routinely start on a Sunday instead, so
+#' both grids are snapped back to the epoch start, and both may therefore begin
+#' a few days before the dates in `x`. [run_nowcast()] shifts \pkg{surveillance}'s
+#' estimates back onto the object's own weekday when they return, so a nowcast
+#' fitted through the engine is still indexed by the event dates you gave it.
 #'
 #' @param x A `tbl_now`.
 #' @param length Number of time steps to estimate, counting back from `to`. The
@@ -4884,7 +4899,7 @@ get_surveillance_when <- function(x, length = 30L, ..., to = NULL, by = NULL) {
     )
   }
   by <- by %||% .surveillance_aggregate_by(get_event_units(x))
-  to <- .surveillance_grid_date(to %||% get_now(x), "to")
+  to <- .surveillance_grid_date(to %||% get_now(x), "to", by)
 
   # `seq()` counting BACK from `to` rather than forward from a computed start:
   # on months the two disagree (a month is not a fixed number of days), and it
@@ -4898,7 +4913,7 @@ get_surveillance_when <- function(x, length = 30L, ..., to = NULL, by = NULL) {
 get_surveillance_range <- function(x, ..., from = NULL, to = NULL, by = NULL) {
   .assert_tbl_now(x, "get_surveillance_range")
   by <- by %||% .surveillance_aggregate_by(get_event_units(x))
-  to <- .surveillance_grid_date(to %||% get_now(x), "to")
+  to <- .surveillance_grid_date(to %||% get_now(x), "to", by)
 
   from <- from %||% suppressWarnings(min(x[[get_event_date(x)]], na.rm = TRUE))
   if (!is.finite(unclass(from))) {
@@ -4907,7 +4922,7 @@ get_surveillance_range <- function(x, ..., from = NULL, to = NULL, by = NULL) {
       "i" = "Pass {.arg from} explicitly."
     ))
   }
-  from <- .surveillance_grid_date(from, "from")
+  from <- .surveillance_grid_date(from, "from", by)
 
   if (from > to) {
     cli::cli_abort(c(
@@ -4925,12 +4940,13 @@ get_surveillance_range <- function(x, ..., from = NULL, to = NULL, by = NULL) {
 #'
 #' @param value The value given for that end of the grid.
 #' @param argument Its argument name, for the error message.
+#' @param by The grid step, so the result can be snapped to an epoch start.
 #'
-#' @return A length-1 `Date`.
+#' @return A length-1 `Date`, at the start of its epoch.
 #'
 #' @keywords internal
 #' @noRd
-.surveillance_grid_date <- function(value, argument) {
+.surveillance_grid_date <- function(value, argument, by = "1 day") {
   if (length(value) != 1L || is.na(value)) {
     cli::cli_abort(
       "{.arg {argument}} must be a single non-missing date, not \
@@ -4939,7 +4955,81 @@ get_surveillance_range <- function(x, ..., from = NULL, to = NULL, by = NULL) {
   }
   # A numeric grid is caught upstream by `.surveillance_aggregate_by()`, so
   # anything reaching here should already be a date.
-  as.Date(value)
+  .surveillance_epoch_start(as.Date(value), by)
+}
+
+#' Snap dates to the start of the epoch `surveillance` bins them into
+#'
+#' [surveillance::nowcast()] insists that `now`, `when` and `control$dRange` all
+#' sit at the first day of an epoch -- it checks `format(date, "%u") == 1` for
+#' `"1 week"` and `format(date, "%d") == 1` for `"1 month"`, and aborts with
+#' \dQuote{The variables 'now' and 'when' needs to be at the first of each
+#' epoch} otherwise. An epidemiological week starts on a **Sunday**, so a
+#' perfectly well-formed weekly `tbl_now` hits that error. Flooring to the
+#' epoch start is what [surveillance::linelist2sts()] already does to the data
+#' itself, so the grid is simply being told the same story.
+#'
+#' @param dates A `Date` vector.
+#' @param by One of `"1 day"`, `"1 week"` or `"1 month"`.
+#'
+#' @return A `Date` vector of epoch starts.
+#'
+#' @keywords internal
+#' @noRd
+.surveillance_epoch_start <- function(dates, by) {
+  dates <- as.Date(dates)
+  switch(by,
+    # ISO weekday, Monday == 1: exactly the field `nowcast()` tests.
+    "1 week" = dates - (as.integer(format(dates, "%u")) - 1L),
+    "1 month" = dates - (as.integer(format(dates, "%d")) - 1L),
+    dates
+  )
+}
+
+#' How far a `tbl_now`'s event dates sit into their `surveillance` epoch
+#'
+#' The inverse of `.surveillance_epoch_start()`, read off the object: the number
+#' of days between an event date and the epoch start it was snapped to. Weekly
+#' data stamped on a Sunday gives `6`. `nowcast_tidy.surveillance()` adds it
+#' back so the predictions come home on the dates the caller's data uses,
+#' rather than on \pkg{surveillance}'s Mondays.
+#'
+#' @param x A `tbl_now` object.
+#' @param by The aggregation step the fit used.
+#'
+#' @return A single integer number of days.
+#'
+#' @keywords internal
+#' @noRd
+.surveillance_epoch_offset <- function(x, by) {
+  if (identical(by, "1 day")) {
+    return(0L)
+  }
+  dates <- x[[get_event_date(x)]]
+  dates <- dates[!is.na(dates)]
+  if (length(dates) == 0L) {
+    return(0L)
+  }
+  offsets <- unique(as.integer(dates - .surveillance_epoch_start(dates, by)))
+
+  # More than one offset means the event dates are not on a common weekday (or
+  # day of the month), so there is no single date to shift the estimates back
+  # to. That is the same misalignment that makes the delays fractional, and it
+  # has the same cure.
+  if (length(offsets) > 1L) {
+    advice <- if (identical(by, "1 week")) {
+      "Put every date on one weekday with {.fn align_weeks} first."
+    } else {
+      "Put every date on the same day of the month with {.fn aggregate_time_units} first."
+    }
+    cli::cli_abort(c(
+      "{.pkg surveillance} lays a {.val {by}} nowcast on epochs that all begin
+       on the same day, but {.arg x}'s event dates sit at
+       {length(offsets)} different offsets into theirs.",
+      "i" = advice
+    ))
+  }
+  offsets
 }
 
 
@@ -5106,7 +5196,7 @@ as_tbl_now.tbl_now_triangle_list <- function(object, ...) {
 #' pieces <- tbl_now_to_surveillance(x, format = "linelist_list")
 #' lapply(pieces, function(piece) {
 #'   surveillance::nowcast(
-#'     now = get_now(x), when = get_surveillance_when(x),
+#'     now = max(get_surveillance_range(x)), when = get_surveillance_when(x),
 #'     data = piece, dEventCol = "dHospital", dReportCol = "dReport",
 #'     control = list(dRange = get_surveillance_range(x))
 #'   )

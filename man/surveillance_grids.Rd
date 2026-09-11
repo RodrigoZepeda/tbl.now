@@ -40,11 +40,13 @@ them have defaults you can rely on. These two helpers build the grids from the
 \item \code{get_surveillance_when()} -- the dates you want \strong{estimated}, passed as
 \code{when}. The most recent \code{length} steps up to and including \code{\link[=get_now]{get_now()}}.
 \item \code{get_surveillance_range()} -- the \strong{whole} time axis the model is laid on,
-passed as \code{control$dRange}. Every step from the first event to \code{now}.
+passed as \code{control$dRange}. Every step from the first event to \code{now}. Its
+last element is also what \code{now} itself should be: \code{\link[=get_now]{get_now()}} can fall
+mid-epoch, and \code{\link[surveillance:nowcast]{surveillance::nowcast()}} refuses that (see below).
 }
 
 \if{html}{\out{<div class="sourceCode r">}}\preformatted{sur_fit <- surveillance::nowcast(
-  now  = get_now(x),
+  now  = max(get_surveillance_range(x)),
   when = get_surveillance_when(x, length = 30),
   data = tbl_now_to_surveillance(x, verbose = FALSE),
   dEventCol = "dHospital", dReportCol = "dReport",
@@ -67,6 +69,18 @@ as days that do not exist.
 
 This is also why \code{\link[=complete_zeroes]{complete_zeroes()}} is no help here: it can only add zero
 \emph{counts}, and a line list has no count column to put a zero in.
+}
+
+\section{Which weekday the grid lands on}{
+
+
+\code{\link[surveillance:nowcast]{surveillance::nowcast()}} refuses a grid that does not sit at the \strong{first day
+of an epoch}: a Monday for \code{"1 week"}, the first of the month for
+\code{"1 month"}. Epidemiological weeks routinely start on a Sunday instead, so
+both grids are snapped back to the epoch start, and both may therefore begin
+a few days before the dates in \code{x}. \code{\link[=run_nowcast]{run_nowcast()}} shifts \pkg{surveillance}'s
+estimates back onto the object's own weekday when they return, so a nowcast
+fitted through the engine is still indexed by the event dates you gave it.
 }
 
 \examples{

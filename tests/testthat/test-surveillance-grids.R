@@ -58,11 +58,14 @@ test_that("`by` counts back from `now` rather than forward from a start", {
   skip_on_cran()
   # A month is not a fixed number of days, so seq()-ing forward from a computed
   # start lands somewhere near `now` instead of on it. It is the `now` end that
-  # has to be exact -- that is the day being nowcast.
+  # has to be exact -- that is the period being nowcast. On a monthly step that
+  # end is the first of `now`'s month, because `surveillance::nowcast()` refuses
+  # a grid that does not sit at the start of an epoch.
   x <- daily_tbl_now()
   when <- get_surveillance_when(x, length = 3, by = "1 month")
 
-  expect_equal(max(when), get_now(x))
+  expect_equal(max(when), as.Date("2024-01-01"))
+  expect_equal(when, as.Date(c("2023-11-01", "2023-12-01", "2024-01-01")))
   expect_length(when, 3L)
 })
 
@@ -117,7 +120,7 @@ test_that("the grids drive a real surveillance::nowcast() call", {
     tbl_now_to_surveillance(x, verbose = FALSE)
   ))
   fit <- suppressWarnings(quiet_messages(surveillance::nowcast(
-    now  = get_now(x),
+    now  = max(get_surveillance_range(x)),
     when = get_surveillance_when(x, length = 3),
     data = linelist,
     dEventCol = "dHospital", dReportCol = "dReport",
@@ -194,4 +197,76 @@ test_that("an explicit N.tInf.max in `control` still wins", {
       verbose = FALSE
     )
   )))
+})
+
+# Epoch alignment -------------------------------------------------------------
+
+# `surveillance::nowcast()` tests `format(date, "%u") == 1` for a weekly fit and
+# `format(date, "%d") == 1` for a monthly one, and aborts with "The variables
+# 'now' and 'when' needs to be at the first of each epoch" otherwise. An epi
+# week starts on a Sunday, so an ordinary weekly object used to hit that.
+sunday_weekly_tbl_now <- function() {
+  sundays <- as.Date("2022-01-02") + seq(0, 70, by = 7)
+  d <- data.frame(
+    ev = rep(sundays, each = 2),
+    rp = rep(sundays, each = 2) + rep(c(0, 7), times = length(sundays))
+  )
+  tbl_now(d,
+    event_date = "ev", report_date = "rp", units = "weeks",
+    verbose = FALSE, warn_non_uniqueness = FALSE
+  )
+}
+
+test_that("the grids land on the epoch start surveillance demands", {
+  skip_on_cran()
+  x <- sunday_weekly_tbl_now()
+  expect_equal(format(get_now(x), "%u"), "7") # a Sunday, as epi weeks are
+
+  when <- get_surveillance_when(x, length = 4)
+  range <- get_surveillance_range(x)
+
+  expect_true(all(format(when, "%u") == "1"))
+  expect_true(all(format(range, "%u") == "1"))
+  # Snapped, not moved to another week: the last epoch is the one `now` is in.
+  expect_equal(max(when), get_now(x) - 6)
+  expect_equal(max(range), get_now(x) - 6)
+  expect_equal(min(range), min(x$ev) - 6)
+})
+
+test_that("a daily object's grids are left alone", {
+  skip_on_cran()
+  x <- daily_tbl_now()
+  expect_equal(max(get_surveillance_when(x, length = 3)), get_now(x))
+  expect_equal(max(get_surveillance_range(x)), get_now(x))
+})
+
+test_that("the offset is read off the object and refuses mixed weekdays", {
+  skip_on_cran()
+  expect_equal(.surveillance_epoch_offset(sunday_weekly_tbl_now(), "1 week"), 6L)
+  expect_equal(.surveillance_epoch_offset(daily_tbl_now(), "1 day"), 0L)
+  # Monday-stamped data, as `denguedat` is, needs no shift at all.
+  expect_equal(.surveillance_epoch_offset(weekly_tbl_now(), "1 week"), 0L)
+
+  mixed <- daily_tbl_now()
+  expect_error(
+    .surveillance_epoch_offset(mixed, "1 week"),
+    "different offsets"
+  )
+})
+
+test_that("engine_surveillance returns estimates on the object's own weekday", {
+  skip_on_cran()
+  skip_if_not_installed("surveillance")
+  x <- sunday_weekly_tbl_now()
+
+  nowcast <- suppressWarnings(suppressMessages(
+    run_nowcast(x, engine_surveillance(D = 2), verbose = FALSE)
+  ))
+  dates <- as.data.frame(nowcast@predictions)[["ev"]]
+
+  # Sundays, as the object's own event dates are -- not the Mondays the
+  # `stsNC` is indexed by -- and no later than `now`.
+  expect_true(all(format(dates, "%u") == "7"))
+  expect_lte(max(dates), get_now(x))
+  expect_true(any(dates %in% x$ev))
 })

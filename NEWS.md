@@ -1,5 +1,50 @@
 # tbl.now 1.0.0
 
+## `example_engine()` no longer emits duplicate prediction rows
+
+`get_latest_reported_cases()` answers by the censoring flag as well as by the
+event date and the strata, so a cell holding both an exactly-dated and a
+censored arrival comes back as two rows -- and answers by a declared
+**covariate** the same way. `example_engine()` passed those rows straight
+through, so its `predictions` repeated the `(event date, stratum, quantile
+level)` key that a `tbl_nowcast` is built on.
+
+Nothing complained at the time. It surfaced much later and much further away:
+`tidy()` died with an unreadable recycling error (`Size 116: Existing data.
+Size 118: Column estimate.`) and `autoplot()` with `is.finite(x): default
+method not implemented for type 'list'`, because `pivot_wider()` had folded the
+repeated key into a list-column.
+
+The engine now pools the counts down to the event date and the stratum, which
+is the only key its result has. This is the same `summarise(.by = key)` step
+the *Adding your own nowcasting model* article already shows; the counts
+themselves are unchanged, and so is every other engine.
+
+## A trailing comma no longer aborts `nowcast_ensemble()` or `nowcast_backtest()`
+
+Both take their members through `...`, collected with `list()` -- and `list()`
+turns a trailing comma into `argument is missing, with no default`, an error
+naming neither the argument nor the call. Every \pkg{dplyr} verb accepts one, so
+there was no reason for a reader to expect otherwise. They now collect with
+`rlang::list2()`, which tolerates the trailing comma (and accepts `!!!`
+splicing). An empty argument in the *middle* of a call is still refused, and now
+says which one it was.
+
+## `engine_surveillance()` works on Sunday-start weeks
+
+`surveillance::nowcast()` refuses a `now`, a `when` or a `control$dRange` that
+is not the first day of one of its epochs -- a **Monday** for weekly data. An
+epidemiological week starts on a Sunday, so weekly `tbl_now` objects built the
+ordinary way died with `The variables 'now' and 'when' needs to be at the first
+of each epoch`.
+
+`get_surveillance_when()` and `get_surveillance_range()` now snap their grids to
+the epoch start, which is what `surveillance::linelist2sts()` already does to
+the data, and `run_nowcast()` shifts the estimates back onto the object's own
+weekday on the way out -- so the predictions are still indexed by the event
+dates you supplied. Event dates that sit on no common weekday are refused up
+front, naming `align_weeks()`, rather than after a fit.
+
 ## Breaking: `case_autocorrelation()` and `reporting_completeness()` are gone
 
 Both were written by an AI and never reviewed by a human. They were taken out

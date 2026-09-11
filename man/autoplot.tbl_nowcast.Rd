@@ -3,6 +3,11 @@
 \name{autoplot.tbl_nowcast}
 \alias{autoplot.tbl_nowcast}
 \title{Plot a nowcast}
+\usage{
+\method{autoplot}{tbl_nowcast}(object, ..., levels = NULL,
+  show_reported = TRUE, colour = NULL, linewidth = 1, date_lim = NULL,
+  ylim = NULL, palette = .tbl_now_palette())
+}
 \arguments{
 \item{object}{A \link{tbl_nowcast} object.}
 
@@ -28,6 +33,9 @@ a nowcast is an estimate of the \strong{epidemic} process (cases by event date),
 which the package always draws in green, with red reserved for the
 reporting process.}
 
+\item{linewidth}{Multiplier on the width of the median line. Default \code{1}; it
+multiplies rather than replaces the geom's own width.}
+
 \item{date_lim}{Length-2 vector of event-axis limits, as \code{Date}s (or as
 numbers on a numeric event axis). \code{NA} in either position leaves that end
 alone. A nowcast covers the whole series but only \emph{corrects} its final
@@ -43,6 +51,9 @@ cuts the fan off at the boundary instead of letting it run to the edge.}
 \code{NULL} (default) leaves the axis to \pkg{ggplot2}. Note that a stratified
 nowcast facets with \code{scales = "free_y"}, so one pair of limits is imposed
 on every panel.}
+
+\item{palette}{A named colour palette (see \code{\link[=tbl_now_palette]{tbl_now_palette()}}). Each colour
+is named for the role it plays, so overriding one role re-themes the plot.}
 }
 \value{
 A \code{ggplot} object.
@@ -54,6 +65,22 @@ Draws a fan chart of a \link{tbl_nowcast}: the counts reported so far as grey
 columns, one shaded band per central prediction interval over them, and the
 median as a line, so that the size of the correction the model is applying is
 visible as the gap between the bars and the fan.
+}
+\details{
+A named function registered in \code{.onLoad()}, like the neighbouring \code{tidy()}
+and \code{as_tibble()} methods and for the same two reasons.
+
+\verb{S7::method(autoplot, tbl_nowcast) <- } would be shorter, but \verb{method<-} is a
+replacement function, so R rewrites the call as an assignment back to
+\code{autoplot} and leaves a \strong{copy of \pkg{ggplot2}'s generic in this
+namespace}. That copy is what \verb{R CMD check} sees when it decides \code{autoplot}
+is a generic this package owns and exports, which in turn makes every
+\verb{autoplot.*} function here look like an S3 method that was never registered.
+Plain registration copies nothing.
+
+The function is also \emph{named} for the method it implements, rather than being
+assigned anonymously into the generic, so that \verb{R CMD check} can resolve this
+topic's usage section back to an object that exists.
 }
 \examples{
 predictions <- tidyr::expand_grid(

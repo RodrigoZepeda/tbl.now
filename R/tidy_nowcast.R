@@ -98,8 +98,17 @@
 #' tidy(nc)
 #'
 #' @name tidy.tbl_nowcast
-#' @usage NULL
-tidy_tbl_nowcast <- function(x, probs = NULL, ...) {
+#' @usage \method{tidy}{tbl_nowcast}(x, probs = NULL, ...)
+#'
+#' @details
+#' Registered by hand in `.onLoad()`. The S7 class name is
+#' `tbl.now::tbl_nowcast`, so the S3 method dispatch actually looks up is
+#' `tidy.tbl.now::tbl_nowcast` -- not a writable R name, and beyond what
+#' `@exportS3Method` can express. The function is nonetheless *named* for the
+#' method it implements, because `R CMD check` resolves this topic's usage
+#' section back to an object of that name; a helper called something else would
+#' leave the help page documenting a function that does not exist.
+tidy.tbl_nowcast <- function(x, probs = NULL, ...) {
   .assert_tbl_nowcast(x)
 
   event_col <- x@event_date
