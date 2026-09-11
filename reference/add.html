@@ -365,7 +365,10 @@ the <a href="nowcast_data_getters.html">getters</a> for reading them back;
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">denguedat</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">ndata</span> <span class="op">&lt;-</span> <span class="fu"><a href="tbl_now.html">tbl_now</a></span><span class="op">(</span><span class="va">denguedat</span>,</span></span>
+<span class="r-in"><span><span class="co"># These verbs only touch what the object records about itself, never the</span></span></span>
+<span class="r-in"><span><span class="co"># rows, so a couple of years stands in for the full twenty-year series.</span></span></span>
+<span class="r-in"><span><span class="va">recent</span> <span class="op">&lt;-</span> <span class="va">denguedat</span><span class="op">[</span><span class="va">denguedat</span><span class="op">$</span><span class="va">onset_week</span> <span class="op">&gt;=</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2009-01-01"</span><span class="op">)</span>, <span class="op">]</span></span></span>
+<span class="r-in"><span><span class="va">ndata</span> <span class="op">&lt;-</span> <span class="fu"><a href="tbl_now.html">tbl_now</a></span><span class="op">(</span><span class="va">recent</span>,</span></span>
 <span class="r-in"><span>  event_date <span class="op">=</span> <span class="va">onset_week</span>,</span></span>
 <span class="r-in"><span>  report_date <span class="op">=</span> <span class="va">report_week</span>,</span></span>
 <span class="r-in"><span>  strata <span class="op">=</span> <span class="va">gender</span>,</span></span>
@@ -412,7 +415,7 @@ the <a href="nowcast_data_getters.html">getters</a> for reading them back;
 <span class="r-in"><span><span class="co"># tells the object to use the corrected column instead.</span></span></span>
 <span class="r-in"><span><span class="va">ndata</span><span class="op">$</span><span class="va">corrected_onset</span> <span class="op">&lt;-</span> <span class="va">ndata</span><span class="op">$</span><span class="va">onset_week</span> <span class="op">-</span> <span class="fu">lubridate</span><span class="fu">::</span><span class="fu"><a href="https://lubridate.tidyverse.org/reference/period.html" class="external-link">days</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">ndata</span> <span class="op">&lt;-</span> <span class="va">ndata</span> <span class="op">|&gt;</span> <span class="fu">change_event_date</span><span class="op">(</span><span class="va">corrected_onset</span><span class="op">)</span></span></span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>52987 rows have a fractional `.delay`.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>9268 rows have a fractional `.delay`.</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> A fractional delay is what a converter chokes on: the two date columns are on</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span>   different grids. `align_weeks()` is the fix for weekly data.</span>
 <span class="r-in"><span><span class="fu"><a href="nowcast_data_getters.html">get_event_date</a></span><span class="op">(</span><span class="va">ndata</span><span class="op">)</span></span></span>
@@ -423,13 +426,13 @@ the <a href="nowcast_data_getters.html">getters</a> for reading them back;
 <span class="r-in"><span><span class="co">## TRUE means the report date is only an upper bound (e.g. a backlog dump).</span></span></span>
 <span class="r-in"><span><span class="va">ndata</span><span class="op">$</span><span class="va">is_censored_report</span> <span class="op">&lt;-</span> <span class="cn">FALSE</span></span></span>
 <span class="r-in"><span><span class="va">ndata</span> <span class="op">&lt;-</span> <span class="va">ndata</span> <span class="op">|&gt;</span> <span class="fu">add_is_censored_report</span><span class="op">(</span><span class="va">is_censored_report</span><span class="op">)</span></span></span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>52987 rows have a fractional `.delay`.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>9268 rows have a fractional `.delay`.</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> A fractional delay is what a converter chokes on: the two date columns are on</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span>   different grids. `align_weeks()` is the fix for weekly data.</span>
 <span class="r-in"><span><span class="fu"><a href="nowcast_data_getters.html">get_is_censored_report</a></span><span class="op">(</span><span class="va">ndata</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] "is_censored_report"</span>
 <span class="r-in"><span><span class="va">ndata</span> <span class="op">&lt;-</span> <span class="fu">remove_is_censored_report</span><span class="op">(</span><span class="va">ndata</span><span class="op">)</span></span></span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>52987 rows have a fractional `.delay`.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>9268 rows have a fractional `.delay`.</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> A fractional delay is what a converter chokes on: the two date columns are on</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span>   different grids. `align_weeks()` is the fix for weekly data.</span>
 <span class="r-in"><span></span></span>
@@ -437,14 +440,14 @@ the <a href="nowcast_data_getters.html">getters</a> for reading them back;
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Set it by hand ...</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="nowcast_data_getters.html">get_now</a></span><span class="op">(</span><span class="fu">change_now</span><span class="op">(</span><span class="va">ndata</span>, now <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2011-01-01"</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>52987 rows have a fractional `.delay`.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>9268 rows have a fractional `.delay`.</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> A fractional delay is what a converter chokes on: the two date columns are on</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span>   different grids. `align_weeks()` is the fix for weekly data.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] "2011-01-01"</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># ... or snap it back to the latest date actually observed.</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="nowcast_data_getters.html">get_now</a></span><span class="op">(</span><span class="fu">update_now</span><span class="op">(</span><span class="va">ndata</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>52987 rows have a fractional `.delay`.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>9268 rows have a fractional `.delay`.</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> A fractional delay is what a converter chokes on: the two date columns are on</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span>   different grids. `align_weeks()` is the fix for weekly data.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] "2010-12-20"</span>
@@ -452,14 +455,14 @@ the <a href="nowcast_data_getters.html">getters</a> for reading them back;
 <span class="r-in"><span><span class="co">## ---- Count data: which column holds the counts ------------------------</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="va">counts</span> <span class="op">&lt;-</span> <span class="fu"><a href="to_count.html">to_count</a></span><span class="op">(</span><span class="va">ndata</span>, to <span class="op">=</span> <span class="st">"count-incidence"</span><span class="op">)</span></span></span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>52987 rows have a fractional `.delay`.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>9268 rows have a fractional `.delay`.</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> A fractional delay is what a converter chokes on: the two date columns are on</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span>   different grids. `align_weeks()` is the fix for weekly data.</span>
 <span class="r-in"><span><span class="va">counts</span> <span class="op">|&gt;</span></span></span>
 <span class="r-in"><span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>inflated <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="fl">1.15</span> <span class="op">*</span> <span class="va">n</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span></span>
 <span class="r-in"><span>  <span class="fu">change_case_count</span><span class="op">(</span><span class="va">inflated</span><span class="op">)</span> <span class="op">|&gt;</span></span></span>
 <span class="r-in"><span>  <span class="fu"><a href="nowcast_data_getters.html">get_case_count</a></span><span class="op">(</span><span class="op">)</span></span></span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>52987 rows have a fractional `.delay`.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>9268 rows have a fractional `.delay`.</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> A fractional delay is what a converter chokes on: the two date columns are on</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span>   different grids. `align_weeks()` is the fix for weekly data.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] "inflated"</span>
@@ -468,7 +471,7 @@ the <a href="nowcast_data_getters.html">getters</a> for reading them back;
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">covid_us</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">covid</span> <span class="op">&lt;-</span> <span class="va">covid_us</span> <span class="op">|&gt;</span></span></span>
-<span class="r-in"><span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">onset_dt</span> <span class="op">&gt;=</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2020-11-01"</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span></span>
+<span class="r-in"><span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">onset_dt</span> <span class="op">&gt;=</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2020-12-01"</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span></span>
 <span class="r-in"><span>  <span class="fu"><a href="tbl_now.html">tbl_now</a></span><span class="op">(</span></span></span>
 <span class="r-in"><span>    event_date <span class="op">=</span> <span class="va">onset_dt</span>, report_date <span class="op">=</span> <span class="va">pos_spec_dt</span>,</span></span>
 <span class="r-in"><span>    case_count <span class="op">=</span> <span class="va">n</span>, data_type <span class="op">=</span> <span class="st">"count-incidence"</span>,</span></span>
@@ -492,7 +495,7 @@ the <a href="nowcast_data_getters.html">getters</a> for reading them back;
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="va">covid</span><span class="op">[[</span><span class="fu"><a href="nowcast_data_getters.html">get_revision_type</a></span><span class="op">(</span><span class="va">covid</span><span class="op">)</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> confirmed   pending </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     27273     11961 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      8241      4600 </span>
 <span class="r-in"><span><span class="fu"><a href="nowcast_data_getters.html">get_revision_levels</a></span><span class="op">(</span><span class="va">covid</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Laboratory-confirmed case             Probable Case </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>               "confirmed"                 "pending" </span>

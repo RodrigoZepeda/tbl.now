@@ -332,7 +332,10 @@ for appending new rows rather than editing attributes.
 
 ``` r
 data(denguedat)
-ndata <- tbl_now(denguedat,
+# These verbs only touch what the object records about itself, never the
+# rows, so a couple of years stands in for the full twenty-year series.
+recent <- denguedat[denguedat$onset_week >= as.Date("2009-01-01"), ]
+ndata <- tbl_now(recent,
   event_date = onset_week,
   report_date = report_week,
   strata = gender,
@@ -379,7 +382,7 @@ ndata |>
 # tells the object to use the corrected column instead.
 ndata$corrected_onset <- ndata$onset_week - lubridate::days(1)
 ndata <- ndata |> change_event_date(corrected_onset)
-#> Warning: 52987 rows have a fractional `.delay`.
+#> Warning: 9268 rows have a fractional `.delay`.
 #> ℹ A fractional delay is what a converter chokes on: the two date columns are on
 #>   different grids. `align_weeks()` is the fix for weekly data.
 get_event_date(ndata)
@@ -390,13 +393,13 @@ get_event_date(ndata)
 ## TRUE means the report date is only an upper bound (e.g. a backlog dump).
 ndata$is_censored_report <- FALSE
 ndata <- ndata |> add_is_censored_report(is_censored_report)
-#> Warning: 52987 rows have a fractional `.delay`.
+#> Warning: 9268 rows have a fractional `.delay`.
 #> ℹ A fractional delay is what a converter chokes on: the two date columns are on
 #>   different grids. `align_weeks()` is the fix for weekly data.
 get_is_censored_report(ndata)
 #> [1] "is_censored_report"
 ndata <- remove_is_censored_report(ndata)
-#> Warning: 52987 rows have a fractional `.delay`.
+#> Warning: 9268 rows have a fractional `.delay`.
 #> ℹ A fractional delay is what a converter chokes on: the two date columns are on
 #>   different grids. `align_weeks()` is the fix for weekly data.
 
@@ -404,14 +407,14 @@ ndata <- remove_is_censored_report(ndata)
 
 # Set it by hand ...
 get_now(change_now(ndata, now = as.Date("2011-01-01")))
-#> Warning: 52987 rows have a fractional `.delay`.
+#> Warning: 9268 rows have a fractional `.delay`.
 #> ℹ A fractional delay is what a converter chokes on: the two date columns are on
 #>   different grids. `align_weeks()` is the fix for weekly data.
 #> [1] "2011-01-01"
 
 # ... or snap it back to the latest date actually observed.
 get_now(update_now(ndata))
-#> Warning: 52987 rows have a fractional `.delay`.
+#> Warning: 9268 rows have a fractional `.delay`.
 #> ℹ A fractional delay is what a converter chokes on: the two date columns are on
 #>   different grids. `align_weeks()` is the fix for weekly data.
 #> [1] "2010-12-20"
@@ -419,14 +422,14 @@ get_now(update_now(ndata))
 ## ---- Count data: which column holds the counts ------------------------
 
 counts <- to_count(ndata, to = "count-incidence")
-#> Warning: 52987 rows have a fractional `.delay`.
+#> Warning: 9268 rows have a fractional `.delay`.
 #> ℹ A fractional delay is what a converter chokes on: the two date columns are on
 #>   different grids. `align_weeks()` is the fix for weekly data.
 counts |>
   dplyr::mutate(inflated = round(1.15 * n)) |>
   change_case_count(inflated) |>
   get_case_count()
-#> Warning: 52987 rows have a fractional `.delay`.
+#> Warning: 9268 rows have a fractional `.delay`.
 #> ℹ A fractional delay is what a converter chokes on: the two date columns are on
 #>   different grids. `align_weeks()` is the fix for weekly data.
 #> [1] "inflated"
@@ -435,7 +438,7 @@ counts |>
 
 data(covid_us)
 covid <- covid_us |>
-  dplyr::filter(onset_dt >= as.Date("2020-11-01")) |>
+  dplyr::filter(onset_dt >= as.Date("2020-12-01")) |>
   tbl_now(
     event_date = onset_dt, report_date = pos_spec_dt,
     case_count = n, data_type = "count-incidence",
@@ -459,7 +462,7 @@ covid <- change_revision_date(covid, cdc_report_dt,
 table(covid[[get_revision_type(covid)]])
 #> 
 #> confirmed   pending 
-#>     27273     11961 
+#>      8241      4600 
 get_revision_levels(covid)
 #> Laboratory-confirmed case             Probable Case 
 #>               "confirmed"                 "pending" 

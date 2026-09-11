@@ -319,7 +319,7 @@ if (requireNamespace("baselinenowcast", quietly = TRUE)) {
 #> • draws: 100
 #> 
 #> Nowcast at "2010-12-20" (q50, 2.5-97.5% interval):
-#> • 13 [0, 163.3]
+#> • 14 [0, 192.5]
 #> 
 #> # A tibble: 6 × 3
 #>   onset_week .quantile_level .value

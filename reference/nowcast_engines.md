@@ -283,10 +283,10 @@ engine_nobbs(max_D = 10, moving_window = 64)
 # Fit epinowcast on the last 180 periods only; it scales with the number of
 # reference dates, while the two engines below take the whole series.
 engine_epinowcast(preprocess_args = list(max_delay = 30), min_date = 180)
-#> ── epinowcast model output ───────────────────────────────────────────────────── 
-#> Groups:  | Timestep:  | Max delay:  
-#> Observations:  timepoints x  snapshots 
-#> Max date: NULL 
+#> ── <nowcast_engine: "epinowcast"> ──────────────────────────────────────────────
+#> • min_date: "180" periods before now
+#> • quantile levels: 0.025, 0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95, and 0.975
+#> • arguments: preprocess_args
 engine_baselinenowcast()
 #> ── <nowcast_engine: "baselinenowcast"> ─────────────────────────────────────────
 #> • quantile levels: 0.025, 0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95, and 0.975

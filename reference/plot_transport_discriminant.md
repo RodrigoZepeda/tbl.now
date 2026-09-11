@@ -90,6 +90,12 @@ for the whole gallery.
 
 ``` r
 data(denguedat)
-dn <- tbl_now(denguedat, onset_week, report_week, verbose = FALSE)
+# The two and a half years around the 1996 and 1997 backlog dumps, so that
+# the plane has red points on it without scanning the whole series.
+window <- denguedat[
+  denguedat$onset_week >= as.Date("1995-06-01") &
+    denguedat$onset_week <= as.Date("1998-01-01"),
+]
+dn <- tbl_now(window, onset_week, report_week, verbose = FALSE)
 plot_transport_discriminant(dn)
 ```

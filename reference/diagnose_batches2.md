@@ -153,7 +153,7 @@ diagnose_batches2(dengue_tbl, at = as.Date("1990-06-25"), n_permutations = 99)
 #> # A tibble: 1 × 7
 #>   stratum  n_at n_reference mean_delay_at mean_delay_reference statistic p_value
 #>   <chr>   <int>       <int>         <dbl>                <dbl>     <dbl>   <dbl>
-#> 1 all         4          26             1                 2.77     -1.56       1
+#> 1 all         4          26             1                 2.77     -1.56    0.94
 
 # `n_permutations` sets the resolution of the p-value: 99 keeps the example
 ## fast, but use the default (999) for anything you intend to report.

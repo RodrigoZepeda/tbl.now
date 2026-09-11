@@ -130,7 +130,10 @@ walks through them in order.
 
 ``` r
 data(denguedat)
-ndata <- tbl_now(denguedat,
+# The last five years. The full twenty-year series gives the same shape
+# of answer, it just takes longer to compute.
+recent <- denguedat[denguedat$onset_week >= as.Date("2006-01-01"), ]
+ndata <- tbl_now(recent,
   event_date = "onset_week",
   report_date = "report_week",
   strata = "gender",
@@ -146,9 +149,9 @@ cases_per_date(ndata, axis = "event")
 #>   n = dates on the grid; total = cases
 #>   quantity   stratum     n total  mean    sd   min   q25   q50   q75   q90   max
 #>   <chr>      <chr>   <int> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl>
-#> 1 per_event… all      1095 52987  48.4  53.3     0    14    30    64   104   358
-#> 2 per_event… Female   1095 26592  24.3  26.7     0     7    15    32    52   189
-#> 3 per_event… Male     1095 26395  24.1  27.0     0     7    15    31    53   176
+#> 1 per_event… all       260 14135  54.4  73.2     0    11    25    65   139   358
+#> 2 per_event… Female    260  6998  26.9  36.4     0     6    12    31    71   189
+#> 3 per_event… Male      260  7137  27.4  37.2     0     5    13    32    71   176
 #> # ℹ 1 more variable: prop_zero <dbl>
 #> 
 #> ℹ Use `dplyr::filter()` or `tibble::as_tibble()` for the full schema.
@@ -160,9 +163,9 @@ delay_summary(ndata)
 #>   n = (event, report) cells; total = cases
 #>   quantity   stratum     n total  mean    sd   min   q25   q50   q75   q90   max
 #>   <chr>      <chr>   <int> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl>
-#> 1 event_to_… all      8265 52987  1.74  1.21     0     1     1     2     3    26
-#> 2 event_to_… Female   4133 26592  1.74  1.20     0     1     1     2     3    15
-#> 3 event_to_… Male     4132 26395  1.74  1.22     0     1     1     2     3    26
+#> 1 event_to_… all      1673 14135  1.81  1.06     0     1     2     2     3    26
+#> 2 event_to_… Female    842  6998  1.82  1.07     0     1     2     2     3    15
+#> 3 event_to_… Male      831  7137  1.80  1.06     0     1     2     2     3    26
 #> 
 #> ℹ Use `dplyr::filter()` or `tibble::as_tibble()` for the full schema.
 
@@ -173,11 +176,11 @@ zero_run_summary(ndata, axis = "event")
 #> 
 #> zero_run
 #>   n = runs of consecutive zero dates; total = zero dates in those runs
-#>   quantity   stratum     n total  mean    sd   min   q25   q50   q75   q90   max
-#>   <chr>      <chr>   <int> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl>
-#> 1 event_date all         2     4  2    1.41      1     1     1     3     3     3
-#> 2 event_date Female     10    13  1.3  0.675     1     1     1     1     2     3
-#> 3 event_date Male        8    13  1.62 0.916     1     1     1     2     3     3
+#>   quantity  stratum     n total  mean     sd   min   q25   q50   q75   q90   max
+#>   <chr>     <chr>   <int> <dbl> <dbl>  <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl>
+#> 1 event_da… all         1     3   3   NA         3     3     3     3     3     3
+#> 2 event_da… Female      5     8   1.6  0.894     1     1     1     2     3     3
+#> 3 event_da… Male        5     7   1.4  0.894     1     1     1     1     3     3
 #> 
 #> ℹ Use `dplyr::filter()` or `tibble::as_tibble()` for the full schema.
 
@@ -190,8 +193,8 @@ prop_strata(ndata)
 #>   n = (event, report) cells in the category; total = cases in the category
 #>   quantity            n total  prop
 #>   <chr>           <int> <dbl> <dbl>
-#> 1 strata = Female  4133 26592 0.502
-#> 2 strata = Male    4132 26395 0.498
+#> 1 strata = Female   842  6998 0.495
+#> 2 strata = Male     831  7137 0.505
 #> 
 #> ℹ Use `dplyr::filter()` or `tibble::as_tibble()` for the full schema.
 prop_censored(ndata)
@@ -205,15 +208,15 @@ date_ranges(ndata)
 #>   n = cells, or distinct dates on a date row; total = cases
 #>    quantity    stratum     n total date_min   date_max  
 #>    <chr>       <chr>   <int> <dbl> <date>     <date>    
-#>  1 total_cases all      8265 52987 NA         NA        
-#>  2 event_date  all      1091 52987 1990-01-01 2010-11-29
-#>  3 report_date all      1092 52987 1990-01-01 2010-12-20
-#>  4 total_cases Female   4133 26592 NA         NA        
-#>  5 event_date  Female   1082 26592 1990-01-01 2010-11-29
-#>  6 report_date Female   1078 26592 1990-01-01 2010-12-20
-#>  7 total_cases Male     4132 26395 NA         NA        
-#>  8 event_date  Male     1082 26395 1990-01-01 2010-11-29
-#>  9 report_date Male     1073 26395 1990-01-01 2010-12-13
+#>  1 total_cases all      1673 14135 NA         NA        
+#>  2 event_date  all       257 14135 2006-01-02 2010-11-29
+#>  3 report_date all       257 14135 2006-01-09 2010-12-20
+#>  4 total_cases Female    842  6998 NA         NA        
+#>  5 event_date  Female    252  6998 2006-01-02 2010-11-29
+#>  6 report_date Female    250  6998 2006-01-09 2010-12-20
+#>  7 total_cases Male      831  7137 NA         NA        
+#>  8 event_date  Male      253  7137 2006-01-02 2010-11-29
+#>  9 report_date Male      251  7137 2006-01-09 2010-12-13
 #> 10 now         all        NA    NA 2010-12-20 2010-12-20
 #> ℹ 1 more row.
 #> 
@@ -227,15 +230,15 @@ triangle_occupancy(ndata)
 #>    quantity                stratum     n  value
 #>    <chr>                   <chr>   <int>  <dbl>
 #>  1 max_delay               all        NA 26    
-#>  2 triangle_cells_observed all      5154 NA    
-#>  3 triangle_cells_possible all     29214 NA    
-#>  4 triangle_occupancy      all        NA  0.176
+#>  2 triangle_cells_observed all      1034 NA    
+#>  3 triangle_cells_possible all      6669 NA    
+#>  4 triangle_occupancy      all        NA  0.155
 #>  5 now_gap_event           all        NA  3    
 #>  6 now_gap_report          all        NA  0    
 #>  7 max_delay               Female     NA 15    
-#>  8 triangle_cells_observed Female   4133 NA    
-#>  9 triangle_cells_possible Female  29214 NA    
-#> 10 triangle_occupancy      Female     NA  0.141
+#>  8 triangle_cells_observed Female    842 NA    
+#>  9 triangle_cells_possible Female   6669 NA    
+#> 10 triangle_occupancy      Female     NA  0.126
 #> ℹ 8 more rows.
 #> 
 #> ℹ Use `dplyr::filter()` or `tibble::as_tibble()` for the full schema.
@@ -248,17 +251,17 @@ cumulative_growth(ndata, k = 3)
 #> 
 #> growth
 #>   n = event dates; total = cases added
-#>   quantity stratum     n total  mean    sd   min   q25   q50   q75   q90   max
-#>   <chr>    <chr>   <int> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl>
-#> 1 delay 1  all       631  9752  9.93 9.16      1  5     7.6  12    18    104  
-#> 2 delay 2  all      1078  9282  1.93 1.30      1  1.36  1.6   2     2.83  18  
-#> 3 delay 3  all      1089  2607  1.16 0.336     1  1.02  1.09  1.19  1.33   8  
-#> 4 delay 1  Female    471  8292 10.7  8.92      1  5     8    13    20     71  
-#> 5 delay 2  Female   1045  9219  1.95 1.57      1  1.33  1.61  2     3     31  
-#> 6 delay 3  Female   1076  2406  1.13 0.295     1  1     1.06  1.15  1.31   7.5
-#> 7 delay 1  Male      469  8251 10.5  9.95      1  5     8    12    19    104  
-#> 8 delay 2  Male     1040  9035  1.88 1.39      1  1.33  1.57  2     2.56  27  
-#> 9 delay 3  Male     1075  2379  1.14 0.357     1  1     1.06  1.17  1.33   8  
+#>   quantity stratum     n total  mean     sd   min   q25   q50   q75   q90   max
+#>   <chr>    <chr>   <int> <dbl> <dbl>  <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl>
+#> 1 delay 1  all       107  2067 13.5  15.7       1  5.5   9    15    31.3  104  
+#> 2 delay 2  all       249  2908  2.45  2.24      1  1.4   1.71  2.5   4     18  
+#> 3 delay 3  all       255   859  1.21  0.616     1  1     1.10  1.2   1.38   8  
+#> 4 delay 1  Female     68  1530 14.2  14.6       1  5     9    19    30     71  
+#> 5 delay 2  Female    238  2812  2.51  2.90      1  1.33  1.67  2.46  4.5   31  
+#> 6 delay 3  Female    249   785  1.17  0.522     1  1     1.05  1.16  1.4    7.5
+#> 7 delay 1  Male       77  1801 15.4  17.8       1  6    10    15    33    104  
+#> 8 delay 2  Male      236  2826  2.37  2.50      1  1.29  1.65  2.35  4     27  
+#> 9 delay 3  Male      251   825  1.20  0.621     1  1     1.06  1.2   1.4    8  
 #> 
 #> ℹ Use `dplyr::filter()` or `tibble::as_tibble()` for the full schema.
 
@@ -274,15 +277,15 @@ dplyr::bind_rows(
 #>   n = cells, or distinct dates on a date row; total = cases
 #>    quantity    stratum     n total date_min   date_max  
 #>    <chr>       <chr>   <int> <dbl> <date>     <date>    
-#>  1 total_cases all      8265 52987 NA         NA        
-#>  2 event_date  all      1091 52987 1990-01-01 2010-11-29
-#>  3 report_date all      1092 52987 1990-01-01 2010-12-20
-#>  4 total_cases Female   4133 26592 NA         NA        
-#>  5 event_date  Female   1082 26592 1990-01-01 2010-11-29
-#>  6 report_date Female   1078 26592 1990-01-01 2010-12-20
-#>  7 total_cases Male     4132 26395 NA         NA        
-#>  8 event_date  Male     1082 26395 1990-01-01 2010-11-29
-#>  9 report_date Male     1073 26395 1990-01-01 2010-12-13
+#>  1 total_cases all      1673 14135 NA         NA        
+#>  2 event_date  all       257 14135 2006-01-02 2010-11-29
+#>  3 report_date all       257 14135 2006-01-09 2010-12-20
+#>  4 total_cases Female    842  6998 NA         NA        
+#>  5 event_date  Female    252  6998 2006-01-02 2010-11-29
+#>  6 report_date Female    250  6998 2006-01-09 2010-12-20
+#>  7 total_cases Male      831  7137 NA         NA        
+#>  8 event_date  Male      253  7137 2006-01-02 2010-11-29
+#>  9 report_date Male      251  7137 2006-01-09 2010-12-13
 #> 10 now         all        NA    NA 2010-12-20 2010-12-20
 #> ℹ 1 more row.
 #> 
@@ -290,9 +293,9 @@ dplyr::bind_rows(
 #>   n = (event, report) cells; total = cases
 #>   quantity   stratum     n total  mean    sd   min   q25   q50   q75   q90   max
 #>   <chr>      <chr>   <int> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl>
-#> 1 event_to_… all      8265 52987  1.74  1.21     0     1     1     2     3    26
-#> 2 event_to_… Female   4133 26592  1.74  1.20     0     1     1     2     3    15
-#> 3 event_to_… Male     4132 26395  1.74  1.22     0     1     1     2     3    26
+#> 1 event_to_… all      1673 14135  1.81  1.06     0     1     2     2     3    26
+#> 2 event_to_… Female    842  6998  1.82  1.07     0     1     2     2     3    15
+#> 3 event_to_… Male      831  7137  1.80  1.06     0     1     2     2     3    26
 #> 
 #> ℹ Use `dplyr::filter()` or `tibble::as_tibble()` for the full schema.
 ```

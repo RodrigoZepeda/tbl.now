@@ -173,10 +173,10 @@ fit <- try(
   ),
   silent = TRUE
 )
-#> WARN [2026-09-11 08:59:03] estimate_dist (chain: 1): Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.
+#> WARN [2026-09-11 10:38:54] estimate_dist (chain: 1): Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.
 #> Running the chains for more iterations may help. See
 #> https://mc-stan.org/misc/warnings.html#bulk-ess - 
-#> WARN [2026-09-11 08:59:03] estimate_dist (chain: 1): Tail Effective Samples Size (ESS) is too low, indicating posterior variances and tail quantiles may be unreliable.
+#> WARN [2026-09-11 10:38:54] estimate_dist (chain: 1): Tail Effective Samples Size (ESS) is too low, indicating posterior variances and tail quantiles may be unreliable.
 #> Running the chains for more iterations may help. See
 #> https://mc-stan.org/misc/warnings.html#tail-ess - 
 
@@ -188,15 +188,15 @@ if (!inherits(fit, "try-error")) {
 #> # A tibble: 4 × 6
 #>   term    estimate conf.low conf.high level engine 
 #>   <chr>      <dbl>    <dbl>     <dbl> <dbl> <chr>  
-#> 1 meanlog    2.33     2.32      2.34   0.95 EpiNow2
-#> 2 sdlog      0.368    0.355     0.380  0.95 EpiNow2
-#> 3 mean      11.0     10.9      11.1    0.95 EpiNow2
-#> 4 sd         4.21     4.06      4.37   0.95 EpiNow2
+#> 1 meanlog    2.33     2.31      2.34   0.95 EpiNow2
+#> 2 sdlog      0.367    0.357     0.377  0.95 EpiNow2
+#> 3 mean      11.0     10.8      11.1    0.95 EpiNow2
+#> 4 sd         4.20     4.06      4.33   0.95 EpiNow2
 #> # A tibble: 4 × 8
 #>   term    estimate conf.low conf.high level engine      q5    q95
 #>   <chr>      <dbl>    <dbl>     <dbl> <dbl> <chr>    <dbl>  <dbl>
-#> 1 meanlog    2.33     2.32      2.34   0.95 EpiNow2  2.32   2.34 
-#> 2 sdlog      0.368    0.355     0.380  0.95 EpiNow2  0.356  0.376
-#> 3 mean      11.0     10.9      11.1    0.95 EpiNow2 10.9   11.1  
-#> 4 sd         4.21     4.06      4.37   0.95 EpiNow2  4.08   4.32 
+#> 1 meanlog    2.33     2.31      2.34   0.95 EpiNow2  2.32   2.34 
+#> 2 sdlog      0.367    0.357     0.377  0.95 EpiNow2  0.358  0.376
+#> 3 mean      11.0     10.8      11.1    0.95 EpiNow2 10.9   11.1  
+#> 4 sd         4.20     4.06      4.33   0.95 EpiNow2  4.08   4.31 
 ```

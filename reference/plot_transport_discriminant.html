@@ -128,7 +128,13 @@ from; <code><a href="diagnostic_plot.html">diagnostic_plot()</a></code> for the 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">denguedat</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">dn</span> <span class="op">&lt;-</span> <span class="fu"><a href="tbl_now.html">tbl_now</a></span><span class="op">(</span><span class="va">denguedat</span>, <span class="va">onset_week</span>, <span class="va">report_week</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co"># The two and a half years around the 1996 and 1997 backlog dumps, so that</span></span></span>
+<span class="r-in"><span><span class="co"># the plane has red points on it without scanning the whole series.</span></span></span>
+<span class="r-in"><span><span class="va">window</span> <span class="op">&lt;-</span> <span class="va">denguedat</span><span class="op">[</span></span></span>
+<span class="r-in"><span>  <span class="va">denguedat</span><span class="op">$</span><span class="va">onset_week</span> <span class="op">&gt;=</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"1995-06-01"</span><span class="op">)</span> <span class="op">&amp;</span></span></span>
+<span class="r-in"><span>    <span class="va">denguedat</span><span class="op">$</span><span class="va">onset_week</span> <span class="op">&lt;=</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"1998-01-01"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span><span class="op">]</span></span></span>
+<span class="r-in"><span><span class="va">dn</span> <span class="op">&lt;-</span> <span class="fu"><a href="tbl_now.html">tbl_now</a></span><span class="op">(</span><span class="va">window</span>, <span class="va">onset_week</span>, <span class="va">report_week</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">plot_transport_discriminant</span><span class="op">(</span><span class="va">dn</span><span class="op">)</span></span></span>
 <span class="r-plt img"><img src="plot_transport_discriminant-1.png" alt="" width="700" height="433"></span>
 </code></pre></div>

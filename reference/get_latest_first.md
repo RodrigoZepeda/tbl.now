@@ -142,7 +142,10 @@ which uses the latest counts as truth.
 
 ``` r
 data(denguedat)
-dengue <- tbl_now(denguedat,
+# The last five years. The counters work the same on the full twenty-year
+# series, they just have more weeks to walk.
+recent <- denguedat[denguedat$onset_week >= as.Date("2006-01-01"), ]
+dengue <- tbl_now(recent,
   report_date = "report_week",
   event_date = "onset_week",
   strata = "gender",
@@ -153,80 +156,80 @@ dengue <- tbl_now(denguedat,
 # week -- an undercount, because the late reports had not arrived yet.
 first <- get_initial_reported_cases(dengue)
 first
-#> # A tibble:  2,164 × 7
+#> # A tibble:  505 × 7
 #> # Data type: "count-cumulative"
 #> # Frequency: Event: `weeks` | Report: `weeks`
 #>    onset_week   report_week   .event_num .report_num gender         n .delay
 #>    <date>       <date>             <dbl>       <dbl> <chr>      <dbl>  <dbl>
 #>    [event_date] [report_date]      [...]       [...] [strata] [cases]  [...]
-#>  1 1990-01-01   1990-01-01             0           0 Female         2      0
-#>  2 1990-01-01   1990-01-01             0           0 Male           1      0
-#>  3 1990-01-08   1990-01-08             1           1 Female         1      0
-#>  4 1990-01-08   1990-01-08             1           1 Male           1      0
-#>  5 1990-01-15   1990-01-15             2           2 Female         2      0
-#>  6 1990-01-15   1990-01-15             2           2 Male           4      0
-#>  7 1990-01-22   1990-01-22             3           3 Female         5      0
-#>  8 1990-01-22   1990-01-22             3           3 Male           3      0
-#>  9 1990-01-29   1990-01-29             4           4 Female         3      0
-#> 10 1990-01-29   1990-01-29             4           4 Male           1      0
+#>  1 2006-01-02   2006-01-09             0           1 Female         1      1
+#>  2 2006-01-02   2006-01-09             0           1 Male           7      1
+#>  3 2006-01-09   2006-01-16             1           2 Female         2      1
+#>  4 2006-01-09   2006-01-16             1           2 Male           5      1
+#>  5 2006-01-16   2006-01-16             2           2 Female         3      0
+#>  6 2006-01-16   2006-01-16             2           2 Male           1      0
+#>  7 2006-01-23   2006-01-23             3           3 Female         2      0
+#>  8 2006-01-23   2006-01-30             3           4 Male           4      1
+#>  9 2006-01-30   2006-02-06             4           5 Female         1      1
+#> 10 2006-01-30   2006-01-30             4           4 Male           1      0
 #> # ────────────────────────────────────────────────────────────────────────────────
 #> # Now: 2010-12-20 | Event date: "onset_week" | Report date: "report_week"
 #> # Strata: "gender"
 #> # ────────────────────────────────────────────────────────────────────────────────
-#> # ℹ 2,154 more rows
+#> # ℹ 495 more rows
 
 # What it shows now, after all the corrections.
 latest <- get_latest_reported_cases(dengue)
 latest
-#> # A tibble:  2,164 × 7
+#> # A tibble:  505 × 7
 #> # Data type: "count-cumulative"
 #> # Frequency: Event: `weeks` | Report: `weeks`
 #>    onset_week   report_week   .event_num .report_num gender         n .delay
 #>    <date>       <date>             <dbl>       <dbl> <chr>      <dbl>  <dbl>
 #>    [event_date] [report_date]      [...]       [...] [strata] [cases]  [...]
-#>  1 1990-01-01   1990-03-05             0           9 Female        39      9
-#>  2 1990-01-01   1990-02-12             0           6 Male          22      6
-#>  3 1990-01-08   1990-02-05             1           5 Female        25      4
-#>  4 1990-01-08   1990-02-12             1           6 Male          25      5
-#>  5 1990-01-15   1990-03-05             2           9 Female        21      7
-#>  6 1990-01-15   1990-02-12             2           6 Male          23      4
-#>  7 1990-01-22   1990-02-19             3           7 Female        24      4
-#>  8 1990-01-22   1990-03-19             3          11 Male          22      8
-#>  9 1990-01-29   1990-03-19             4          11 Female        21      7
-#> 10 1990-01-29   1990-03-12             4          10 Male          18      6
+#>  1 2006-01-02   2006-01-23             0           3 Female         9      3
+#>  2 2006-01-02   2006-01-30             0           4 Male          10      4
+#>  3 2006-01-09   2006-01-16             1           2 Female         2      1
+#>  4 2006-01-09   2006-02-13             1           6 Male           9      5
+#>  5 2006-01-16   2006-02-13             2           6 Female        11      4
+#>  6 2006-01-16   2006-01-30             2           4 Male          11      2
+#>  7 2006-01-23   2006-02-06             3           5 Female        16      2
+#>  8 2006-01-23   2006-02-06             3           5 Male           8      2
+#>  9 2006-01-30   2006-02-27             4           8 Female         3      4
+#> 10 2006-01-30   2006-02-06             4           5 Male           6      1
 #> # ────────────────────────────────────────────────────────────────────────────────
 #> # Now: 2010-12-20 | Event date: "onset_week" | Report date: "report_week"
 #> # Strata: "gender"
 #> # ────────────────────────────────────────────────────────────────────────────────
-#> # ℹ 2,154 more rows
+#> # ℹ 495 more rows
 
 # The difference between them is what a nowcast tries to predict.
 sum(latest$n) - sum(first$n)
-#> [1] 42691
+#> [1] 11278
 
 # Everything known within two weeks of onset.
 get_nth_reported_cases(dengue, delay = 2)
-#> # A tibble:  2,151 × 7
+#> # A tibble:  500 × 7
 #> # Data type: "count-cumulative"
 #> # Frequency: Event: `weeks` | Report: `weeks`
 #>    onset_week   report_week   .event_num .report_num gender         n .delay
 #>    <date>       <date>             <dbl>       <dbl> <chr>      <dbl>  <dbl>
 #>    [event_date] [report_date]      [...]       [...] [strata] [cases]  [...]
-#>  1 1990-01-01   1990-01-15             0           2 Female        31      2
-#>  2 1990-01-01   1990-01-15             0           2 Male          19      2
-#>  3 1990-01-08   1990-01-22             1           3 Female        21      2
-#>  4 1990-01-08   1990-01-22             1           3 Male          20      2
-#>  5 1990-01-15   1990-01-29             2           4 Female        14      2
-#>  6 1990-01-15   1990-01-29             2           4 Male          22      2
-#>  7 1990-01-22   1990-02-05             3           5 Female        18      2
-#>  8 1990-01-22   1990-02-05             3           5 Male          20      2
-#>  9 1990-01-29   1990-02-12             4           6 Female        19      2
-#> 10 1990-01-29   1990-02-12             4           6 Male          12      2
+#>  1 2006-01-02   2006-01-16             0           2 Female         6      2
+#>  2 2006-01-02   2006-01-16             0           2 Male           9      2
+#>  3 2006-01-09   2006-01-16             1           2 Female         2      1
+#>  4 2006-01-09   2006-01-23             1           3 Male           8      2
+#>  5 2006-01-16   2006-01-30             2           4 Female        10      2
+#>  6 2006-01-16   2006-01-30             2           4 Male          11      2
+#>  7 2006-01-23   2006-02-06             3           5 Female        16      2
+#>  8 2006-01-23   2006-02-06             3           5 Male           8      2
+#>  9 2006-01-30   2006-02-13             4           6 Female         2      2
+#> 10 2006-01-30   2006-02-06             4           5 Male           6      1
 #> # ────────────────────────────────────────────────────────────────────────────────
 #> # Now: 2010-12-20 | Event date: "onset_week" | Report date: "report_week"
 #> # Strata: "gender"
 #> # ────────────────────────────────────────────────────────────────────────────────
-#> # ℹ 2,141 more rows
+#> # ℹ 490 more rows
 
 # A grouping is answered by, not dropped.
 dengue |>

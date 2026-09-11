@@ -121,7 +121,10 @@ explains how to read each finding.
 
 ``` r
 data(denguedat)
-ndata <- tbl_now(denguedat,
+# The last five years. The full twenty-year series gives the same shape
+# of answer, it just takes longer to compute.
+recent <- denguedat[denguedat$onset_week >= as.Date("2006-01-01"), ]
+ndata <- tbl_now(recent,
   event_date = "onset_week",
   report_date = "report_week",
   strata = "gender",
@@ -206,13 +209,12 @@ diagnose_negatives(ndata)
 #> ℹ 1 finding. Use `dplyr::filter()` or `tibble::as_tibble()` for the table.
 diagnose_truncation(ndata)
 #> ── Diagnosis of a <tbl_now> ────────────────────────────────────────────────────
-#> 3 notes.
+#> 3 passed.
 #> 
-#> Notes (3)
-#> ℹ truncation/event_date [Female]: 1 event date is younger than the 95th percentile of the delay, so its counts are still filling in; an estimated 5.8% of its eventual total has not arrived.
-#>   → This is right-truncation, and it is the reason to nowcast rather than a defect. Cut the series at "2010-11-22" to describe it instead.
-#> ℹ truncation/event_date [Male]: 1 event date is younger than the 95th percentile of the delay, so its counts are still filling in; an estimated 5.9% of its eventual total has not arrived.
-#> ℹ truncation/event_date: 1 event date is younger than the 95th percentile of the delay, so its counts are still filling in; an estimated 5.9% of its eventual total has not arrived.
+#> Passed (3)
+#> ✔ truncation/event_date [Female]: Every event date is old enough to be complete.
+#> ✔ truncation/event_date [Male]: Every event date is old enough to be complete.
+#> ✔ truncation/event_date: Every event date is old enough to be complete.
 #> 
 #> ℹ 3 findings. Use `dplyr::filter()` or `tibble::as_tibble()` for the table.
 
@@ -222,8 +224,8 @@ diagnose_strata(ndata)
 #> 2 notes, 1 skipped.
 #> 
 #> Notes (2)
-#> ℹ strata/size [Male]: The smallest stratum is "Male" with 26395 cases, 49.8% of the total.
-#> ℹ strata/sparsity [Female]: The sparsest stratum is "Female": 13 of the 1095 weeks between the minimum event (1990-01-01) and the now (2010-12-20) carry no cases at all (1.2%, against 0.4% pooled over every stratum).
+#> ℹ strata/size [Female]: The smallest stratum is "Female" with 6998 cases, 49.5% of the total.
+#> ℹ strata/sparsity [Female]: The sparsest stratum is "Female": 8 of the 260 weeks between the minimum event (2006-01-02) and the now (2010-12-20) carry no cases at all (3.1%, against 1.2% pooled over every stratum).
 #>   → A stratum that is mostly zeros is the one a per-stratum fit will struggle with; pooling it is often better than fitting it. When every stratum is mostly zeros the grid is finer than the data -- `aggregate_time_units()` coarsens it.
 #> 
 #> ─ 1 skipped: strata/pending

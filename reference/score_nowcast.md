@@ -249,24 +249,24 @@ if (requireNamespace("baselinenowcast", quietly = TRUE)) {
 #> Warning: 18 reference times available and 27 are specified.
 #> ℹ All 18 reference times will be used.
 #> # A tibble: 18 × 7
-#>    .method        onset_week .observed     wis ae_median coverage_50 coverage_90
-#>    <chr>          <date>         <dbl>   <dbl>     <dbl> <lgl>       <lgl>      
-#>  1 baselinenowca… 2010-06-07       157   0           0   TRUE        TRUE       
-#>  2 baselinenowca… 2010-06-14       210   0           0   TRUE        TRUE       
-#>  3 baselinenowca… 2010-06-21       193   0           0   TRUE        TRUE       
-#>  4 baselinenowca… 2010-06-28       193   0           0   TRUE        TRUE       
-#>  5 baselinenowca… 2010-07-05       258   0           0   TRUE        TRUE       
-#>  6 baselinenowca… 2010-07-12       315   0           0   TRUE        TRUE       
-#>  7 baselinenowca… 2010-07-19       338   0           0   TRUE        TRUE       
-#>  8 baselinenowca… 2010-07-26       302   0           0   TRUE        TRUE       
-#>  9 baselinenowca… 2010-08-02       329   1           1   FALSE       FALSE      
-#> 10 baselinenowca… 2010-08-09       358   0           0   TRUE        TRUE       
-#> 11 baselinenowca… 2010-08-16       355   0           0   TRUE        TRUE       
-#> 12 baselinenowca… 2010-08-23       258   0           0   TRUE        TRUE       
-#> 13 baselinenowca… 2010-08-30       287   0.273       1   TRUE        TRUE       
-#> 14 baselinenowca… 2010-09-06       298   0.201       0   TRUE        TRUE       
-#> 15 baselinenowca… 2010-09-13       275   0.464       0   TRUE        TRUE       
-#> 16 baselinenowca… 2010-09-20       250   5.33       11   FALSE       FALSE      
-#> 17 baselinenowca… 2010-09-27       201  19.5        47.5 FALSE       TRUE       
-#> 18 baselinenowca… 2010-10-04       147 105.        264   FALSE       TRUE       
+#>    .method         onset_week .observed    wis ae_median coverage_50 coverage_90
+#>    <chr>           <date>         <dbl>  <dbl>     <dbl> <lgl>       <lgl>      
+#>  1 baselinenowcast 2010-06-07       157  0             0 TRUE        TRUE       
+#>  2 baselinenowcast 2010-06-14       210  0             0 TRUE        TRUE       
+#>  3 baselinenowcast 2010-06-21       193  0             0 TRUE        TRUE       
+#>  4 baselinenowcast 2010-06-28       193  0             0 TRUE        TRUE       
+#>  5 baselinenowcast 2010-07-05       258  0             0 TRUE        TRUE       
+#>  6 baselinenowcast 2010-07-12       315  0             0 TRUE        TRUE       
+#>  7 baselinenowcast 2010-07-19       338  0             0 TRUE        TRUE       
+#>  8 baselinenowcast 2010-07-26       302  0             0 TRUE        TRUE       
+#>  9 baselinenowcast 2010-08-02       329  1             1 FALSE       FALSE      
+#> 10 baselinenowcast 2010-08-09       358  0             0 TRUE        TRUE       
+#> 11 baselinenowcast 2010-08-16       355  0             0 TRUE        TRUE       
+#> 12 baselinenowcast 2010-08-23       258  0             0 TRUE        TRUE       
+#> 13 baselinenowcast 2010-08-30       287  0.411         1 FALSE       TRUE       
+#> 14 baselinenowcast 2010-09-06       298  0.243         0 TRUE        TRUE       
+#> 15 baselinenowcast 2010-09-13       275  0.487         0 TRUE        TRUE       
+#> 16 baselinenowcast 2010-09-20       250  4.75         12 FALSE       TRUE       
+#> 17 baselinenowcast 2010-09-27       201 20.3          49 FALSE       TRUE       
+#> 18 baselinenowcast 2010-10-04       147 93.8         212 FALSE       TRUE       
 ```

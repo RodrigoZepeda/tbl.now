@@ -187,7 +187,10 @@ goes through the findings one at a time.
 
 ``` r
 data(denguedat)
-ndata <- tbl_now(denguedat,
+# The last five years. The full twenty-year series gives the same shape
+# of answer, it just takes longer to compute.
+recent <- denguedat[denguedat$onset_week >= as.Date("2006-01-01"), ]
+ndata <- tbl_now(recent,
   event_date = "onset_week",
   report_date = "report_week",
   strata = "gender",
@@ -197,23 +200,19 @@ ndata <- tbl_now(denguedat,
 # Everything, worst first
 diagnose(ndata)
 #> ── Diagnosis of a <tbl_now> ────────────────────────────────────────────────────
-#> 9 notes, 15 passed, 5 skipped.
+#> 6 notes, 18 passed, 5 skipped.
 #> 
-#> Notes (9)
+#> Notes (6)
 #> ℹ now/now_gap_event [Female]: The last event date is 3 weeks before now ("2010-12-20").
 #>   → Everything in that window is still arriving; it is what a nowcast is for, and it is also what makes the last points of any plot look like a decline.
 #> ℹ now/now_gap_event [Male]: The last event date is 3 weeks before now ("2010-12-20").
 #> ℹ now/now_gap_event: The last event date is 3 weeks before now ("2010-12-20").
 #> ℹ now/now_gap_report [Male]: The last report date is 1 week before now ("2010-12-20").
-#> ℹ strata/size [Male]: The smallest stratum is "Male" with 26395 cases, 49.8% of the total.
-#> ℹ strata/sparsity [Female]: The sparsest stratum is "Female": 13 of the 1095 weeks between the minimum event (1990-01-01) and the now (2010-12-20) carry no cases at all (1.2%, against 0.4% pooled over every stratum).
+#> ℹ strata/size [Female]: The smallest stratum is "Female" with 6998 cases, 49.5% of the total.
+#> ℹ strata/sparsity [Female]: The sparsest stratum is "Female": 8 of the 260 weeks between the minimum event (2006-01-02) and the now (2010-12-20) carry no cases at all (3.1%, against 1.2% pooled over every stratum).
 #>   → A stratum that is mostly zeros is the one a per-stratum fit will struggle with; pooling it is often better than fitting it. When every stratum is mostly zeros the grid is finer than the data -- `aggregate_time_units()` coarsens it.
-#> ℹ truncation/event_date [Female]: 1 event date is younger than the 95th percentile of the delay, so its counts are still filling in; an estimated 5.8% of its eventual total has not arrived.
-#>   → This is right-truncation, and it is the reason to nowcast rather than a defect. Cut the series at "2010-11-22" to describe it instead.
-#> ℹ truncation/event_date [Male]: 1 event date is younger than the 95th percentile of the delay, so its counts are still filling in; an estimated 5.9% of its eventual total has not arrived.
-#> ℹ truncation/event_date: 1 event date is younger than the 95th percentile of the delay, so its counts are still filling in; an estimated 5.9% of its eventual total has not arrived.
 #> 
-#> ✔ 15 passed: declarations/temporal_effects, declarations/undeclared, missing/gender, missing/onset_week, missing/report_week, now/event_date, now/now_gap_report, now/report_date, ordering/event_to_report, simultaneously missing/event and report dates, units/declared, units/delay, units/event_grid, and units/report_grid
+#> ✔ 18 passed: declarations/temporal_effects, declarations/undeclared, missing/gender, missing/onset_week, missing/report_week, now/event_date, now/now_gap_report, now/report_date, ordering/event_to_report, simultaneously missing/event and report dates, truncation/event_date, units/declared, units/delay, units/event_grid, and units/report_grid
 #> ─ 5 skipped: duplicates/key, negatives/count, ordering/event_to_revision, ordering/report_to_revision, and strata/pending
 #> 
 #> ℹ 29 findings. Use `dplyr::filter()` or `tibble::as_tibble()` for the table.
@@ -221,23 +220,19 @@ diagnose(ndata)
 # Only what needs acting on
 diagnose(ndata) |> dplyr::filter(status <= "note")
 #> ── Diagnosis of a <tbl_now> ────────────────────────────────────────────────────
-#> 9 notes.
+#> 6 notes.
 #> 
-#> Notes (9)
+#> Notes (6)
 #> ℹ now/now_gap_event [Female]: The last event date is 3 weeks before now ("2010-12-20").
 #>   → Everything in that window is still arriving; it is what a nowcast is for, and it is also what makes the last points of any plot look like a decline.
 #> ℹ now/now_gap_event [Male]: The last event date is 3 weeks before now ("2010-12-20").
 #> ℹ now/now_gap_event: The last event date is 3 weeks before now ("2010-12-20").
 #> ℹ now/now_gap_report [Male]: The last report date is 1 week before now ("2010-12-20").
-#> ℹ strata/size [Male]: The smallest stratum is "Male" with 26395 cases, 49.8% of the total.
-#> ℹ strata/sparsity [Female]: The sparsest stratum is "Female": 13 of the 1095 weeks between the minimum event (1990-01-01) and the now (2010-12-20) carry no cases at all (1.2%, against 0.4% pooled over every stratum).
+#> ℹ strata/size [Female]: The smallest stratum is "Female" with 6998 cases, 49.5% of the total.
+#> ℹ strata/sparsity [Female]: The sparsest stratum is "Female": 8 of the 260 weeks between the minimum event (2006-01-02) and the now (2010-12-20) carry no cases at all (3.1%, against 1.2% pooled over every stratum).
 #>   → A stratum that is mostly zeros is the one a per-stratum fit will struggle with; pooling it is often better than fitting it. When every stratum is mostly zeros the grid is finer than the data -- `aggregate_time_units()` coarsens it.
-#> ℹ truncation/event_date [Female]: 1 event date is younger than the 95th percentile of the delay, so its counts are still filling in; an estimated 5.8% of its eventual total has not arrived.
-#>   → This is right-truncation, and it is the reason to nowcast rather than a defect. Cut the series at "2010-11-22" to describe it instead.
-#> ℹ truncation/event_date [Male]: 1 event date is younger than the 95th percentile of the delay, so its counts are still filling in; an estimated 5.9% of its eventual total has not arrived.
-#> ℹ truncation/event_date: 1 event date is younger than the 95th percentile of the delay, so its counts are still filling in; an estimated 5.9% of its eventual total has not arrived.
 #> 
-#> ℹ 9 findings. Use `dplyr::filter()` or `tibble::as_tibble()` for the table.
+#> ℹ 6 findings. Use `dplyr::filter()` or `tibble::as_tibble()` for the table.
 
 # One block on its own
 diagnose(ndata, checks = "units")

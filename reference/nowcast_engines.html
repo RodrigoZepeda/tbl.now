@@ -298,10 +298,10 @@ from a bad model afterwards. Pin it with
 <span class="r-in"><span><span class="co"># Fit epinowcast on the last 180 periods only; it scales with the number of</span></span></span>
 <span class="r-in"><span><span class="co"># reference dates, while the two engines below take the whole series.</span></span></span>
 <span class="r-in"><span><span class="fu">engine_epinowcast</span><span class="op">(</span>preprocess_args <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>max_delay <span class="op">=</span> <span class="fl">30</span><span class="op">)</span>, min_date <span class="op">=</span> <span class="fl">180</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ── epinowcast model output ───────────────────────────────────────────────────── </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Groups:  | Timestep:  | Max delay:  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Observations:  timepoints x  snapshots </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Max date: NULL </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ── &lt;nowcast_engine: <span style="color: #0000BB;">"epinowcast"</span>&gt; ──────────────────────────────────────────────</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> • min_date: <span style="color: #0000BB;">"180"</span> periods before now</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> • quantile levels: <span style="color: #0000BB;">0.025</span>, <span style="color: #0000BB;">0.05</span>, <span style="color: #0000BB;">0.1</span>, <span style="color: #0000BB;">0.25</span>, <span style="color: #0000BB;">0.5</span>, <span style="color: #0000BB;">0.75</span>, <span style="color: #0000BB;">0.9</span>, <span style="color: #0000BB;">0.95</span>, and <span style="color: #0000BB;">0.975</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> • arguments: <span style="color: #00BB00;">preprocess_args</span></span>
 <span class="r-in"><span><span class="fu">engine_baselinenowcast</span><span class="op">(</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── &lt;nowcast_engine: <span style="color: #0000BB;">"baselinenowcast"</span>&gt; ─────────────────────────────────────────</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> • quantile levels: <span style="color: #0000BB;">0.025</span>, <span style="color: #0000BB;">0.05</span>, <span style="color: #0000BB;">0.1</span>, <span style="color: #0000BB;">0.25</span>, <span style="color: #0000BB;">0.5</span>, <span style="color: #0000BB;">0.75</span>, <span style="color: #0000BB;">0.9</span>, <span style="color: #0000BB;">0.95</span>, and <span style="color: #0000BB;">0.975</span></span>

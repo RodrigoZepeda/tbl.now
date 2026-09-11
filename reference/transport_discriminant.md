@@ -94,16 +94,21 @@ to plot this plane.
 
 ``` r
 data(denguedat)
-dn <- tbl_now(denguedat, onset_week, report_week, verbose = FALSE)
+# The two and a half years around the 1996 and 1997 backlog dumps. The whole
+# twenty-year series works the same way, it just takes longer to scan.
+window <- denguedat[
+  denguedat$onset_week >= as.Date("1995-06-01") &
+    denguedat$onset_week <= as.Date("1998-01-01"),
+]
+dn <- tbl_now(window, onset_week, report_week, verbose = FALSE)
 td <- transport_discriminant(dn)
 td[td$batch, ]
-#> <transport_discriminant>: 3 report dates, look-back 7, 3 batches and 0 surges at alpha = 0.05.
-#> # A tibble: 3 × 14
+#> <transport_discriminant>: 2 report dates, look-back 7, 2 batches and 0 surges at alpha = 0.05.
+#> # A tibble: 2 × 14
 #>   report_date stratum reported baseline window_total spike deficit delta
 #>   <date>      <chr>      <dbl>    <dbl>        <dbl> <dbl>   <dbl> <dbl>
 #> 1 1996-02-12  all           46     29.4          236  16.6    60.7 -44.1
-#> 2 1997-09-15  all           93     55.7          330  37.3    92.0 -54.7
-#> 3 2006-07-31  all           27     13.9           67  13.1    40.5 -27.4
+#> 2 1997-09-15  all           93     55.7          330  37.3    92   -54.7
 #> # ℹ 6 more variables: transport_z <dbl>, creation_z <dbl>, p_transport <dbl>,
 #> #   p_creation <dbl>, classification <chr>, batch <lgl>
 ```

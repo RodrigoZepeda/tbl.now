@@ -187,7 +187,10 @@ explains how to read each finding.</p></div>
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">denguedat</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">ndata</span> <span class="op">&lt;-</span> <span class="fu"><a href="tbl_now.html">tbl_now</a></span><span class="op">(</span><span class="va">denguedat</span>,</span></span>
+<span class="r-in"><span><span class="co"># The last five years. The full twenty-year series gives the same shape</span></span></span>
+<span class="r-in"><span><span class="co"># of answer, it just takes longer to compute.</span></span></span>
+<span class="r-in"><span><span class="va">recent</span> <span class="op">&lt;-</span> <span class="va">denguedat</span><span class="op">[</span><span class="va">denguedat</span><span class="op">$</span><span class="va">onset_week</span> <span class="op">&gt;=</span> <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2006-01-01"</span><span class="op">)</span>, <span class="op">]</span></span></span>
+<span class="r-in"><span><span class="va">ndata</span> <span class="op">&lt;-</span> <span class="fu"><a href="tbl_now.html">tbl_now</a></span><span class="op">(</span><span class="va">recent</span>,</span></span>
 <span class="r-in"><span>  event_date <span class="op">=</span> <span class="st">"onset_week"</span>,</span></span>
 <span class="r-in"><span>  report_date <span class="op">=</span> <span class="st">"report_week"</span>,</span></span>
 <span class="r-in"><span>  strata <span class="op">=</span> <span class="st">"gender"</span>,</span></span>
@@ -272,13 +275,12 @@ explains how to read each finding.</p></div>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #555555;">ℹ 1 finding. Use `dplyr::filter()` or `tibble::as_tibble()` for the table.</span></span>
 <span class="r-in"><span><span class="fu">diagnose_truncation</span><span class="op">(</span><span class="va">ndata</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ── Diagnosis of a <span style="color: #0000BB;">&lt;tbl_now&gt;</span> ────────────────────────────────────────────────────</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">3 notes</span><span style="color: #555555;">.</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">3 passed</span><span style="color: #555555;">.</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="font-weight: bold;">Notes (3)</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">ℹ</span> <span style="font-weight: bold;">truncation/event_date [Female]:</span> 1 event date is younger than the 95th percentile of the delay, so its counts are still filling in; an estimated 5.8% of its eventual total has not arrived.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #555555;">→</span> <span style="color: #555555;">This is right-truncation, and it is the reason to nowcast rather than a defect. Cut the series at "2010-11-22" to describe it instead.</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">ℹ</span> <span style="font-weight: bold;">truncation/event_date [Male]:</span> 1 event date is younger than the 95th percentile of the delay, so its counts are still filling in; an estimated 5.9% of its eventual total has not arrived.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">ℹ</span> <span style="font-weight: bold;">truncation/event_date:</span> 1 event date is younger than the 95th percentile of the delay, so its counts are still filling in; an estimated 5.9% of its eventual total has not arrived.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="font-weight: bold;">Passed (3)</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> <span style="font-weight: bold;">truncation/event_date [Female]:</span> Every event date is old enough to be complete.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> <span style="font-weight: bold;">truncation/event_date [Male]:</span> Every event date is old enough to be complete.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> <span style="font-weight: bold;">truncation/event_date:</span> Every event date is old enough to be complete.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #555555;">ℹ 3 findings. Use `dplyr::filter()` or `tibble::as_tibble()` for the table.</span></span>
 <span class="r-in"><span></span></span>
@@ -288,8 +290,8 @@ explains how to read each finding.</p></div>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">2 notes</span><span style="color: #555555;">, 1 skipped.</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="font-weight: bold;">Notes (2)</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">ℹ</span> <span style="font-weight: bold;">strata/size [Male]:</span> The smallest stratum is "Male" with 26395 cases, 49.8% of the total.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">ℹ</span> <span style="font-weight: bold;">strata/sparsity [Female]:</span> The sparsest stratum is "Female": 13 of the 1095 weeks between the minimum event (1990-01-01) and the now (2010-12-20) carry no cases at all (1.2%, against 0.4% pooled over every stratum).</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">ℹ</span> <span style="font-weight: bold;">strata/size [Female]:</span> The smallest stratum is "Female" with 6998 cases, 49.5% of the total.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">ℹ</span> <span style="font-weight: bold;">strata/sparsity [Female]:</span> The sparsest stratum is "Female": 8 of the 260 weeks between the minimum event (2006-01-02) and the now (2010-12-20) carry no cases at all (3.1%, against 1.2% pooled over every stratum).</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #555555;">→</span> <span style="color: #555555;">A stratum that is mostly zeros is the one a per-stratum fit will struggle with; pooling it is often better than fitting it. When every stratum is mostly zeros the grid is finer than the data -- `aggregate_time_units()` coarsens it.</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #555555;">─</span> 1 skipped: <span style="color: #00BB00;">strata/pending</span></span>
