@@ -9,6 +9,13 @@ row per posterior draw with `type = "draws"`.
 Not every engine keeps draws. When the backend returned only summarised
 quantiles, `type = "draws"` has nothing to give you.
 
+## Usage
+
+``` r
+# S3 method for class 'tbl_nowcast'
+as_tibble(x, ..., type = c("quantiles", "draws"))
+```
+
 ## Arguments
 
 - x:
@@ -45,6 +52,12 @@ so the copy makes `R CMD check` report pkgconfig as an undeclared `::`
 import of a package this one never uses. Plain S3 registration
 dispatches on `class(x)`, which for an S7 object is
 `"tbl.now::tbl_nowcast"`, and copies nothing.
+
+The registered class string cannot be spelled as a method name – there
+is no writable `as_tibble.tbl.now::tbl_nowcast` – but the function
+itself is still *named* for the method it implements, so that
+`R CMD check` can resolve this topic's usage section back to an object
+that exists.
 
 ## See also
 

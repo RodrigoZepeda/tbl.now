@@ -344,11 +344,10 @@ One interface over the modelling packages.
 - [`nowcast_quantile_levels()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_quantile_levels.md)
   **\[stable\]** : Default quantile levels for a nowcast
 
-- [`autoplot.tbl_nowcast`](https://rodrigozepeda.github.io/tbl.now/reference/autoplot.tbl_nowcast.md)
+- [`autoplot(`*`<tbl_nowcast>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/autoplot.tbl_nowcast.md)
   **\[experimental\]** : Plot a nowcast
 
-- [`as_tibble.tbl_nowcast`](https://rodrigozepeda.github.io/tbl.now/reference/as_tibble.tbl_nowcast.md)
-  [`as_tibble_tbl_nowcast`](https://rodrigozepeda.github.io/tbl.now/reference/as_tibble.tbl_nowcast.md)
+- [`as_tibble(`*`<tbl_nowcast>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/as_tibble.tbl_nowcast.md)
   **\[stable\]** :
 
   Coerce a `tbl_nowcast` into a `tibble`
@@ -459,8 +458,7 @@ Every engine’s result, in one shape.
 - [`tidy()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast.md)
   **\[stable\]** : Tidy a fitted nowcast into one standard table
 
-- [`tidy.tbl_nowcast`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.tbl_nowcast.md)
-  [`tidy_tbl_nowcast`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.tbl_nowcast.md)
+- [`tidy(`*`<tbl_nowcast>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.tbl_nowcast.md)
   **\[stable\]** :
 
   Tidy a nowcast produced by

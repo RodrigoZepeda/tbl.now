@@ -1,4 +1,4 @@
-# tbl.now: A Tidy Workflow for Epidemiological Nowcasting
+# tbl.now: Tidy Data and Workflow Layer for Epidemic Nowcasting
 
 Defines tidy data structures and package-agnostic workflows for
 epidemiological nowcasting. The 'tbl_now' class records event, report,

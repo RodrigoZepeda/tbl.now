@@ -9,6 +9,15 @@ prediction interval over them, and the median as a line, so that the
 size of the correction the model is applying is visible as the gap
 between the bars and the fan.
 
+## Usage
+
+``` r
+# S3 method for class 'tbl_nowcast'
+autoplot(object, ..., levels = NULL,
+  show_reported = TRUE, colour = NULL, linewidth = 1, date_lim = NULL,
+  ylim = NULL, palette = .tbl_now_palette())
+```
+
 ## Arguments
 
 - object:
@@ -51,6 +60,11 @@ between the bars and the fan.
   date), which the package always draws in green, with red reserved for
   the reporting process.
 
+- linewidth:
+
+  Multiplier on the width of the median line. Default `1`; it multiplies
+  rather than replaces the geom's own width.
+
 - date_lim:
 
   Length-2 vector of event-axis limits, as `Date`s (or as numbers on a
@@ -73,9 +87,36 @@ between the bars and the fan.
   facets with `scales = "free_y"`, so one pair of limits is imposed on
   every panel.
 
+- palette:
+
+  A named colour palette (see
+  [`tbl_now_palette()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_palette.md)).
+  Each colour is named for the role it plays, so overriding one role
+  re-themes the plot.
+
 ## Value
 
 A `ggplot` object.
+
+## Details
+
+A named function registered in `.onLoad()`, like the neighbouring
+[`tidy()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast.md)
+and
+[`as_tibble()`](https://tibble.tidyverse.org/reference/as_tibble.html)
+methods and for the same two reasons.
+
+`S7::method(autoplot, tbl_nowcast) <- ` would be shorter, but `method<-`
+is a replacement function, so R rewrites the call as an assignment back
+to `autoplot` and leaves a **copy of ggplot2's generic in this
+namespace**. That copy is what `R CMD check` sees when it decides
+`autoplot` is a generic this package owns and exports, which in turn
+makes every `autoplot.*` function here look like an S3 method that was
+never registered. Plain registration copies nothing.
+
+The function is also *named* for the method it implements, rather than
+being assigned anonymously into the generic, so that `R CMD check` can
+resolve this topic's usage section back to an object that exists.
 
 ## See also
 

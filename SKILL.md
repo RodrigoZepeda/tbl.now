@@ -396,6 +396,15 @@ becomes the fit’s `@method`, which is how two configurations of one
 backend stay distinguishable in a backtest and an ensemble; without one
 the fit is named after its package.
 
+[`engine_surveillance()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_engines.md)
+fits on `surveillance`’s own epochs, which start on a Monday for weekly
+data and on the first of the month for monthly data. The grids are
+snapped to that and the estimates are shifted back onto the object’s
+weekday, so Sunday-start epi weeks work unchanged; event dates spread
+over several weekdays are refused, and
+[`align_weeks()`](https://rodrigozepeda.github.io/tbl.now/reference/align_weeks.md)
+is the cure.
+
 Score against the full data, not the historical snapshot used to fit:
 
 ``` r

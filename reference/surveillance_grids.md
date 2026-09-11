@@ -14,10 +14,14 @@ and how wide a time step is:
 
 - `get_surveillance_range()` – the **whole** time axis the model is laid
   on, passed as `control$dRange`. Every step from the first event to
-  `now`.
+  `now`. Its last element is also what `now` itself should be:
+  [`get_now()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_data_getters.md)
+  can fall mid-epoch, and
+  [`surveillance::nowcast()`](https://rdrr.io/pkg/surveillance/man/nowcast.html)
+  refuses that (see below).
 
     sur_fit <- surveillance::nowcast(
-      now  = get_now(x),
+      now  = max(get_surveillance_range(x)),
       when = get_surveillance_when(x, length = 30),
       data = tbl_now_to_surveillance(x, verbose = FALSE),
       dEventCol = "dHospital", dReportCol = "dReport",
@@ -84,6 +88,19 @@ This is also why
 [`complete_zeroes()`](https://rodrigozepeda.github.io/tbl.now/reference/complete_zeroes.md)
 is no help here: it can only add zero *counts*, and a line list has no
 count column to put a zero in.
+
+## Which weekday the grid lands on
+
+[`surveillance::nowcast()`](https://rdrr.io/pkg/surveillance/man/nowcast.html)
+refuses a grid that does not sit at the **first day of an epoch**: a
+Monday for `"1 week"`, the first of the month for `"1 month"`.
+Epidemiological weeks routinely start on a Sunday instead, so both grids
+are snapped back to the epoch start, and both may therefore begin a few
+days before the dates in `x`.
+[`run_nowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/run_nowcast.md)
+shifts surveillance's estimates back onto the object's own weekday when
+they return, so a nowcast fitted through the engine is still indexed by
+the event dates you gave it.
 
 ## See also
 

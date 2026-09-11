@@ -15,7 +15,7 @@ as usual:
     pieces <- tbl_now_to_surveillance(x, format = "linelist_list")
     lapply(pieces, function(piece) {
       surveillance::nowcast(
-        now = get_now(x), when = get_surveillance_when(x),
+        now = max(get_surveillance_range(x)), when = get_surveillance_when(x),
         data = piece, dEventCol = "dHospital", dReportCol = "dReport",
         control = list(dRange = get_surveillance_range(x))
       )

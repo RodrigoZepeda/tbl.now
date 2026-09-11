@@ -55,7 +55,7 @@ denguedat <- denguedat |>
 
 #Which is just a tibble with extra attributes
 denguedat
-#> # A tibble:  1,652 x 6
+#> # A tibble:  1,652 × 6
 #> # Data type: "linelist"
 #> # Frequency: Event: `weeks` | Report: `weeks`
 #>   onset_week   report_week   gender   .event_num .report_num .delay
@@ -66,11 +66,11 @@ denguedat
 #> 3 2005-01-03   2005-01-10    Female            0           1      1
 #> 4 2005-01-03   2005-01-10    Male              0           1      1
 #> 5 2005-01-03   2005-01-10    Male              0           1      1
-#> # ----------------------------------------------------------------------------------------------------------------------------------------------------------------
+#> # ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 #> # Now: 2005-09-26 | Event date: "onset_week" | Report date: "report_week"
 #> # Strata: "gender"
-#> # ----------------------------------------------------------------------------------------------------------------------------------------------------------------
-#> # i 1,647 more rows
+#> # ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+#> # ℹ 1,647 more rows
 ```
 
 Once transformed, it can help you diagnose data problems (see [this
@@ -529,11 +529,10 @@ One interface over the modelling packages.
 - [`nowcast_quantile_levels()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_quantile_levels.md)
   **\[stable\]** : Default quantile levels for a nowcast
 
-- [`autoplot.tbl_nowcast`](https://rodrigozepeda.github.io/tbl.now/reference/autoplot.tbl_nowcast.md)
+- [`autoplot(`*`<tbl_nowcast>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/autoplot.tbl_nowcast.md)
   **\[experimental\]** : Plot a nowcast
 
-- [`as_tibble.tbl_nowcast`](https://rodrigozepeda.github.io/tbl.now/reference/as_tibble.tbl_nowcast.md)
-  [`as_tibble_tbl_nowcast`](https://rodrigozepeda.github.io/tbl.now/reference/as_tibble.tbl_nowcast.md)
+- [`as_tibble(`*`<tbl_nowcast>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/as_tibble.tbl_nowcast.md)
   **\[stable\]** :
 
   Coerce a `tbl_nowcast` into a `tibble`
@@ -644,8 +643,7 @@ Every engine’s result, in one shape.
 - [`tidy()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast.md)
   **\[stable\]** : Tidy a fitted nowcast into one standard table
 
-- [`tidy.tbl_nowcast`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.tbl_nowcast.md)
-  [`tidy_tbl_nowcast`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.tbl_nowcast.md)
+- [`tidy(`*`<tbl_nowcast>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.tbl_nowcast.md)
   **\[stable\]** :
 
   Tidy a nowcast produced by

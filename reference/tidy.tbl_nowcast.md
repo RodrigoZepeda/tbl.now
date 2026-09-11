@@ -11,6 +11,13 @@ method in this package returns, so a nowcast produced through
 and one produced by calling a modelling package by hand are read the
 same way.
 
+## Usage
+
+``` r
+# S3 method for class 'tbl_nowcast'
+tidy(x, probs = NULL, ...)
+```
+
 ## Arguments
 
 - x:
@@ -33,6 +40,18 @@ same way.
 ## Value
 
 A tibble, as described in *Value*.
+
+## Details
+
+Registered by hand in `.onLoad()`. The S7 class name is
+[`tbl.now::tbl_nowcast`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_nowcast.md),
+so the S3 method dispatch actually looks up is
+`tidy.tbl.now::tbl_nowcast` – not a writable R name, and beyond what
+`@exportS3Method` can express. The function is nonetheless *named* for
+the method it implements, because `R CMD check` resolves this topic's
+usage section back to an object of that name; a helper called something
+else would leave the help page documenting a function that does not
+exist.
 
 ## Value
 

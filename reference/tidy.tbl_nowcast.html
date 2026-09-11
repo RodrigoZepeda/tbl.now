@@ -54,6 +54,11 @@ package returns, so a nowcast produced through <code><a href="run_nowcast.html">
 produced by calling a modelling package by hand are read the same way.</p>
     </div>
 
+    <div class="section level2">
+    <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="co"># S3 method for class 'tbl_nowcast'</span></span>
+<span><span class="fu"><a href="tidy.nowcast.html">tidy</a></span><span class="op">(</span><span class="va">x</span>, probs <span class="op">=</span> <span class="cn">NULL</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
+    </div>
 
     <div class="section level2">
     <h2 id="arguments">Arguments<a class="anchor" aria-label="anchor" href="#arguments"></a></h2>
@@ -78,6 +83,16 @@ quantile.</p></dd>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A tibble, as described in <em>Value</em>.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+    <p>Registered by hand in <code>.onLoad()</code>. The S7 class name is
+<code><a href="tbl_nowcast.html">tbl.now::tbl_nowcast</a></code>, so the S3 method dispatch actually looks up is
+<code>tidy.tbl.now::tbl_nowcast</code> – not a writable R name, and beyond what
+<code>@exportS3Method</code> can express. The function is nonetheless <em>named</em> for the
+method it implements, because <code>R CMD check</code> resolves this topic's usage
+section back to an object of that name; a helper called something else would
+leave the help page documenting a function that does not exist.</p>
     </div>
     <div class="section level2">
     <h2 id="value-1">Value<a class="anchor" aria-label="anchor" href="#value-1"></a></h2>

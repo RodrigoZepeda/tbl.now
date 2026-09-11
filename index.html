@@ -245,7 +245,7 @@ Columns holding temporal effects (day of week, holidays, …) that some models c
 <span></span>
 <span><span class="co">#Which is just a tibble with extra attributes</span></span>
 <span><span class="va">denguedat</span></span>
-<span><span class="co">#&gt; # A tibble:  1,652 x 6</span></span>
+<span><span class="co">#&gt; # A tibble:  1,652 × 6</span></span>
 <span><span class="co">#&gt; # Data type: "linelist"</span></span>
 <span><span class="co">#&gt; # Frequency: Event: `weeks` | Report: `weeks`</span></span>
 <span><span class="co">#&gt;   onset_week   report_week   gender   .event_num .report_num .delay</span></span>
@@ -256,11 +256,11 @@ Columns holding temporal effects (day of week, holidays, …) that some models c
 <span><span class="co">#&gt; 3 2005-01-03   2005-01-10    Female            0           1      1</span></span>
 <span><span class="co">#&gt; 4 2005-01-03   2005-01-10    Male              0           1      1</span></span>
 <span><span class="co">#&gt; 5 2005-01-03   2005-01-10    Male              0           1      1</span></span>
-<span><span class="co">#&gt; # ----------------------------------------------------------------------------------------------------------------------------------------------------------------</span></span>
+<span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────</span></span>
 <span><span class="co">#&gt; # Now: 2005-09-26 | Event date: "onset_week" | Report date: "report_week"</span></span>
 <span><span class="co">#&gt; # Strata: "gender"</span></span>
-<span><span class="co">#&gt; # ----------------------------------------------------------------------------------------------------------------------------------------------------------------</span></span>
-<span><span class="co">#&gt; # i 1,647 more rows</span></span></code></pre></div>
+<span><span class="co">#&gt; # ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────</span></span>
+<span><span class="co">#&gt; # ℹ 1,647 more rows</span></span></code></pre></div>
 <p>Once transformed, it can help you diagnose data problems (see <a href="https://rodrigozepeda.github.io/tbl.now/articles/diagnosing-a-tbl-now.html">this article</a>) or modeling requirements with your database:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">denguedat</span><span class="op">)</span></span></code></pre></div>
@@ -362,10 +362,10 @@ Columns holding temporal effects (day of week, holidays, …) that some models c
 <h2 data-toc-skip>Dev status</h2>
 <ul class="list-unstyled">
 <li><a href="https://app.codecov.io/gh/RodrigoZepeda/tbl.now" class="external-link"><img src="https://codecov.io/gh/RodrigoZepeda/tbl.now/graph/badge.svg" alt="Codecov test coverage"></a></li>
-<li><a href="https://lifecycle.r-lib.org/articles/stages.html#experimental" class="external-link"><img src="https://img.shields.io/badge/lifecycle-experimental-orange.svg" alt="Lifecycle: experimental"></a></li>
 <li><a href="https://CRAN.R-project.org/package=tbl.now" class="external-link"><img src="https://www.r-pkg.org/badges/version/tbl.now" alt="CRAN status"></a></li>
 <li><a href="https://github.com/RodrigoZepeda/tbl.now/actions/workflows/R-CMD-check.yaml" class="external-link"><img src="https://github.com/RodrigoZepeda/tbl.now/actions/workflows/R-CMD-check.yaml/badge.svg" alt="R-CMD-check"></a></li>
 <li><a href="https://RodrigoZepeda.r-universe.dev/tbl.now" class="external-link"><img src="https://RodrigoZepeda.r-universe.dev/tbl.now/badges/version" alt="R-universe version"></a></li>
+<li><a href="https://lifecycle.r-lib.org/articles/stages.html#stable" class="external-link"><img src="https://img.shields.io/badge/lifecycle-stable-brightgreen.svg" alt="Lifecycle: stable"></a></li>
 </ul>
 </div>
 

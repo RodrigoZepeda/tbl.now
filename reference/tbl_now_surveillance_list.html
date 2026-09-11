@@ -9,7 +9,7 @@ lapply(), [[ and friends work as usual:
 pieces &amp;lt;- tbl_now_to_surveillance(x, format = &quot;linelist_list&quot;)
 lapply(pieces, function(piece) {
   surveillance::nowcast(
-    now = get_now(x), when = get_surveillance_when(x),
+    now = max(get_surveillance_range(x)), when = get_surveillance_when(x),
     data = piece, dEventCol = &quot;dHospital&quot;, dReportCol = &quot;dReport&quot;,
     control = list(dRange = get_surveillance_range(x))
   )
@@ -38,7 +38,7 @@ lapply(), [[ and friends work as usual:
 pieces &amp;lt;- tbl_now_to_surveillance(x, format = &quot;linelist_list&quot;)
 lapply(pieces, function(piece) {
   surveillance::nowcast(
-    now = get_now(x), when = get_surveillance_when(x),
+    now = max(get_surveillance_range(x)), when = get_surveillance_when(x),
     data = piece, dEventCol = &quot;dHospital&quot;, dReportCol = &quot;dReport&quot;,
     control = list(dRange = get_surveillance_range(x))
   )
@@ -110,7 +110,7 @@ metadata needed to rebuild a <code>tbl_now</code> from it.</p>
 <p></p><div class="sourceCode r"><pre><code><span><span class="va">pieces</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tbl_now_surveillance.html">tbl_now_to_surveillance</a></span><span class="op">(</span><span class="va">x</span>, format <span class="op">=</span> <span class="st">"linelist_list"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="va">pieces</span>, <span class="kw">function</span><span class="op">(</span><span class="va">piece</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="fu">surveillance</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/surveillance/man/nowcast.html" class="external-link">nowcast</a></span><span class="op">(</span></span>
-<span>    now <span class="op">=</span> <span class="fu"><a href="../reference/nowcast_data_getters.html">get_now</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span>, when <span class="op">=</span> <span class="fu"><a href="../reference/surveillance_grids.html">get_surveillance_when</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span>,</span>
+<span>    now <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="fu"><a href="../reference/surveillance_grids.html">get_surveillance_range</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span><span class="op">)</span>, when <span class="op">=</span> <span class="fu"><a href="../reference/surveillance_grids.html">get_surveillance_when</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span>,</span>
 <span>    data <span class="op">=</span> <span class="va">piece</span>, dEventCol <span class="op">=</span> <span class="st">"dHospital"</span>, dReportCol <span class="op">=</span> <span class="st">"dReport"</span>,</span>
 <span>    control <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>dRange <span class="op">=</span> <span class="fu"><a href="../reference/surveillance_grids.html">get_surveillance_range</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span><span class="op">)</span></span>
 <span>  <span class="op">)</span></span>
