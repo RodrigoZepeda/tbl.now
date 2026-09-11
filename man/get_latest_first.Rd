@@ -102,7 +102,10 @@ reshaping the object: one row in is still one case (or one cell) out.
 
 \examples{
 data(denguedat)
-dengue <- tbl_now(denguedat,
+# The last five years. The counters work the same on the full twenty-year
+# series, they just have more weeks to walk.
+recent <- denguedat[denguedat$onset_week >= as.Date("2006-01-01"), ]
+dengue <- tbl_now(recent,
   report_date = "report_week",
   event_date = "onset_week",
   strata = "gender",

@@ -2556,17 +2556,13 @@ ggplot2::autoplot
 #' )
 #' autoplot(dengue)
 #'
-#' # Only the reporting-delay calendar effect
-#' autoplot(dengue, panels = "delay_calendar")
-#'
-#' ## A single panel (returned as a plain ggplot)
-#' autoplot(dengue, panels = "delay_week")
-#'
-#' # Split by stratum. `by_strata = TRUE` works on the whole gallery too; one
-#' # panel keeps the example quick.
+#' # A single panel comes back as a plain ggplot, so it can be selected, split
+#' # by stratum and then treated like any other plot. `panels` takes any of the
+#' # names listed above; `by_strata = TRUE` works on the whole gallery too, but
+#' # one panel keeps the example quick.
 #' autoplot(dengue, panels = "delay_week", by_strata = TRUE)
 #'
-#' # Zoom the delay panel to delays of 0-10 weeks
+#' # Panel-specific arguments compose with it: zoom the delay panel to 0-10 weeks
 #' autoplot(dengue, panels = "delay_distribution", delay_distribution_xlim = c(0, 10))
 #' @seealso
 #' [diagnostic_plot()] for the companion gallery, which looks at the *reporting

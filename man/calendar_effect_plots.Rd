@@ -120,10 +120,10 @@ daily_now <- tbl_now(
 )
 plot_weekend_effects(daily_now)
 
-# ... and how the weekend shows up in the reporting delay
-plot_weekend_effects(daily_now, type = "report")
-
-# By month, on monthly-unit data
+# By month, on monthly-unit data. `type` picks the process and `measure`
+# picks the scale; both compose, and work the same way on every calendar
+# function here. (The day-type and holiday-lag panels are always
+# normalized, so they take `type` but not `measure`.)
 monthly_now <- tbl_now(
   data.frame(
     event_date  = seq(as.Date("2018-01-01"), as.Date("2021-12-01"), by = "month"),
@@ -132,11 +132,7 @@ monthly_now <- tbl_now(
   event_date, report_date,
   event_units = "months", report_units = "months", verbose = FALSE
 )
-plot_month_of_year_effects(monthly_now)
-
-# ... and how the reporting does, as a share of the year's cases rather than
-# normalized. `type` and `measure` compose.
-plot_week_of_year_effects(dengue_now, type = "report", measure = "percent")
+plot_month_of_year_effects(monthly_now, type = "report", measure = "normalized")
 
 if (requireNamespace("almanac", quietly = TRUE)){
 

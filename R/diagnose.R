@@ -115,7 +115,10 @@
 #'
 #' @examples
 #' data(denguedat)
-#' ndata <- tbl_now(denguedat,
+#' # The last five years. The full twenty-year series gives the same shape
+#' # of answer, it just takes longer to compute.
+#' recent <- denguedat[denguedat$onset_week >= as.Date("2006-01-01"), ]
+#' ndata <- tbl_now(recent,
 #'   event_date = "onset_week",
 #'   report_date = "report_week",
 #'   strata = "gender",
@@ -206,7 +209,10 @@ diagnose.tbl_now <- function(x, ..., checks = NULL, by_strata = NULL,
 #'
 #' @examples
 #' data(denguedat)
-#' ndata <- tbl_now(denguedat,
+#' # The last five years. The full twenty-year series gives the same shape
+#' # of answer, it just takes longer to compute.
+#' recent <- denguedat[denguedat$onset_week >= as.Date("2006-01-01"), ]
+#' ndata <- tbl_now(recent,
 #'   event_date = "onset_week",
 #'   report_date = "report_week",
 #'   strata = "gender",
@@ -2438,7 +2444,10 @@ diagnose_strata <- function(x, by_strata = NULL, strata = NULL) {
 #'
 #' @examples
 #' data(denguedat)
-#' ndata <- tbl_now(denguedat,
+#' # The last five years. The full twenty-year series gives the same shape
+#' # of answer, it just takes longer to compute.
+#' recent <- denguedat[denguedat$onset_week >= as.Date("2006-01-01"), ]
+#' ndata <- tbl_now(recent,
 #'   event_date = "onset_week", report_date = "report_week",
 #'   strata = "gender", verbose = FALSE
 #' )

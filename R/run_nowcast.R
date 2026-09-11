@@ -233,10 +233,16 @@ list_nowcast_methods <- function(installed_only = TRUE) {
   if (isTRUE(installed_only)) {
     # A method name usually *is* the package name; when it is not (a
     # hand-written backend), there is nothing to check, so keep it.
+    #
+    # `system.file()` only looks the package up on the library path;
+    # `requireNamespace()` would *load* it, which for the modelling backends
+    # means several seconds of Stan machinery (`EpiNow2` alone is ~3.5s) and
+    # leaves six namespaces attached to the session as a side effect of asking
+    # what is installed. The question here is exactly the cheap one.
     keep <- vapply(
       names,
       function(nm) {
-        !nm %in% .known_backend_packages() || requireNamespace(nm, quietly = TRUE)
+        !nm %in% .known_backend_packages() || nzchar(system.file(package = nm))
       },
       logical(1)
     )

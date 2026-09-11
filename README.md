@@ -7,8 +7,10 @@
 
 [![Codecov test
 coverage](https://codecov.io/gh/RodrigoZepeda/tbl.now/graph/badge.svg)](https://app.codecov.io/gh/RodrigoZepeda/tbl.now)
-[![CRAN
-status](https://www.r-pkg.org/badges/version/tbl.now)](https://CRAN.R-project.org/package=tbl.now)
+<!-- CRAN status badge removed until the package is accepted: its target,
+     the canonical CRAN page for this package, 404s until then and
+     `R CMD check --as-cran` reports it as a possibly invalid URL in
+     README.md. Restore with usethis::use_cran_badge() after acceptance. -->
 [![R-CMD-check](https://github.com/RodrigoZepeda/tbl.now/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/RodrigoZepeda/tbl.now/actions/workflows/R-CMD-check.yaml)
 [![R-universe
 version](https://RodrigoZepeda.r-universe.dev/tbl.now/badges/version)](https://RodrigoZepeda.r-universe.dev/tbl.now)

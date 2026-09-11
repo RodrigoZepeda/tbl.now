@@ -284,7 +284,10 @@ happened yet is not a resolution.
 
 \examples{
 data(denguedat)
-ndata <- tbl_now(denguedat,
+# These verbs only touch what the object records about itself, never the
+# rows, so a couple of years stands in for the full twenty-year series.
+recent <- denguedat[denguedat$onset_week >= as.Date("2009-01-01"), ]
+ndata <- tbl_now(recent,
   event_date = onset_week,
   report_date = report_week,
   strata = gender,
@@ -355,7 +358,7 @@ counts |>
 
 data(covid_us)
 covid <- covid_us |>
-  dplyr::filter(onset_dt >= as.Date("2020-11-01")) |>
+  dplyr::filter(onset_dt >= as.Date("2020-12-01")) |>
   tbl_now(
     event_date = onset_dt, report_date = pos_spec_dt,
     case_count = n, data_type = "count-incidence",
