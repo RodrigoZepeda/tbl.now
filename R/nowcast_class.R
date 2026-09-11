@@ -413,6 +413,7 @@ S7::method(print, tbl_nowcast) <- function(x, ..., n = 6) {
 #' nc <- tbl_nowcast(predictions = predictions, method = "toy", event_date = "onset_week")
 #' tibble::as_tibble(nc)
 #'
+#' @exportS3Method NULL
 #' @name as_tibble.tbl_nowcast
 #' @usage \method{as_tibble}{tbl_nowcast}(x, ..., type = c("quantiles", "draws"))
 as_tibble.tbl_nowcast <- function(x, ..., type = c("quantiles", "draws")) {

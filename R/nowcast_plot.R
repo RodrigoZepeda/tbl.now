@@ -179,6 +179,7 @@
 #' assigned anonymously into the generic, so that `R CMD check` can resolve this
 #' topic's usage section back to an object that exists.
 #'
+#' @exportS3Method NULL
 #' @name autoplot.tbl_nowcast
 #' @usage \method{autoplot}{tbl_nowcast}(object, ..., levels = NULL,
 #'   show_reported = TRUE, colour = NULL, linewidth = 1, date_lim = NULL,

@@ -88,6 +88,18 @@ you can run.
 from 5.1 Mb to 3.4 Mb, comfortably back under CRAN's threshold. The datasets
 themselves are unchanged.
 
+## `list_nowcast_methods()` no longer loads the modelling packages
+
+`installed_only = TRUE` asked `requireNamespace()` whether each backend was
+available, which *loads* the namespace to find out. Listing the methods
+therefore pulled \pkg{EpiNow2}, \pkg{diseasenowcasting} and the rest into the
+session -- several seconds of Stan machinery, and six namespaces attached as a
+side effect of a question about the library path. It now asks
+`system.file(package = )`, which is the cheap form of the same question. The
+only behavioural difference is that a package which is installed but cannot be
+loaded is now listed; `run_nowcast()` still says so, clearly, when you try to
+use it.
+
 ## Upstream examples now guard converter and fit equivalence
 
 The shipped examples from epinowcast, NobBS, surveillance, EpiNow2 and epidist

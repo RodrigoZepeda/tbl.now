@@ -653,7 +653,13 @@ plot_delay_profiles <- function(x, by = c("report", "event"), max_delay = NULL,
 #' from; [diagnostic_plot()] for the whole gallery.
 #' @examples
 #' data(denguedat)
-#' dn <- tbl_now(denguedat, onset_week, report_week, verbose = FALSE)
+#' # The two and a half years around the 1996 and 1997 backlog dumps, so that
+#' # the plane has red points on it without scanning the whole series.
+#' window <- denguedat[
+#'   denguedat$onset_week >= as.Date("1995-06-01") &
+#'     denguedat$onset_week <= as.Date("1998-01-01"),
+#' ]
+#' dn <- tbl_now(window, onset_week, report_week, verbose = FALSE)
 #' plot_transport_discriminant(dn)
 #' @export
 #' @md
@@ -874,7 +880,13 @@ plot_transport_discriminant <- function(x, ..., plotly = FALSE, size = 1,
 #'
 #' @examplesIf requireNamespace("patchwork", quietly = TRUE)
 #' data(denguedat)
-#' dn <- tbl_now(denguedat, onset_week, report_week, verbose = FALSE)
+#' # The two and a half years around the 1996 and 1997 backlog dumps: enough
+#' # for the transport panel to have something to flag, quick enough to draw.
+#' window <- denguedat[
+#'   denguedat$onset_week >= as.Date("1995-06-01") &
+#'     denguedat$onset_week <= as.Date("1998-01-01"),
+#' ]
+#' dn <- tbl_now(window, onset_week, report_week, verbose = FALSE)
 #' diagnostic_plot(dn, panels = c("triangle", "transport"))
 #'
 #' @export

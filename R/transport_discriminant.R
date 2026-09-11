@@ -69,7 +69,13 @@
 #'
 #' @examples
 #' data(denguedat)
-#' dn <- tbl_now(denguedat, onset_week, report_week, verbose = FALSE)
+#' # The two and a half years around the 1996 and 1997 backlog dumps. The whole
+#' # twenty-year series works the same way, it just takes longer to scan.
+#' window <- denguedat[
+#'   denguedat$onset_week >= as.Date("1995-06-01") &
+#'     denguedat$onset_week <= as.Date("1998-01-01"),
+#' ]
+#' dn <- tbl_now(window, onset_week, report_week, verbose = FALSE)
 #' td <- transport_discriminant(dn)
 #' td[td$batch, ]
 #'

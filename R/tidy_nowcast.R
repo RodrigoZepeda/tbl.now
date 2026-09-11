@@ -97,6 +97,7 @@
 #'
 #' tidy(nc)
 #'
+#' @exportS3Method NULL
 #' @name tidy.tbl_nowcast
 #' @usage \method{tidy}{tbl_nowcast}(x, probs = NULL, ...)
 #'
