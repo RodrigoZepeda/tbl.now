@@ -947,7 +947,14 @@ nowcast_fit.surveillance <- function(engine, x, ..., when = NULL, D = NULL,
   .need_pkg("surveillance")
 
   aggregate_by <- .surveillance_aggregate_by(get_event_units(x))
-  now <- get_now(x)
+  # `nowcast()` refuses a `now` that is not the first day of an epoch, and an
+  # epi week starts on a Sunday rather than surveillance's Monday. Snapping is
+  # what the back end does to the line list anyway; the estimates are shifted
+  # back onto the object's own weekday in `nowcast_tidy.surveillance()`.
+  # Calling the offset here also fails fast, before a fit, when the event dates
+  # are on no common weekday at all.
+  .surveillance_epoch_offset(x, aggregate_by)
+  now <- .surveillance_epoch_start(get_now(x), aggregate_by)
   D <- D %||% .surveillance_max_delay(x)
 
   # Both grids come from the WHOLE object, once, not from each stratum's own
@@ -1058,6 +1065,13 @@ nowcast_tidy.surveillance <- function(engine, fit, x, ..., quantile_levels) {
     one$stratum <- label
     one
   }))
+
+  # An `stsNC` is indexed by its epoch starts -- Mondays on a weekly fit. Put
+  # the estimates back on the weekday the caller's event dates use, so they
+  # join the data they were fitted from.
+  aggregate_by <- .surveillance_aggregate_by(get_event_units(x))
+  tidied$event_date <- as.Date(tidied$event_date) +
+    .surveillance_epoch_offset(x, aggregate_by)
 
   .tidy_to_predictions(tidied, x, quantile_levels, "surveillance")
 }

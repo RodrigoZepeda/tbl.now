@@ -421,3 +421,21 @@ test_that("the quantile ensemble is narrower than the linear pool", {
   }
   expect_true(all(width(pooled) > width(averaged)))
 })
+
+test_that("a trailing comma is tolerated rather than aborting on a missing arg", {
+  skip_on_cran()
+  # `list(...)` turns a trailing comma into "argument is missing, with no
+  # default", which names neither the argument nor the call. Every dplyr verb
+  # accepts one, so `rlang::list2()` is what collects the members.
+  a <- fake_nowcast("a", 1:5)
+  b <- fake_nowcast("b", 2:6)
+
+  expect_no_error(nowcast_ensemble(a, b, verbose = FALSE, ))
+  expect_equal(
+    tidy(nowcast_ensemble(a, b, verbose = FALSE, )),
+    tidy(nowcast_ensemble(a, b, verbose = FALSE))
+  )
+
+  # An empty argument anywhere else is still refused, and says which it was.
+  expect_error(nowcast_ensemble(a, , b, verbose = FALSE), "empty")
+})

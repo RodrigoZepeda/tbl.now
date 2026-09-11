@@ -92,7 +92,7 @@ stratified analysis means fitting each stratum separately.
 \if{html}{\out{<div class="sourceCode r">}}\preformatted{pieces <- tbl_now_to_surveillance(x, format = "linelist_list", verbose = FALSE)
 fits <- lapply(pieces, function(piece) \{
   surveillance::nowcast(
-    now = get_now(x), when = get_surveillance_when(x),
+    now = max(get_surveillance_range(x)), when = get_surveillance_when(x),
     data = piece, dEventCol = "dHospital", dReportCol = "dReport",
     control = list(dRange = get_surveillance_range(x))
   )

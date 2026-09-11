@@ -905,7 +905,10 @@ nowcast_backtest <- function(x, ..., now_dates = NULL, horizon = 4,
 #' @keywords internal
 #' @noRd
 .collect_engines <- function(...) {
-  engines <- list(...)
+  # See `.collect_nowcasts()`: `list()` turns a trailing comma into "argument is
+  # missing, with no default", and this function is variadic for the same reason
+  # that one is.
+  engines <- rlang::list2(...)
   # A list of engines is what `lapply()` over a set of configurations produces,
   # and refusing it would send the caller to `do.call()` for no reason.
   if (length(engines) == 1 && is.list(engines[[1]]) && !is_nowcast_engine(engines[[1]])) {
