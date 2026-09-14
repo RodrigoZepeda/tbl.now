@@ -1,0 +1,101 @@
+# Plot the transport-discriminant plane
+
+**\[stable\]**
+
+Places each report date by its creation score (x) and transport /
+deficit score (y) from
+[`transport_discriminant()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/transport_discriminant.md),
+shading the region that decides the batch call. Surges are not
+distinguished here (they fold into the quiet background) since only the
+batch call is of interest.
+
+## Usage
+
+``` r
+plot_transport_discriminant(
+  x,
+  ...,
+  plotly = FALSE,
+  size = 1,
+  grid_linewidth = 0.3,
+  palette = .tbl_now_palette()
+)
+```
+
+## Arguments
+
+- x:
+
+  A
+  [`tbl_now()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/tbl_now.md)
+  object.
+
+- ...:
+
+  Passed to
+  [`transport_discriminant()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/transport_discriminant.md)
+  (e.g. `lookback`, `period`, `alpha`).
+
+- plotly:
+
+  If `TRUE`, return an interactive plotly widget instead of a static
+  plot. Default `FALSE`.
+
+- size:
+
+  Multiplier on the size of the points and their date labels. Default
+  `1`: unflagged points are drawn at `1.1`, confirmed batches at `2.6`.
+  It is a multiplier rather than an absolute size precisely so that
+  enlarging the marks keeps the flagged ones bigger than the rest.
+
+- grid_linewidth:
+
+  Line width of the zero lines and the dashed significance thresholds
+  this function draws – the package's own reference grid, not ggplot2's.
+  Default `0.3`.
+
+- palette:
+
+  A named colour palette (see
+  [`tbl_now_palette()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/tbl_now_palette.md)).
+
+## Value
+
+A ggplot2 object (or a plotly widget when `plotly = TRUE`).
+
+## Details
+
+Only the
+[`diagnose_batches()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/diagnose_batches.md)-confirmed
+batches (Benjamini-Hochberg-corrected) are coloured red; the dashed
+lines and shaded region are a reference for where a batch sits (deficit
+cleared, and significant), not the flagging rule. The most
+extreme-looking points (far left, far up) are *holds* – windows still
+depleted because the release has not happened yet – not batches. A
+genuine batch sits in the band just to the right of the vertical line,
+once the window total recovers.
+
+## See also
+
+[`transport_discriminant()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/transport_discriminant.md)
+for the numbers behind the plane;
+[`diagnose_batches()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/diagnose_batches.md)
+for the hypothesis test that flags the red points;
+[plot_reporting_process()](https://rodrigozepeda.github.io/tbl.now/dev/reference/plot_epidemic_process.md)
+for the series they come from;
+[`diagnostic_plot()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/diagnostic_plot.md)
+for the whole gallery.
+
+## Examples
+
+``` r
+data(denguedat)
+# The two and a half years around the 1996 and 1997 backlog dumps, so that
+# the plane has red points on it without scanning the whole series.
+window <- denguedat[
+  denguedat$onset_week >= as.Date("1995-06-01") &
+    denguedat$onset_week <= as.Date("1998-01-01"),
+]
+dn <- tbl_now(window, onset_week, report_week, verbose = FALSE)
+plot_transport_discriminant(dn)
+```

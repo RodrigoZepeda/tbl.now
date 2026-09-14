@@ -1,0 +1,233 @@
+# Convert between `tbl_now` and EpiNow2
+
+**\[experimental\]**
+
+EpiNow2 takes several different input shapes, one per entry point, so
+`tbl_now_to_EpiNow2()` is told which one you want with `target` – named
+after the EpiNow2 function the result is passed to, so it can be handed
+over unchanged:
+
+- `"estimate_infections"`:
+
+  a `data.frame` of `date` / `confirm`, the series as known at
+  [`get_now()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/nowcast_data_getters.md).
+  Also what
+  [`EpiNow2::epinow()`](https://epiforecasts.io/EpiNow2/reference/epinow.html)
+  takes.
+
+- `"regional_epinow"`:
+
+  the same, plus a `region` column built from the object's strata.
+
+- `"estimate_truncation"`:
+
+  a
+  [tbl_now_epinow2_snapshots](https://rodrigozepeda.github.io/tbl.now/dev/reference/tbl_now_epinow2_snapshots.md)
+  list – one `date`/`confirm` snapshot per report date, which is the one
+  EpiNow2 model that uses the report dimension a `tbl_now` exists to
+  carry.
+
+- `"estimate_secondary"`:
+
+  a `data.frame` of `date` / `primary` / `secondary`, where `primary`
+  counts reported arrivals by `report_date` and `secondary` counts
+  resolved revisions by `revision_date`, filtered by `secondary_type`.
+  This is a **repurposing** of
+  [`EpiNow2::estimate_secondary()`](https://epiforecasts.io/EpiNow2/reference/estimate_secondary.html):
+  the model was written for two epidemiological streams linked by a
+  delay (cases and deaths, say), and here the two streams are one series
+  and its own revisions, so the fitted delay is report-to-revision. The
+  converter warns about the repurposing when it runs.
+
+- `"estimate_dist"`:
+
+  the interval-censored `pdate_lwr` / `pdate_upr` / `sdate_lwr` /
+  `sdate_upr` / `obs_date` frame that
+  [`EpiNow2::estimate_dist()`](https://epiforecasts.io/EpiNow2/reference/estimate_dist.html)
+  fits a **delay distribution** to (new in EpiNow2 1.9.0). Count data
+  rides along as the `n` weight column. `estimate_dist()` vendors
+  likelihood functions from
+  [primarycensored](https://primarycensored.epinowcast.org/), and its
+  help asks that you cite primarycensored alongside EpiNow2 when using
+  it (`citation("primarycensored")`). Like
+  [`tbl_now_to_epidist()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/tbl_now_epidist.md),
+  this target returns one row per observed delay: the revision axis is
+  dropped and undeclared columns are pooled, because neither reaches
+  `estimate_dist()` and so neither can keep two rows apart.
+
+`tbl_now_from_EpiNow2()` inverts the snapshot form: snapshot *k* is the
+series as known at report date *k*, so differencing consecutive
+snapshots recovers `count-incidence` exactly. There is deliberately
+**no** inverse for the other targets: a single series has no report
+dimension to recover, a secondary stream is already aggregated, and a
+delay distribution is not case data.
+
+## Usage
+
+``` r
+tbl_now_to_EpiNow2(
+  x,
+  ...,
+  target = c("estimate_infections", "regional_epinow", "estimate_truncation",
+    "estimate_secondary", "estimate_dist"),
+  snapshots = NULL,
+  secondary_type = c("confirmed", "total", "retracted", "unknown"),
+  accumulate = "auto",
+  complete = "auto",
+  verbose = TRUE,
+  quiet = FALSE
+)
+
+tbl_now_from_EpiNow2(data, ..., report_dates = NULL, verbose = TRUE)
+```
+
+## Arguments
+
+- x:
+
+  A `tbl_now` object.
+
+- ...:
+
+  Forwarded to
+  [`as_tbl_now()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/as_tbl_now.md)
+  (`from`); unused (`to`).
+
+- target:
+
+  Which EpiNow2 entry point the result is for. See above.
+
+- snapshots:
+
+  For `"estimate_truncation"`: how many snapshots to emit, taken from
+  the **latest** report dates. `NULL` (default) uses 5, matching
+  [`EpiNow2::example_truncated`](https://epiforecasts.io/EpiNow2/reference/example_truncated.html).
+  One snapshot per distinct report date is usually far more than the
+  model can fit.
+
+- secondary_type:
+
+  For `"estimate_secondary"`: which revision outcomes to count in the
+  `secondary` stream. One of `"confirmed"` (default), `"total"`,
+  `"retracted"` or `"unknown"`. Pending cases are not on the revision
+  axis, and `"net"` can be negative, which
+  [`EpiNow2::estimate_secondary()`](https://epiforecasts.io/EpiNow2/reference/estimate_secondary.html)
+  cannot represent as a count stream.
+
+- accumulate:
+
+  How to handle non-daily data. `"auto"` (default) lays a weekly series
+  on EpiNow2's daily grid with an `accumulate` column; `FALSE` passes
+  the rows through unchanged, which is almost always wrong (see
+  *Non-daily data*). Ignored for `"estimate_dist"`, which works in
+  censoring windows rather than on a grid.
+
+- complete:
+
+  For the series targets: fill event periods that have no reports at all
+  with zeroes, out to the object's
+  [`get_now()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/nowcast_data_getters.md),
+  via
+  [`complete_zeroes()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/complete_zeroes.md).
+  `"auto"` (the default) does this for **line-list** input only. A line
+  list has no row for a period in which nothing was reported, so a
+  series built from one stops at the last period that *has* a report –
+  short of the `now`, which is the period the nowcast is about. Count
+  data is left exactly as supplied, because it can say "observed zero"
+  itself. `TRUE` / `FALSE` force either behaviour; `TRUE` on
+  `count-cumulative` input de-accumulates it first. Ignored for
+  `"estimate_dist"`, which works in censoring windows rather than on a
+  grid.
+
+- verbose:
+
+  Logical. Print the choices that were made.
+
+- quiet:
+
+  Logical. A *different* channel from `verbose`: `verbose` controls the
+  informational summary of what the conversion did, while `quiet`
+  suppresses the lossy-conversion warning. Set both to keep a conversion
+  entirely silent.
+
+- data:
+
+  A
+  [tbl_now_epinow2_snapshots](https://rodrigozepeda.github.io/tbl.now/dev/reference/tbl_now_epinow2_snapshots.md),
+  or a plain list of `date`/`confirm` data frames (e.g.
+  [`EpiNow2::example_truncated`](https://epiforecasts.io/EpiNow2/reference/example_truncated.html)),
+  in which case `report_dates` is required.
+
+- report_dates:
+
+  For `from`: a `Date` vector, one per snapshot, saying when each was
+  taken. Read from the object's attribute when it has one.
+
+## Value
+
+For `to`, a `data.frame` or a
+[tbl_now_epinow2_snapshots](https://rodrigozepeda.github.io/tbl.now/dev/reference/tbl_now_epinow2_snapshots.md),
+according to `target`. For `from`, a `tbl_now` of
+`data_type = "count-incidence"`.
+
+## Non-daily data
+
+EpiNow2 models a **daily** process. As of 1.9.0 there is no `timestep`,
+`interval` or `period` argument on any of its entry points, so a weekly
+series passed as one row per week is read as one row per **day** and the
+fit is silently wrong on the time axis – no error, just an epidemic
+seven times too fast.
+
+Its own answer is the `accumulate` column (see
+[`EpiNow2::fill_missing()`](https://epiforecasts.io/EpiNow2/reference/fill_missing.html)):
+the series is laid on a daily grid and the filler days are marked to be
+added to the next real observation. `accumulate = "auto"` does this from
+[`get_event_units()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/nowcast_data_getters.md)
+for case-count targets, and from the shared `report_units` /
+`revision_units` grid for `estimate_secondary`. Units coarser than a
+week, and the `"numeric"` grid, are refused outright rather than
+approximated.
+
+## What EpiNow2 will not take
+
+- [`EpiNow2::estimate_delay()`](https://epiforecasts.io/EpiNow2/reference/estimate_delay.html)
+  takes a bare vector of delays. Its own help now points at
+  `estimate_dist()` as "the recommended replacement", and it throws away
+  the censoring a `tbl_now` carries, so there is no target for it
+  either. If you want it anyway, it is `x$.delay`.
+
+## See also
+
+[`tbl_now_to_epidist()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/tbl_now_epidist.md),
+which builds the same censoring windows as `target = "estimate_dist"` –
+the two are different front ends onto one delay-distribution schema.
+
+## Examples
+
+``` r
+data(denguedat)
+nowobj <- tbl_now(denguedat[1:2000, ],
+  event_date = "onset_week", report_date = "report_week", verbose = FALSE
+)
+## A single daily series for estimate_infections() -- the weekly data is laid
+# on EpiNow2's daily grid.
+head(tbl_now_to_EpiNow2(nowobj, verbose = FALSE, quiet = TRUE))
+#>         date confirm accumulate
+#> 1 1989-12-26      NA       TRUE
+#> 2 1989-12-27      NA       TRUE
+#> 3 1989-12-28      NA       TRUE
+#> 4 1989-12-29      NA       TRUE
+#> 5 1989-12-30      NA       TRUE
+#> 6 1989-12-31      NA       TRUE
+
+## Snapshots for estimate_truncation(), which uses the report dimension.
+snaps <- tbl_now_to_EpiNow2(nowobj,
+  target = "estimate_truncation", verbose = FALSE, quiet = TRUE
+)
+snaps
+#> ── 5 reporting snapshots from a <tbl_now> ──────────────────────────────────────
+#> • One per report date: "1991-02-04", "1991-02-11", "1991-02-18", "1991-02-25", and "1991-03-04"
+#> • Rows each: 406, 413, 420, 427, and 434
+#> • Now: "1991-03-04"
+#> ℹ Pass this to `EpiNow2::estimate_truncation()`. `EpiNow2::estimate_secondary()` wants a single data frame of linked series instead -- not this.
+```

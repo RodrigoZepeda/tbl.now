@@ -1,0 +1,132 @@
+# tbl.now: Tidy Data and Workflow Layer for Epidemic Nowcasting
+
+Defines tidy data structures and package-agnostic workflows for
+epidemiological nowcasting. The 'tbl_now' class records event, report,
+and revision dates alongside strata, covariates, censoring, and
+reporting-delay metadata while remaining compatible with 'dplyr'. Tools
+support validation, manipulation, diagnostics, visualization, format
+conversion, retrospective evaluation, and multiple modelling engines.
+The 'tbl_nowcast' class standardizes probabilistic predictions for
+plotting, scoring, comparison, and ensembling.
+
+## Details
+
+Surveillance data arrives late. A case that happened on Monday may not
+reach the system until Thursday, so the most recent counts always look
+lower than they will turn out to be. **Nowcasting** corrects that: it
+estimates how many cases have already happened but have not been
+reported yet.
+
+`tbl.now` is the tidy scaffolding around that problem. You declare which
+columns hold the event date, the report date and anything else that
+matters once, and everything else – describing, diagnosing, plotting,
+fitting, scoring – follows from that declaration.
+
+## The workflow
+
+1.  **Declare.**
+    [`tbl_now()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/tbl_now.md)
+    turns a `data.frame` into a `tbl_now`, or
+    [`as_tbl_now()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/as_tbl_now.md)
+    converts an object from another nowcasting package. The result is
+    still a `tibble`, so `dplyr` keeps working.
+
+2.  **Describe.**
+    [summary()](https://rodrigozepeda.github.io/tbl.now/dev/reference/tbl_now_summary.md)
+    says what is in the data;
+    [autoplot()](https://rodrigozepeda.github.io/tbl.now/dev/reference/autoplot.tbl_now.md)
+    draws it.
+
+3.  **Diagnose.**
+    [`diagnose()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/diagnose.md)
+    says what is *wrong* with it, and points at the statistical tests
+    worth running –
+    [`diagnose_drift()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/diagnose_drift.md)
+    for delays that are getting longer,
+    [`diagnose_batches()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/diagnose_batches.md)
+    for backlog releases,
+    [`diagnostic_plot()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/diagnostic_plot.md)
+    for the reporting process as a picture.
+
+4.  **Reshape.**
+    [`to_count()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/to_count.md),
+    [`complete_zeroes()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/complete_zeroes.md),
+    [`aggregate_time_units()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/aggregate_time_units.md),
+    [`align_weeks()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/align_weeks.md)
+    and
+    [censor_reports()](https://rodrigozepeda.github.io/tbl.now/dev/reference/censoring.md)
+    put the data on the grid a model needs.
+
+5.  **Fit.**
+    [`run_nowcast()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/run_nowcast.md)
+    takes the data and an
+    [`engine()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/engine.md)
+    – one interface over epinowcast, baselinenowcast, NobBS, EpiNow2,
+    surveillance and diseasenowcasting. Write your own with
+    [`nowcast_fit()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/nowcast_fit.md)
+    and
+    [`nowcast_tidy()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/nowcast_tidy.md).
+
+6.  **Check.**
+    [`score_nowcast()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/score_nowcast.md)
+    and
+    [`nowcast_backtest()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/nowcast_backtest.md)
+    say whether the nowcast was any good;
+    [`nowcast_ensemble()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/nowcast_ensemble.md)
+    combines several.
+
+[`vignette("tbl.now")`](https://rodrigozepeda.github.io/tbl.now/dev/articles/tbl.now.md)
+walks this end to end, from a raw line list to a scored nowcast, and
+marks the point where you choose between a modelling package's native
+fitting API and the common cross-engine one. The [package
+website](https://rodrigozepeda.github.io/tbl.now/) carries longer
+articles on the class itself, the modelling packages, batch reporting,
+ensembles and writing your own backend.
+
+## Datasets
+
+Seven surveillance datasets ship with the package for experimenting:
+[denguedat](https://rodrigozepeda.github.io/tbl.now/dev/reference/denguedat.md),
+[mpoxdat](https://rodrigozepeda.github.io/tbl.now/dev/reference/mpoxdat.md),
+[flusight](https://rodrigozepeda.github.io/tbl.now/dev/reference/flusight.md),
+[covid_colombia](https://rodrigozepeda.github.io/tbl.now/dev/reference/covid_colombia.md),
+[covid_us](https://rodrigozepeda.github.io/tbl.now/dev/reference/covid_us.md),
+[sari_bh](https://rodrigozepeda.github.io/tbl.now/dev/reference/sari_bh.md)
+and
+[hai_bucaramanga](https://rodrigozepeda.github.io/tbl.now/dev/reference/hai_bucaramanga.md)
+– the last deliberately messy, for the diagnostics.
+
+## See also
+
+Useful links:
+
+- <https://rodrigozepeda.github.io/tbl.now/>
+
+- <https://github.com/RodrigoZepeda/tbl.now>
+
+- Report bugs at <https://github.com/RodrigoZepeda/tbl.now/issues>
+
+## Author
+
+**Maintainer**: Rodrigo Zepeda-Tello <rzepeda17@gmail.com>
+([ORCID](https://orcid.org/0000-0003-4471-5270))
+
+Authors:
+
+- Rodrigo Zepeda-Tello <rzepeda17@gmail.com>
+  ([ORCID](https://orcid.org/0000-0003-4471-5270))
+
+- Rami Yaari ([ORCID](https://orcid.org/0000-0002-8808-8937))
+
+- Matteo Perini ([ORCID](https://orcid.org/0000-0002-9465-6216))
+
+Other contributors:
+
+- Teresa Yamana ([ORCID](https://orcid.org/0000-0001-8349-3151))
+  \[contributor\]
+
+- Jeffrey Shaman ([ORCID](https://orcid.org/0000-0002-7216-7809))
+  \[contributor\]
+
+- Columbia University in the City of New York \[copyright holder,
+  funder\]

@@ -1,0 +1,168 @@
+# Fill in the days when nothing was reported
+
+**\[stable\]**
+
+Surveillance data records what happened, not what didn't. If no dengue
+case with onset on 3 January was reported on 5 January, there is simply
+no row for that combination – which is *not* the same as a row saying
+zero, even though it means the same thing.
+
+Most nowcasting models need the difference spelled out. They work on a
+complete rectangle of (event date x report date) cells, and a missing
+cell is ambiguous: it could be a genuine zero, or a delay so long the
+report has not arrived yet. `complete_zeroes()` writes the genuine zeros
+in explicitly, for every stratum, leaving only the not-yet-reported
+cells absent.
+
+## Usage
+
+``` r
+complete_zeroes(x, max_delay = NULL, until = NULL)
+```
+
+## Arguments
+
+- x:
+
+  A `tbl_now` object.
+
+- max_delay:
+
+  Maximum delay to fill. For example if set to 5 it will complete with
+  0's all reports with delays 0 to 4. But will not fill other delays
+  (say 6)
+
+- until:
+
+  Event date to complete up to. `NULL` (the default) completes to
+  whichever is later, the object's
+  [`get_now()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/nowcast_data_getters.md)
+  or the last event date present in the data. Completing only up to the
+  last *observed* event date would leave a gap precisely at the `now`
+  edge, because an event date with no reports at all does not appear in
+  the data; several downstream converters build their time grid from the
+  rows they are given and would silently stop short. A supplied `until`
+  is never allowed to truncate below the data, and has no effect beyond
+  the `now`: an event date later than the `now` cannot carry any report
+  on or before it, so no row would survive for it.
+
+  ### Temporal effects
+
+  If `x` arrived with materialised
+  [`temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/temporal_effects.md)
+  columns, they are **recomputed on the completed grid** before the
+  result is returned, so the rows this function adds carry their own
+  calendar effects rather than `NA`. A lazy specification that has not
+  been computed yet stays lazy.
+
+## Value
+
+A `tbl_now` object with the same columns as `x`, plus the rows that were
+implicitly zero, carrying `0` in the `case_count` column. Explicit
+missing counts in the input remain `NA`; only cells created by
+`complete_zeroes()` are filled. The data type is preserved, as are any
+computed temporal-effect columns (recomputed over the new rows).
+
+## Details
+
+Zeros are only filled where a report *could* have arrived: cells with a
+report date on or before the event date's `now`, and within `max_delay`.
+Filling beyond that would invent observations from the future.
+
+### Rows with a missing date
+
+A row whose event or report date is `NA` has no cell on the rectangle,
+so it takes no part in the grid: the bounds (`max_delay`, the first and
+last event date, the last report date) are all computed ignoring it. It
+is still a case, though, so it is **carried through unchanged** rather
+than dropped – use
+[`censor_reports()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/censoring.md)
+to give it a bound, or
+[`dplyr::filter()`](https://dplyr.tidyverse.org/reference/filter.html)
+to remove it, if you would rather it were on the grid or gone. Only an
+object in which *every* row is missing one of the two dates is refused,
+because then there is no grid to complete at all.
+
+## See also
+
+[`to_count()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/to_count.md)
+for the data shapes this operates on;
+[`censor_reporting_delays_above()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/censoring.md)
+for the opposite problem, delays that are too long;
+[`diagnose_missing()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/nowcast_diagnose_components.md)
+and
+[`diagnose_truncation()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/nowcast_diagnose_components.md)
+to find the gaps first;
+[`plot_reporting_triangle()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/plot_reporting_triangle.md)
+to see the rectangle being filled.
+
+## Examples
+
+``` r
+ndata <- dplyr::tibble(
+  event = rep(c(
+    as.Date("2020/01/01"), as.Date("2020/01/01"),
+    as.Date("2020/01/02"), as.Date("2020/01/04"),
+    as.Date("2020/01/04")
+  ), 2),
+  report = rep(c(
+    as.Date("2020/01/01"), as.Date("2020/01/02"),
+    as.Date("2020/01/02"), as.Date("2020/01/04"),
+    as.Date("2020/01/05")
+  ), 2),
+  n = rpois(10, lambda = 5),
+  sex = c(rep("Male", 5), rep("Female", 5))
+)
+ndata <- tbl_now(ndata,
+  event_date = event, report_date = report,
+  verbose = FALSE, strata = sex, case_count = n, data_type = "count-incidence"
+)
+
+# Nothing happened on 2020-01-03, so the data has no row for it at all.
+sort(unique(ndata$event))
+#> [1] "2020-01-01" "2020-01-02" "2020-01-04"
+
+## complete_zeroes() writes that absence down as an explicit zero, for every
+# stratum, so a model can tell "no cases" from "not reported yet".
+filled <- complete_zeroes(ndata)
+sort(unique(filled$event))
+#> [1] "2020-01-01" "2020-01-02" "2020-01-03" "2020-01-04" "2020-01-05"
+nrow(ndata)
+#> [1] 10
+nrow(filled)
+#> [1] 18
+
+# Also works for count-cumulative
+ndata |>
+  to_count("count-cumulative") |>
+  complete_zeroes() |>
+  dplyr::arrange(event, sex, report)
+#> # A tibble:  18 × 7
+#> # Data type: "count-cumulative"
+#> # Frequency: Event: `days` | Report: `days`
+#>    event        report        .event_num .report_num sex            n .delay
+#>    <date>       <date>             <dbl>       <dbl> <chr>      <dbl>  <dbl>
+#>    [event_date] [report_date]      [...]       [...] [strata] [cases]  [...]
+#>  1 2020-01-01   2020-01-01             0           0 Female         6      0
+#>  2 2020-01-01   2020-01-02             0           1 Female        12      1
+#>  3 2020-01-01   2020-01-01             0           0 Male           6      0
+#>  4 2020-01-01   2020-01-02             0           1 Male          11      1
+#>  5 2020-01-02   2020-01-02             1           1 Female         3      0
+#>  6 2020-01-02   2020-01-03             1           2 Female         3      1
+#>  7 2020-01-02   2020-01-02             1           1 Male           7      0
+#>  8 2020-01-02   2020-01-03             1           2 Male           7      1
+#>  9 2020-01-03   2020-01-03             2           2 Female         0      0
+#> 10 2020-01-03   2020-01-04             2           3 Female         0      1
+#> 11 2020-01-03   2020-01-03             2           2 Male           0      0
+#> 12 2020-01-03   2020-01-04             2           3 Male           0      1
+#> 13 2020-01-04   2020-01-04             3           3 Female         3      0
+#> 14 2020-01-04   2020-01-05             3           4 Female         8      1
+#> 15 2020-01-04   2020-01-04             3           3 Male           3      0
+#> 16 2020-01-04   2020-01-05             3           4 Male           9      1
+#> 17 2020-01-05   2020-01-05             4           4 Female         0      0
+#> 18 2020-01-05   2020-01-05             4           4 Male           0      0
+#> # ────────────────────────────────────────────────────────────────────────────────
+#> # Now: 2020-01-05 | Event date: "event" | Report date: "report"
+#> # Strata: "sex"
+#> # ────────────────────────────────────────────────────────────────────────────────
+```

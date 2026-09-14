@@ -1,0 +1,112 @@
+# The epidemic process and the reporting process
+
+**\[stable\]**
+
+The same cases, counted on two different clocks. Comparing the two is
+the single most useful thing you can do to tell a real outbreak from a
+reporting artifact.
+
+- `plot_epidemic_process()` counts by **event date** – when the cases
+  actually happened. Epidemics grow and shrink smoothly, so this curve
+  should be smooth.
+
+- `plot_reporting_process()` counts by **report date** – when news of
+  them arrived. Reporting is administrative, so this curve is spiky:
+  weekends, holidays and backlog releases all show up here.
+
+A lone spike in the reporting process with nothing under it in the
+epidemic process is a **batch** – a day the system cleared its inbox,
+not a day people got sick. A spike in both is a genuine surge.
+
+## Usage
+
+``` r
+plot_reporting_process(
+  x,
+  plotly = FALSE,
+  axis = c("report", "revision"),
+  by_revision_type = TRUE,
+  palette = .tbl_now_palette()
+)
+
+plot_epidemic_process(
+  x,
+  plotly = FALSE,
+  axis = c("report", "revision"),
+  palette = .tbl_now_palette()
+)
+```
+
+## Arguments
+
+- x:
+
+  A
+  [`tbl_now()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/tbl_now.md)
+  object.
+
+- plotly:
+
+  If `TRUE`, return an interactive plotly widget (hover, zoom) instead
+  of a static ggplot2 plot. Default `FALSE`.
+
+- axis:
+
+  Which time axis to draw: `"report"` (default) or `"revision"`. On the
+  revision axis the picture answers the laboratory's version of the
+  question – when results arrived, rather than when reports did. Needs a
+  revision process (see
+  [add_revision_date()](https://rodrigozepeda.github.io/tbl.now/dev/reference/add.md));
+  cases still `"pending"` have no revision date and are left out.
+
+- by_revision_type:
+
+  Logical (default `TRUE`), `plot_reporting_process()` only. Stack each
+  bar by how the arrivals it counts eventually resolved – `confirmed`,
+  `pending`, `retracted` and `unknown`, in the palette's outcome colours
+  (see
+  [`tbl_now_palette()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/tbl_now_palette.md))
+  – so a day whose reports were mostly taken back is visible as such
+  rather than as an ordinary day. Ignored on an object with no revision
+  axis. It cannot be taken from `count-cumulative` data, which records
+  running totals rather than cases, and warns and draws the unsplit bars
+  there.
+
+- palette:
+
+  A named colour palette (see
+  [`tbl_now_palette()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/tbl_now_palette.md)).
+  These two panels draw bars and nothing else, so they take no `size` or
+  `linewidth`.
+
+## Value
+
+A ggplot2 object (or a plotly widget when `plotly = TRUE`).
+
+## Details
+
+Both are facetted by stratum when the object has strata.
+
+## See also
+
+[`diagnostic_plot()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/diagnostic_plot.md),
+which draws these alongside the rest of the reporting-process gallery;
+[`plot_observed_cases()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/plot_observed_cases.md)
+for the epidemic process with the incompleteness cutoff marked;
+[`diagnose_batches()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/diagnose_batches.md)
+to test a suspicious spike rather than eyeball it.
+
+## Examples
+
+``` r
+data(denguedat)
+dn <- tbl_now(denguedat, onset_week, report_week, verbose = FALSE)
+
+# When cases happened: smooth, because epidemics are.
+plot_epidemic_process(dn)
+
+
+# When news of them arrived: spikier, because reporting is administrative.
+plot_reporting_process(dn)
+
+```

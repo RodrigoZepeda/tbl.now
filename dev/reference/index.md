@@ -1,0 +1,518 @@
+# Package index
+
+## The `tbl_now` class
+
+Create one, check it, and move between the three data types.
+
+- [`tbl_now()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/tbl_now.md)
+  **\[stable\]** :
+
+  Create a `tbl_now` object
+
+- [`as_tbl_now()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/as_tbl_now.md)
+  **\[stable\]** :
+
+  Transform an object into a `tbl_now`
+
+- [`validate_tbl_now()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/validate_tbl_now.md)
+  [`is_tbl_now()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/validate_tbl_now.md)
+  **\[stable\]** :
+
+  Check that an object is a valid `tbl_now`
+
+- [`tbl_now_attributes()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/tbl_now_attributes.md)
+  **\[stable\]** :
+
+  List what a `tbl_now` was told about itself
+
+- [`to_count()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/to_count.md)
+  **\[stable\]** : Convert between linelist and aggregated count data
+
+## Attributes
+
+Read what the object was told about itself, and change it.
+
+- [`get_event_date()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/nowcast_data_getters.md)
+  [`get_report_date()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/nowcast_data_getters.md)
+  [`get_strata()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/nowcast_data_getters.md)
+  [`get_num_strata()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/nowcast_data_getters.md)
+  [`get_covariates()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/nowcast_data_getters.md)
+  [`get_num_covariates()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/nowcast_data_getters.md)
+  [`get_now()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/nowcast_data_getters.md)
+  [`get_report_units()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/nowcast_data_getters.md)
+  [`get_event_units()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/nowcast_data_getters.md)
+  [`get_data_type()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/nowcast_data_getters.md)
+  [`get_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/nowcast_data_getters.md)
+  [`get_temporal_effect_cols()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/nowcast_data_getters.md)
+  [`get_is_censored_report()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/nowcast_data_getters.md)
+  [`get_case_count()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/nowcast_data_getters.md)
+  [`get_revision_date()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/nowcast_data_getters.md)
+  [`get_revision_type()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/nowcast_data_getters.md)
+  [`get_revision_units()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/nowcast_data_getters.md)
+  [`get_is_censored_revision()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/nowcast_data_getters.md)
+  [`get_revision_levels()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/nowcast_data_getters.md)
+  [`has_revision()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/nowcast_data_getters.md)
+  **\[stable\]** :
+
+  Read what a `tbl_now` was told about itself
+
+- [`get_latest_reported_cases()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/get_latest_first.md)
+  [`get_initial_reported_cases()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/get_latest_first.md)
+  [`get_nth_reported_cases()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/get_latest_first.md)
+  **\[stable\]** : Cases at a chosen point in the reporting process
+
+- [`change_now()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/add.md)
+  [`update_now()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/add.md)
+  [`change_event_date()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/add.md)
+  [`change_report_date()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/add.md)
+  [`change_case_count()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/add.md)
+  [`change_is_censored_report()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/add.md)
+  [`remove_is_censored_report()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/add.md)
+  [`add_is_censored_report()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/add.md)
+  [`change_strata()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/add.md)
+  [`remove_strata()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/add.md)
+  [`add_strata()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/add.md)
+  [`remove_all_strata()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/add.md)
+  [`change_covariates()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/add.md)
+  [`remove_covariates()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/add.md)
+  [`add_covariates()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/add.md)
+  [`remove_all_covariates()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/add.md)
+  [`replace_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/add.md)
+  [`remove_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/add.md)
+  [`change_is_censored_revision()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/add.md)
+  [`add_is_censored_revision()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/add.md)
+  [`remove_is_censored_revision()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/add.md)
+  [`add_revision_date()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/add.md)
+  [`change_revision_date()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/add.md)
+  [`remove_revision_date()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/add.md)
+  **\[stable\]** :
+
+  Set, change and remove the attributes of a `tbl_now`
+
+- [`update(`*`<tbl_now>`*`)`](https://rodrigozepeda.github.io/tbl.now/dev/reference/update.tbl_now.md)
+  **\[experimental\]** :
+
+  Append newly arrived data to a `tbl_now`
+
+## Reshaping
+
+Put the data on the grid a model needs.
+
+- [`aggregate_time_units()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/aggregate_time_units.md)
+  **\[stable\]** :
+
+  Coarsen a `tbl_now` onto a bigger time unit
+
+- [`align_weeks()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/align_weeks.md)
+  [`week_2_date()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/align_weeks.md)
+  **\[stable\]** : Put weekly data on a common weekday
+
+- [`complete_zeroes()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/complete_zeroes.md)
+  **\[stable\]** : Fill in the days when nothing was reported
+
+- [`censor_reporting_delays_above()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/censoring.md)
+  [`censor_reports()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/censoring.md)
+  [`censor_reporting_delays()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/censoring.md)
+  [`censor_revisions()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/censoring.md)
+  [`censor_revision_delays()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/censoring.md)
+  [`censor_revision_delays_above()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/censoring.md)
+  **\[stable\]** : Record a report or a delay as a bound rather than a
+  fact
+
+- [`is_weekday()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/is_weekday.md)
+  **\[stable\]** : Is a date a weekday or a weekend?
+
+## Temporal effects
+
+Calendar structure, recorded lazily and materialised on demand.
+
+- [`temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/temporal_effects.md)
+  **\[stable\]** : Calendar effects to include in a nowcast
+
+- [`add_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/add_temporal_effects.md)
+  [`compute_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/add_temporal_effects.md)
+  **\[stable\]** :
+
+  Attach calendar effects to a `tbl_now`, and turn them into columns
+
+## The revision process
+
+The optional third date, and the outcomes it carries.
+
+- [`get_latest_revised_cases()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/revised_cases.md)
+  [`get_initial_revised_cases()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/revised_cases.md)
+  [`get_nth_revised_cases()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/revised_cases.md)
+  **\[stable\]** : Cases at a chosen point in the revision process
+- [`diagnose_revision_delay()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/revision_delay.md)
+  **\[stable\]** : Compare revision delays between confirmed and
+  retracted cases
+
+## Summarising
+
+What is in the data. [`summary()`](https://rdrr.io/r/base/summary.html)
+returns a tibble, and every block of it is also a function of its own.
+
+- [`summary(`*`<tbl_now>`*`)`](https://rodrigozepeda.github.io/tbl.now/dev/reference/tbl_now_summary.md)
+  **\[experimental\]** :
+
+  Summarise a `tbl_now`
+
+- [`cases_per_date()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/nowcast_summary_components.md)
+  [`delay_summary()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/nowcast_summary_components.md)
+  [`zero_run_summary()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/nowcast_summary_components.md)
+  [`prop_censored()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/nowcast_summary_components.md)
+  [`prop_revision_type()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/nowcast_summary_components.md)
+  [`prop_strata()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/nowcast_summary_components.md)
+  [`prop_covariate_levels()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/nowcast_summary_components.md)
+  [`date_ranges()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/nowcast_summary_components.md)
+  [`triangle_occupancy()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/nowcast_summary_components.md)
+  [`cumulative_growth()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/nowcast_summary_components.md)
+  **\[stable\]** :
+
+  Individual blocks of a `tbl_now` summary
+
+- [`print(`*`<tbl_now_summary_table>`*`)`](https://rodrigozepeda.github.io/tbl.now/dev/reference/print.tbl_now_summary_table.md)
+  **\[stable\]** :
+
+  Print a `tbl_now` summary
+
+## Diagnosing
+
+What is wrong with the data.
+[`diagnose()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/diagnose.md)
+is structural and deterministic; the statistical tests are listed after
+it.
+
+- [`diagnose()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/diagnose.md)
+  **\[experimental\]** :
+
+  Diagnose a `tbl_now`
+
+- [`diagnose_declarations()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/nowcast_diagnose_components.md)
+  [`diagnose_ordering()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/nowcast_diagnose_components.md)
+  [`diagnose_missing()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/nowcast_diagnose_components.md)
+  [`diagnose_duplicates()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/nowcast_diagnose_components.md)
+  [`diagnose_units()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/nowcast_diagnose_components.md)
+  [`diagnose_negatives()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/nowcast_diagnose_components.md)
+  [`diagnose_now()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/nowcast_diagnose_components.md)
+  [`diagnose_truncation()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/nowcast_diagnose_components.md)
+  [`diagnose_strata()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/nowcast_diagnose_components.md)
+  **\[stable\]** :
+
+  Individual blocks of a `tbl_now` diagnosis
+
+- [`print(`*`<tbl_now_diagnosis>`*`)`](https://rodrigozepeda.github.io/tbl.now/dev/reference/print.tbl_now_diagnosis.md)
+  **\[stable\]** :
+
+  Print a `tbl_now` diagnosis
+
+- [`diagnose_drift()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/diagnose_drift.md)
+  **\[stable\]** : Test whether the reporting-delay distribution drifts
+  over time
+
+- [`diagnose_changepoint()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/diagnose_changepoint.md)
+  **\[stable\]** : Detect an abrupt change point in the reporting-delay
+  distribution
+
+- [`diagnose_batches()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/diagnose_batches.md)
+  **\[experimental\]** : Screen the report axis for batched reporting
+
+- [`diagnose_batches2()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/diagnose_batches2.md)
+  **\[experimental\]** : Test whether one report date drew from
+  unusually old event dates
+
+- [`transport_discriminant()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/transport_discriminant.md)
+  **\[experimental\]** : The transport discriminant of a reporting
+  series
+
+- [`simulate_batch()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/simulate_batch.md)
+  **\[experimental\]** :
+
+  Inject a batch into a `tbl_now` by withholding and then releasing
+  reports
+
+## Plots
+
+One grid, or any panel of it on its own.
+
+- [`tbl_now_palette()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/tbl_now_palette.md)
+  :
+
+  The `tbl.now` colour palette
+
+- [`autoplot(`*`<tbl_now>`*`)`](https://rodrigozepeda.github.io/tbl.now/dev/reference/autoplot.tbl_now.md)
+  **\[experimental\]** :
+
+  Diagnostic `autoplot` for a `tbl_now`
+
+- [`diagnostic_plot()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/diagnostic_plot.md)
+  **\[stable\]** : Diagnostic plots of the reporting process
+
+- [`plot_day_of_week_effects()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/calendar_effect_plots.md)
+  [`plot_week_of_year_effects()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/calendar_effect_plots.md)
+  [`plot_month_of_year_effects()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/calendar_effect_plots.md)
+  [`plot_holiday_effects()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/calendar_effect_plots.md)
+  [`plot_weekend_effects()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/calendar_effect_plots.md)
+  [`plot_holiday_lag_effects()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/calendar_effect_plots.md)
+  **\[stable\]** : Calendar effects on the case counts or on the
+  reporting delay
+
+- [`plot_revision_status()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/plot_revision_status.md)
+  **\[stable\]** : How much of each day has been resolved
+
+- [`plot_cycles()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/plot_cycles.md)
+  **\[stable\]** : Periodogram of the case counts or of the reporting
+  delay
+
+- [`plot_delay_distribution()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/plot_delay_distribution.md)
+  **\[stable\]** : Empirical distribution of the reporting or revision
+  delay
+
+- [`plot_delay_drift()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/plot_delay_drift.md)
+  **\[stable\]** : Visualise whether the reporting-delay distribution
+  drifts over time
+
+- [`plot_delay_profiles()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/plot_delay_profiles.md)
+  **\[stable\]** : Plot the per-date delay profiles
+
+- [`plot_reporting_process()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/plot_epidemic_process.md)
+  [`plot_epidemic_process()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/plot_epidemic_process.md)
+  **\[stable\]** : The epidemic process and the reporting process
+
+- [`plot_observed_cases()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/plot_observed_cases.md)
+  **\[stable\]** : Observed epidemic process with the incompleteness
+  line
+
+- [`plot_reporting_hexamap()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/plot_reporting_hexamap.md)
+  **\[stable\]** : Plot the reporting triangle as an age-period-cohort
+  hexamap
+
+- [`plot_reporting_triangle()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/plot_reporting_triangle.md)
+  **\[stable\]** : Plot the reporting triangle
+
+- [`plot_transport_discriminant()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/plot_transport_discriminant.md)
+  **\[stable\]** : Plot the transport-discriminant plane
+
+## Fitting nowcasts
+
+One interface over the modelling packages.
+
+- [`run_nowcast()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/run_nowcast.md)
+  **\[stable\]** :
+
+  Nowcast a `tbl_now` with any supported modelling package
+
+- [`engine()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/engine.md)
+  **\[stable\]** : Specify a nowcasting model and its arguments
+
+- [`engine_diseasenowcasting()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/nowcast_engines.md)
+  [`engine_baselinenowcast()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/nowcast_engines.md)
+  [`engine_epinowcast()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/nowcast_engines.md)
+  [`engine_nobbs()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/nowcast_engines.md)
+  [`engine_surveillance()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/nowcast_engines.md)
+  [`engine_epinow2()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/nowcast_engines.md)
+  **\[stable\]** : Engines for the built-in nowcasting packages
+
+- [`example_engine()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/example_engine.md)
+  [`nowcast_fit(`*`<example>`*`)`](https://rodrigozepeda.github.io/tbl.now/dev/reference/example_engine.md)
+  [`nowcast_tidy(`*`<example>`*`)`](https://rodrigozepeda.github.io/tbl.now/dev/reference/example_engine.md)
+  **\[stable\]** : A toy engine for examples
+
+- [`is_nowcast_engine()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/is_nowcast_engine.md)
+  **\[stable\]** : Is this an engine?
+
+- [`list_nowcast_methods()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/list_nowcast_methods.md)
+  **\[stable\]** : List the available nowcasting methods
+
+- [`nowcast_fit()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/nowcast_fit.md)
+  **\[stable\]** : Fit a nowcast with one modelling package
+
+- [`nowcast_tidy()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/nowcast_tidy.md)
+  **\[stable\]** : Standardise a fitted nowcast
+
+- [`tbl_nowcast()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/tbl_nowcast.md)
+  **\[stable\]** :
+
+  A nowcast produced by
+  [`run_nowcast()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/run_nowcast.md)
+
+- [`is_tbl_nowcast()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/is_tbl_nowcast.md)
+  **\[stable\]** :
+
+  Is this object a `tbl_nowcast`?
+
+- [`nowcast_quantile_levels()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/nowcast_quantile_levels.md)
+  **\[stable\]** : Default quantile levels for a nowcast
+
+- [`autoplot(`*`<tbl_nowcast>`*`)`](https://rodrigozepeda.github.io/tbl.now/dev/reference/autoplot.tbl_nowcast.md)
+  **\[experimental\]** : Plot a nowcast
+
+- [`as_tibble(`*`<tbl_nowcast>`*`)`](https://rodrigozepeda.github.io/tbl.now/dev/reference/as_tibble.tbl_nowcast.md)
+  **\[stable\]** :
+
+  Coerce a `tbl_nowcast` into a `tibble`
+
+## Ensembles, backtests and scoring
+
+- [`nowcast_ensemble()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/nowcast_ensemble.md)
+  **\[stable\]** : Combine several nowcasts into an ensemble
+
+- [`nowcast_weights()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/nowcast_weights.md)
+  **\[stable\]** : Ensemble weights from a backtest
+
+- [`nowcast_backtest()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/nowcast_backtest.md)
+  **\[stable\]** :
+
+  Refit several methods at past `now` dates and score them
+
+- [`score_nowcast()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/score_nowcast.md)
+  [`as_forecast_quantile(`*`<nowcast_backtest>`*`)`](https://rodrigozepeda.github.io/tbl.now/dev/reference/score_nowcast.md)
+  [`as_forecast_point(`*`<nowcast_backtest>`*`)`](https://rodrigozepeda.github.io/tbl.now/dev/reference/score_nowcast.md)
+  [`as_forecast_sample(`*`<nowcast_backtest>`*`)`](https://rodrigozepeda.github.io/tbl.now/dev/reference/score_nowcast.md)
+  **\[stable\]** : Score a nowcast against observed data
+
+## Converters
+
+Out to the modelling packages, and back again.
+
+- [`tbl_now_to_EpiNow2()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/tbl_now_EpiNow2.md)
+  [`tbl_now_from_EpiNow2()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/tbl_now_EpiNow2.md)
+  **\[experimental\]** :
+
+  Convert between `tbl_now` and EpiNow2
+
+- [`tbl_now_from_baselinenowcast()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/tbl_now_baselinenowcast.md)
+  [`tbl_now_to_baselinenowcast()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/tbl_now_baselinenowcast.md)
+  **\[stable\]** :
+
+  Convert between `tbl_now` and baselinenowcast
+
+- [`tbl_now_from_data_table()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/tbl_now_data_table.md)
+  [`tbl_now_to_data_table()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/tbl_now_data_table.md)
+  **\[stable\]** :
+
+  Convert between `tbl_now` and data.table
+
+- [`tbl_now_from_epidist()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/tbl_now_epidist.md)
+  [`tbl_now_to_epidist()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/tbl_now_epidist.md)
+  **\[experimental\]** :
+
+  Convert between `tbl_now` and epidist
+
+- [`tbl_now_from_epinowcast()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/tbl_now_epinowcast.md)
+  [`tbl_now_to_epinowcast()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/tbl_now_epinowcast.md)
+  **\[stable\]** :
+
+  Convert between `tbl_now` and epinowcast
+
+- [`tbl_now_to_nobbs()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/tbl_now_nobbs.md)
+  **\[stable\]** :
+
+  Convert a `tbl_now` into the line list NobBS nowcasts from
+
+- [`tbl_now_to_surveillance()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/tbl_now_surveillance.md)
+  **\[stable\]** :
+
+  Convert a `tbl_now` into the line list surveillance nowcasts from
+
+- [`tbl_now_from_tsibble()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/tbl_now_tsibble.md)
+  [`tbl_now_to_tsibble()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/tbl_now_tsibble.md)
+  **\[stable\]** :
+
+  Convert between `tbl_now` and tsibble
+
+- [`as_epidist_linelist_data(`*`<tbl_now>`*`)`](https://rodrigozepeda.github.io/tbl.now/dev/reference/tbl_now_coercion_methods.md)
+  [`as_epidist_aggregate_data(`*`<tbl_now>`*`)`](https://rodrigozepeda.github.io/tbl.now/dev/reference/tbl_now_coercion_methods.md)
+  [`as_reporting_triangle(`*`<tbl_now>`*`)`](https://rodrigozepeda.github.io/tbl.now/dev/reference/tbl_now_coercion_methods.md)
+  [`as_tsibble(`*`<tbl_now>`*`)`](https://rodrigozepeda.github.io/tbl.now/dev/reference/tbl_now_coercion_methods.md)
+  [`as.data.table(`*`<tbl_now>`*`)`](https://rodrigozepeda.github.io/tbl.now/dev/reference/tbl_now_coercion_methods.md)
+  **\[stable\]** :
+
+  Coerce a `tbl_now` with another package's generic
+
+- [`print(`*`<tbl_now_epinow2_snapshots>`*`)`](https://rodrigozepeda.github.io/tbl.now/dev/reference/tbl_now_epinow2_snapshots.md)
+  **\[stable\]** :
+
+  Snapshots of one series, as EpiNow2 estimates truncation from
+
+- [`print(`*`<tbl_now_triangle_list>`*`)`](https://rodrigozepeda.github.io/tbl.now/dev/reference/tbl_now_triangle_list.md)
+  **\[stable\]** : One reporting triangle per stratum
+
+- [`print(`*`<tbl_now_surveillance_list>`*`)`](https://rodrigozepeda.github.io/tbl.now/dev/reference/tbl_now_surveillance_list.md)
+  **\[stable\]** :
+
+  One surveillance line list per stratum
+
+- [`get_surveillance_when()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/surveillance_grids.md)
+  [`get_surveillance_range()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/surveillance_grids.md)
+  **\[stable\]** :
+
+  The date grids
+  [`surveillance::nowcast()`](https://rdrr.io/pkg/surveillance/man/nowcast.html)
+  needs
+
+## Tidying model output
+
+Every engine’s result, in one shape.
+
+- [`tidy()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/tidy.nowcast.md)
+  **\[stable\]** : Tidy a fitted nowcast into one standard table
+
+- [`tidy(`*`<tbl_nowcast>`*`)`](https://rodrigozepeda.github.io/tbl.now/dev/reference/tidy.tbl_nowcast.md)
+  **\[stable\]** :
+
+  Tidy a nowcast produced by
+  [`run_nowcast()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/run_nowcast.md)
+  or
+  [`nowcast_ensemble()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/nowcast_ensemble.md)
+
+- [`tidy(`*`<nowcast_backtest>`*`)`](https://rodrigozepeda.github.io/tbl.now/dev/reference/tidy.nowcast_backtest.md)
+  **\[stable\]** :
+
+  Tidy the predictions and scores of a
+  [`nowcast_backtest()`](https://rodrigozepeda.github.io/tbl.now/dev/reference/nowcast_backtest.md)
+
+- [`tidy(`*`<estimate_dist>`*`)`](https://rodrigozepeda.github.io/tbl.now/dev/reference/tidy.delay_distribution.md)
+  [`tidy(`*`<epidist_fit>`*`)`](https://rodrigozepeda.github.io/tbl.now/dev/reference/tidy.delay_distribution.md)
+  **\[stable\]** : Tidy a fitted delay distribution
+
+## dplyr integration
+
+The methods that keep the class alive inside a pipeline.
+
+- [`as_tibble(`*`<tbl_now>`*`)`](https://rodrigozepeda.github.io/tbl.now/dev/reference/as_tibble.tbl_now.md)
+  [`as_tibble(`*`<grouped_tbl_now>`*`)`](https://rodrigozepeda.github.io/tbl.now/dev/reference/as_tibble.tbl_now.md)
+  [`as.data.frame(`*`<tbl_now>`*`)`](https://rodrigozepeda.github.io/tbl.now/dev/reference/as_tibble.tbl_now.md)
+  [`as.data.frame(`*`<grouped_tbl_now>`*`)`](https://rodrigozepeda.github.io/tbl.now/dev/reference/as_tibble.tbl_now.md)
+  **\[stable\]** :
+
+  Coerce a `tbl_now` to a tibble or a data frame
+
+- [`` `[`( ``*`<tbl_now>`*`)`](https://rodrigozepeda.github.io/tbl.now/dev/reference/assign_tbl.md)
+  [`` `[`( ``*`<grouped_tbl_now>`*`)`](https://rodrigozepeda.github.io/tbl.now/dev/reference/assign_tbl.md)
+  [`` `names<-`( ``*`<tbl_now>`*`)`](https://rodrigozepeda.github.io/tbl.now/dev/reference/assign_tbl.md)
+  [`` `names<-`( ``*`<grouped_tbl_now>`*`)`](https://rodrigozepeda.github.io/tbl.now/dev/reference/assign_tbl.md)
+  [`` `$<-`( ``*`<tbl_now>`*`)`](https://rodrigozepeda.github.io/tbl.now/dev/reference/assign_tbl.md)
+  [`` `$<-`( ``*`<grouped_tbl_now>`*`)`](https://rodrigozepeda.github.io/tbl.now/dev/reference/assign_tbl.md)
+  **\[stable\]** :
+
+  Base R operations on a `tbl_now`
+
+## Datasets
+
+- [`covid_colombia`](https://rodrigozepeda.github.io/tbl.now/dev/reference/covid_colombia.md)
+  : COVID-19 Notifications – Colombia 2020-2023
+- [`covid_us`](https://rodrigozepeda.github.io/tbl.now/dev/reference/covid_us.md)
+  : covid_us: CDC COVID-19 Case Surveillance Public Use Data (2020)
+- [`denguedat`](https://rodrigozepeda.github.io/tbl.now/dev/reference/denguedat.md)
+  : denguedat: Dengue fever individual-level reporting data from Puerto
+  Rico
+- [`flusight`](https://rodrigozepeda.github.io/tbl.now/dev/reference/flusight.md)
+  : flusight: NHSN Weekly Hospital Respiratory Data from FluSight
+- [`hai_bucaramanga`](https://rodrigozepeda.github.io/tbl.now/dev/reference/hai_bucaramanga.md)
+  : Healthcare-Associated Infections – Bucaramanga, Colombia 2020-2023
+- [`mpoxdat`](https://rodrigozepeda.github.io/tbl.now/dev/reference/mpoxdat.md)
+  : mpoxdat: Mpox reporting data from the 2022 New York City outbreak
+- [`sari_bh`](https://rodrigozepeda.github.io/tbl.now/dev/reference/sari_bh.md)
+  : sari_bh: Severe Acute Respiratory Illness data from Belo Horizonte
+  (Brazil), 2020-2022
