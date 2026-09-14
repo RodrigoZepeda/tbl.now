@@ -1,5 +1,14 @@
 url: https://rodrigozepeda.github.io/tbl.now/
 
+# `mode: auto` reads DESCRIPTION's Version: a 4-component version (e.g.
+# 1.0.0.9000, what `devel` carries) builds into a `dev/` subpath with an
+# "in-development" banner and a version switcher; a 3-component release
+# version (what `main` carries) builds at the site root as usual. Both
+# branches deploy into the same `docs/` folder (see pkgdown.yaml's `clean:
+# false`), so the two versions coexist on one gh-pages site.
+development:
+  mode: auto
+
 # The deploy in `.github/workflows/pkgdown.yaml` uses `clean: false`, so a page
 # removed from `docs/` is NOT removed from the live site -- it just stops being
 # updated. A renamed article therefore leaves its old URL serving pre-rename
