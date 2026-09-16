@@ -75,6 +75,13 @@
 #' For example precipitation might influence a dengue nowcast but in general it
 #' is not of interest to generate nowcasts by precipitation levels.
 #'
+#' @param event_covariates,report_covariates,revision_covariates (optional)
+#' [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
+#' or `NULL` (default). Subsets of `covariates` tagged for the event,
+#' report or revision component of a model. A column may be tagged in
+#' more than one component, e.g. a location effect can be both an event and a
+#' report covariate.
+#'
 #' @param now (optional) Date or `NULL` (default). The date that is considered the `now` of the
 #' nowcast. If no `now` is given then the function automatically uses the last
 #' `event_date`.
@@ -171,6 +178,9 @@
 #'   \item{report_date}{Name of the column refering to when the event of interest was reported.}
 #'   \item{strata}{Names of the columns corresponding to the strata (for modelling).}
 #'   \item{covariates}{Names of the columns corresponding to covariates (for modelling).}
+#'   \item{event_covariates}{Covariates tagged for the event/incidence model.}
+#'   \item{report_covariates}{Covariates tagged for the report model.}
+#'   \item{revision_covariates}{Covariates tagged for the revision model.}
 #'   \item{case_count}{Column containing the number of observations for that moment if `data_type` is `count-incidence` or `count-cumulative`.}
 #'   \item{temporal_effects}{Names of the columns refering to the temporal effects.}
 #'   \item{now}{Date of the `now` for a nowcast.}
@@ -309,6 +319,9 @@ tbl_now <- function(data,
                     delay = NULL,
                     strata = NULL,
                     covariates = NULL,
+                    event_covariates = NULL,
+                    report_covariates = NULL,
+                    revision_covariates = NULL,
                     case_count = NULL,
                     is_censored_report = NULL,
                     revision_date = NULL,
@@ -350,6 +363,9 @@ tbl_now <- function(data,
   delay_quo <- rlang::enquo(delay)
   strata_quo <- rlang::enquo(strata)
   covariates_quo <- rlang::enquo(covariates)
+  event_covariates_quo <- rlang::enquo(event_covariates)
+  report_covariates_quo <- rlang::enquo(report_covariates)
+  revision_covariates_quo <- rlang::enquo(revision_covariates)
   case_count_quo <- rlang::enquo(case_count)
   is_censored_report_quo <- rlang::enquo(is_censored_report)
   revision_date_quo <- rlang::enquo(revision_date)
@@ -502,6 +518,30 @@ tbl_now <- function(data,
   covariates <- colnames(data)[covariates_select]
   if (length(covariates) == 0) covariates <- NULL
 
+  event_covariates <- colnames(data)[.tbl_now_eval_select(event_covariates_quo, data)]
+  report_covariates <- colnames(data)[.tbl_now_eval_select(report_covariates_quo, data)]
+  revision_covariates <- colnames(data)[.tbl_now_eval_select(revision_covariates_quo, data)]
+  if (length(event_covariates) == 0) event_covariates <- NULL
+  if (length(report_covariates) == 0) report_covariates <- NULL
+  if (length(revision_covariates) == 0) revision_covariates <- NULL
+  covariates <- unique(c(
+    covariates,
+    event_covariates,
+    report_covariates,
+    revision_covariates
+  ))
+  if (length(covariates) == 0) covariates <- NULL
+  assigned_covariates <- unique(c(
+    event_covariates,
+    report_covariates,
+    revision_covariates
+  ))
+  event_covariates <- unique(c(
+    event_covariates,
+    setdiff(covariates %||% character(0), assigned_covariates)
+  ))
+  if (length(event_covariates) == 0) event_covariates <- NULL
+
 
   if (length(case_count) > 1) {
     cli::cli_abort(
@@ -597,6 +637,9 @@ tbl_now <- function(data,
   attr(data, "case_count") <- case_count
   attr(data, "strata") <- strata
   attr(data, "covariates") <- covariates
+  attr(data, "event_covariates") <- event_covariates
+  attr(data, "report_covariates") <- report_covariates
+  attr(data, "revision_covariates") <- revision_covariates
   attr(data, "now") <- now
   attr(data, "event_units") <- event_units
   attr(data, "report_units") <- report_units

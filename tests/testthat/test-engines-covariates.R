@@ -31,7 +31,7 @@ COVARIATE_SPEC <- list(
     }
   ),
   list(
-    id = "epinowcast", package = "epinowcast", carries = FALSE,
+    id = "epinowcast", package = "epinowcast", carries = TRUE,
     convert = function(x) tbl_now_to_epinowcast(x, verbose = FALSE, quiet = TRUE)
   ),
   list(

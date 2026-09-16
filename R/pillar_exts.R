@@ -94,6 +94,15 @@ tbl_format_footer.tbl_now <- function(x, ...) {
     }
     if (get_num_covariates(x) > 0) {
       cli::cli_text("Covariates: {.val {get_covariates(x)}}")
+      if (length(get_event_covariates(x)) > 0) {
+        cli::cli_text("Event covariates: {.val {get_event_covariates(x)}}")
+      }
+      if (length(get_report_covariates(x)) > 0) {
+        cli::cli_text("Report covariates: {.val {get_report_covariates(x)}}")
+      }
+      if (length(get_revision_covariates(x)) > 0) {
+        cli::cli_text("Revision covariates: {.val {get_revision_covariates(x)}}")
+      }
     }
 
     # Show temporal-effects spec and (if computed) the column names
@@ -128,6 +137,15 @@ ctl_new_pillar.tbl_now <- function(controller, x, width, ...) {
       annotation <- "[report_date]"
     } else if (!is.null(get_strata(controller)) && (cval %in% get_strata(controller))) {
       annotation <- "[strata]"
+    } else if (cval %in% (get_event_covariates(controller) %||% character(0)) &&
+      cval %in% (get_report_covariates(controller) %||% character(0))) {
+      annotation <- "[event+report cov]"
+    } else if (cval %in% (get_event_covariates(controller) %||% character(0))) {
+      annotation <- "[event cov]"
+    } else if (cval %in% (get_report_covariates(controller) %||% character(0))) {
+      annotation <- "[report cov]"
+    } else if (cval %in% (get_revision_covariates(controller) %||% character(0))) {
+      annotation <- "[revision cov]"
     } else if (!is.null(get_covariates(controller)) && (cval %in% get_covariates(controller))) {
       annotation <- "[covariate]"
     } else if (identical(cval, get_revision_date(controller))) {

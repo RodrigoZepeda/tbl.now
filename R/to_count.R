@@ -119,6 +119,11 @@ to_count.tbl_now <- function(x, to = NULL, ...) {
   case_count <- get_case_count(x)
   if (is.null(case_count)) case_count <- "n"
   if (is.null(to)) to <- get_data_type(x)
+  original_role_covariates <- lapply(
+    .covariate_role_attributes(),
+    function(role) attr(x, role, exact = TRUE)
+  )
+  names(original_role_covariates) <- .covariate_role_attributes()
 
   # Create the grouping vector
   gp_vec <- c(
@@ -200,6 +205,11 @@ to_count.tbl_now <- function(x, to = NULL, ...) {
 
   x <- x |>
     dplyr::arrange(dplyr::across(dplyr::all_of(c(get_event_date(x), get_strata(x), get_is_censored_report(x), .revision_group_cols(x), get_covariates(x), get_temporal_effect_cols(x)))))
+
+  for (role in names(original_role_covariates)) {
+    kept <- intersect(original_role_covariates[[role]], get_covariates(x) %||% character(0))
+    attr(x, role) <- if (length(kept) == 0L) NULL else kept
+  }
 
   # Return the count
   return(x)

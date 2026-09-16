@@ -2556,6 +2556,68 @@ tbl_now_from_tsibble <- function(data, report_date, event_date = NULL,
   )
 }
 
+#' Attach role-tagged covariates to epinowcast's completed grid
+#'
+#' User covariates tagged for event or report components should be available to
+#' module formulas. They are joined onto the completed reference/report grid so
+#' completion rows added by epinowcast inherit covariates that are constant on
+#' their reference date and grouping columns.
+#'
+#' @param completed Data table from `enw_complete_dates()`.
+#' @param x The source `tbl_now`, already converted to cumulative counts.
+#' @param grouping Grouping columns passed to epinowcast.
+#'
+#' @return A list with `data` and `cols`.
+#'
+#' @keywords internal
+#' @noRd
+.epinowcast_role_covariates <- function(completed, x, grouping) {
+  cols <- unique(c(
+    get_event_covariates(x) %||% character(0),
+    get_report_covariates(x) %||% character(0)
+  ))
+  cols <- intersect(cols, colnames(x))
+  if (length(cols) == 0L) {
+    return(list(data = completed, cols = character(0)))
+  }
+
+  event_col <- get_event_date(x)
+  report_col <- get_report_date(x)
+  source <- x |>
+    dplyr::as_tibble() |>
+    dplyr::transmute(
+      reference_date = .data[[event_col]],
+      report_date = .data[[report_col]],
+      dplyr::across(dplyr::all_of(c(grouping, cols)))
+    )
+
+  # Prefer reference-level metadata, which is what epinowcast's reference
+  # (delay) module can use directly. If a covariate is genuinely cell-specific,
+  # fall back to the observed cell values; completion-created cells remain NA
+  # and epinowcast will make the resulting modelling problem explicit.
+  ref_keys <- c("reference_date", grouping)
+  ref_meta <- source |>
+    dplyr::select(dplyr::all_of(c(ref_keys, cols))) |>
+    dplyr::distinct()
+  ref_counts <- ref_meta |>
+    dplyr::count(dplyr::across(dplyr::all_of(ref_keys)), name = ".n")
+  reference_level <- ref_counts$.n <= 1L
+
+  out <- dplyr::as_tibble(completed)
+  out$reference_date <- as.Date(out$reference_date)
+  out$report_date <- as.Date(out$report_date)
+  if (all(reference_level)) {
+    out <- dplyr::left_join(out, ref_meta, by = ref_keys)
+  } else {
+    cell_keys <- c("reference_date", "report_date", grouping)
+    cell_meta <- source |>
+      dplyr::distinct(dplyr::across(dplyr::all_of(c(cell_keys, cols))))
+    out <- dplyr::left_join(out, cell_meta, by = cell_keys)
+  }
+
+  list(data = data.table::as.data.table(out), cols = cols)
+}
+
 #' @rdname tbl_now_epinowcast
 #' @export
 tbl_now_to_epinowcast <- function(x, ..., max_delay = NULL,
@@ -2569,14 +2631,20 @@ tbl_now_to_epinowcast <- function(x, ..., max_delay = NULL,
   # Materialised temporal-effect columns ARE carried through (see
   # `.epinowcast_temporal_effects()` below), so exclude them from the "dropped"
   # set to stop the warning firing on columns that are in fact threaded.
+  role_covariates <- unique(c(
+    get_event_covariates(x) %||% character(0),
+    get_report_covariates(x) %||% character(0)
+  ))
   .warn_dropped_covariates(
     x, "tbl_now_to_epinowcast",
-    kept = get_temporal_effect_cols(x) %||% character(0),
+    kept = unique(c(get_temporal_effect_cols(x) %||% character(0), role_covariates)),
     advice = "{.pkg epinowcast} does not carry arbitrary user covariates onto
               its preprocessed object. Either declare the effect through
               {.fn add_temporal_effects} (its columns start with {.val .event_}
               / {.val .report_} and are carried onto {.field metareference} /
-              {.field metareport}), or use {.pkg epinowcast}'s own metadata
+              {.field metareport}), tag covariates with
+              {.fn add_event_covariates} / {.fn add_report_covariates}, or use
+              {.pkg epinowcast}'s own metadata
               ({.val day_of_week}, {.val day}, {.val week}, {.val month}) added
               by {.fn enw_add_metaobs_features}."
   )
@@ -2657,6 +2725,9 @@ tbl_now_to_epinowcast <- function(x, ..., max_delay = NULL,
     observations, by = grouping, max_delay = completion_max_delay,
     missing_reference = missing_reference, timestep = timestep
   )
+  with_roles <- .epinowcast_role_covariates(completed, x, grouping %||% character(0))
+  completed <- with_roles$data
+  role_cols <- with_roles$cols
   with_effects  <- .epinowcast_temporal_effects(completed, x)
   completed     <- with_effects$data
   temporal_cols <- with_effects$cols
@@ -2693,6 +2764,9 @@ tbl_now_to_epinowcast <- function(x, ..., max_delay = NULL,
     cli::cli_li("by: {.val {if (is.null(grouping)) 'none' else grouping}}")
     if (length(temporal_cols) > 0) {
       cli::cli_li("temporal effects: {.val {temporal_cols}}")
+    }
+    if (length(role_cols) > 0) {
+      cli::cli_li("role covariates: {.val {role_cols}}")
     }
     cli::cli_li("timestep: {.val {timestep}}")
     cli::cli_li("max_delay: {.val {max_delay}} {.emph {timestep}{?s}}")

@@ -904,6 +904,9 @@ diagnose_strata <- function(x, by_strata = NULL, strata = NULL) {
   report_date <- get_report_date(x)
   strata <- get_strata(x)
   covariates <- get_covariates(x)
+  event_covariates <- get_event_covariates(x)
+  report_covariates <- get_report_covariates(x)
+  revision_covariates <- get_revision_covariates(x)
   now <- get_now(x)
   report_units <- get_report_units(x)
   event_units <- get_event_units(x)
@@ -942,6 +945,17 @@ diagnose_strata <- function(x, by_strata = NULL, strata = NULL) {
     error("covariates", .diagnose_text(
       "Attribute {.val covariates} must be {.val NULL} or a character vector"
     ))
+  }
+  for (pair in list(
+    list("event_covariates", event_covariates),
+    list("report_covariates", report_covariates),
+    list("revision_covariates", revision_covariates)
+  )) {
+    if (!is.null(pair[[2]]) && !is.character(pair[[2]])) {
+      error(pair[[1]], .diagnose_text(
+        "Attribute {.val {pair[[1]]}} must be {.val NULL} or a character vector"
+      ))
+    }
   }
   if ((!lubridate::is.Date(now) && !is.integer(now)) || length(now) != 1) {
     error("now", .diagnose_text(
@@ -1028,6 +1042,19 @@ diagnose_strata <- function(x, by_strata = NULL, strata = NULL) {
     if (is.character(column) && !column %in% colnames(x)) {
       error(column, .diagnose_text(
         "Covariate column {.val {column}} not found in data"
+      ))
+    }
+  }
+  for (pair in list(
+    list("event_covariates", event_covariates),
+    list("report_covariates", report_covariates),
+    list("revision_covariates", revision_covariates)
+  )) {
+    missing_covariates <- setdiff(pair[[2]], covariates)
+    if (length(missing_covariates) > 0) {
+      error(pair[[1]], .diagnose_text(
+        "{.val {pair[[1]]}} must be tagged columns from {.val covariates};
+         missing from covariates: {.val {missing_covariates}}"
       ))
     }
   }
@@ -1704,7 +1731,7 @@ diagnose_strata <- function(x, by_strata = NULL, strata = NULL) {
     which(!is.na(delay) & abs(delay - round(delay)) > sqrt(.Machine$double.eps))
   }
   .diagnose_count_row(
-    "units", "delay", length(fractional), nrow(x), "warning",
+    "units", "report", length(fractional), nrow(x), "warning",
     .diagnose_text(
       "{length(fractional)} row{?s} {?has/have} a fractional {.code .delay}."
     ),

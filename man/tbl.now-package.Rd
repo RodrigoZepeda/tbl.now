@@ -8,7 +8,7 @@
 \description{
 \if{html}{\figure{logo.png}{options: style='float: right' alt='logo' width='120'}}
 
-Defines tidy data structures and package-agnostic workflows for epidemiological nowcasting. The 'tbl_now' class records event, report, and revision dates alongside strata, covariates, censoring, and reporting-delay metadata while remaining compatible with 'dplyr'. Tools support validation, manipulation, diagnostics, visualization, format conversion, retrospective evaluation, and multiple modelling engines. The 'tbl_nowcast' class standardizes probabilistic predictions for plotting, scoring, comparison, and ensembling.
+Defines tidy data structures and package-agnostic workflows for epidemiological nowcasting. The 'tbl_now' class records event, report, and revision dates alongside strata, covariates tagged by model component, censoring, and reporting-delay metadata while remaining compatible with 'dplyr'. Tools support validation, manipulation, diagnostics, visualization, format conversion, retrospective evaluation, and multiple modelling engines. The 'tbl_nowcast' class standardizes probabilistic predictions for plotting, scoring, comparison, and ensembling.
 }
 \details{
 Surveillance data arrives late. A case that happened on Monday may not reach

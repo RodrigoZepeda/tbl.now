@@ -1,3 +1,28 @@
+# tbl.now 1.1.0
+
+## Covariates can be tagged by model component
+
+`tbl_now()` now records which declared covariates belong to the event process,
+the report process or the revision process. A covariate can be tagged
+in several places -- for example, `location` can be both an event covariate and
+a report covariate -- without duplicating the column.
+
+Use `event_covariates`, `report_covariates` and `revision_covariates` in
+`tbl_now()`, or edit them later with the new
+`add_*_covariates()`, `change_*_covariates()`,
+`remove_*_covariates()` and `get_*_covariates()` helpers. Printing a
+`tbl_now` now reports the component tags.
+
+Declared covariates with no explicit role default to event covariates, keeping
+the historical meaning of `covariates = ...`.
+
+`engine_epinowcast()` carries event and report covariates through
+`tbl_now_to_epinowcast()` and wires them into default `expectation` and
+`reference` modules when those modules are not supplied explicitly. Explicit
+epinowcast modules are left untouched and warn that the tagged covariates must
+be included by the caller. `engine_diseasenowcasting()` receives the same
+role-tagged `tbl_now` attributes directly.
+
 # tbl.now 1.0.0
 
 ## `example_engine()` no longer emits duplicate prediction rows
@@ -473,7 +498,7 @@ sharing estimates across strata and drops an internal wrapper class.
 
 * **New**: `engine_baselinenowcast(strata_sharing = )` -- passed straight
   through to `baselinenowcast::baselinenowcast()`. `"none"` (default) fits
-  every stratum independently; `"delay"` shares the delay PMF across strata;
+  every stratum independently; `"report"` shares the delay PMF across strata;
   `"uncertainty"` shares the uncertainty parameters; both can be combined.
   Meaningful only when the object has strata.
 * **New default**: `tbl_now_to_baselinenowcast(format = "auto")` -- returns a
@@ -2021,7 +2046,7 @@ the class exists to carry. One row is one statistic of one quantity of one
 stratum:
 
 ```r
-summary(dengue_now) |> dplyr::filter(component == "delay")
+summary(dengue_now) |> dplyr::filter(component == "report")
 ```
 
 It covers the case counts on each of the object's time axes (event, report and,

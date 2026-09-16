@@ -148,6 +148,13 @@
 #'   remove_covariates(humidity) |>
 #'   get_covariates()
 #'
+#' ## Covariates can also be tagged by model component.
+#' ndata <- ndata |>
+#'   add_event_covariates(temperature) |>
+#'   add_report_covariates(humidity)
+#' get_event_covariates(ndata)
+#' get_report_covariates(ndata)
+#'
 #' ## ---- Pointing an attribute at a different column ---------------------
 #'
 #' ## Suppose onset was recorded a day late and you correct it. `change_event_date()`
@@ -666,10 +673,71 @@ change_covariates <- function(x, ..., warn_now = TRUE, warn_non_uniqueness = TRU
 
   # Assign the values
   attr(x, "covariates") <- value
+  x <- .prune_covariate_roles(x)
+  x <- .default_event_covariates(x)
 
   validate_tbl_now(x, warn_now = warn_now, warn_non_uniqueness = warn_non_uniqueness)
 
   return(x)
+}
+
+#' Keep covariate role tags inside the master covariate list
+#'
+#' @param x A `tbl_now`.
+#'
+#' @return `x` with stale role entries removed.
+#'
+#' @keywords internal
+#' @noRd
+.prune_covariate_roles <- function(x) {
+  covariates <- get_covariates(x) %||% character(0)
+  for (role in .covariate_role_attributes()) {
+    role_covariates <- attr(x, role, exact = TRUE)
+    if (!is.null(role_covariates)) {
+      kept <- intersect(role_covariates, covariates)
+      attr(x, role) <- if (length(kept) == 0) NULL else kept
+    }
+  }
+  x
+}
+
+#' Default unassigned covariates to the event role
+#'
+#' A covariate with no component tag is interpreted as an event covariate. This
+#' keeps the historical meaning of `covariates = ...` while allowing report and
+#' revision roles to be declared explicitly.
+#'
+#' @param x A `tbl_now`.
+#'
+#' @return `x` with unassigned covariates added to `event_covariates`.
+#'
+#' @keywords internal
+#' @noRd
+.default_event_covariates <- function(x) {
+  covariates <- get_covariates(x) %||% character(0)
+  assigned <- unique(c(
+    get_event_covariates(x) %||% character(0),
+    get_report_covariates(x) %||% character(0),
+    get_revision_covariates(x) %||% character(0)
+  ))
+  unassigned <- setdiff(covariates, assigned)
+  event_covariates <- unique(c(get_event_covariates(x), unassigned))
+  attr(x, "event_covariates") <- if (length(event_covariates) == 0) {
+    NULL
+  } else {
+    event_covariates
+  }
+  x
+}
+
+#' The component-specific covariate role attributes
+#'
+#' @return Character vector of attribute names.
+#'
+#' @keywords internal
+#' @noRd
+.covariate_role_attributes <- function() {
+  c("event_covariates", "report_covariates", "revision_covariates")
 }
 
 #' @rdname add
@@ -714,6 +782,130 @@ remove_all_covariates <- function(x) {
     )
   }
   change_covariates(x, NULL)
+}
+
+#' @rdname add
+#' @export
+change_event_covariates <- function(x, ..., warn_now = TRUE, warn_non_uniqueness = TRUE) {
+  .change_covariate_role(
+    x, ..., role = "event_covariates",
+    warn_now = warn_now, warn_non_uniqueness = warn_non_uniqueness
+  )
+}
+
+#' @rdname add
+#' @export
+change_report_covariates <- function(x, ..., warn_now = TRUE, warn_non_uniqueness = TRUE) {
+  .change_covariate_role(
+    x, ..., role = "report_covariates",
+    warn_now = warn_now, warn_non_uniqueness = warn_non_uniqueness
+  )
+}
+
+#' @rdname add
+#' @export
+change_revision_covariates <- function(x, ..., warn_now = TRUE, warn_non_uniqueness = TRUE) {
+  .change_covariate_role(
+    x, ..., role = "revision_covariates",
+    warn_now = warn_now, warn_non_uniqueness = warn_non_uniqueness
+  )
+}
+
+#' Change one covariate role attribute
+#'
+#' The selected columns are also registered as ordinary covariates, because role
+#' tags are refinements of `covariates`, not a parallel column list.
+#'
+#' @param x A `tbl_now`.
+#' @param ... Tidy-select columns.
+#' @param role Attribute to change.
+#' @inheritParams validate_tbl_now
+#'
+#' @return A `tbl_now`.
+#'
+#' @keywords internal
+#' @noRd
+.change_covariate_role <- function(x, ..., role, warn_now = TRUE,
+                                   warn_non_uniqueness = TRUE) {
+  if (!inherits(x, "tbl_now")) {
+    cli::cli_abort("{.arg x} must be a {.code tbl_now} object")
+  }
+  value_pos <- tidyselect::eval_select(rlang::expr(c(...)), x)
+  value <- if (length(value_pos) == 0) NULL else colnames(x)[value_pos]
+
+  attr(x, role) <- value
+  all_covariates <- unique(c(get_covariates(x), value))
+  attr(x, "covariates") <- if (length(all_covariates) == 0) NULL else all_covariates
+  x <- .default_event_covariates(x)
+  validate_tbl_now(x, warn_now = warn_now, warn_non_uniqueness = warn_non_uniqueness)
+  x
+}
+
+#' @rdname add
+#' @export
+add_event_covariates <- function(x, ...) {
+  .add_covariate_role(x, ..., role = "event_covariates")
+}
+
+#' @rdname add
+#' @export
+add_report_covariates <- function(x, ...) {
+  .add_covariate_role(x, ..., role = "report_covariates")
+}
+
+#' @rdname add
+#' @export
+add_revision_covariates <- function(x, ...) {
+  .add_covariate_role(x, ..., role = "revision_covariates")
+}
+
+.add_covariate_role <- function(x, ..., role) {
+  value_names <- colnames(x)[tidyselect::eval_select(rlang::expr(c(...)), x)]
+  existing <- attr(x, role, exact = TRUE)
+  .change_covariate_role(x, dplyr::all_of(c(value_names, existing)), role = role)
+}
+
+#' @rdname add
+#' @export
+remove_event_covariates <- function(x, ...) {
+  .remove_covariate_role(x, ..., role = "event_covariates")
+}
+
+#' @rdname add
+#' @export
+remove_report_covariates <- function(x, ...) {
+  .remove_covariate_role(x, ..., role = "report_covariates")
+}
+
+#' @rdname add
+#' @export
+remove_revision_covariates <- function(x, ...) {
+  .remove_covariate_role(x, ..., role = "revision_covariates")
+}
+
+.remove_covariate_role <- function(x, ..., role) {
+  value <- colnames(x)[tidyselect::eval_select(rlang::expr(c(...)), x)]
+  role_covariates <- attr(x, role, exact = TRUE)
+  keep <- setdiff(role_covariates, value)
+  .change_covariate_role(x, dplyr::all_of(keep), role = role)
+}
+
+#' @rdname add
+#' @export
+remove_all_event_covariates <- function(x) {
+  .change_covariate_role(x, NULL, role = "event_covariates")
+}
+
+#' @rdname add
+#' @export
+remove_all_report_covariates <- function(x) {
+  .change_covariate_role(x, NULL, role = "report_covariates")
+}
+
+#' @rdname add
+#' @export
+remove_all_revision_covariates <- function(x) {
+  .change_covariate_role(x, NULL, role = "revision_covariates")
 }
 
 

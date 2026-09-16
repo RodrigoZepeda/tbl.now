@@ -1,7 +1,7 @@
 Package: tbl.now
 Type: Package
 Title: Tidy Data and Workflow Layer for Epidemic Nowcasting
-Version: 1.0.0.9000
+Version: 1.1.0
 Authors@R: 
     c(person("Rodrigo", "Zepeda-Tello", , "rzepeda17@gmail.com", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0003-4471-5270")),
@@ -16,8 +16,8 @@ Authors@R:
       person(given = "Columbia University in the City of New York", role = c("cph", "fnd")))
 Description: Defines tidy data structures and package-agnostic workflows for
     epidemiological nowcasting. The 'tbl_now' class records event, report, and
-    revision dates alongside strata, covariates, censoring, and
-    reporting-delay metadata while remaining compatible with 'dplyr'. Tools
+    revision dates alongside strata, covariates tagged by model component,
+    censoring, and reporting-delay metadata while remaining compatible with 'dplyr'. Tools
     support validation, manipulation, diagnostics, visualization, format
     conversion, retrospective evaluation, and multiple modelling engines. The
     'tbl_nowcast' class standardizes probabilistic predictions for plotting,

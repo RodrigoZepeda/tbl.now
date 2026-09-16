@@ -8,6 +8,9 @@
 \alias{get_num_strata}
 \alias{get_covariates}
 \alias{get_num_covariates}
+\alias{get_event_covariates}
+\alias{get_report_covariates}
+\alias{get_revision_covariates}
 \alias{get_now}
 \alias{get_report_units}
 \alias{get_event_units}
@@ -35,6 +38,12 @@ get_num_strata(x)
 get_covariates(x)
 
 get_num_covariates(x)
+
+get_event_covariates(x)
+
+get_report_covariates(x)
+
+get_revision_covariates(x)
 
 get_now(x)
 
@@ -77,6 +86,11 @@ column holding the date the event happened / was reported.}
 of the column holding the number of cases.}
 \item{\code{get_strata()}, \code{get_covariates()}}{Character vector of column names,
 or \code{NULL} when there are none.}
+\item{\code{get_event_covariates()}, \code{get_report_covariates()},
+\code{get_revision_covariates()}}{Character vector of covariate column names
+tagged for the event/incidence, reporting-delay, or revision component,
+or \code{NULL} when there are none. A column may appear in more than one of
+these.}
 \item{\code{get_num_strata()}, \code{get_num_covariates()}}{Integer count, \code{0} when
 there are none.}
 \item{\code{get_is_censored_report()}}{Character, or \code{NULL}. The name of the column
