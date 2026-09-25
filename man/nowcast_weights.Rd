@@ -9,6 +9,7 @@ nowcast_weights(
   type = c("inverse_score", "optim", "equal"),
   now = NULL,
   include_now = FALSE,
+  common_dates = TRUE,
   ...
 )
 }
@@ -36,6 +37,10 @@ weights.}
 weight-training window? Default \code{FALSE}; set \code{TRUE} for an in-sample
 diagnostic.}
 
+\item{common_dates}{Logical. Compare the methods only on the targets -- the
+(\code{now} date, event date, stratum) rows -- that \strong{every} method scored.
+Default \code{TRUE}. See "Methods are compared on common targets" below.}
+
 \item{...}{Unused.}
 }
 \value{
@@ -47,6 +52,23 @@ A named numeric vector of weights summing to 1.
 Turns the retrospective scores of a \code{\link[=nowcast_backtest]{nowcast_backtest()}} into a vector of
 weights for \code{\link[=nowcast_ensemble]{nowcast_ensemble()}}.
 }
+\section{Methods are compared on common targets}{
+
+
+A backtest keeps going when a fit fails (see \code{on_error} in
+\code{\link[=nowcast_backtest]{nowcast_backtest()}}), so one method can end up with scores at fewer dates
+than another. Averaging each method over its own dates would then compare
+them on different questions: a model that failed at the hardest date would
+look better than it is and earn too much weight. With \code{common_dates = TRUE}
+the scores are first restricted to the targets every method scored, and a
+warning names each method and date whose rows were dropped. Set
+\code{common_dates = FALSE} to average each method over its own targets instead.
+\code{type = "optim"} needs every method's prediction for each target, so it
+always uses the common targets; \code{common_dates = FALSE} only silences the
+warning there. A method that failed at \emph{every} date is not a member of the
+backtest and is not counted.
+}
+
 \examples{
 data(denguedat)
 

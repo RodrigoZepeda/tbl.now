@@ -10,6 +10,7 @@ nowcast_ensemble(
   weights = "equal",
   backtest = NULL,
   include_now = FALSE,
+  common_dates = TRUE,
   quantile_levels = NULL,
   n_draws = 4000L,
   name = "ensemble",
@@ -42,6 +43,10 @@ passed to \code{\link[=nowcast_weights]{nowcast_weights()}}.}
 \code{backtest}, should rows at the nowcast members' own \code{now} dates be allowed
 into the weight-training window? Default \code{FALSE}; set \code{TRUE} only for an
 in-sample diagnostic.}
+
+\item{common_dates}{Logical. When deriving performance weights from
+\code{backtest}, compare the methods only on the targets every one of them
+scored. Default \code{TRUE}; passed to \code{\link[=nowcast_weights]{nowcast_weights()}}.}
 
 \item{quantile_levels}{Quantile levels to report the ensemble at. Defaults to
 the levels shared by all members.}

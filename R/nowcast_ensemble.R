@@ -41,6 +41,9 @@
 #'   `backtest`, should rows at the nowcast members' own `now` dates be allowed
 #'   into the weight-training window? Default `FALSE`; set `TRUE` only for an
 #'   in-sample diagnostic.
+#' @param common_dates Logical. When deriving performance weights from
+#'   `backtest`, compare the methods only on the targets every one of them
+#'   scored. Default `TRUE`; passed to [nowcast_weights()].
 #' @param quantile_levels Quantile levels to report the ensemble at. Defaults to
 #'   the levels shared by all members.
 #' @param n_draws Number of draws in the pooled sample when
@@ -85,7 +88,7 @@
 #' @export
 nowcast_ensemble <- function(..., type = c("quantile", "linear_pool"),
                              weights = "equal", backtest = NULL,
-                             include_now = FALSE,
+                             include_now = FALSE, common_dates = TRUE,
                              quantile_levels = NULL, n_draws = 4000L,
                              name = "ensemble", verbose = TRUE) {
   type <- match.arg(type)
@@ -96,7 +99,9 @@ nowcast_ensemble <- function(..., type = c("quantile", "linear_pool"),
   }
 
   .check_ensemble_compatibility(members)
-  weights <- .resolve_weights(weights, members, backtest, include_now = include_now)
+  weights <- .resolve_weights(weights, members, backtest,
+    include_now = include_now, common_dates = common_dates
+  )
 
   if (isTRUE(verbose)) {
     cli::cli_alert_info(
@@ -209,12 +214,14 @@ nowcast_ensemble <- function(..., type = c("quantile", "linear_pool"),
 #' @param weights The user's `weights` argument.
 #' @param members The named list of member nowcasts.
 #' @param backtest A `nowcast_backtest` or `NULL`.
+#' @param include_now,common_dates Passed to [nowcast_weights()].
 #'
 #' @return A named numeric vector summing to 1, aligned with `members`.
 #'
 #' @keywords internal
 #' @noRd
-.resolve_weights <- function(weights, members, backtest, include_now = FALSE) {
+.resolve_weights <- function(weights, members, backtest, include_now = FALSE,
+                             common_dates = TRUE) {
   member_names <- names(members)
 
   if (is.character(weights)) {
@@ -233,7 +240,8 @@ nowcast_ensemble <- function(..., type = c("quantile", "linear_pool"),
 
     member_now <- unique(do.call(c, lapply(members, function(m) m@now)))
     fitted <- nowcast_weights(
-      backtest, type = weights, now = member_now, include_now = include_now
+      backtest, type = weights, now = member_now, include_now = include_now,
+      common_dates = common_dates
     )
     # The backtest is keyed by method name, the members by their (possibly
     # user-given) names; fall back to the method when the name is unknown.

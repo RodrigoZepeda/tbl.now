@@ -559,6 +559,12 @@ score_nowcast <- function(x, truth = NULL, truth_axis = c("report", "revision"),
 #' @param on_error Either `"warn"` (default) to skip a model/date that fails
 #'   with a warning, or `"abort"` to stop.
 #' @param verbose Logical. Whether to report progress.
+#' @param parallel `r lifecycle::badge('experimental')` Logical. Whether to run
+#'   the (engine, date) fits in parallel with \pkg{future}, through
+#'   \pkg{foreach} and \pkg{doFuture} (both must be installed). Default
+#'   `FALSE`. The workers are whatever [future::plan()] you set before the call;
+#'   under the default `plan(sequential)` nothing runs in parallel. **May not
+#'   play well with Stan-based engines**; see the "Parallel backtests" section.
 #' @inheritParams score_nowcast
 #'
 #' @return An object of class `nowcast_backtest`: a list with
@@ -574,6 +580,11 @@ score_nowcast <- function(x, truth = NULL, truth_axis = c("report", "revision"),
 #'     \item{methods}{The labels that produced at least one nowcast.}
 #'     \item{now_dates}{The dates that were nowcast.}
 #'   }
+#'
+#'   Printing it summarises each method's scores over the targets every method
+#'   scored, warning when a failed fit made them differ; use
+#'   `print(bt, common_dates = FALSE)` to average each over its own targets.
+#'   The same rule sets [nowcast_weights()].
 #'
 #' @section Use the result directly with scoringutils:
 #'
@@ -601,6 +612,33 @@ score_nowcast <- function(x, truth = NULL, truth_axis = c("report", "revision"),
 #' `model`, `now`, the event-date column, and declared strata are retained as
 #' forecast units, allowing scores to be extended, regrouped, or summarised
 #' without returning to the internal `tbl.now` representation.
+#'
+#' @section Parallel backtests (experimental):
+#'
+#' With `parallel = TRUE`, every (engine, date) fit becomes one \pkg{future}
+#' task, run on the backend you choose with [future::plan()]:
+#'
+#' ```r
+#' future::plan(future::multisession, workers = 3)
+#' bt <- nowcast_backtest(x, engine_a, engine_b, n_dates = 3, parallel = TRUE)
+#' future::plan(future::sequential)
+#' ```
+#'
+#' The result is the same object, in the same row order, as a sequential run.
+#' When `seed` is given every fit is seeded from it exactly as in a sequential
+#' run, so the two agree; without `seed`, each task gets its own parallel-safe
+#' random stream and results will differ from a sequential run.
+#'
+#' This option is **experimental** and **may not play well with Stan-based
+#' engines** such as [engine_epinowcast()] and [engine_epinow2()]. Those
+#' engines can already run chains in parallel themselves, and nesting that inside parallel R workers can oversubscribe
+#' the CPU, exhaust memory, or make Stan compilation and model caching fail
+#' (several workers compiling or reading the same model at once). If you use
+#' them in a parallel backtest, set their chains to run sequentially
+#' (`epinowcast::enw_fit_opts(parallel_chains = 1)`,
+#' `EpiNow2::stan_opts(cores = 1)`), compile each model once before
+#' the backtest, and keep the number of workers small. When in doubt, leave
+#' `parallel = FALSE`: the sequential path is unchanged.
 #'
 #' @section Every engine must report the same quantile levels:
 #'
@@ -666,10 +704,19 @@ nowcast_backtest <- function(x, ..., now_dates = NULL, horizon = 4,
                              seed = NULL, keep_draws = FALSE,
                              on_error = c("warn", "abort"), verbose = TRUE,
                              truth_axis = c("report", "revision"),
-                             truth_type = "total") {
+                             truth_type = "total", parallel = FALSE) {
   .assert_tbl_now(x, "nowcast_backtest")
   on_error <- match.arg(on_error)
   truth_axis <- match.arg(truth_axis)
+  if (!rlang::is_bool(parallel)) {
+    cli::cli_abort("{.arg parallel} must be {.code TRUE} or {.code FALSE}.")
+  }
+  if (parallel) {
+    rlang::check_installed(
+      c("doFuture", "foreach"),
+      reason = "to run {.code nowcast_backtest(parallel = TRUE)}."
+    )
+  }
 
   engines <- .collect_engines(...)
   labels <- names(engines)
@@ -695,69 +742,37 @@ nowcast_backtest <- function(x, ..., now_dates = NULL, horizon = 4,
     complete_grid = TRUE
   )
 
-  results <- list()
-  timings <- list()
+  # One task per (engine, date) fit, in the sequential order: dates outer,
+  # engines inner. The snapshot is cut once per date and shared by its tasks.
+  tasks <- list()
   for (now_date in as.list(now_dates)) {
     snapshot <- .nowcast_snapshot(x, now_date)
-
     for (i in seq_along(engines)) {
-      this_engine <- engines[[i]]
-      label <- labels[[i]]
-      if (isTRUE(verbose)) {
-        cli::cli_alert_info("Backtesting {.val {label}} at {.val {now_date}}.")
-      }
-
-      if (!is.null(seed)) {
-        # Seeded from the LABEL, so the two models of one package do not draw
-        # the same numbers -- which would make them look more alike than they are.
-        set.seed(.backtest_seed(seed, label, now_date))
-      }
-
-      started <- proc.time()[["elapsed"]]
-      attempt <- tryCatch(
-        list(
-          nowcast = run_nowcast(snapshot, this_engine, verbose = FALSE),
-          error = NULL
-        ),
-        error = function(e) {
-          message <- c(
-            "Engine {.val {label}} failed at {.val {now_date}}.",
-            "x" = conditionMessage(e)
-          )
-          if (on_error == "abort") cli::cli_abort(message) else cli::cli_warn(message)
-          list(nowcast = NULL, error = conditionMessage(e))
-        }
-      )
-      nowcast <- attempt$nowcast
-      timings[[length(timings) + 1L]] <- dplyr::tibble(
-        .method = label,
-        .now = now_date,
-        elapsed_seconds = unname(proc.time()[["elapsed"]] - started),
-        success = !is.null(nowcast),
-        error = attempt$error %||% NA_character_
-      )
-      if (is.null(nowcast)) next
-
-      # `.score_against()` labels with the fit's own `@method` -- the PACKAGE.
-      # Overwrite with the backtest's label, or two models of one package would
-      # score under one name here while their predictions carried two, and
-      # `nowcast_weights()` would learn a single weight for both.
-      scores <- .score_against(nowcast, truth) |>
-        dplyr::mutate(.method = label)
-      predictions <- nowcast@predictions |>
-        dplyr::mutate(.method = label, .now = now_date, .before = 1)
-      draws <- if (isTRUE(keep_draws) && !is.null(nowcast@draws)) {
-        nowcast@draws |>
-          dplyr::mutate(.method = label, .now = now_date, .before = 1)
-      } else {
-        NULL
-      }
-
-      results[[length(results) + 1]] <- list(
-        scores = scores, predictions = predictions, draws = draws
+      tasks[[length(tasks) + 1L]] <- list(
+        snapshot = snapshot, engine = engines[[i]], label = labels[[i]],
+        now_date = now_date
       )
     }
   }
+
+  # A future task runs under L'Ecuyer-CMRG, where `set.seed(n)` gives other
+  # numbers than under the caller's generator. Seed each fit with the caller's
+  # RNG kind so a parallel backtest reproduces the sequential one.
+  # A plain list rather than a closure: a closure would carry this whole frame
+  # (the full data and every snapshot) to every future task.
+  fit_args <- list(
+    truth = truth, seed = seed, keep_draws = keep_draws, on_error = on_error,
+    verbose = verbose, rng_kind = if (parallel) RNGkind() else NULL
+  )
+  fits <- if (parallel) {
+    .backtest_parallel_map(tasks, fit_args)
+  } else {
+    lapply(tasks, .backtest_run_task, fit_args = fit_args)
+  }
+
+  timings <- lapply(fits, `[[`, "timing")
+  results <- lapply(fits, `[[`, "result")
+  results <- results[!vapply(results, is.null, logical(1))]
 
   if (length(results) == 0) {
     cli::cli_abort("Every method failed at every date; nothing to score.")
@@ -796,6 +811,136 @@ nowcast_backtest <- function(x, ..., now_dates = NULL, horizon = 4,
     ),
     class = "nowcast_backtest"
   )
+}
+
+#' Fit and score one engine at one retrospective date
+#'
+#' The body of the [nowcast_backtest()] loop, split out so the same code runs
+#' sequentially and on a `future` worker.
+#'
+#' @param snapshot The `tbl_now` truncated to `now_date`.
+#' @param engine A `nowcast_engine`.
+#' @param label The engine's backtest label.
+#' @param now_date The retrospective date.
+#' @param truth The resolved truth table.
+#' @param seed,keep_draws,on_error,verbose As in [nowcast_backtest()].
+#' @param rng_kind `NULL`, or the caller's `RNGkind()` to seed under when the
+#'   fit runs on a `future` worker.
+#'
+#' @return A list with `timing` (a one-row tibble) and `result` (a list of
+#'   `scores`, `predictions` and `draws`, or `NULL` when the fit failed).
+#'
+#' @keywords internal
+#' @noRd
+.backtest_fit <- function(snapshot, engine, label, now_date, truth, seed,
+                          keep_draws, on_error, verbose, rng_kind = NULL) {
+  if (isTRUE(verbose)) {
+    cli::cli_alert_info("Backtesting {.val {label}} at {.val {now_date}}.")
+  }
+
+  if (!is.null(seed)) {
+    # Seeded from the LABEL, so the two models of one package do not draw
+    # the same numbers -- which would make them look more alike than they are.
+    fit_seed <- .backtest_seed(seed, label, now_date)
+    if (is.null(rng_kind)) {
+      set.seed(fit_seed)
+    } else {
+      set.seed(fit_seed, kind = rng_kind[[1]], normal.kind = rng_kind[[2]],
+               sample.kind = rng_kind[[3]])
+    }
+  }
+
+  started <- proc.time()[["elapsed"]]
+  attempt <- tryCatch(
+    list(
+      nowcast = run_nowcast(snapshot, engine, verbose = FALSE),
+      error = NULL
+    ),
+    error = function(e) {
+      message <- c(
+        "Engine {.val {label}} failed at {.val {now_date}}.",
+        "x" = conditionMessage(e)
+      )
+      if (on_error == "abort") cli::cli_abort(message) else cli::cli_warn(message)
+      list(nowcast = NULL, error = conditionMessage(e))
+    }
+  )
+  nowcast <- attempt$nowcast
+  timing <- dplyr::tibble(
+    .method = label,
+    .now = now_date,
+    elapsed_seconds = unname(proc.time()[["elapsed"]] - started),
+    success = !is.null(nowcast),
+    error = attempt$error %||% NA_character_
+  )
+  if (is.null(nowcast)) {
+    return(list(timing = timing, result = NULL))
+  }
+
+  # `.score_against()` labels with the fit's own `@method` -- the PACKAGE.
+  # Overwrite with the backtest's label, or two models of one package would
+  # score under one name here while their predictions carried two, and
+  # `nowcast_weights()` would learn a single weight for both.
+  scores <- .score_against(nowcast, truth) |>
+    dplyr::mutate(.method = label)
+  predictions <- nowcast@predictions |>
+    dplyr::mutate(.method = label, .now = now_date, .before = 1)
+  draws <- if (isTRUE(keep_draws) && !is.null(nowcast@draws)) {
+    nowcast@draws |>
+      dplyr::mutate(.method = label, .now = now_date, .before = 1)
+  } else {
+    NULL
+  }
+
+  list(
+    timing = timing,
+    result = list(scores = scores, predictions = predictions, draws = draws)
+  )
+}
+
+#' Run one backtest task
+#'
+#' @param task A list with `snapshot`, `engine`, `label` and `now_date`.
+#' @param fit_args A list of the remaining `.backtest_fit()` arguments.
+#'
+#' @return As `.backtest_fit()`.
+#'
+#' @keywords internal
+#' @noRd
+.backtest_run_task <- function(task, fit_args) {
+  do.call(.backtest_fit, c(
+    list(task$snapshot, task$engine, task$label, task$now_date),
+    fit_args
+  ))
+}
+
+#' Map backtest fits over the registered `future` backend
+#'
+#' Uses `foreach` with `doFuture`'s `%dofuture%`, so the backend is whatever
+#' the caller set with `future::plan()`. Results come back in task order.
+#' `seed = TRUE` gives each task its own parallel-safe RNG stream; a
+#' user-supplied `seed` is still applied inside each fit, under the caller's
+#' RNG kind, so it overrides that stream and parallel and sequential runs agree.
+#'
+#' @param tasks A list of backtest tasks.
+#' @param fit_args A list of the remaining `.backtest_fit()` arguments.
+#'
+#' @return A list, one element per task.
+#'
+#' @keywords internal
+#' @noRd
+.backtest_parallel_map <- function(tasks, fit_args) {
+  `%dofuture%` <- doFuture::`%dofuture%`
+  # Bound locally so `future` exports it as a global: an unexported function
+  # named in the expression is not found on a worker under `pkgload`.
+  run_task <- .backtest_run_task
+  task <- NULL
+  foreach::foreach(
+    task = tasks,
+    .options.future = list(seed = TRUE, packages = "tbl.now")
+  ) %dofuture% {
+    run_task(task, fit_args)
+  }
 }
 
 #' Validate retrospective nowcast origins
@@ -996,8 +1141,19 @@ nowcast_backtest <- function(x, ..., now_dates = NULL, horizon = 4,
   utils::tail(candidates, n)
 }
 
+#' Print a `nowcast_backtest`
+#'
+#' @param x A `nowcast_backtest`.
+#' @param common_dates Logical. Summarise every method over only the targets
+#'   (date, event date and stratum) that all methods scored. Default `TRUE`;
+#'   see [nowcast_weights()].
+#' @param ... Unused.
+#'
+#' @return `x`, invisibly.
+#'
+#' @noRd
 #' @exportS3Method base::print
-print.nowcast_backtest <- function(x, ...) {
+print.nowcast_backtest <- function(x, common_dates = TRUE, ...) {
   # `cat_*()` rather than `cli_*()`: the latter writes to the MESSAGE stream, so
   # a print method built on it vanishes under `message = FALSE`, `sink()` or
   # `capture.output()`.
@@ -1007,7 +1163,15 @@ print.nowcast_backtest <- function(x, ...) {
     cli::format_inline("now dates: {.val {as.character(x$now_dates)}}")
   ))
 
-  summary <- x$scores |>
+  x_scored <- .common_backtest_targets(x, common_dates)
+  if (nrow(x_scored$scores) == 0L) {
+    cli::cat_line(
+      "No target was scored by every method; ",
+      "print with `common_dates = FALSE` to summarise each over its own."
+    )
+    return(invisible(x))
+  }
+  summary <- x_scored$scores |>
     dplyr::group_by(.data$.method) |>
     dplyr::summarise(
       mean_wis = mean(.data$wis, na.rm = TRUE),
@@ -1051,6 +1215,24 @@ print.nowcast_backtest <- function(x, ...) {
 #' @param include_now Logical. Should rows at `now` be allowed into the
 #'   weight-training window? Default `FALSE`; set `TRUE` for an in-sample
 #'   diagnostic.
+#' @param common_dates Logical. Compare the methods only on the targets -- the
+#'   (`now` date, event date, stratum) rows -- that **every** method scored.
+#'   Default `TRUE`. See "Methods are compared on common targets" below.
+#'
+#' @section Methods are compared on common targets:
+#'
+#' A backtest keeps going when a fit fails (see `on_error` in
+#' [nowcast_backtest()]), so one method can end up with scores at fewer dates
+#' than another. Averaging each method over its own dates would then compare
+#' them on different questions: a model that failed at the hardest date would
+#' look better than it is and earn too much weight. With `common_dates = TRUE`
+#' the scores are first restricted to the targets every method scored, and a
+#' warning names each method and date whose rows were dropped. Set
+#' `common_dates = FALSE` to average each method over its own targets instead.
+#' `type = "optim"` needs every method's prediction for each target, so it
+#' always uses the common targets; `common_dates = FALSE` only silences the
+#' warning there. A method that failed at *every* date is not a member of the
+#' backtest and is not counted.
 #'
 #' @return A named numeric vector of weights summing to 1.
 #'
@@ -1090,7 +1272,8 @@ print.nowcast_backtest <- function(x, ...) {
 #'
 #' @export
 nowcast_weights <- function(backtest, type = c("inverse_score", "optim", "equal"),
-                            now = NULL, include_now = FALSE, ...) {
+                            now = NULL, include_now = FALSE,
+                            common_dates = TRUE, ...) {
   if (!inherits(backtest, "nowcast_backtest")) {
     cli::cli_abort("{.arg backtest} must be a {.cls nowcast_backtest} (see {.fn nowcast_backtest}).")
   }
@@ -1100,6 +1283,15 @@ nowcast_weights <- function(backtest, type = c("inverse_score", "optim", "equal"
   methods <- backtest$methods
   if (type == "equal") {
     return(stats::setNames(rep(1 / length(methods), length(methods)), methods))
+  }
+
+  backtest <- .common_backtest_targets(backtest, common_dates)
+  if (nrow(backtest$scores) == 0L) {
+    cli::cli_abort(c(
+      "Could not derive weights: no target was scored by every method.",
+      "i" = "Set {.code common_dates = FALSE} to average each method over \
+             its own targets."
+    ))
   }
 
   if (type == "inverse_score") {
@@ -1120,6 +1312,79 @@ nowcast_weights <- function(backtest, type = c("inverse_score", "optim", "equal"
   }
 
   .optimise_nowcast_weights(backtest)
+}
+
+#' Restrict a backtest to the targets every method scored
+#'
+#' A target is one (`.now`, event date, stratum) row. It is kept when every
+#' method in `backtest$methods` has a non-missing WIS for it. Targets no method
+#' scored are dropped silently (they never counted towards a mean); targets
+#' only some methods scored are dropped with a warning naming each method and
+#' date that lacked them.
+#'
+#' @param backtest A `nowcast_backtest`.
+#' @param common_dates Logical. When `FALSE`, `backtest` is returned unchanged.
+#'
+#' @return `backtest` with `scores`, `predictions` and `draws` restricted to the
+#'   common targets.
+#'
+#' @keywords internal
+#' @noRd
+.common_backtest_targets <- function(backtest, common_dates = TRUE) {
+  if (!rlang::is_bool(common_dates)) {
+    cli::cli_abort("{.arg common_dates} must be {.code TRUE} or {.code FALSE}.")
+  }
+  methods <- backtest$methods
+  if (!common_dates || length(methods) < 2L) {
+    return(backtest)
+  }
+
+  key <- c(".now", backtest$event_date, backtest$strata)
+  scored <- backtest$scores |>
+    dplyr::filter(.data$.method %in% methods, !is.na(.data$wis)) |>
+    dplyr::distinct(dplyr::across(dplyr::all_of(c(key, ".method"))))
+  per_target <- scored |>
+    dplyr::count(dplyr::across(dplyr::all_of(key)), name = ".n_methods")
+  common <- per_target |>
+    dplyr::filter(.data$.n_methods == length(methods)) |>
+    dplyr::select(dplyr::all_of(key))
+  partial <- per_target |>
+    dplyr::filter(.data$.n_methods < length(methods)) |>
+    dplyr::select(dplyr::all_of(key))
+
+  if (nrow(partial) > 0L) {
+    missing <- tidyr::expand_grid(partial, .method = methods) |>
+      dplyr::anti_join(scored, by = c(key, ".method")) |>
+      dplyr::distinct(.data$.method, .data$.now) |>
+      dplyr::arrange(match(.data$.method, methods), .data$.now)
+    dropped <- nrow(dplyr::semi_join(backtest$scores, partial, by = key))
+    missing_methods <- unique(missing$.method)
+    missing_dates <- lapply(missing_methods, function(m) {
+      as.character(missing$.now[missing$.method == m])
+    })
+    # Referenced by index, not pasted in: a label is data, and one carrying a
+    # brace would otherwise be read as a glue expression.
+    bullets <- paste0(
+      "{.val {missing_methods[[", seq_along(missing_methods), "]]}} has no ",
+      "score for some targets at {.val {missing_dates[[",
+      seq_along(missing_methods), "]]}}."
+    )
+    names(bullets) <- rep("!", length(bullets))
+    cli::cli_warn(c(
+      "Comparing the methods on the targets all of them scored: dropped \
+       {dropped} score row{?s}.",
+      bullets,
+      "i" = "Set {.code common_dates = FALSE} to average each method over its \
+             own targets instead."
+    ))
+  }
+
+  for (table in c("scores", "predictions", "draws")) {
+    if (!is.null(backtest[[table]])) {
+      backtest[[table]] <- dplyr::semi_join(backtest[[table]], common, by = key)
+    }
+  }
+  backtest
 }
 
 #' Restrict backtest rows used to train performance weights

@@ -15,7 +15,8 @@ nowcast_backtest(
   on_error = c("warn", "abort"),
   verbose = TRUE,
   truth_axis = c("report", "revision"),
-  truth_type = "total"
+  truth_type = "total",
+  parallel = FALSE
 )
 }
 \arguments{
@@ -75,6 +76,13 @@ types such as \code{"confirmed"}, \code{"retracted"}, \code{"pending"}, \code{"u
 \code{"net"} follow the same meanings as \code{\link[=get_latest_reported_cases]{get_latest_reported_cases()}} and
 \code{\link[=get_latest_revised_cases]{get_latest_revised_cases()}}. \code{"by_type"} is refused because scoring needs
 one observed value per event-date/stratum target.}
+
+\item{parallel}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}} Logical. Whether to run
+the (engine, date) fits in parallel with \pkg{future}, through
+\pkg{foreach} and \pkg{doFuture} (both must be installed). Default
+\code{FALSE}. The workers are whatever \code{\link[future:plan]{future::plan()}} you set before the call;
+under the default \code{plan(sequential)} nothing runs in parallel. \strong{May not
+play well with Stan-based engines}; see the "Parallel backtests" section.}
 }
 \value{
 An object of class \code{nowcast_backtest}: a list with
@@ -90,6 +98,11 @@ its elapsed time in seconds, whether it succeeded, and any error text.}
 \item{methods}{The labels that produced at least one nowcast.}
 \item{now_dates}{The dates that were nowcast.}
 }
+
+Printing it summarises each method's scores over the targets every method
+scored, warning when a failed fit made them differ; use
+\code{print(bt, common_dates = FALSE)} to average each over its own targets.
+The same rule sets \code{\link[=nowcast_weights]{nowcast_weights()}}.
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
@@ -129,6 +142,34 @@ is obtained with:
 \code{model}, \code{now}, the event-date column, and declared strata are retained as
 forecast units, allowing scores to be extended, regrouped, or summarised
 without returning to the internal \code{tbl.now} representation.
+}
+
+\section{Parallel backtests (experimental)}{
+
+
+With \code{parallel = TRUE}, every (engine, date) fit becomes one \pkg{future}
+task, run on the backend you choose with \code{\link[future:plan]{future::plan()}}:
+
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{future::plan(future::multisession, workers = 3)
+bt <- nowcast_backtest(x, engine_a, engine_b, n_dates = 3, parallel = TRUE)
+future::plan(future::sequential)
+}\if{html}{\out{</div>}}
+
+The result is the same object, in the same row order, as a sequential run.
+When \code{seed} is given every fit is seeded from it exactly as in a sequential
+run, so the two agree; without \code{seed}, each task gets its own parallel-safe
+random stream and results will differ from a sequential run.
+
+This option is \strong{experimental} and \strong{may not play well with Stan-based
+engines} such as \code{\link[=engine_epinowcast]{engine_epinowcast()}} and \code{\link[=engine_epinow2]{engine_epinow2()}}. Those
+engines can already run chains in parallel themselves, and nesting that inside parallel R workers can oversubscribe
+the CPU, exhaust memory, or make Stan compilation and model caching fail
+(several workers compiling or reading the same model at once). If you use
+them in a parallel backtest, set their chains to run sequentially
+(\code{epinowcast::enw_fit_opts(parallel_chains = 1)},
+\code{EpiNow2::stan_opts(cores = 1)}), compile each model once before
+the backtest, and keep the number of workers small. When in doubt, leave
+\code{parallel = FALSE}: the sequential path is unchanged.
 }
 
 \section{Every engine must report the same quantile levels}{

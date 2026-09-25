@@ -1,5 +1,32 @@
 # tbl.now 1.1.0
 
+## Breaking: backtest methods are compared on the targets all of them scored
+
+When a fit failed in `nowcast_backtest()`, the backtest carried on and that
+method simply had fewer scores. `nowcast_weights()` and the backtest's print
+summary then averaged each method over its **own** dates, so a model that
+failed at a hard date looked better than it was and earned too much weight --
+silently.
+
+Now the default `nowcast_weights(type = "inverse_score")`, `type = "optim"`,
+the print summary, and `nowcast_ensemble()`'s performance weights keep only the
+targets (`now` date, event date, stratum) that every method scored, and warn
+naming each method and date whose rows were dropped. Weights and summaries from
+a backtest with a failed fit therefore change. The new `common_dates = TRUE`
+argument of `nowcast_weights()`, `nowcast_ensemble()` and `print()` restores
+the previous per-method averages with `common_dates = FALSE`. Backtests in
+which every fit succeeded are unaffected.
+
+## `nowcast_backtest()` can run its fits in parallel (experimental)
+
+`nowcast_backtest()` gains `parallel = FALSE`. With `parallel = TRUE`, every
+(engine, date) fit runs as a \pkg{future} task through \pkg{foreach} and
+\pkg{doFuture}, on whatever backend `future::plan()` sets (#92). The result
+has the same rows in the same order as a sequential run, and with `seed` the
+same values. The option is experimental and may not play well with Stan-based
+engines such as `engine_epinowcast()` and `engine_epinow2()`, which already
+parallelise their chains; the sequential path is unchanged.
+
 ## Covariates can be tagged by model component
 
 `tbl_now()` now records which declared covariates belong to the event process,
