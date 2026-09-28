@@ -122,7 +122,7 @@ test_that("a clean object produces no error and no warning findings", {
   expect_equal(sum(result$status %in% c("error", "warning")), 0)
   expect_equal(as.character(finding(result, "ordering", "event_to_report")$status), "ok")
   expect_equal(as.character(finding(result, "duplicates", "key")$status), "ok")
-  expect_equal(as.character(finding(result, "units", "delay")$status), "ok")
+  expect_equal(as.character(finding(result, "units", "report")$status), "ok")
 })
 
 test_that("diagnose() refuses anything that is not a tbl_now", {
@@ -454,7 +454,7 @@ test_that("weekly dates on two weekday grids are found, with the fix named", {
   # A `warning` since 0.31.0 (#63), not a note: the converters cannot read a
   # fractional delay, and the package no longer creates one, so the only way in
   # is this -- two date columns on different weekday grids.
-  fractional <- finding(result, "units", "delay")
+  fractional <- finding(result, "units", "report")
   expect_equal(as.character(fractional$status), "warning")
   expect_equal(fractional$n_affected, 3)
 })

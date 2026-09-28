@@ -204,7 +204,7 @@ test_that("the fractional finding is the same one diagnose() reports", {
   ))
 
   findings <- suppressWarnings(diagnose(x))
-  row <- findings[findings$check == "units" & findings$scope == "delay", ]
+  row <- findings[findings$check == "units" & findings$scope == "report", ]
 
   expect_equal(nrow(row), 1L)
   expect_equal(as.character(row$status), "warning")
@@ -213,7 +213,7 @@ test_that("the fractional finding is the same one diagnose() reports", {
   # A clean object reports the same row as `ok`, not as absent: a check that
   # cannot be seen is not a check.
   clean <- suppressWarnings(diagnose(align_weeks(x)))
-  clean_row <- clean[clean$check == "units" & clean$scope == "delay", ]
+  clean_row <- clean[clean$check == "units" & clean$scope == "report", ]
   expect_equal(as.character(clean_row$status), "ok")
 })
 
@@ -236,7 +236,7 @@ test_that("validate_tbl_now() still does not run the expensive grid checks", {
     by_strata = FALSE, warn_non_uniqueness = FALSE, warn_now = TRUE,
     floor = "note", deep = FALSE, assert = FALSE, fn = "validate_tbl_now"
   ))
-  expect_true("delay" %in% shallow$scope)
+  expect_true("report" %in% shallow$scope)
   expect_false("report_grid" %in% shallow$scope)
   expect_false("event_grid" %in% shallow$scope)
 })
