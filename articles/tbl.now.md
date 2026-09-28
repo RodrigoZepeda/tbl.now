@@ -159,7 +159,7 @@ diagnose(dengue)
 #> ℹ truncation/event_date: 3 event dates are younger than the 95th percentile of the delay, so their counts are still filling in; an estimated 50.6% of their eventual total has not arrived.
 #>   → This is right-truncation, and it is the reason to nowcast rather than a defect. Cut the series at "2005-09-05" to describe it instead.
 #> 
-#> ✔ 13 passed: declarations/temporal_effects, missing/onset_week, missing/report_week, now/event_date, now/now_gap_event, now/now_gap_report, now/report_date, ordering/event_to_report, simultaneously missing/event and report dates, units/declared, units/delay, units/event_grid, and units/report_grid
+#> ✔ 13 passed: declarations/temporal_effects, missing/onset_week, missing/report_week, now/event_date, now/now_gap_event, now/now_gap_report, now/report_date, ordering/event_to_report, simultaneously missing/event and report dates, units/declared, units/event_grid, units/report, and units/report_grid
 #> ─ 6 skipped: duplicates/key, negatives/count, ordering/event_to_revision, ordering/report_to_revision, strata/pending, and strata/size
 #> 
 #> ℹ 21 findings. Use `dplyr::filter()` or `tibble::as_tibble()` for the table.

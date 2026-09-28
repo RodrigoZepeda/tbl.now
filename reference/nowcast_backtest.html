@@ -23,7 +23,7 @@ and a long now_dates it is genuinely expensive."><meta property="og:image" conte
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.1.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -53,7 +53,7 @@ and a long now_dates it is genuinely expensive."><meta property="og:image" conte
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Refit several methods at past <code>now</code> dates and score them</h1>
-      <small class="dont-index">Source: <a href="https://github.com/RodrigoZepeda/tbl.now/blob/main/R/nowcast_score.R" class="external-link"><code>R/nowcast_score.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/RodrigoZepeda/tbl.now/blob/devel/R/nowcast_score.R" class="external-link"><code>R/nowcast_score.R</code></a></small>
       <div class="d-none name"><code>nowcast_backtest.Rd</code></div>
     </div>
 
@@ -82,7 +82,8 @@ and a long <code>now_dates</code> it is genuinely expensive.</p>
 <span>  on_error <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"warn"</span>, <span class="st">"abort"</span><span class="op">)</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  truth_axis <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"report"</span>, <span class="st">"revision"</span><span class="op">)</span>,</span>
-<span>  truth_type <span class="op">=</span> <span class="st">"total"</span></span>
+<span>  truth_type <span class="op">=</span> <span class="st">"total"</span>,</span>
+<span>  parallel <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -167,6 +168,15 @@ types such as <code>"confirmed"</code>, <code>"retracted"</code>, <code>"pending
 <code><a href="revised_cases.html">get_latest_revised_cases()</a></code>. <code>"by_type"</code> is refused because scoring needs
 one observed value per event-date/stratum target.</p></dd>
 
+
+<dt id="arg-parallel">parallel<a class="anchor" aria-label="anchor" href="#arg-parallel"></a></dt>
+<dd><p><a href="https://lifecycle.r-lib.org/articles/stages.html#experimental" class="external-link"><img src="figures/lifecycle-experimental.svg" alt="[Experimental]"></a> Logical. Whether to run
+the (engine, date) fits in parallel with <span class="pkg">future</span>, through
+<span class="pkg">foreach</span> and <span class="pkg">doFuture</span> (both must be installed). Default
+<code>FALSE</code>. The workers are whatever <code><a href="https://future.futureverse.org/reference/plan.html" class="external-link">future::plan()</a></code> you set before the call;
+under the default <code>plan(sequential)</code> nothing runs in parallel. <strong>May not
+play well with Stan-based engines</strong>; see the "Parallel backtests" section.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -195,7 +205,11 @@ its elapsed time in seconds, whether it succeeded, and any error text.</p></dd>
 <dd><p>The dates that were nowcast.</p></dd>
 
 
-</dl></div>
+</dl><p>Printing it summarises each method's scores over the targets every method
+scored, warning when a failed fit made them differ; use
+<code>print(bt, common_dates = FALSE)</code> to average each over its own targets.
+The same rule sets <code><a href="nowcast_weights.html">nowcast_weights()</a></code>.</p>
+    </div>
     <div class="section level2">
     <h2 id="use-the-result-directly-with-scoringutils">Use the result directly with scoringutils<a class="anchor" aria-label="anchor" href="#use-the-result-directly-with-scoringutils"></a></h2>
 
@@ -217,6 +231,31 @@ is obtained with:</p>
 <p><code>model</code>, <code>now</code>, the event-date column, and declared strata are retained as
 forecast units, allowing scores to be extended, regrouped, or summarised
 without returning to the internal <code>tbl.now</code> representation.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="parallel-backtests-experimental-">Parallel backtests (experimental)<a class="anchor" aria-label="anchor" href="#parallel-backtests-experimental-"></a></h2>
+
+
+
+<p>With <code>parallel = TRUE</code>, every (engine, date) fit becomes one <span class="pkg">future</span>
+task, run on the backend you choose with <code><a href="https://future.futureverse.org/reference/plan.html" class="external-link">future::plan()</a></code>:</p>
+<p></p><div class="sourceCode r"><pre><code><span><span class="fu">future</span><span class="fu">::</span><span class="fu"><a href="https://future.futureverse.org/reference/plan.html" class="external-link">plan</a></span><span class="op">(</span><span class="fu">future</span><span class="fu">::</span><span class="va"><a href="https://future.futureverse.org/reference/multisession.html" class="external-link">multisession</a></span>, workers <span class="op">=</span> <span class="fl">3</span><span class="op">)</span></span>
+<span><span class="va">bt</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/nowcast_backtest.html">nowcast_backtest</a></span><span class="op">(</span><span class="va">x</span>, <span class="va">engine_a</span>, <span class="va">engine_b</span>, n_dates <span class="op">=</span> <span class="fl">3</span>, parallel <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="fu">future</span><span class="fu">::</span><span class="fu"><a href="https://future.futureverse.org/reference/plan.html" class="external-link">plan</a></span><span class="op">(</span><span class="fu">future</span><span class="fu">::</span><span class="va"><a href="https://future.futureverse.org/reference/sequential.html" class="external-link">sequential</a></span><span class="op">)</span></span></code></pre><p></p></div>
+<p>The result is the same object, in the same row order, as a sequential run.
+When <code>seed</code> is given every fit is seeded from it exactly as in a sequential
+run, so the two agree; without <code>seed</code>, each task gets its own parallel-safe
+random stream and results will differ from a sequential run.</p>
+<p>This option is <strong>experimental</strong> and <strong>may not play well with Stan-based
+engines</strong> such as <code><a href="nowcast_engines.html">engine_epinowcast()</a></code> and <code><a href="nowcast_engines.html">engine_epinow2()</a></code>. Those
+engines can already run chains in parallel themselves, and nesting that inside parallel R workers can oversubscribe
+the CPU, exhaust memory, or make Stan compilation and model caching fail
+(several workers compiling or reading the same model at once). If you use
+them in a parallel backtest, set their chains to run sequentially
+(<code>epinowcast::enw_fit_opts(parallel_chains = 1)</code>,
+<code>EpiNow2::stan_opts(cores = 1)</code>), compile each model once before
+the backtest, and keep the number of workers small. When in doubt, leave
+<code>parallel = FALSE</code>: the sequential path is unchanged.</p>
     </div>
     <div class="section level2">
     <h2 id="every-engine-must-report-the-same-quantile-levels">Every engine must report the same quantile levels<a class="anchor" aria-label="anchor" href="#every-engine-must-report-the-same-quantile-levels"></a></h2>

@@ -29,7 +29,8 @@ nowcast_backtest(
   on_error = c("warn", "abort"),
   verbose = TRUE,
   truth_axis = c("report", "revision"),
-  truth_type = "total"
+  truth_type = "total",
+  parallel = FALSE
 )
 ```
 
@@ -123,6 +124,16 @@ nowcast_backtest(
   `"by_type"` is refused because scoring needs one observed value per
   event-date/stratum target.
 
+- parallel:
+
+  **\[experimental\]** Logical. Whether to run the (engine, date) fits
+  in parallel with future, through foreach and doFuture (both must be
+  installed). Default `FALSE`. The workers are whatever
+  [`future::plan()`](https://future.futureverse.org/reference/plan.html)
+  you set before the call; under the default `plan(sequential)` nothing
+  runs in parallel. **May not play well with Stan-based engines**; see
+  the "Parallel backtests" section.
+
 ## Value
 
 An object of class `nowcast_backtest`: a list with
@@ -157,6 +168,12 @@ An object of class `nowcast_backtest`: a list with
 
   The dates that were nowcast.
 
+Printing it summarises each method's scores over the targets every
+method scored, warning when a failed fit made them differ; use
+`print(bt, common_dates = FALSE)` to average each over its own targets.
+The same rule sets
+[`nowcast_weights()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_weights.md).
+
 ## Use the result directly with scoringutils
 
 A `nowcast_backtest` has methods for
@@ -181,6 +198,37 @@ example, relative WIS is obtained with:
 `model`, `now`, the event-date column, and declared strata are retained
 as forecast units, allowing scores to be extended, regrouped, or
 summarised without returning to the internal `tbl.now` representation.
+
+## Parallel backtests (experimental)
+
+With `parallel = TRUE`, every (engine, date) fit becomes one future
+task, run on the backend you choose with
+[`future::plan()`](https://future.futureverse.org/reference/plan.html):
+
+    future::plan(future::multisession, workers = 3)
+    bt <- nowcast_backtest(x, engine_a, engine_b, n_dates = 3, parallel = TRUE)
+    future::plan(future::sequential)
+
+The result is the same object, in the same row order, as a sequential
+run. When `seed` is given every fit is seeded from it exactly as in a
+sequential run, so the two agree; without `seed`, each task gets its own
+parallel-safe random stream and results will differ from a sequential
+run.
+
+This option is **experimental** and **may not play well with Stan-based
+engines** such as
+[`engine_epinowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_engines.md)
+and
+[`engine_epinow2()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_engines.md).
+Those engines can already run chains in parallel themselves, and nesting
+that inside parallel R workers can oversubscribe the CPU, exhaust
+memory, or make Stan compilation and model caching fail (several workers
+compiling or reading the same model at once). If you use them in a
+parallel backtest, set their chains to run sequentially
+(`epinowcast::enw_fit_opts(parallel_chains = 1)`,
+`EpiNow2::stan_opts(cores = 1)`), compile each model once before the
+backtest, and keep the number of workers small. When in doubt, leave
+`parallel = FALSE`: the sequential path is unchanged.
 
 ## Every engine must report the same quantile levels
 

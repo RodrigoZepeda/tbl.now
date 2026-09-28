@@ -20,6 +20,7 @@ nowcast_ensemble(
   weights = "equal",
   backtest = NULL,
   include_now = FALSE,
+  common_dates = TRUE,
   quantile_levels = NULL,
   n_draws = 4000L,
   name = "ensemble",
@@ -69,6 +70,13 @@ nowcast_ensemble(
   rows at the nowcast members' own `now` dates be allowed into the
   weight-training window? Default `FALSE`; set `TRUE` only for an
   in-sample diagnostic.
+
+- common_dates:
+
+  Logical. When deriving performance weights from `backtest`, compare
+  the methods only on the targets every one of them scored. Default
+  `TRUE`; passed to
+  [`nowcast_weights()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_weights.md).
 
 - quantile_levels:
 

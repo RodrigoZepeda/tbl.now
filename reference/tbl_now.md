@@ -28,6 +28,9 @@ tbl_now(
   delay = NULL,
   strata = NULL,
   covariates = NULL,
+  event_covariates = NULL,
+  report_covariates = NULL,
+  revision_covariates = NULL,
   case_count = NULL,
   is_censored_report = NULL,
   revision_date = NULL,
@@ -100,6 +103,15 @@ tbl_now(
   influence the nowcast but are not strata. For example precipitation
   might influence a dengue nowcast but in general it is not of interest
   to generate nowcasts by precipitation levels.
+
+- event_covariates, report_covariates, revision_covariates:
+
+  (optional)
+  [tidy-select](https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html)
+  or `NULL` (default). Subsets of `covariates` tagged for the event,
+  report or revision component of a model. A column may be tagged in
+  more than one component, e.g. a location effect can be both an event
+  and a report covariate.
 
 - case_count:
 
@@ -301,6 +313,18 @@ function:
 - covariates:
 
   Names of the columns corresponding to covariates (for modelling).
+
+- event_covariates:
+
+  Covariates tagged for the event/incidence model.
+
+- report_covariates:
+
+  Covariates tagged for the report model.
+
+- revision_covariates:
+
+  Covariates tagged for the revision model.
 
 - case_count:
 

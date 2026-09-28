@@ -1,6 +1,77 @@
 # Changelog
 
+## tbl.now 1.1.0
+
+### Breaking: backtest methods are compared on the targets all of them scored
+
+When a fit failed in
+[`nowcast_backtest()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_backtest.md),
+the backtest carried on and that method simply had fewer scores.
+[`nowcast_weights()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_weights.md)
+and the backtest’s print summary then averaged each method over its
+**own** dates, so a model that failed at a hard date looked better than
+it was and earned too much weight – silently.
+
+Now the default `nowcast_weights(type = "inverse_score")`,
+`type = "optim"`, the print summary, and
+[`nowcast_ensemble()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_ensemble.md)’s
+performance weights keep only the targets (`now` date, event date,
+stratum) that every method scored, and warn naming each method and date
+whose rows were dropped. Weights and summaries from a backtest with a
+failed fit therefore change. The new `common_dates = TRUE` argument of
+[`nowcast_weights()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_weights.md),
+[`nowcast_ensemble()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_ensemble.md)
+and [`print()`](https://rdrr.io/r/base/print.html) restores the previous
+per-method averages with `common_dates = FALSE`. Backtests in which
+every fit succeeded are unaffected.
+
+### `nowcast_backtest()` can run its fits in parallel (experimental)
+
+[`nowcast_backtest()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_backtest.md)
+gains `parallel = FALSE`. With `parallel = TRUE`, every (engine, date)
+fit runs as a task through and , on whatever backend
+[`future::plan()`](https://future.futureverse.org/reference/plan.html)
+sets ([\#92](https://github.com/RodrigoZepeda/tbl.now/issues/92)). The
+result has the same rows in the same order as a sequential run, and with
+`seed` the same values. The option is experimental and may not play well
+with Stan-based engines such as
+[`engine_epinowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_engines.md)
+and
+[`engine_epinow2()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_engines.md),
+which already parallelise their chains; the sequential path is
+unchanged.
+
+### Covariates can be tagged by model component
+
+[`tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.md)
+now records which declared covariates belong to the event process, the
+report process or the revision process. A covariate can be tagged in
+several places – for example, `location` can be both an event covariate
+and a report covariate – without duplicating the column.
+
+Use `event_covariates`, `report_covariates` and `revision_covariates` in
+[`tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now.md),
+or edit them later with the new `add_*_covariates()`,
+`change_*_covariates()`, `remove_*_covariates()` and
+`get_*_covariates()` helpers. Printing a `tbl_now` now reports the
+component tags.
+
+Declared covariates with no explicit role default to event covariates,
+keeping the historical meaning of `covariates = ...`.
+
+[`engine_epinowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_engines.md)
+carries event and report covariates through
+[`tbl_now_to_epinowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_epinowcast.md)
+and wires them into default `expectation` and `reference` modules when
+those modules are not supplied explicitly. Explicit epinowcast modules
+are left untouched and warn that the tagged covariates must be included
+by the caller.
+[`engine_diseasenowcasting()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_engines.md)
+receives the same role-tagged `tbl_now` attributes directly.
+
 ## tbl.now 1.0.0
+
+CRAN release: 2026-09-21
 
 ### `example_engine()` no longer emits duplicate prediction rows
 
@@ -637,7 +708,7 @@ internal wrapper class.
 - **New**: `engine_baselinenowcast(strata_sharing = )` – passed straight
   through to
   [`baselinenowcast::baselinenowcast()`](https://baselinenowcast.epinowcast.org/reference/baselinenowcast.html).
-  `"none"` (default) fits every stratum independently; `"delay"` shares
+  `"none"` (default) fits every stratum independently; `"report"` shares
   the delay PMF across strata; `"uncertainty"` shares the uncertainty
   parameters; both can be combined. Meaningful only when the object has
   strata.
@@ -2609,7 +2680,7 @@ row is one statistic of one quantity of one stratum:
 
 ``` r
 
-summary(dengue_now) |> dplyr::filter(component == "delay")
+summary(dengue_now) |> dplyr::filter(component == "report")
 ```
 
 It covers the case counts on each of the object’s time axes (event,
@@ -3639,15 +3710,15 @@ The remaining findings were addressed too:
 
 - **[`tidy.epidist_fit()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.delay_distribution.md)
   warns on a delay model with covariates.**
-  [`epidist::predict_delay_parameters()`](https://epidist.epinowcast.org/reference/predict_delay_parameters.html)
-  returns one row per draw *and* observation, and the reported quantiles
-  pool over both. For `mu ~ 1` every observation shares the draw’s
-  value, so that is exactly the posterior interval; with covariates in
-  the delay model the interval is a *mixture across covariate levels*,
-  which the docs described simply as “Posterior median”. The method now
-  detects a parameter that varies within a single draw and says so,
-  pointing at `newdata` for a specific covariate combination. The
-  numbers are unchanged – only the silence is.
+  `epidist::predict_delay_parameters()` returns one row per draw *and*
+  observation, and the reported quantiles pool over both. For `mu ~ 1`
+  every observation shares the draw’s value, so that is exactly the
+  posterior interval; with covariates in the delay model the interval is
+  a *mixture across covariate levels*, which the docs described simply
+  as “Posterior median”. The method now detects a parameter that varies
+  within a single draw and says so, pointing at `newdata` for a specific
+  covariate combination. The numbers are unchanged – only the silence
+  is.
 
 ### Tests
 

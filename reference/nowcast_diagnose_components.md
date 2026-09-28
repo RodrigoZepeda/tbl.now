@@ -159,8 +159,8 @@ diagnose_units(ndata)
 #> 
 #> Passed (4)
 #> ✔ units/declared: The declared units agree: "weeks" and "weeks".
-#> ✔ units/delay: Every `.delay` is a whole number of units.
 #> ✔ units/event_grid: "onset_week" lands on the object's "weeks" grid.
+#> ✔ units/report: Every `.delay` is a whole number of units.
 #> ✔ units/report_grid: "report_week" lands on the object's "weeks" grid.
 #> 
 #> ℹ 4 findings. Use `dplyr::filter()` or `tibble::as_tibble()` for the table.
@@ -247,7 +247,7 @@ dplyr::bind_rows(
 #> ℹ now/now_gap_event: The last event date is 3 weeks before now ("2010-12-20").
 #> ℹ now/now_gap_report [Male]: The last report date is 1 week before now ("2010-12-20").
 #> 
-#> ✔ 8 passed: units/declared, units/delay, units/event_grid, units/report_grid, now/event_date, now/now_gap_report, and now/report_date
+#> ✔ 8 passed: units/declared, units/event_grid, units/report, units/report_grid, now/event_date, now/now_gap_report, and now/report_date
 #> 
 #> ℹ 12 findings. Use `dplyr::filter()` or `tibble::as_tibble()` for the table.
 ```

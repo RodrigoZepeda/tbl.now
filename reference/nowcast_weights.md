@@ -15,6 +15,7 @@ nowcast_weights(
   type = c("inverse_score", "optim", "equal"),
   now = NULL,
   include_now = FALSE,
+  common_dates = TRUE,
   ...
 )
 ```
@@ -58,6 +59,12 @@ nowcast_weights(
   Logical. Should rows at `now` be allowed into the weight-training
   window? Default `FALSE`; set `TRUE` for an in-sample diagnostic.
 
+- common_dates:
+
+  Logical. Compare the methods only on the targets – the (`now` date,
+  event date, stratum) rows – that **every** method scored. Default
+  `TRUE`. See "Methods are compared on common targets" below.
+
 - ...:
 
   Unused.
@@ -65,6 +72,22 @@ nowcast_weights(
 ## Value
 
 A named numeric vector of weights summing to 1.
+
+## Methods are compared on common targets
+
+A backtest keeps going when a fit fails (see `on_error` in
+[`nowcast_backtest()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_backtest.md)),
+so one method can end up with scores at fewer dates than another.
+Averaging each method over its own dates would then compare them on
+different questions: a model that failed at the hardest date would look
+better than it is and earn too much weight. With `common_dates = TRUE`
+the scores are first restricted to the targets every method scored, and
+a warning names each method and date whose rows were dropped. Set
+`common_dates = FALSE` to average each method over its own targets
+instead. `type = "optim"` needs every method's prediction for each
+target, so it always uses the common targets; `common_dates = FALSE`
+only silences the warning there. A method that failed at *every* date is
+not a member of the backtest and is not counted.
 
 ## See also
 

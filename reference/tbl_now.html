@@ -31,7 +31,7 @@ dates without being told again."><meta property="og:image" content="https://rodr
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.1.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -61,7 +61,7 @@ dates without being told again."><meta property="og:image" content="https://rodr
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Create a <code>tbl_now</code> object</h1>
-      <small class="dont-index">Source: <a href="https://github.com/RodrigoZepeda/tbl.now/blob/main/R/tbl_now.R" class="external-link"><code>R/tbl_now.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/RodrigoZepeda/tbl.now/blob/devel/R/tbl_now.R" class="external-link"><code>R/tbl_now.R</code></a></small>
       <div class="d-none name"><code>tbl_now.Rd</code></div>
     </div>
 
@@ -90,6 +90,9 @@ dates without being told again.</p>
 <span>  delay <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  strata <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  covariates <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  event_covariates <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  report_covariates <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  revision_covariates <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  case_count <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  is_censored_report <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  revision_date <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -159,6 +162,15 @@ or <code>NULL</code> (default). Name of different variables
 (column names) that influence the nowcast but are not strata.
 For example precipitation might influence a dengue nowcast but in general it
 is not of interest to generate nowcasts by precipitation levels.</p></dd>
+
+
+<dt id="arg-event-covariates-report-covariates-revision-covariates">event_covariates, report_covariates, revision_covariates<a class="anchor" aria-label="anchor" href="#arg-event-covariates-report-covariates-revision-covariates"></a></dt>
+<dd><p>(optional)
+<a href="https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html" class="external-link">tidy-select</a>
+or <code>NULL</code> (default). Subsets of <code>covariates</code> tagged for the event,
+report or revision component of a model. A column may be tagged in
+more than one component, e.g. a location effect can be both an event and a
+report covariate.</p></dd>
 
 
 <dt id="arg-case-count">case_count<a class="anchor" aria-label="anchor" href="#arg-case-count"></a></dt>
@@ -331,6 +343,15 @@ by the <code><a href="validate_tbl_now.html">validate_tbl_now()</a></code> funct
 
 <dt>covariates</dt>
 <dd><p>Names of the columns corresponding to covariates (for modelling).</p></dd>
+
+<dt>event_covariates</dt>
+<dd><p>Covariates tagged for the event/incidence model.</p></dd>
+
+<dt>report_covariates</dt>
+<dd><p>Covariates tagged for the report model.</p></dd>
+
+<dt>revision_covariates</dt>
+<dd><p>Covariates tagged for the revision model.</p></dd>
 
 <dt>case_count</dt>
 <dd><p>Column containing the number of observations for that moment if <code>data_type</code> is <code>count-incidence</code> or <code>count-cumulative</code>.</p></dd>

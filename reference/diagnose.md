@@ -212,7 +212,7 @@ diagnose(ndata)
 #> ℹ strata/sparsity [Female]: The sparsest stratum is "Female": 8 of the 260 weeks between the minimum event (2006-01-02) and the now (2010-12-20) carry no cases at all (3.1%, against 1.2% pooled over every stratum).
 #>   → A stratum that is mostly zeros is the one a per-stratum fit will struggle with; pooling it is often better than fitting it. When every stratum is mostly zeros the grid is finer than the data -- `aggregate_time_units()` coarsens it.
 #> 
-#> ✔ 18 passed: declarations/temporal_effects, declarations/undeclared, missing/gender, missing/onset_week, missing/report_week, now/event_date, now/now_gap_report, now/report_date, ordering/event_to_report, simultaneously missing/event and report dates, truncation/event_date, units/declared, units/delay, units/event_grid, and units/report_grid
+#> ✔ 18 passed: declarations/temporal_effects, declarations/undeclared, missing/gender, missing/onset_week, missing/report_week, now/event_date, now/now_gap_report, now/report_date, ordering/event_to_report, simultaneously missing/event and report dates, truncation/event_date, units/declared, units/event_grid, units/report, and units/report_grid
 #> ─ 5 skipped: duplicates/key, negatives/count, ordering/event_to_revision, ordering/report_to_revision, and strata/pending
 #> 
 #> ℹ 29 findings. Use `dplyr::filter()` or `tibble::as_tibble()` for the table.
@@ -241,8 +241,8 @@ diagnose(ndata, checks = "units")
 #> 
 #> Passed (4)
 #> ✔ units/declared: The declared units agree: "weeks" and "weeks".
-#> ✔ units/delay: Every `.delay` is a whole number of units.
 #> ✔ units/event_grid: "onset_week" lands on the object's "weeks" grid.
+#> ✔ units/report: Every `.delay` is a whole number of units.
 #> ✔ units/report_grid: "report_week" lands on the object's "weeks" grid.
 #> 
 #> ℹ 4 findings. Use `dplyr::filter()` or `tibble::as_tibble()` for the table.

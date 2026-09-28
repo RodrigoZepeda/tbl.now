@@ -61,6 +61,30 @@ add_covariates(x, ...)
 
 remove_all_covariates(x)
 
+change_event_covariates(x, ..., warn_now = TRUE, warn_non_uniqueness = TRUE)
+
+change_report_covariates(x, ..., warn_now = TRUE, warn_non_uniqueness = TRUE)
+
+change_revision_covariates(x, ..., warn_now = TRUE, warn_non_uniqueness = TRUE)
+
+add_event_covariates(x, ...)
+
+add_report_covariates(x, ...)
+
+add_revision_covariates(x, ...)
+
+remove_event_covariates(x, ...)
+
+remove_report_covariates(x, ...)
+
+remove_revision_covariates(x, ...)
+
+remove_all_event_covariates(x)
+
+remove_all_report_covariates(x)
+
+remove_all_revision_covariates(x)
+
 replace_temporal_effects(x, t_effects)
 
 remove_temporal_effects(x)
@@ -375,6 +399,15 @@ ndata |>
   remove_covariates(humidity) |>
   get_covariates()
 #> [1] "temperature"
+
+## Covariates can also be tagged by model component.
+ndata <- ndata |>
+  add_event_covariates(temperature) |>
+  add_report_covariates(humidity)
+get_event_covariates(ndata)
+#> [1] "temperature" "humidity"   
+get_report_covariates(ndata)
+#> [1] "humidity"
 
 ## ---- Pointing an attribute at a different column ---------------------
 

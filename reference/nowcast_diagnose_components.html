@@ -55,7 +55,7 @@ revisions still pending.
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.1.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -85,7 +85,7 @@ revisions still pending.
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Individual blocks of a <code>tbl_now</code> diagnosis</h1>
-      <small class="dont-index">Source: <a href="https://github.com/RodrigoZepeda/tbl.now/blob/main/R/diagnose.R" class="external-link"><code>R/diagnose.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/RodrigoZepeda/tbl.now/blob/devel/R/diagnose.R" class="external-link"><code>R/diagnose.R</code></a></small>
       <div class="d-none name"><code>nowcast_diagnose_components.Rd</code></div>
     </div>
 
@@ -225,8 +225,8 @@ explains how to read each finding.</p></div>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="font-weight: bold;">Passed (4)</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> <span style="font-weight: bold;">units/declared:</span> The declared units agree: "weeks" and "weeks".</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> <span style="font-weight: bold;">units/delay:</span> Every `.delay` is a whole number of units.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> <span style="font-weight: bold;">units/event_grid:</span> "onset_week" lands on the object's "weeks" grid.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> <span style="font-weight: bold;">units/report:</span> Every `.delay` is a whole number of units.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> <span style="font-weight: bold;">units/report_grid:</span> "report_week" lands on the object's "weeks" grid.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #555555;">ℹ 4 findings. Use `dplyr::filter()` or `tibble::as_tibble()` for the table.</span></span>
@@ -313,7 +313,7 @@ explains how to read each finding.</p></div>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">ℹ</span> <span style="font-weight: bold;">now/now_gap_event:</span> The last event date is 3 weeks before now ("2010-12-20").</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">ℹ</span> <span style="font-weight: bold;">now/now_gap_report [Male]:</span> The last report date is 1 week before now ("2010-12-20").</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> 8 passed: <span style="color: #00BB00;">units/declared</span>, <span style="color: #00BB00;">units/delay</span>, <span style="color: #00BB00;">units/event_grid</span>, <span style="color: #00BB00;">units/report_grid</span>, <span style="color: #00BB00;">now/event_date</span>, <span style="color: #00BB00;">now/now_gap_report</span>, and <span style="color: #00BB00;">now/report_date</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> 8 passed: <span style="color: #00BB00;">units/declared</span>, <span style="color: #00BB00;">units/event_grid</span>, <span style="color: #00BB00;">units/report</span>, <span style="color: #00BB00;">units/report_grid</span>, <span style="color: #00BB00;">now/event_date</span>, <span style="color: #00BB00;">now/now_gap_report</span>, and <span style="color: #00BB00;">now/report_date</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #555555;">ℹ 12 findings. Use `dplyr::filter()` or `tibble::as_tibble()` for the table.</span></span>
 <span class="r-in"><span></span></span>

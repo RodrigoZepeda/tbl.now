@@ -428,7 +428,23 @@ ensemble <- nowcast_ensemble(
 ```
 
 Engines in a backtest need unique labels and identical quantile levels.
-A seed is derived per engine/date fit.
+A seed is derived per engine/date fit. `parallel = TRUE` (experimental,
+off by default) runs each engine/date fit as a `future` task via
+`foreach` and `doFuture`, on the backend set with
+[`future::plan()`](https://future.futureverse.org/reference/plan.html);
+with `seed` the result equals the sequential run. It may not play well
+with Stan engines
+([`engine_epinowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_engines.md),
+[`engine_epinow2()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_engines.md)):
+run their chains sequentially inside a parallel backtest, or keep
+`parallel = FALSE`. A failed fit is skipped with a warning
+(`on_error = "warn"`);
+[`nowcast_weights()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_weights.md),
+the print summary, and
+[`nowcast_ensemble()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_ensemble.md)
+weights then compare methods only on targets every method scored,
+warning about the dropped method/date rows (`common_dates = FALSE`
+averages each method over its own targets).
 `nowcast_ensemble(type = "quantile")` works with quantiles;
 `type = "linear_pool"` requires draws from every member. Combine only
 models with the same target semantics, dates, and strata. Use

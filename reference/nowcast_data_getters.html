@@ -21,7 +21,7 @@ x[[get_event_date(x)]] and your code works on any tbl_now."><meta property="og:i
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.1.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -51,7 +51,7 @@ x[[get_event_date(x)]] and your code works on any tbl_now."><meta property="og:i
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Read what a <code>tbl_now</code> was told about itself</h1>
-      <small class="dont-index">Source: <a href="https://github.com/RodrigoZepeda/tbl.now/blob/main/R/getters.R" class="external-link"><code>R/getters.R</code></a>, <a href="https://github.com/RodrigoZepeda/tbl.now/blob/main/R/revision.R" class="external-link"><code>R/revision.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/RodrigoZepeda/tbl.now/blob/devel/R/getters.R" class="external-link"><code>R/getters.R</code></a>, <a href="https://github.com/RodrigoZepeda/tbl.now/blob/devel/R/revision.R" class="external-link"><code>R/revision.R</code></a></small>
       <div class="d-none name"><code>nowcast_data_getters.Rd</code></div>
     </div>
 
@@ -79,6 +79,12 @@ assuming a column is called <code>onset_week</code>, write
 <span><span class="fu">get_covariates</span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu">get_num_covariates</span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu">get_event_covariates</span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu">get_report_covariates</span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu">get_revision_covariates</span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu">get_now</span><span class="op">(</span><span class="va">x</span><span class="op">)</span></span>
 <span></span>
@@ -131,6 +137,13 @@ of the column holding the number of cases.</p></dd>
 <dt><code>get_strata()</code>, <code>get_covariates()</code></dt>
 <dd><p>Character vector of column names,
 or <code>NULL</code> when there are none.</p></dd>
+
+<dt><code>get_event_covariates()</code>, <code>get_report_covariates()</code>,
+<code>get_revision_covariates()</code></dt>
+<dd><p>Character vector of covariate column names
+tagged for the event/incidence, reporting-delay, or revision component,
+or <code>NULL</code> when there are none. A column may appear in more than one of
+these.</p></dd>
 
 <dt><code>get_num_strata()</code>, <code>get_num_covariates()</code></dt>
 <dd><p>Integer count, <code>0</code> when

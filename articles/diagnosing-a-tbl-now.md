@@ -103,7 +103,7 @@ diagnose(sari)
 #> ℹ truncation/event_date [[0,20]]: 78 event dates are younger than the 95th percentile of the delay, so their counts are still filling in; an estimated 22% of their eventual total has not arrived.
 #> ℹ truncation/event_date: 78 event dates are younger than the 95th percentile of the delay, so their counts are still filling in; an estimated 17% of their eventual total has not arrived.
 #> 
-#> ✔ 12 passed: declarations/temporal_effects, missing/age_cat, missing/symptom_onset_date, now/event_date, now/now_gap_report, now/report_date, simultaneously missing/event and report dates, units/declared, units/delay, units/event_grid, and units/report_grid
+#> ✔ 12 passed: declarations/temporal_effects, missing/age_cat, missing/symptom_onset_date, now/event_date, now/now_gap_report, now/report_date, simultaneously missing/event and report dates, units/declared, units/event_grid, units/report, and units/report_grid
 #> ─ 5 skipped: duplicates/key, negatives/count, ordering/event_to_revision, ordering/report_to_revision, and strata/pending
 #> 
 #> ℹ 35 findings. Use `dplyr::filter()` or `tibble::as_tibble()` for the table.
@@ -186,7 +186,7 @@ diagnose(flu_now)
 #> 1 warning, 5 notes, 12 passed, 4 skipped.
 #> 
 #> Warnings (1)
-#> ! units/delay: 563 rows have a fractional `.delay`.
+#> ! units/report: 563 rows have a fractional `.delay`.
 #>   → A fractional delay is what a converter chokes on: the two date columns are on different grids. `align_weeks()` is the fix for weekly data.
 #> 
 #> Notes (5)

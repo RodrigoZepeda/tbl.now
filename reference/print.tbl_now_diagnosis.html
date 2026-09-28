@@ -19,7 +19,7 @@ works on it."><meta property="og:image" content="https://rodrigozepeda.github.io
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.1.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -49,7 +49,7 @@ works on it."><meta property="og:image" content="https://rodrigozepeda.github.io
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Print a <code>tbl_now</code> diagnosis</h1>
-      <small class="dont-index">Source: <a href="https://github.com/RodrigoZepeda/tbl.now/blob/main/R/diagnose.R" class="external-link"><code>R/diagnose.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/RodrigoZepeda/tbl.now/blob/devel/R/diagnose.R" class="external-link"><code>R/diagnose.R</code></a></small>
       <div class="d-none name"><code>print.tbl_now_diagnosis.Rd</code></div>
     </div>
 
@@ -123,7 +123,7 @@ empty report.</p></dd>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #0000BB;">ℹ</span> <span style="font-weight: bold;">strata/sparsity [Female]:</span> The sparsest stratum is "Female": 8 of the 260 weeks between the minimum event (2006-01-02) and the now (2010-12-20) carry no cases at all (3.1%, against 1.2% pooled over every stratum).</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #555555;">→</span> <span style="color: #555555;">A stratum that is mostly zeros is the one a per-stratum fit will struggle with; pooling it is often better than fitting it. When every stratum is mostly zeros the grid is finer than the data -- `aggregate_time_units()` coarsens it.</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> 18 passed: <span style="color: #00BB00;">declarations/temporal_effects</span>, <span style="color: #00BB00;">declarations/undeclared</span>, <span style="color: #00BB00;">missing/gender</span>, <span style="color: #00BB00;">missing/onset_week</span>, <span style="color: #00BB00;">missing/report_week</span>, <span style="color: #00BB00;">now/event_date</span>, <span style="color: #00BB00;">now/now_gap_report</span>, <span style="color: #00BB00;">now/report_date</span>, <span style="color: #00BB00;">ordering/event_to_report</span>, <span style="color: #00BB00;">simultaneously missing/event and report dates</span>, <span style="color: #00BB00;">truncation/event_date</span>, <span style="color: #00BB00;">units/declared</span>, <span style="color: #00BB00;">units/delay</span>, <span style="color: #00BB00;">units/event_grid</span>, and <span style="color: #00BB00;">units/report_grid</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> 18 passed: <span style="color: #00BB00;">declarations/temporal_effects</span>, <span style="color: #00BB00;">declarations/undeclared</span>, <span style="color: #00BB00;">missing/gender</span>, <span style="color: #00BB00;">missing/onset_week</span>, <span style="color: #00BB00;">missing/report_week</span>, <span style="color: #00BB00;">now/event_date</span>, <span style="color: #00BB00;">now/now_gap_report</span>, <span style="color: #00BB00;">now/report_date</span>, <span style="color: #00BB00;">ordering/event_to_report</span>, <span style="color: #00BB00;">simultaneously missing/event and report dates</span>, <span style="color: #00BB00;">truncation/event_date</span>, <span style="color: #00BB00;">units/declared</span>, <span style="color: #00BB00;">units/event_grid</span>, <span style="color: #00BB00;">units/report</span>, and <span style="color: #00BB00;">units/report_grid</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #555555;">─</span> 5 skipped: <span style="color: #00BB00;">duplicates/key</span>, <span style="color: #00BB00;">negatives/count</span>, <span style="color: #00BB00;">ordering/event_to_revision</span>, <span style="color: #00BB00;">ordering/report_to_revision</span>, and <span style="color: #00BB00;">strata/pending</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #555555;">ℹ 29 findings. Use `dplyr::filter()` or `tibble::as_tibble()` for the table.</span></span>
@@ -159,8 +159,8 @@ empty report.</p></dd>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> <span style="font-weight: bold;">truncation/event_date [Male]:</span> Every event date is old enough to be complete.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> <span style="font-weight: bold;">truncation/event_date:</span> Every event date is old enough to be complete.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> <span style="font-weight: bold;">units/declared:</span> The declared units agree: "weeks" and "weeks".</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> <span style="font-weight: bold;">units/delay:</span> Every `.delay` is a whole number of units.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> <span style="font-weight: bold;">units/event_grid:</span> "onset_week" lands on the object's "weeks" grid.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> <span style="font-weight: bold;">units/report:</span> Every `.delay` is a whole number of units.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> <span style="font-weight: bold;">units/report_grid:</span> "report_week" lands on the object's "weeks" grid.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="font-weight: bold;">Skipped (5)</span></span>

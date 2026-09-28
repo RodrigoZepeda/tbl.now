@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.1.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -37,7 +37,7 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="logo.png" class="logo" alt=""><h1>Use tbl.now</h1>
-      <small class="dont-index">Source: <a href="https://github.com/RodrigoZepeda/tbl.now/blob/main/SKILL.md" class="external-link"><code>SKILL.md</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/RodrigoZepeda/tbl.now/blob/devel/SKILL.md" class="external-link"><code>SKILL.md</code></a></small>
     </div>
 
 <div id="use-tblnow" class="section level1">
@@ -265,7 +265,7 @@
 <span>  renewal <span class="op">=</span> <span class="va">fit_b</span>,</span>
 <span>  weights <span class="op">=</span> <span class="va">weights</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<p>Engines in a backtest need unique labels and identical quantile levels. A seed is derived per engine/date fit. <code>nowcast_ensemble(type = "quantile")</code> works with quantiles; <code>type = "linear_pool"</code> requires draws from every member. Combine only models with the same target semantics, dates, and strata. Use <code>scoringutils::as_forecast_*()</code> for additional scoring workflows.</p>
+<p>Engines in a backtest need unique labels and identical quantile levels. A seed is derived per engine/date fit. <code>parallel = TRUE</code> (experimental, off by default) runs each engine/date fit as a <code>future</code> task via <code>foreach</code> and <code>doFuture</code>, on the backend set with <code><a href="https://future.futureverse.org/reference/plan.html" class="external-link">future::plan()</a></code>; with <code>seed</code> the result equals the sequential run. It may not play well with Stan engines (<code><a href="reference/nowcast_engines.html">engine_epinowcast()</a></code>, <code><a href="reference/nowcast_engines.html">engine_epinow2()</a></code>): run their chains sequentially inside a parallel backtest, or keep <code>parallel = FALSE</code>. A failed fit is skipped with a warning (<code>on_error = "warn"</code>); <code><a href="reference/nowcast_weights.html">nowcast_weights()</a></code>, the print summary, and <code><a href="reference/nowcast_ensemble.html">nowcast_ensemble()</a></code> weights then compare methods only on targets every method scored, warning about the dropped method/date rows (<code>common_dates = FALSE</code> averages each method over its own targets). <code>nowcast_ensemble(type = "quantile")</code> works with quantiles; <code>type = "linear_pool"</code> requires draws from every member. Combine only models with the same target semantics, dates, and strata. Use <code>scoringutils::as_forecast_*()</code> for additional scoring workflows.</p>
 </div>
 <div class="section level2">
 <h2 id="common-failure-modes">Common failure modes<a class="anchor" aria-label="anchor" href="#common-failure-modes"></a></h2>

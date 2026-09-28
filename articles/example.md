@@ -183,7 +183,7 @@ diagnose(hai_bucaramanga)
 #> ℹ truncation/event_date [Male]: 15 event dates are younger than the 95th percentile of the delay, so their counts are still filling in; an estimated 25.5% of their eventual total has not arrived.
 #> ℹ truncation/event_date: 24 event dates are younger than the 95th percentile of the delay, so their counts are still filling in; an estimated 20.5% of their eventual total has not arrived.
 #> 
-#> ✔ 12 passed: declarations/temporal_effects, missing/sex, now/event_date, now/now_gap_event, now/now_gap_report, now/report_date, units/declared, units/delay, units/event_grid, and units/report_grid
+#> ✔ 12 passed: declarations/temporal_effects, missing/sex, now/event_date, now/now_gap_event, now/now_gap_report, now/report_date, units/declared, units/event_grid, units/report, and units/report_grid
 #> ─ 5 skipped: duplicates/key, negatives/count, ordering/event_to_revision, ordering/report_to_revision, and strata/pending
 #> 
 #> ℹ 29 findings. Use `dplyr::filter()` or `tibble::as_tibble()` for the table.
@@ -310,7 +310,7 @@ diagnose(hai_bucaramanga)
 #> ℹ truncation/event_date [Male]: 204 event dates are younger than the 95th percentile of the delay, so their counts are still filling in; an estimated 71.7% of their eventual total has not arrived.
 #> ℹ truncation/event_date: 300 event dates are younger than the 95th percentile of the delay, so their counts are still filling in; an estimated 74.7% of their eventual total has not arrived.
 #> 
-#> ✔ 20 passed: declarations/temporal_effects, missing/.is_censored_report, missing/report_date, missing/sex, missing/specimen_date, now/event_date, now/now_gap_event, now/now_gap_report, now/report_date, ordering/event_to_report, simultaneously missing/event and report dates, units/declared, units/delay, units/event_grid, and units/report_grid
+#> ✔ 20 passed: declarations/temporal_effects, missing/.is_censored_report, missing/report_date, missing/sex, missing/specimen_date, now/event_date, now/now_gap_event, now/now_gap_report, now/report_date, ordering/event_to_report, simultaneously missing/event and report dates, units/declared, units/event_grid, units/report, and units/report_grid
 #> ─ 5 skipped: duplicates/key, negatives/count, ordering/event_to_revision, ordering/report_to_revision, and strata/pending
 #> 
 #> ℹ 32 findings. Use `dplyr::filter()` or `tibble::as_tibble()` for the table.

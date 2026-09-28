@@ -48,9 +48,9 @@ tidy(x, probs = NULL, level = 0.95, newdata = NULL, ...)
 - newdata:
 
   `tidy.epidist_fit()` only. Optional data frame passed to
-  [`epidist::predict_delay_parameters()`](https://epidist.epinowcast.org/reference/predict_delay_parameters.html),
-  for a fit with covariates in the delay model
-  (`formula = mu ~ 1 + gender`, say). `NULL` uses the fit's own data.
+  `epidist::predict_delay_parameters()`, for a fit with covariates in
+  the delay model (`formula = mu ~ 1 + gender`, say). `NULL` uses the
+  fit's own data.
 
 ## Value
 
@@ -93,7 +93,7 @@ real quantile rather than an approximation.
 ## How `mean` and `sd` are obtained
 
 epidist reports continuous-distribution moments via
-[`epidist::add_mean_sd()`](https://epidist.epinowcast.org/reference/add_mean_sd.html).
+`epidist::add_mean_sd()`.
 
 EpiNow2 gets them without naming a distribution. It can fit five
 families today and may add more, and a
@@ -173,10 +173,10 @@ fit <- try(
   ),
   silent = TRUE
 )
-#> WARN [2026-09-11 10:38:54] estimate_dist (chain: 1): Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.
+#> WARN [2026-09-28 18:16:39] estimate_dist (chain: 1): Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.
 #> Running the chains for more iterations may help. See
 #> https://mc-stan.org/misc/warnings.html#bulk-ess - 
-#> WARN [2026-09-11 10:38:54] estimate_dist (chain: 1): Tail Effective Samples Size (ESS) is too low, indicating posterior variances and tail quantiles may be unreliable.
+#> WARN [2026-09-28 18:16:39] estimate_dist (chain: 1): Tail Effective Samples Size (ESS) is too low, indicating posterior variances and tail quantiles may be unreliable.
 #> Running the chains for more iterations may help. See
 #> https://mc-stan.org/misc/warnings.html#tail-ess - 
 

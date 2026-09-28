@@ -2,12 +2,13 @@
 
 Defines tidy data structures and package-agnostic workflows for
 epidemiological nowcasting. The 'tbl_now' class records event, report,
-and revision dates alongside strata, covariates, censoring, and
-reporting-delay metadata while remaining compatible with 'dplyr'. Tools
-support validation, manipulation, diagnostics, visualization, format
-conversion, retrospective evaluation, and multiple modelling engines.
-The 'tbl_nowcast' class standardizes probabilistic predictions for
-plotting, scoring, comparison, and ensembling.
+and revision dates alongside strata, covariates tagged by model
+component, censoring, and reporting-delay metadata while remaining
+compatible with 'dplyr'. Tools support validation, manipulation,
+diagnostics, visualization, format conversion, retrospective evaluation,
+and multiple modelling engines. The 'tbl_nowcast' class standardizes
+probabilistic predictions for plotting, scoring, comparison, and
+ensembling.
 
 ## Details
 

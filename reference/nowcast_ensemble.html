@@ -17,7 +17,7 @@ needs no reshaping on your side."><meta property="og:image" content="https://rod
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.1.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -47,7 +47,7 @@ needs no reshaping on your side."><meta property="og:image" content="https://rod
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Combine several nowcasts into an ensemble</h1>
-      <small class="dont-index">Source: <a href="https://github.com/RodrigoZepeda/tbl.now/blob/main/R/nowcast_ensemble.R" class="external-link"><code>R/nowcast_ensemble.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/RodrigoZepeda/tbl.now/blob/devel/R/nowcast_ensemble.R" class="external-link"><code>R/nowcast_ensemble.R</code></a></small>
       <div class="d-none name"><code>nowcast_ensemble.Rd</code></div>
     </div>
 
@@ -68,6 +68,7 @@ needs no reshaping on your side.</p>
 <span>  weights <span class="op">=</span> <span class="st">"equal"</span>,</span>
 <span>  backtest <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  include_now <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  common_dates <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  quantile_levels <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  n_draws <span class="op">=</span> <span class="fl">4000L</span>,</span>
 <span>  name <span class="op">=</span> <span class="st">"ensemble"</span>,</span>
@@ -116,6 +117,12 @@ passed to <code><a href="nowcast_weights.html">nowcast_weights()</a></code>.</p>
 <code>backtest</code>, should rows at the nowcast members' own <code>now</code> dates be allowed
 into the weight-training window? Default <code>FALSE</code>; set <code>TRUE</code> only for an
 in-sample diagnostic.</p></dd>
+
+
+<dt id="arg-common-dates">common_dates<a class="anchor" aria-label="anchor" href="#arg-common-dates"></a></dt>
+<dd><p>Logical. When deriving performance weights from
+<code>backtest</code>, compare the methods only on the targets every one of them
+scored. Default <code>TRUE</code>; passed to <code><a href="nowcast_weights.html">nowcast_weights()</a></code>.</p></dd>
 
 
 <dt id="arg-quantile-levels">quantile_levels<a class="anchor" aria-label="anchor" href="#arg-quantile-levels"></a></dt>

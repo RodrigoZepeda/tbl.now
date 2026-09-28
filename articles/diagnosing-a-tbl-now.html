@@ -27,7 +27,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.1.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -70,7 +70,7 @@
       <img src="../logo.png" class="logo" alt=""><h1>Diagnosing a tbl_now</h1>
             
       
-      <small class="dont-index">Source: <a href="https://github.com/RodrigoZepeda/tbl.now/blob/main/vignettes/articles/diagnosing-a-tbl-now.Rmd" class="external-link"><code>vignettes/articles/diagnosing-a-tbl-now.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/RodrigoZepeda/tbl.now/blob/devel/vignettes/articles/diagnosing-a-tbl-now.Rmd" class="external-link"><code>vignettes/articles/diagnosing-a-tbl-now.Rmd</code></a></small>
       <div class="d-none name"><code>diagnosing-a-tbl-now.Rmd</code></div>
     </div>
 
@@ -169,7 +169,7 @@ can be used to print a report: with errors, warnings and notes:</p>
 <span><span class="co">#&gt; <span style="color: #0000BB;">ℹ</span> <span style="font-weight: bold;">truncation/event_date [[0,20]]:</span> 78 event dates are younger than the 95th percentile of the delay, so their counts are still filling in; an estimated 22% of their eventual total has not arrived.</span></span>
 <span><span class="co">#&gt; <span style="color: #0000BB;">ℹ</span> <span style="font-weight: bold;">truncation/event_date:</span> 78 event dates are younger than the 95th percentile of the delay, so their counts are still filling in; an estimated 17% of their eventual total has not arrived.</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> 12 passed: <span style="color: #00BB00;">declarations/temporal_effects</span>, <span style="color: #00BB00;">missing/age_cat</span>, <span style="color: #00BB00;">missing/symptom_onset_date</span>, <span style="color: #00BB00;">now/event_date</span>, <span style="color: #00BB00;">now/now_gap_report</span>, <span style="color: #00BB00;">now/report_date</span>, <span style="color: #00BB00;">simultaneously missing/event and report dates</span>, <span style="color: #00BB00;">units/declared</span>, <span style="color: #00BB00;">units/delay</span>, <span style="color: #00BB00;">units/event_grid</span>, and <span style="color: #00BB00;">units/report_grid</span></span></span>
+<span><span class="co">#&gt; <span style="color: #00BB00;">✔</span> 12 passed: <span style="color: #00BB00;">declarations/temporal_effects</span>, <span style="color: #00BB00;">missing/age_cat</span>, <span style="color: #00BB00;">missing/symptom_onset_date</span>, <span style="color: #00BB00;">now/event_date</span>, <span style="color: #00BB00;">now/now_gap_report</span>, <span style="color: #00BB00;">now/report_date</span>, <span style="color: #00BB00;">simultaneously missing/event and report dates</span>, <span style="color: #00BB00;">units/declared</span>, <span style="color: #00BB00;">units/event_grid</span>, <span style="color: #00BB00;">units/report</span>, and <span style="color: #00BB00;">units/report_grid</span></span></span>
 <span><span class="co">#&gt; <span style="color: #555555;">─</span> 5 skipped: <span style="color: #00BB00;">duplicates/key</span>, <span style="color: #00BB00;">negatives/count</span>, <span style="color: #00BB00;">ordering/event_to_revision</span>, <span style="color: #00BB00;">ordering/report_to_revision</span>, and <span style="color: #00BB00;">strata/pending</span></span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; <span style="color: #555555;">ℹ 35 findings. Use `dplyr::filter()` or `tibble::as_tibble()` for the table.</span></span></span></code></pre></div>
@@ -363,7 +363,7 @@ this example with the <code>flusight</code> dataset:</p>
 <span><span class="co">#&gt; <span style="color: #BBBB00;">1 warning</span><span style="color: #555555;">, </span><span style="color: #0000BB;">5 notes</span><span style="color: #555555;">, </span><span style="color: #00BB00;">12 passed</span><span style="color: #555555;">, 4 skipped.</span></span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; <span style="font-weight: bold;">Warnings (1)</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> <span style="font-weight: bold;">units/delay:</span> 563 rows have a fractional `.delay`.</span></span>
+<span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> <span style="font-weight: bold;">units/report:</span> 563 rows have a fractional `.delay`.</span></span>
 <span><span class="co">#&gt;   <span style="color: #555555;">→</span> <span style="color: #555555;">A fractional delay is what a converter chokes on: the two date columns are on different grids. `align_weeks()` is the fix for weekly data.</span></span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; <span style="font-weight: bold;">Notes (5)</span></span></span>

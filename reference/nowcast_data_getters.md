@@ -27,6 +27,12 @@ get_covariates(x)
 
 get_num_covariates(x)
 
+get_event_covariates(x)
+
+get_report_covariates(x)
+
+get_revision_covariates(x)
+
 get_now(x)
 
 get_report_units(x)
@@ -79,6 +85,13 @@ A column name, a count, or a metadata value, depending on the function:
 - `get_strata()`, `get_covariates()`:
 
   Character vector of column names, or `NULL` when there are none.
+
+- `get_event_covariates()`, `get_report_covariates()`,
+  `get_revision_covariates()`:
+
+  Character vector of covariate column names tagged for the
+  event/incidence, reporting-delay, or revision component, or `NULL`
+  when there are none. A column may appear in more than one of these.
 
 - `get_num_strata()`, `get_num_covariates()`:
 
