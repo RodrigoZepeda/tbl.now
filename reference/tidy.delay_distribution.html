@@ -98,7 +98,7 @@ two packages' fits can be compared side by side.</p>
 
 <dt id="arg-newdata">newdata<a class="anchor" aria-label="anchor" href="#arg-newdata"></a></dt>
 <dd><p><code>tidy.epidist_fit()</code> only. Optional data frame passed to
-<code>epidist::predict_delay_parameters()</code>, for a fit with covariates in the
+<code><a href="https://epidist.epinowcast.org/reference/delay_parameter_draws.html" class="external-link">epidist::delay_parameter_draws()</a></code>, for a fit with covariates in the
 delay model (<code>formula = mu ~ 1 + gender</code>, say). <code>NULL</code> uses the fit's own
 data.</p></dd>
 
@@ -145,7 +145,7 @@ rather than an approximation.</p>
 
 
 <p><span class="pkg">epidist</span> reports continuous-distribution moments via
-<code>epidist::add_mean_sd()</code>.</p>
+<code><a href="https://epidist.epinowcast.org/reference/add_summaries.html" class="external-link">epidist::add_summaries()</a></code>.</p>
 <p><span class="pkg">EpiNow2</span> gets them without naming a distribution. It can fit five
 families today and may add more, and a <code><a href="https://rdrr.io/r/base/switch.html" class="external-link">switch()</a></code> in this package would
 quietly stop reporting anything the day it does. Instead each draw's
@@ -221,10 +221,10 @@ distribution; <a href="revision_delay.html">revision_delay</a> for the delay the
 <span class="r-in"><span>  <span class="op">)</span>,</span></span>
 <span class="r-in"><span>  silent <span class="op">=</span> <span class="cn">TRUE</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> WARN [2026-09-28 18:16:39] estimate_dist (chain: 1): Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> WARN [2026-09-28 22:24:07] estimate_dist (chain: 1): Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Running the chains for more iterations may help. See</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> https://mc-stan.org/misc/warnings.html#bulk-ess - </span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> WARN [2026-09-28 18:16:39] estimate_dist (chain: 1): Tail Effective Samples Size (ESS) is too low, indicating posterior variances and tail quantiles may be unreliable.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> WARN [2026-09-28 22:24:07] estimate_dist (chain: 1): Tail Effective Samples Size (ESS) is too low, indicating posterior variances and tail quantiles may be unreliable.</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Running the chains for more iterations may help. See</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> https://mc-stan.org/misc/warnings.html#tail-ess - </span>
 <span class="r-in"><span></span></span>

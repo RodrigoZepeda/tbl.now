@@ -63,6 +63,11 @@
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.0.0" id="tblnow-100">tbl.now 1.0.0<a class="anchor" aria-label="anchor" href="#tblnow-100"></a></h2><p class="text-muted">CRAN release: 2026-09-21</p>
 <div class="section level3">
+<h3 id="tidy-on-an-epidist-fit-uses-the-current-epidist-interface-1-0-0">
+<code>tidy()</code> on an epidist fit uses the current epidist interface<a class="anchor" aria-label="anchor" href="#tidy-on-an-epidist-fit-uses-the-current-epidist-interface-1-0-0"></a></h3>
+<p>epidist 0.5.0 removed <code>predict_delay_parameters()</code> and <code>add_mean_sd()</code>, which made <code>R CMD check</code> warn about unexported objects and broke <code><a href="../reference/tidy.delay_distribution.html">tidy.epidist_fit()</a></code>. It now calls <code><a href="https://epidist.epinowcast.org/reference/delay_parameter_draws.html" class="external-link">epidist::delay_parameter_draws()</a></code> and <code><a href="https://epidist.epinowcast.org/reference/add_summaries.html" class="external-link">epidist::add_summaries()</a></code>. Because the new draws also carry the model data’s columns, the reported terms are restricted to the family’s distributional parameters plus <code>mean</code> and <code>sd</code>, so the table is the same as before. <code>epidist</code> in <code>Suggests</code> is now <code>&gt;= 0.5.0</code>, the first release with them.</p>
+</div>
+<div class="section level3">
 <h3 id="example_engine-no-longer-emits-duplicate-prediction-rows-1-0-0">
 <code>example_engine()</code> no longer emits duplicate prediction rows<a class="anchor" aria-label="anchor" href="#example_engine-no-longer-emits-duplicate-prediction-rows-1-0-0"></a></h3>
 <p><code><a href="../reference/get_latest_first.html">get_latest_reported_cases()</a></code> answers by the censoring flag as well as by the event date and the strata, so a cell holding both an exactly-dated and a censored arrival comes back as two rows – and answers by a declared <strong>covariate</strong> the same way. <code><a href="../reference/example_engine.html">example_engine()</a></code> passed those rows straight through, so its <code>predictions</code> repeated the <code>(event date, stratum, quantile level)</code> key that a <code>tbl_nowcast</code> is built on.</p>

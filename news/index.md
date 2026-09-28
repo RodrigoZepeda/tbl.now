@@ -73,6 +73,20 @@ receives the same role-tagged `tbl_now` attributes directly.
 
 CRAN release: 2026-09-21
 
+### `tidy()` on an epidist fit uses the current epidist interface
+
+epidist 0.5.0 removed `predict_delay_parameters()` and `add_mean_sd()`,
+which made `R CMD check` warn about unexported objects and broke
+[`tidy.epidist_fit()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.delay_distribution.md).
+It now calls
+[`epidist::delay_parameter_draws()`](https://epidist.epinowcast.org/reference/delay_parameter_draws.html)
+and
+[`epidist::add_summaries()`](https://epidist.epinowcast.org/reference/add_summaries.html).
+Because the new draws also carry the model data’s columns, the reported
+terms are restricted to the family’s distributional parameters plus
+`mean` and `sd`, so the table is the same as before. `epidist` in
+`Suggests` is now `>= 0.5.0`, the first release with them.
+
 ### `example_engine()` no longer emits duplicate prediction rows
 
 [`get_latest_reported_cases()`](https://rodrigozepeda.github.io/tbl.now/reference/get_latest_first.md)
