@@ -220,20 +220,23 @@ test_that("tidy() falls back to NA bounds when there is no pi slot", {
 
 fake_delay_draws <- function() {
   set.seed(1)
-  data.frame(
+  draws <- data.frame(
     draw  = seq_len(400),
     index = rep(1:4, each = 100),
     mu    = stats::rnorm(400, 1.6, 0.05),
     sigma = stats::rnorm(400, 0.61, 0.02)
   )
+  # `delay_parameter_draws()` records the family it drew for.
+  attr(draws, "epidist_family") <- list(name = "lognormal", dpars = c("mu", "sigma"))
+  draws
 }
 
 with_mocked_epidist <- function(code) {
   testthat::local_mocked_bindings(
-    predict_delay_parameters = function(fit, newdata = NULL, ...) {
+    delay_parameter_draws = function(object, newdata = NULL, ...) {
       fake_delay_draws()
     },
-    add_mean_sd = function(data, ...) {
+    add_summaries = function(data, ...) {
       data$mean <- exp(data$mu + data$sigma^2 / 2)
       data$sd <- data$mean * sqrt(exp(data$sigma^2) - 1)
       data

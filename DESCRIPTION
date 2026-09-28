@@ -33,7 +33,7 @@ Suggests:
     baselinenowcast (>= 0.2.1),
     diseasenowcasting (>= 2.4.0),
     data.table,
-    epidist (>= 0.4.1),
+    epidist (>= 1.0.0),
     EpiNow2 (>= 1.9.0),
     epinowcast (>= 0.7.0),
     knitr,
