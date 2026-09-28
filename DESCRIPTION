@@ -34,7 +34,7 @@ Suggests:
     diseasenowcasting (>= 2.4.0),
     data.table,
     doFuture (>= 1.0.0),
-    epidist (>= 0.4.1),
+    epidist (>= 1.0.0),
     EpiNow2 (>= 1.9.0),
     epinowcast (>= 0.7.0),
     foreach,

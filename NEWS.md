@@ -52,6 +52,16 @@ role-tagged `tbl_now` attributes directly.
 
 # tbl.now 1.0.0
 
+## `tidy()` on an epidist fit uses epidist 1.0.0's interface
+
+epidist 1.0.0 removed `predict_delay_parameters()` and `add_mean_sd()`, which
+made `R CMD check` warn about unexported objects and broke `tidy.epidist_fit()`.
+It now calls `epidist::delay_parameter_draws()` and `epidist::add_summaries()`.
+Because the new draws also carry the model data's columns, the reported terms
+are restricted to the family's distributional parameters plus `mean` and `sd`,
+so the table is the same as before. `epidist` in `Suggests` is now
+`>= 1.0.0`.
+
 ## `example_engine()` no longer emits duplicate prediction rows
 
 `get_latest_reported_cases()` answers by the censoring flag as well as by the
