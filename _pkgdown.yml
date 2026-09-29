@@ -209,6 +209,7 @@ reference:
   - nowcast_ensemble
   - nowcast_weights
   - nowcast_backtest
+  - backtest_combine
   - score_nowcast
 
 - title: Converters

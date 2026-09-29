@@ -244,6 +244,10 @@ One can visualize the ensemble with `autoplot()` or get its results with `tidy()
 autoplot(ensemble_nowcast, date_lim = c(as.Date("2010/10/01"), as.Date("2010/12/20")))
 ```
 
+::: {.alert .alert-info}
+You can combine multiple backtests for different models with `backtest_combine`
+:::
+
 ## 4. Adding your own model
 
 You can add any model built by yourself or from any other package to the fitting so that it has its own engine, its own tidy to clean and can be used in conjunction with `tidy()`, `autoplot()` as well as the backtesting and ensemble methods. You can read more about it in [the corresponding article](https://rodrigozepeda.github.io/tbl.now/articles/custom-nowcast-models.html). 
