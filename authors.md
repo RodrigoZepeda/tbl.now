@@ -21,7 +21,7 @@
 ## Citation
 
 Source:
-[`DESCRIPTION`](https://github.com/RodrigoZepeda/tbl.now/blob/main/DESCRIPTION)
+[`DESCRIPTION`](https://github.com/RodrigoZepeda/tbl.now/blob/devel/DESCRIPTION)
 
 Zepeda-Tello R, Yaari R, Perini M (2026). *tbl.now: Tidy Data and
 Workflow Layer for Epidemic Nowcasting*. R package version 1.1.0,
