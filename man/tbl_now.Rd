@@ -11,6 +11,9 @@ tbl_now(
   delay = NULL,
   strata = NULL,
   covariates = NULL,
+  event_covariates = NULL,
+  report_covariates = NULL,
+  revision_covariates = NULL,
   case_count = NULL,
   is_censored_report = NULL,
   revision_date = NULL,
@@ -65,6 +68,13 @@ or \code{NULL} (default). Name of different variables
 (column names) that influence the nowcast but are not strata.
 For example precipitation might influence a dengue nowcast but in general it
 is not of interest to generate nowcasts by precipitation levels.}
+
+\item{event_covariates, report_covariates, revision_covariates}{(optional)
+\href{https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html}{tidy-select}
+or \code{NULL} (default). Subsets of \code{covariates} tagged for the event,
+report or revision component of a model. A column may be tagged in
+more than one component, e.g. a location effect can be both an event and a
+report covariate.}
 
 \item{case_count}{(optional) \href{https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html}{tidy-select} or \code{NULL}
 Name of the column with the case counts if \code{data_type} is "count-incidence"
@@ -211,6 +221,9 @@ by the \code{\link[=validate_tbl_now]{validate_tbl_now()}} function:
 \item{report_date}{Name of the column refering to when the event of interest was reported.}
 \item{strata}{Names of the columns corresponding to the strata (for modelling).}
 \item{covariates}{Names of the columns corresponding to covariates (for modelling).}
+\item{event_covariates}{Covariates tagged for the event/incidence model.}
+\item{report_covariates}{Covariates tagged for the report model.}
+\item{revision_covariates}{Covariates tagged for the revision model.}
 \item{case_count}{Column containing the number of observations for that moment if \code{data_type} is \code{count-incidence} or \code{count-cumulative}.}
 \item{temporal_effects}{Names of the columns refering to the temporal effects.}
 \item{now}{Date of the \code{now} for a nowcast.}

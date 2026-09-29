@@ -518,9 +518,84 @@ nowcast_fit.epinowcast <- function(engine, x, ..., preprocess_args = list(),
     verbose
   )
 
-  .epinowcast_check_effects_wired(x, list(...))
+  dots <- .epinowcast_apply_role_covariates(x, preprocessed, list(...))
 
-  .quietly_if(epinowcast::epinowcast(preprocessed, ...), verbose)
+  .epinowcast_check_effects_wired(x, dots)
+
+  .quietly_if(do.call(epinowcast::epinowcast, c(list(data = preprocessed), dots)), verbose)
+}
+
+#' Add epinowcast module defaults from covariate role tags
+#'
+#' `engine_epinowcast()` leaves explicit module arguments untouched. When a user
+#' tags covariates on the `tbl_now` and has not supplied the corresponding
+#' module, use epinowcast's defaults with the tagged covariates appended to the
+#' relevant formula.
+#'
+#' @param x Source `tbl_now`.
+#' @param preprocessed The object returned by `tbl_now_to_epinowcast()`.
+#' @param dots Engine arguments destined for `epinowcast::epinowcast()`.
+#'
+#' @return Updated argument list.
+#'
+#' @keywords internal
+#' @noRd
+.epinowcast_apply_role_covariates <- function(x, preprocessed, dots) {
+  event_covariates <- get_event_covariates(x) %||% character(0)
+  report_covariates <- get_report_covariates(x) %||% character(0)
+  revision_covariates <- get_revision_covariates(x) %||% character(0)
+
+  if (length(event_covariates) > 0L && is.null(dots$expectation)) {
+    dots$expectation <- epinowcast::enw_expectation(
+      r = .epinowcast_formula(c("(1 | day:.group)", event_covariates), intercept = FALSE),
+      data = preprocessed
+    )
+  } else if (length(event_covariates) > 0L) {
+    .warn_role_covariates_explicit_module("event", event_covariates, "expectation")
+  }
+
+  if (length(report_covariates) > 0L && is.null(dots$reference)) {
+    dots$reference <- epinowcast::enw_reference(
+      parametric = .epinowcast_formula(report_covariates),
+      distribution = "lognormal",
+      data = preprocessed
+    )
+  } else if (length(report_covariates) > 0L) {
+    .warn_role_covariates_explicit_module("report", report_covariates, "reference")
+  }
+
+  if (length(revision_covariates) > 0L) {
+    cli::cli_warn(c(
+      "{.pkg epinowcast} has no revision module for {.cls tbl_now} revision covariates.",
+      "i" = "Revision covariate{?s} {.val {revision_covariates}} {?is/are} kept
+             on the object but not used by {.fn engine_epinowcast}."
+    ))
+  }
+
+  dots
+}
+
+.epinowcast_formula <- function(terms, intercept = TRUE) {
+  rhs <- if (length(terms) == 0L) {
+    "1"
+  } else {
+    paste(terms, collapse = " + ")
+  }
+  if (isTRUE(intercept)) {
+    stats::as.formula(paste("~ 1 +", rhs))
+  } else {
+    stats::as.formula(paste("~ 0 +", rhs))
+  }
+}
+
+.warn_role_covariates_explicit_module <- function(role, covariates, module) {
+  cli::cli_warn(c(
+    "{.fn engine_epinowcast} found {role} covariate{?s} {.val {covariates}},
+     but {.arg {module}} was supplied explicitly.",
+    "i" = "The engine will not rewrite explicit {.pkg epinowcast} modules.
+           Include the covariate{?s} in that module formula yourself if they
+           should be used."
+  ))
 }
 
 #' Warn if declared temporal effects were carried into the epinowcast metadata

@@ -168,6 +168,7 @@ tbl_now_reconstruct <- function(data, template) {
 #' @noRd
 .TBL_NOW_ATTRIBUTES <- c(
   "event_date", "report_date", "case_count", "strata", "covariates",
+  "event_covariates", "report_covariates", "revision_covariates",
   "now", "event_units", "report_units", "data_type",
   "is_censored_report", "is_censored_revision",
   "revision_date", "revision_type", "revision_units",
@@ -212,6 +213,14 @@ tbl_now_reconstruct_internal <- function(data, template) {
 
     # Reattach
     attr(data, "covariates") <- covariates
+  }
+
+  for (role in .covariate_role_attributes()) {
+    role_covariates <- attr(template, role, exact = TRUE)
+    if (!is.null(role_covariates)) {
+      kept <- intersect(role_covariates, get_covariates(data) %||% character(0))
+      attr(data, role) <- if (length(kept) == 0) NULL else kept
+    }
   }
 
   # Preserve the lazy temporal_effects spec unchanged (it does not reference columns)
@@ -909,6 +918,16 @@ rename_attributes <- function(.data, loc) {
     kept_names <- names(.data)[loc_changeable[which(!(loc_changeable %in% loc))]]
     new_names <- names(loc)[which(loc %in% loc_changeable)]
     attr(.data, "covariates") <- c(kept_names, new_names)
+  }
+
+  for (role in .covariate_role_attributes()) {
+    protected_role_cols <- attr(.data, role, exact = TRUE)
+    loc_changeable <- which(names(.data) %in% protected_role_cols)
+    if (any(loc_changeable %in% loc)) {
+      kept_names <- names(.data)[loc_changeable[which(!(loc_changeable %in% loc))]]
+      new_names <- names(loc)[which(loc %in% loc_changeable)]
+      attr(.data, role) <- c(kept_names, new_names)
+    }
   }
 
   return(.data)

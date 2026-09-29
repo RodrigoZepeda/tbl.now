@@ -467,6 +467,9 @@ remove_revision_date <- function(x) {
     event_date = get_event_date(x), report_date = get_report_date(x),
     case_count = get_case_count(x), strata = get_strata(x),
     covariates = get_covariates(x), is_censored_report = get_is_censored_report(x),
+    event_covariates = get_event_covariates(x),
+    report_covariates = get_report_covariates(x),
+    revision_covariates = get_revision_covariates(x),
     data_type = get_data_type(x),
     # Carry the `now` across explicitly. Letting the constructor re-infer it
     # reads the latest date of what is LEFT, so dropping the revision axis --
@@ -507,6 +510,9 @@ remove_revision_date <- function(x) {
     event_date = get_event_date(x), report_date = get_report_date(x),
     case_count = get_case_count(x), strata = get_strata(x),
     covariates = get_covariates(x), is_censored_report = get_is_censored_report(x),
+    event_covariates = get_event_covariates(x),
+    report_covariates = get_report_covariates(x),
+    revision_covariates = get_revision_covariates(x),
     revision_date = {{ revision_date }},
     revision_type = {{ revision_type }},
     revision_units = revision_units,

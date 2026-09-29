@@ -711,6 +711,60 @@ test_that("EpiNow2's predictions come from tidy(), keeping its own width", {
   )
 })
 
+test_that("epinowcast engine wires event and report covariates into default modules", {
+  skip_on_cran()
+  skip_if_not_installed("epinowcast")
+
+  x <- counts_tbl_now() |>
+    dplyr::mutate(
+      school_open = as.integer(event_date >= min(event_date) + 21),
+      region = ifelse(event_date < min(event_date) + 35, "north", "south")
+    ) |>
+    add_event_covariates(school_open) |>
+    add_report_covariates(region)
+
+  preprocessed <- suppressWarnings(
+    tbl_now_to_epinowcast(x, max_delay = 3, verbose = FALSE, quiet = TRUE)
+  )
+  args <- tbl.now:::.epinowcast_apply_role_covariates(x, preprocessed, list())
+
+  expect_true("expectation" %in% names(args))
+  expect_true("reference" %in% names(args))
+  expect_true(grepl("school_open", args$expectation$formula$r, fixed = TRUE))
+  expect_true(grepl("region", args$reference$formula$parametric, fixed = TRUE))
+
+  completed <- suppressWarnings(
+    tbl_now_to_epinowcast(x, max_delay = 3, preprocess = FALSE, verbose = FALSE, quiet = TRUE)
+  )
+  expect_true(all(c("school_open", "region") %in% colnames(completed)))
+})
+
+test_that("diseasenowcasting engine receives covariate role attributes", {
+  skip_on_cran()
+  skip_if_not_installed("diseasenowcasting")
+
+  x <- counts_tbl_now() |>
+    dplyr::mutate(
+      school_open = as.integer(event_date >= min(event_date) + 21),
+      region = ifelse(event_date < min(event_date) + 35, "north", "south")
+    ) |>
+    add_event_covariates(school_open) |>
+    add_report_covariates(region)
+
+  seen <- NULL
+  local_mocked_bindings(
+    nowcast = function(data, ...) {
+      seen <<- data
+      structure(list(), class = "diseasenowcasting_fit")
+    },
+    .package = "diseasenowcasting"
+  )
+
+  nowcast_fit(engine_diseasenowcasting(), x, verbose = FALSE)
+  expect_equal(get_event_covariates(seen), "school_open")
+  expect_equal(get_report_covariates(seen), "region")
+})
+
 # The catalogue ---------------------------------------------------------------
 
 test_that("every built-in method has both extension methods registered", {

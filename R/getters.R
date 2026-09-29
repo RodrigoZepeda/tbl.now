@@ -32,6 +32,11 @@
 #'     of the column holding the number of cases.}
 #'   \item{`get_strata()`, `get_covariates()`}{Character vector of column names,
 #'     or `NULL` when there are none.}
+#'   \item{`get_event_covariates()`, `get_report_covariates()`,
+#'     `get_revision_covariates()`}{Character vector of covariate column names
+#'     tagged for the event/incidence, reporting-delay, or revision component,
+#'     or `NULL` when there are none. A column may appear in more than one of
+#'     these.}
 #'   \item{`get_num_strata()`, `get_num_covariates()`}{Integer count, `0` when
 #'     there are none.}
 #'   \item{`get_is_censored_report()`}{Character, or `NULL`. The name of the column
@@ -192,6 +197,24 @@ get_covariates <- function(x) {
 #' @export
 get_num_covariates <- function(x) {
   length(get_covariates(x))
+}
+
+#' @rdname nowcast_data_getters
+#' @export
+get_event_covariates <- function(x) {
+  attr(x, "event_covariates", exact = TRUE)
+}
+
+#' @rdname nowcast_data_getters
+#' @export
+get_report_covariates <- function(x) {
+  attr(x, "report_covariates", exact = TRUE)
+}
+
+#' @rdname nowcast_data_getters
+#' @export
+get_revision_covariates <- function(x) {
+  attr(x, "revision_covariates", exact = TRUE)
 }
 
 #' @rdname nowcast_data_getters

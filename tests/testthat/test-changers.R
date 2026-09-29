@@ -539,6 +539,69 @@ test_that("remove_all_covariates works when no covariates exist", {
   expect_equal(get_num_covariates(result), 0)
 })
 
+test_that("covariate role helpers tag and prune covariates", {
+  test_data <- setup_test_data()
+  ndata <- test_data$ndata |>
+    add_event_covariates(temperature) |>
+    add_report_covariates(temperature, humidity) |>
+    add_revision_covariates(humidity)
+
+  expect_equal(get_event_covariates(ndata), "temperature")
+  expect_equal(get_report_covariates(ndata), c("temperature", "humidity"))
+  expect_equal(get_revision_covariates(ndata), "humidity")
+  expect_setequal(get_covariates(ndata), c("temperature", "humidity"))
+  expect_true(validate_tbl_now(ndata))
+
+  renamed <- ndata |>
+    dplyr::rename(temp = temperature)
+  expect_equal(get_event_covariates(renamed), "temp")
+  expect_equal(get_report_covariates(renamed), c("humidity", "temp"))
+  expect_setequal(get_covariates(renamed), c("humidity", "temp"))
+
+  pruned <- ndata |>
+    remove_covariates(temperature)
+  expect_null(get_event_covariates(pruned))
+  expect_equal(get_report_covariates(pruned), "humidity")
+  expect_equal(get_revision_covariates(pruned), "humidity")
+})
+
+test_that("unassigned covariates default to event covariates", {
+  test_data <- setup_test_data()
+
+  expect_equal(get_covariates(test_data$ndata), "temperature")
+  expect_equal(get_event_covariates(test_data$ndata), "temperature")
+
+  ndata <- test_data$ndata |>
+    add_covariates(humidity)
+
+  expect_setequal(get_covariates(ndata), c("temperature", "humidity"))
+  expect_setequal(get_event_covariates(ndata), c("temperature", "humidity"))
+  expect_null(get_report_covariates(ndata))
+})
+
+test_that("covariate role attributes validate as subsets of covariates", {
+  test_data <- setup_test_data()
+  ndata <- test_data$ndata |>
+    add_event_covariates(temperature)
+  attr(ndata, "covariates") <- NULL
+
+  expect_error(
+    validate_tbl_now(ndata),
+    "event_covariates.*covariates"
+  )
+})
+
+test_that("tbl_now print shows covariate roles", {
+  test_data <- setup_test_data()
+  ndata <- test_data$ndata |>
+    add_event_covariates(temperature) |>
+    add_report_covariates(humidity)
+
+  printed <- capture.output(print(ndata))
+  expect_true(any(grepl("Event covariates", printed)))
+  expect_true(any(grepl("Report covariates", printed)))
+})
+
 # Tests for change_now() ----
 test_that("change_now changes the now date", {
   skip_on_cran()

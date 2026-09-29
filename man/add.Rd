@@ -20,6 +20,18 @@
 \alias{remove_covariates}
 \alias{add_covariates}
 \alias{remove_all_covariates}
+\alias{change_event_covariates}
+\alias{change_report_covariates}
+\alias{change_revision_covariates}
+\alias{add_event_covariates}
+\alias{add_report_covariates}
+\alias{add_revision_covariates}
+\alias{remove_event_covariates}
+\alias{remove_report_covariates}
+\alias{remove_revision_covariates}
+\alias{remove_all_event_covariates}
+\alias{remove_all_report_covariates}
+\alias{remove_all_revision_covariates}
 \alias{replace_temporal_effects}
 \alias{remove_temporal_effects}
 \alias{change_is_censored_revision}
@@ -61,6 +73,30 @@ remove_covariates(x, ...)
 add_covariates(x, ...)
 
 remove_all_covariates(x)
+
+change_event_covariates(x, ..., warn_now = TRUE, warn_non_uniqueness = TRUE)
+
+change_report_covariates(x, ..., warn_now = TRUE, warn_non_uniqueness = TRUE)
+
+change_revision_covariates(x, ..., warn_now = TRUE, warn_non_uniqueness = TRUE)
+
+add_event_covariates(x, ...)
+
+add_report_covariates(x, ...)
+
+add_revision_covariates(x, ...)
+
+remove_event_covariates(x, ...)
+
+remove_report_covariates(x, ...)
+
+remove_revision_covariates(x, ...)
+
+remove_all_event_covariates(x)
+
+remove_all_report_covariates(x)
+
+remove_all_revision_covariates(x)
 
 replace_temporal_effects(x, t_effects)
 
@@ -321,6 +357,13 @@ get_covariates(ndata)
 ndata |>
   remove_covariates(humidity) |>
   get_covariates()
+
+## Covariates can also be tagged by model component.
+ndata <- ndata |>
+  add_event_covariates(temperature) |>
+  add_report_covariates(humidity)
+get_event_covariates(ndata)
+get_report_covariates(ndata)
 
 ## ---- Pointing an attribute at a different column ---------------------
 
