@@ -16,7 +16,8 @@ nowcast_backtest(
   verbose = TRUE,
   truth_axis = c("report", "revision"),
   truth_type = "total",
-  parallel = FALSE
+  parallel = FALSE,
+  checkpoint_file = NULL
 )
 }
 \arguments{
@@ -83,6 +84,12 @@ the (engine, date) fits in parallel with \pkg{future}, through
 \code{FALSE}. The workers are whatever \code{\link[future:plan]{future::plan()}} you set before the call;
 under the default \code{plan(sequential)} nothing runs in parallel. \strong{May not
 play well with Stan-based engines}; see the "Parallel backtests" section.}
+
+\item{checkpoint_file}{Optional path to a file where finished fits are saved
+as the backtest runs, so that an interrupted backtest can resume. Run the
+same call again with the same \code{checkpoint_file} and the (engine, date) fits
+already in it are not refitted; only the missing ones run. See the
+"Checkpoints and resuming" section. Default \code{NULL}: nothing is written.}
 }
 \value{
 An object of class \code{nowcast_backtest}: a list with
@@ -172,6 +179,50 @@ the backtest, and keep the number of workers small. When in doubt, leave
 \code{parallel = FALSE}: the sequential path is unchanged.
 }
 
+\section{Checkpoints and resuming}{
+
+
+A long backtest that is interrupted loses every fit it had finished. With
+\code{checkpoint_file}, each finished (engine, date) fit is saved to that file, and
+running the same call again continues from what is there:
+
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{bt <- nowcast_backtest(x, engine_a, engine_b, now_dates = my_dates,
+                       checkpoint_file = "tmp/my_backtest.rds")
+}\if{html}{\out{</div>}}
+
+The file is a single R data (\code{.rds}) file, written exactly as given (its
+folder is created if missing). A resumed call returns the same object as an
+uninterrupted one; only the \code{elapsed_seconds} of the \code{timings} differ.
+\itemize{
+\item \strong{Only fits that succeeded are skipped.} A fit that failed (with
+\code{on_error = "warn"}) is recorded but retried on the next run.
+\item \strong{The file is checked against the call.} It records a fingerprint of the
+data, \code{seed}, \code{keep_draws}, \code{truth_axis}, \code{truth_type} and each engine (by
+label). If any of them differ the call aborts rather than mixing results
+from two different backtests. Adding a new engine, or new \code{now_dates}, is
+fine: they are simply run and appended. Use a new file, or delete the old
+one, to start from scratch. The engine fingerprint ignores the environment
+of a function passed as an argument, so changing only what such a function
+captures is not detected.
+\item \strong{Only the main R session writes the file.} With \code{parallel = TRUE} the
+\code{future} workers only return their fits; they never touch the file, so any
+\code{\link[future:plan]{future::plan()}} -- \code{multisession}, \code{multicore}, \code{cluster} on other
+machines -- is safe. The fits then run in waves of
+\code{\link[future:nbrOfWorkers]{future::nbrOfWorkers()}} and the file is updated after each wave, so an
+interruption loses at most one wave. Without \code{parallel} it is updated after
+every fit. Each update writes a temporary file next to it and renames it
+over the old one, so an interruption during a write cannot leave a
+truncated checkpoint.
+\item \strong{Do not point two simultaneous runs at one file.} They would overwrite
+each other's progress.
+\item Without a \code{seed}, the fits are not reproducible, so a resumed backtest
+mixes fits that used different random numbers. Set \code{seed} if that matters.
+}
+
+To add later dates to a backtest you already have, or to combine backtests of
+different models, see \code{\link[=backtest_combine]{backtest_combine()}}.
+}
+
 \section{Every engine must report the same quantile levels}{
 
 
@@ -228,6 +279,7 @@ which matters here because \code{now} moves between fits;
 \code{\link[=score_nowcast]{score_nowcast()}} for the scores computed at each \code{now};
 \code{\link[=nowcast_weights]{nowcast_weights()}} to turn the result into ensemble weights, and
 \code{\link[=nowcast_ensemble]{nowcast_ensemble()}} to use them;
+\code{\link[=backtest_combine]{backtest_combine()}} to join backtests run separately;
 \code{\link[scoringutils:score]{scoringutils::score()}} and \code{\link[scoringutils:add_relative_skill]{scoringutils::add_relative_skill()}} for an
 extensible scoring workflow. The
 \href{https://rodrigozepeda.github.io/tbl.now/articles/ensemble-nowcasting.html}{\emph{One call, many models} article}

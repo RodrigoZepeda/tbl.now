@@ -1,7 +1,7 @@
 Package: tbl.now
 Type: Package
 Title: Tidy Data and Workflow Layer for Epidemic Nowcasting
-Version: 1.1.0
+Version: 1.1.1
 Authors@R: 
     c(person("Rodrigo", "Zepeda-Tello", , "rzepeda17@gmail.com", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0003-4471-5270")),
@@ -60,19 +60,19 @@ Imports:
     cli,
     generics,
     grid,
-    dplyr,
+    dplyr (>= 1.1.0),
     ggplot2,
     lifecycle,
     lubridate,
     methods,
     pillar,
-    rlang,
+    rlang (>= 1.0.0),
     S7,
     scales,
     stats,
     tibble,
     tidyr,
-    tidyselect,
+    tidyselect (>= 1.2.1),
     utils
 URL: https://rodrigozepeda.github.io/tbl.now/,
     https://github.com/RodrigoZepeda/tbl.now
