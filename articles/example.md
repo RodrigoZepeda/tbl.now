@@ -888,7 +888,7 @@ hai_bucaramanga |>
 #> # A tibble: 1 × 7
 #>   stratum  n_at n_reference mean_delay_at mean_delay_reference statistic p_value
 #>   <chr>   <int>       <int>         <dbl>                <dbl>     <dbl>   <dbl>
-#> 1 all        11          14          11.4                 2.93      2.68   0.002
+#> 1 all        11          14          11.4                 2.93      2.68   0.004
 ```
 
 Where we further identify the date of `2021-11-28` as a potential batch
@@ -955,7 +955,7 @@ tidy(hai_fit_weekly)
     #>   <date>     <chr>      <dbl>    <dbl>     <dbl> <dbl> <chr>            
     #> 1 2022-07-03 Female         0        0         1  0.95 diseasenowcasting
     #> 2 2022-07-03 Male           0        0         1  0.95 diseasenowcasting
-    #> 3 2022-07-10 Female         0        0         2  0.95 diseasenowcasting
+    #> 3 2022-07-10 Female         0        0         1  0.95 diseasenowcasting
     #> 4 2022-07-10 Male           0        0         2  0.95 diseasenowcasting
     #> 5 2022-07-17 Female         0        0         2  0.95 diseasenowcasting
     #> # ℹ 1 more row

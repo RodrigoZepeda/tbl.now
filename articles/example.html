@@ -70,7 +70,7 @@
       <img src="../logo.png" class="logo" alt=""><h1>The nowcasting workflow 1: hospital-acquired infections in Bucaramanga, Colombia</h1>
             
       
-      <small class="dont-index">Source: <a href="https://github.com/RodrigoZepeda/tbl.now/blob/devel/vignettes/articles/example.Rmd" class="external-link"><code>vignettes/articles/example.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/RodrigoZepeda/tbl.now/blob/main/vignettes/articles/example.Rmd" class="external-link"><code>vignettes/articles/example.Rmd</code></a></small>
       <div class="d-none name"><code>example.Rmd</code></div>
     </div>
 
@@ -801,7 +801,7 @@ batches:</p>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1 × 7</span></span></span>
 <span><span class="co">#&gt;   stratum  n_at n_reference mean_delay_at mean_delay_reference statistic p_value</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>                <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> all        11          14          11.4                 2.93      2.68   0.002</span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> all        11          14          11.4                 2.93      2.68   0.004</span></span></code></pre></div>
 <p>Where we further identify the date of <code>2021-11-28</code> as a
 potential batch with its <code>p_value &lt; 0.05</code>.</p>
 </div>
@@ -847,7 +847,7 @@ fan the nowcast’s prediction intervals.</p>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;date&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>            </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> 2022-07-03 Female         0        0         1  0.95 diseasenowcasting</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> 2022-07-03 Male           0        0         1  0.95 diseasenowcasting</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> 2022-07-10 Female         0        0         2  0.95 diseasenowcasting</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> 2022-07-10 Female         0        0         1  0.95 diseasenowcasting</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> 2022-07-10 Male           0        0         2  0.95 diseasenowcasting</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> 2022-07-17 Female         0        0         2  0.95 diseasenowcasting</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># ℹ 1 more row</span></span></span></code></pre>

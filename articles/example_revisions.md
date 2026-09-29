@@ -416,11 +416,11 @@ tidy(covid_fit)
     #> # A tibble: 6 × 7
     #>   event_date stratum estimate conf.low conf.high level engine
     #>   <date>     <chr>      <dbl>    <dbl>     <dbl> <dbl> <chr> 
-    #> 1 2020-09-30 Female      422.     305       621.  0.95 hsgp  
-    #> 2 2020-09-30 Male        371      267.      585.  0.95 hsgp  
-    #> 3 2020-09-30 Other        14       10        20   0.95 hsgp  
-    #> 4 2020-10-01 Female      391      265       607   0.95 hsgp  
-    #> 5 2020-10-01 Male        378      266.      645.  0.95 hsgp  
+    #> 1 2020-09-30 Female      414      295       576.  0.95 hsgp  
+    #> 2 2020-09-30 Male        368.     261       537   0.95 hsgp  
+    #> 3 2020-09-30 Other        14       10        19   0.95 hsgp  
+    #> 4 2020-10-01 Female      383      255       568.  0.95 hsgp  
+    #> 5 2020-10-01 Male        376      252.      579.  0.95 hsgp  
     #> # ℹ 1 more row
 
 ## 8. Backtesting
@@ -473,8 +473,8 @@ covid_backtest
 #> # A tibble: 2 × 4
 #>   .method mean_wis mean_ae_median coverage_90
 #>   <chr>      <dbl>          <dbl>       <dbl>
-#> 1 hsgp        25.1           29.6       0.541
-#> 2 ar1         26.6           36.0       0.603
+#> 1 hsgp        26.0           30.4       0.530
+#> 2 ar1         26.6           36.1       0.604
 ```
 
 ## 9. Ensembling
