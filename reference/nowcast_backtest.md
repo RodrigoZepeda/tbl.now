@@ -30,7 +30,8 @@ nowcast_backtest(
   verbose = TRUE,
   truth_axis = c("report", "revision"),
   truth_type = "total",
-  parallel = FALSE
+  parallel = FALSE,
+  checkpoint_file = NULL
 )
 ```
 
@@ -134,6 +135,15 @@ nowcast_backtest(
   runs in parallel. **May not play well with Stan-based engines**; see
   the "Parallel backtests" section.
 
+- checkpoint_file:
+
+  Optional path to a file where finished fits are saved as the backtest
+  runs, so that an interrupted backtest can resume. Run the same call
+  again with the same `checkpoint_file` and the (engine, date) fits
+  already in it are not refitted; only the missing ones run. See the
+  "Checkpoints and resuming" section. Default `NULL`: nothing is
+  written.
+
 ## Value
 
 An object of class `nowcast_backtest`: a list with
@@ -230,6 +240,57 @@ parallel backtest, set their chains to run sequentially
 backtest, and keep the number of workers small. When in doubt, leave
 `parallel = FALSE`: the sequential path is unchanged.
 
+## Checkpoints and resuming
+
+A long backtest that is interrupted loses every fit it had finished.
+With `checkpoint_file`, each finished (engine, date) fit is saved to
+that file, and running the same call again continues from what is there:
+
+    bt <- nowcast_backtest(x, engine_a, engine_b, now_dates = my_dates,
+                           checkpoint_file = "tmp/my_backtest.rds")
+
+The file is a single R data (`.rds`) file, written exactly as given (its
+folder is created if missing). A resumed call returns the same object as
+an uninterrupted one; only the `elapsed_seconds` of the `timings`
+differ.
+
+- **Only fits that succeeded are skipped.** A fit that failed (with
+  `on_error = "warn"`) is recorded but retried on the next run.
+
+- **The file is checked against the call.** It records a fingerprint of
+  the data, `seed`, `keep_draws`, `truth_axis`, `truth_type` and each
+  engine (by label). If any of them differ the call aborts rather than
+  mixing results from two different backtests. Adding a new engine, or
+  new `now_dates`, is fine: they are simply run and appended. Use a new
+  file, or delete the old one, to start from scratch. The engine
+  fingerprint ignores the environment of a function passed as an
+  argument, so changing only what such a function captures is not
+  detected.
+
+- **Only the main R session writes the file.** With `parallel = TRUE`
+  the `future` workers only return their fits; they never touch the
+  file, so any
+  [`future::plan()`](https://future.futureverse.org/reference/plan.html)
+  – `multisession`, `multicore`, `cluster` on other machines – is safe.
+  The fits then run in waves of
+  [`future::nbrOfWorkers()`](https://future.futureverse.org/reference/nbrOfWorkers.html)
+  and the file is updated after each wave, so an interruption loses at
+  most one wave. Without `parallel` it is updated after every fit. Each
+  update writes a temporary file next to it and renames it over the old
+  one, so an interruption during a write cannot leave a truncated
+  checkpoint.
+
+- **Do not point two simultaneous runs at one file.** They would
+  overwrite each other's progress.
+
+- Without a `seed`, the fits are not reproducible, so a resumed backtest
+  mixes fits that used different random numbers. Set `seed` if that
+  matters.
+
+To add later dates to a backtest you already have, or to combine
+backtests of different models, see
+[`backtest_combine()`](https://rodrigozepeda.github.io/tbl.now/reference/backtest_combine.md).
+
 ## Every engine must report the same quantile levels
 
 A backtest exists to compare models, and two models summarised at
@@ -255,6 +316,8 @@ for the scores computed at each `now`;
 to turn the result into ensemble weights, and
 [`nowcast_ensemble()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_ensemble.md)
 to use them;
+[`backtest_combine()`](https://rodrigozepeda.github.io/tbl.now/reference/backtest_combine.md)
+to join backtests run separately;
 [`scoringutils::score()`](https://epiforecasts.io/scoringutils/reference/score.html)
 and
 [`scoringutils::add_relative_skill()`](https://epiforecasts.io/scoringutils/reference/add_relative_skill.html)

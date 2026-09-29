@@ -1,5 +1,45 @@
 # Changelog
 
+## tbl.now 1.1.1
+
+### `simulate_batch()` works on older R versions
+
+[`simulate_batch()`](https://rodrigozepeda.github.io/tbl.now/reference/simulate_batch.md)
+aborted with “Every report date is closed” on older R versions (seen on
+R 4.3.3) whatever `closed_dates` was, because
+[`setdiff()`](https://generics.r-lib.org/reference/setops.html) returns
+plain numbers there and [`match()`](https://rdrr.io/r/base/match.html)
+cannot compare them with dates. The open dates are now recovered from
+their numeric values, which is correct on every R version.
+
+### `nowcast_backtest()` can resume, and backtests can be combined
+
+[`nowcast_backtest()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_backtest.md)
+gains `checkpoint_file`
+([\#90](https://github.com/RodrigoZepeda/tbl.now/issues/90)). Each
+finished (engine, date) fit is saved to that file; running the same call
+again refits only the fits that are missing, and a fit that failed is
+retried. The file records a fingerprint of the data, `seed`,
+`keep_draws`, the truth settings and each engine, and a call that
+differs from it aborts rather than mixing fits from two backtests; new
+`now_dates` and new engines are added to it. Only the main R session
+writes the file (through a temporary file and a rename), so every
+[`future::plan()`](https://future.futureverse.org/reference/plan.html)
+is safe with `parallel = TRUE`, which then runs and saves the fits in
+waves of
+[`future::nbrOfWorkers()`](https://future.futureverse.org/reference/nbrOfWorkers.html).
+
+The new
+[`backtest_combine()`](https://rodrigozepeda.github.io/tbl.now/reference/backtest_combine.md)
+joins backtests that were run separately
+([\#91](https://github.com/RodrigoZepeda/tbl.now/issues/91)): different
+models on the same dates, the same model on new dates, or both.
+Combining what one call would have produced gives the same object as
+that call. It aborts when a (method, date) fit appears twice or when the
+backtests differ in strata, `truth_axis`, `truth_type`, `keep_draws` or
+quantile levels, and `only_common_dates = TRUE` keeps only the dates
+every method has.
+
 ## tbl.now 1.1.0
 
 ### Breaking: backtest methods are compared on the targets all of them scored

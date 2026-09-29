@@ -23,7 +23,7 @@ and a long now_dates it is genuinely expensive."><meta property="og:image" conte
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.1.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -83,7 +83,8 @@ and a long <code>now_dates</code> it is genuinely expensive.</p>
 <span>  verbose <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  truth_axis <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"report"</span>, <span class="st">"revision"</span><span class="op">)</span>,</span>
 <span>  truth_type <span class="op">=</span> <span class="st">"total"</span>,</span>
-<span>  parallel <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span>  parallel <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  checkpoint_file <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -177,6 +178,14 @@ the (engine, date) fits in parallel with <span class="pkg">future</span>, throug
 under the default <code>plan(sequential)</code> nothing runs in parallel. <strong>May not
 play well with Stan-based engines</strong>; see the "Parallel backtests" section.</p></dd>
 
+
+<dt id="arg-checkpoint-file">checkpoint_file<a class="anchor" aria-label="anchor" href="#arg-checkpoint-file"></a></dt>
+<dd><p>Optional path to a file where finished fits are saved
+as the backtest runs, so that an interrupted backtest can resume. Run the
+same call again with the same <code>checkpoint_file</code> and the (engine, date) fits
+already in it are not refitted; only the missing ones run. See the
+"Checkpoints and resuming" section. Default <code>NULL</code>: nothing is written.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -258,6 +267,44 @@ the backtest, and keep the number of workers small. When in doubt, leave
 <code>parallel = FALSE</code>: the sequential path is unchanged.</p>
     </div>
     <div class="section level2">
+    <h2 id="checkpoints-and-resuming">Checkpoints and resuming<a class="anchor" aria-label="anchor" href="#checkpoints-and-resuming"></a></h2>
+
+
+
+<p>A long backtest that is interrupted loses every fit it had finished. With
+<code>checkpoint_file</code>, each finished (engine, date) fit is saved to that file, and
+running the same call again continues from what is there:</p>
+<p></p><div class="sourceCode r"><pre><code><span><span class="va">bt</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/nowcast_backtest.html">nowcast_backtest</a></span><span class="op">(</span><span class="va">x</span>, <span class="va">engine_a</span>, <span class="va">engine_b</span>, now_dates <span class="op">=</span> <span class="va">my_dates</span>,</span>
+<span>                       checkpoint_file <span class="op">=</span> <span class="st">"tmp/my_backtest.rds"</span><span class="op">)</span></span></code></pre><p></p></div>
+<p>The file is a single R data (<code>.rds</code>) file, written exactly as given (its
+folder is created if missing). A resumed call returns the same object as an
+uninterrupted one; only the <code>elapsed_seconds</code> of the <code>timings</code> differ.</p><ul><li><p><strong>Only fits that succeeded are skipped.</strong> A fit that failed (with
+<code>on_error = "warn"</code>) is recorded but retried on the next run.</p></li>
+<li><p><strong>The file is checked against the call.</strong> It records a fingerprint of the
+data, <code>seed</code>, <code>keep_draws</code>, <code>truth_axis</code>, <code>truth_type</code> and each engine (by
+label). If any of them differ the call aborts rather than mixing results
+from two different backtests. Adding a new engine, or new <code>now_dates</code>, is
+fine: they are simply run and appended. Use a new file, or delete the old
+one, to start from scratch. The engine fingerprint ignores the environment
+of a function passed as an argument, so changing only what such a function
+captures is not detected.</p></li>
+<li><p><strong>Only the main R session writes the file.</strong> With <code>parallel = TRUE</code> the
+<code>future</code> workers only return their fits; they never touch the file, so any
+<code><a href="https://future.futureverse.org/reference/plan.html" class="external-link">future::plan()</a></code> – <code>multisession</code>, <code>multicore</code>, <code>cluster</code> on other
+machines – is safe. The fits then run in waves of
+<code><a href="https://future.futureverse.org/reference/nbrOfWorkers.html" class="external-link">future::nbrOfWorkers()</a></code> and the file is updated after each wave, so an
+interruption loses at most one wave. Without <code>parallel</code> it is updated after
+every fit. Each update writes a temporary file next to it and renames it
+over the old one, so an interruption during a write cannot leave a
+truncated checkpoint.</p></li>
+<li><p><strong>Do not point two simultaneous runs at one file.</strong> They would overwrite
+each other's progress.</p></li>
+<li><p>Without a <code>seed</code>, the fits are not reproducible, so a resumed backtest
+mixes fits that used different random numbers. Set <code>seed</code> if that matters.</p></li>
+</ul><p>To add later dates to a backtest you already have, or to combine backtests of
+different models, see <code><a href="backtest_combine.html">backtest_combine()</a></code>.</p>
+    </div>
+    <div class="section level2">
     <h2 id="every-engine-must-report-the-same-quantile-levels">Every engine must report the same quantile levels<a class="anchor" aria-label="anchor" href="#every-engine-must-report-the-same-quantile-levels"></a></h2>
 
 
@@ -280,6 +327,7 @@ which matters here because <code>now</code> moves between fits;
 <code><a href="score_nowcast.html">score_nowcast()</a></code> for the scores computed at each <code>now</code>;
 <code><a href="nowcast_weights.html">nowcast_weights()</a></code> to turn the result into ensemble weights, and
 <code><a href="nowcast_ensemble.html">nowcast_ensemble()</a></code> to use them;
+<code><a href="backtest_combine.html">backtest_combine()</a></code> to join backtests run separately;
 <code><a href="https://epiforecasts.io/scoringutils/reference/score.html" class="external-link">scoringutils::score()</a></code> and <code><a href="https://epiforecasts.io/scoringutils/reference/add_relative_skill.html" class="external-link">scoringutils::add_relative_skill()</a></code> for an
 extensible scoring workflow. The
 <a href="https://rodrigozepeda.github.io/tbl.now/articles/ensemble-nowcasting.html"><em>One call, many models</em> article</a>

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.1.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -128,6 +128,19 @@
 <li>method, fit, <code>now</code>, source data, call, and metadata.</li>
 </ul><p>Backend-specific operations use the untouched native fit. Generic <code><a href="reference/tidy.nowcast.html">tidy()</a></code>, plotting, scoring, forecast coercion, and ensembling use the common result. Never fabricate arbitrary quantiles for a backend without draws.</p>
 <p>S7 class names can contain <code>::</code>, which S3 method names cannot represent. Use the existing <code>.onLoad()</code> registration pattern where required. Re-export <code><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">generics::tidy</a></code>; do not create a competing generic.</p>
+</div>
+<div class="section level2">
+<h2 id="backtests-checkpoints-and-combining">Backtests, checkpoints and combining<a class="anchor" aria-label="anchor" href="#backtests-checkpoints-and-combining"></a></h2>
+<p><code><a href="reference/nowcast_backtest.html">nowcast_backtest()</a></code> fits every (engine, date) pair, dates outer and engines inner. Two features are built on that order and must keep working when the backtest changes:</p>
+<ul><li>
+<strong><code><a href="reference/backtest_combine.html">backtest_combine()</a></code></strong> joins backtests run separately – other engines on the same dates, or the same engines on new dates. Combining what one call would have produced must return that call’s object: same rows in the same order, same <code>methods</code>, <code>now_dates</code>, <code>timings</code> and <code>truth</code>, differing only in <code>elapsed_seconds</code>. Test that equality, with strata and a grouped <code>tbl_now</code>. A (method, <code>now</code>) fit in two backtests aborts, a success replaces a failure of the same fit, and backtests that differ in event date, strata, <code>truth_axis</code>, <code>truth_type</code>, <code>keep_draws</code> or quantile levels are refused. If you add a field or table to the <code>nowcast_backtest</code> object, teach <code><a href="reference/backtest_combine.html">backtest_combine()</a></code> to combine it.</li>
+<li>
+<strong><code>checkpoint_file</code></strong> lets an interrupted backtest resume. Only the main R session touches the file; <code>future</code> workers return their fits and never see the path, so every plan is safe. Never write from a worker, and never write in place: write a temporary file beside it and rename. The file stores a fingerprint of everything a fit depends on (data, <code>seed</code>, <code>keep_draws</code>, truth settings, each engine by label); a mismatch aborts rather than mixing backtests. A new argument that changes what a fit computes must join the fingerprint. Failed fits are stored but retried on resume. A resumed backtest must equal an uninterrupted one.</li>
+</ul><p>Test both under <code>parallel = TRUE</code> with a sequential plan and, where the installed package is the code under test, real <code>multisession</code> workers.</p>
+</div>
+<div class="section level2">
+<h2 id="dependencies-and-the-environment">Dependencies and the environment<a class="anchor" aria-label="anchor" href="#dependencies-and-the-environment"></a></h2>
+<p>Test on the versions CI uses (the current R release and current CRAN packages), not an old container. A failure that only an old R or old dependency shows is a missing minimum: declare it with <code>&gt;=</code> in <code>DESCRIPTION</code> (<code>Depends</code>, <code>Imports</code> or <code>Suggests</code>) rather than working around it in the code, and say so in the commit message. Give a minimum to every package whose newer function or argument the code uses (<code><a href="https://rlang.r-lib.org/reference/hash.html" class="external-link">rlang::hash()</a></code> needs rlang 1.0.0, <code>.by</code> in dplyr needs 1.1.0). Compiled packages built under an older R do not load in a newer one; reinstall them after upgrading R.</p>
 </div>
 <div class="section level2">
 <h2 id="summaries-and-diagnostics">Summaries and diagnostics<a class="anchor" aria-label="anchor" href="#summaries-and-diagnostics"></a></h2>

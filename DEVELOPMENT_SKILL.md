@@ -202,6 +202,52 @@ Re-export
 [`generics::tidy`](https://generics.r-lib.org/reference/tidy.html); do
 not create a competing generic.
 
+## Backtests, checkpoints and combining
+
+[`nowcast_backtest()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_backtest.md)
+fits every (engine, date) pair, dates outer and engines inner. Two
+features are built on that order and must keep working when the backtest
+changes:
+
+- **[`backtest_combine()`](https://rodrigozepeda.github.io/tbl.now/reference/backtest_combine.md)**
+  joins backtests run separately – other engines on the same dates, or
+  the same engines on new dates. Combining what one call would have
+  produced must return that call’s object: same rows in the same order,
+  same `methods`, `now_dates`, `timings` and `truth`, differing only in
+  `elapsed_seconds`. Test that equality, with strata and a grouped
+  `tbl_now`. A (method, `now`) fit in two backtests aborts, a success
+  replaces a failure of the same fit, and backtests that differ in event
+  date, strata, `truth_axis`, `truth_type`, `keep_draws` or quantile
+  levels are refused. If you add a field or table to the
+  `nowcast_backtest` object, teach
+  [`backtest_combine()`](https://rodrigozepeda.github.io/tbl.now/reference/backtest_combine.md)
+  to combine it.
+- **`checkpoint_file`** lets an interrupted backtest resume. Only the
+  main R session touches the file; `future` workers return their fits
+  and never see the path, so every plan is safe. Never write from a
+  worker, and never write in place: write a temporary file beside it and
+  rename. The file stores a fingerprint of everything a fit depends on
+  (data, `seed`, `keep_draws`, truth settings, each engine by label); a
+  mismatch aborts rather than mixing backtests. A new argument that
+  changes what a fit computes must join the fingerprint. Failed fits are
+  stored but retried on resume. A resumed backtest must equal an
+  uninterrupted one.
+
+Test both under `parallel = TRUE` with a sequential plan and, where the
+installed package is the code under test, real `multisession` workers.
+
+## Dependencies and the environment
+
+Test on the versions CI uses (the current R release and current CRAN
+packages), not an old container. A failure that only an old R or old
+dependency shows is a missing minimum: declare it with `>=` in
+`DESCRIPTION` (`Depends`, `Imports` or `Suggests`) rather than working
+around it in the code, and say so in the commit message. Give a minimum
+to every package whose newer function or argument the code uses
+([`rlang::hash()`](https://rlang.r-lib.org/reference/hash.html) needs
+rlang 1.0.0, `.by` in dplyr needs 1.1.0). Compiled packages built under
+an older R do not load in a newer one; reinstall them after upgrading R.
+
 ## Summaries and diagnostics
 
 [`validate_tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/validate_tbl_now.md)

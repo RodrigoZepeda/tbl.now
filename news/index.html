@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.1.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -40,6 +40,20 @@
       <small>Source: <a href="https://github.com/RodrigoZepeda/tbl.now/blob/devel/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.1.1" id="tblnow-111">tbl.now 1.1.1<a class="anchor" aria-label="anchor" href="#tblnow-111"></a></h2>
+<div class="section level3">
+<h3 id="simulate_batch-works-on-older-r-versions-1-1-1">
+<code>simulate_batch()</code> works on older R versions<a class="anchor" aria-label="anchor" href="#simulate_batch-works-on-older-r-versions-1-1-1"></a></h3>
+<p><code><a href="../reference/simulate_batch.html">simulate_batch()</a></code> aborted with “Every report date is closed” on older R versions (seen on R 4.3.3) whatever <code>closed_dates</code> was, because <code><a href="https://generics.r-lib.org/reference/setops.html" class="external-link">setdiff()</a></code> returns plain numbers there and <code><a href="https://rdrr.io/r/base/match.html" class="external-link">match()</a></code> cannot compare them with dates. The open dates are now recovered from their numeric values, which is correct on every R version.</p>
+</div>
+<div class="section level3">
+<h3 id="nowcast_backtest-can-resume-and-backtests-can-be-combined-1-1-1">
+<code>nowcast_backtest()</code> can resume, and backtests can be combined<a class="anchor" aria-label="anchor" href="#nowcast_backtest-can-resume-and-backtests-can-be-combined-1-1-1"></a></h3>
+<p><code><a href="../reference/nowcast_backtest.html">nowcast_backtest()</a></code> gains <code>checkpoint_file</code> (<a href="https://github.com/RodrigoZepeda/tbl.now/issues/90" class="external-link">#90</a>). Each finished (engine, date) fit is saved to that file; running the same call again refits only the fits that are missing, and a fit that failed is retried. The file records a fingerprint of the data, <code>seed</code>, <code>keep_draws</code>, the truth settings and each engine, and a call that differs from it aborts rather than mixing fits from two backtests; new <code>now_dates</code> and new engines are added to it. Only the main R session writes the file (through a temporary file and a rename), so every <code><a href="https://future.futureverse.org/reference/plan.html" class="external-link">future::plan()</a></code> is safe with <code>parallel = TRUE</code>, which then runs and saves the fits in waves of <code><a href="https://future.futureverse.org/reference/nbrOfWorkers.html" class="external-link">future::nbrOfWorkers()</a></code>.</p>
+<p>The new <code><a href="../reference/backtest_combine.html">backtest_combine()</a></code> joins backtests that were run separately (<a href="https://github.com/RodrigoZepeda/tbl.now/issues/91" class="external-link">#91</a>): different models on the same dates, the same model on new dates, or both. Combining what one call would have produced gives the same object as that call. It aborts when a (method, date) fit appears twice or when the backtests differ in strata, <code>truth_axis</code>, <code>truth_type</code>, <code>keep_draws</code> or quantile levels, and <code>only_common_dates = TRUE</code> keeps only the dates every method has.</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.1.0" id="tblnow-110">tbl.now 1.1.0<a class="anchor" aria-label="anchor" href="#tblnow-110"></a></h2>
 <div class="section level3">

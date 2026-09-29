@@ -450,6 +450,25 @@ averages each method over its own targets).
 models with the same target semantics, dates, and strata. Use
 `scoringutils::as_forecast_*()` for additional scoring workflows.
 
+An interrupted backtest can resume:
+`nowcast_backtest(..., checkpoint_file = "tmp/bt.rds")` saves each
+finished engine/date fit, and running the same call again refits only
+what is missing (failed fits are retried). The file records a
+fingerprint of the data, seed, truth settings and each engine, and a
+call that differs aborts instead of mixing results; new dates and new
+engines are simply added. Only the main R session writes the file, so
+any
+[`future::plan()`](https://future.futureverse.org/reference/plan.html)
+is safe with `parallel = TRUE` (fits then run and are saved in waves of
+one per worker). Do not point two simultaneous runs at one file.
+
+`backtest_combine(bt_a, bt_b)` joins backtests run separately – other
+engines on the same dates, or the same engines on other dates – into the
+object one call would have produced. It aborts on a (method, date) fit
+present twice or on backtests that differ in strata, truth settings or
+quantile levels; `only_common_dates = TRUE` keeps just the dates every
+method has.
+
 ## Common failure modes
 
 - Do not sum cumulative snapshots across report delays.

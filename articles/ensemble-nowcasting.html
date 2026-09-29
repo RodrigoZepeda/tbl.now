@@ -27,7 +27,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.1.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -359,6 +359,10 @@ nowcast.</p>
 <div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">ensemble_nowcast</span>, date_lim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2010/10/01"</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2010/12/20"</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p><img src="ensemble-nowcasting_files/figure-html/unnamed-chunk-7-1.png" class="r-plt" alt="" width="864"></p>
+<div class="alert alert-info">
+<p>You can combine multiple backtests for different models with
+<code>backtest_combine</code></p>
+</div>
 </div>
 <div class="section level2">
 <h2 id="adding-your-own-model">4. Adding your own model<a class="anchor" aria-label="anchor" href="#adding-your-own-model"></a>

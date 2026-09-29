@@ -345,6 +345,9 @@ autoplot(ensemble_nowcast, date_lim = c(as.Date("2010/10/01"), as.Date("2010/12/
 
 ![](ensemble-nowcasting_files/figure-html/unnamed-chunk-7-1.png)
 
+You can combine multiple backtests for different models with
+`backtest_combine`
+
 ## 4. Adding your own model
 
 You can add any model built by yourself or from any other package to the

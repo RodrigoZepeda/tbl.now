@@ -565,6 +565,9 @@ One interface over the modelling packages.
 
   Refit several methods at past `now` dates and score them
 
+- [`backtest_combine()`](https://rodrigozepeda.github.io/tbl.now/reference/backtest_combine.md)
+  **\[experimental\]** : Combine backtests
+
 - [`score_nowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/score_nowcast.md)
   [`as_forecast_quantile(`*`<nowcast_backtest>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/score_nowcast.md)
   [`as_forecast_point(`*`<nowcast_backtest>`*`)`](https://rodrigozepeda.github.io/tbl.now/reference/score_nowcast.md)
