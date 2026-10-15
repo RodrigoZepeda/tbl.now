@@ -47,7 +47,7 @@ weekend_lags, which capture the shutdown and the catch-up that follows it.
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.1.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -77,7 +77,7 @@ weekend_lags, which capture the shutdown and the catch-up that follows it.
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Calendar effects to include in a nowcast</h1>
-      <small class="dont-index">Source: <a href="https://github.com/RodrigoZepeda/tbl.now/blob/main/R/temporal_effects.R" class="external-link"><code>R/temporal_effects.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/RodrigoZepeda/tbl.now/blob/devel/R/temporal_effects.R" class="external-link"><code>R/temporal_effects.R</code></a></small>
       <div class="d-none name"><code>temporal_effects.Rd</code></div>
     </div>
 
@@ -135,11 +135,17 @@ wave rather than 52 unrelated weeks.</p></li>
 
 
 <dt id="arg-month-of-year">month_of_year<a class="anchor" aria-label="anchor" href="#arg-month-of-year"></a></dt>
-<dd><p>Logical. Whether to include an effect for the month of the year.</p></dd>
+<dd><p>Logical. Whether to include an effect for the calendar
+month of each date: a factor with levels <code>1</code> (January) to <code>12</code> (December).</p></dd>
 
 
 <dt id="arg-week-of-year">week_of_year<a class="anchor" aria-label="anchor" href="#arg-week-of-year"></a></dt>
-<dd><p>Logical. Whether to include an effect for the epidemiological week.</p></dd>
+<dd><p>Logical. Whether to include an effect for the
+epidemiological (MMWR) week of each date, as given by <code><a href="https://lubridate.tidyverse.org/reference/week.html" class="external-link">lubridate::epiweek()</a></code>:
+a factor with levels <code>1</code> to <code>53</code>. MMWR weeks run Sunday to Saturday, and week
+53 only occurs in some years, so its level is often empty.</p>
+<p>Both codes come from the calendar, not from the data's first date: the same
+date gets the same code in every series, stratum and fitting window.</p></dd>
 
 
 <dt id="arg-holiday-lags">holiday_lags<a class="anchor" aria-label="anchor" href="#arg-holiday-lags"></a></dt>
@@ -179,7 +185,13 @@ positive-numeric vector, each entry giving the number of periods in one cycle.
 The Fourier period of the i-th entry is <code>seasons[i] * season_length[i]</code>.</p>
 <p>In weekly data, <code>seasons = 52</code> is a yearly wave. Several entries fit several
 waves at once, so <code>seasons = c(7, 365)</code> in daily data fits a weekly and a
-yearly cycle together.</p></dd>
+yearly cycle together.</p>
+<p>The phase is anchored to the calendar: on a date axis, time is counted from
+1970-01-01 in the data's units, so a date gets the same sine and cosine
+values whatever the first date of the series. (A numeric axis has no
+calendar, and is counted from its first event.) A period of 52 weeks is 364
+days, so its peak drifts about a day a year against the calendar; use
+<code>seasons = 52.18</code> (365.25 / 7, rounded) in weekly data if that matters.</p></dd>
 
 
 <dt id="arg-season-length">season_length<a class="anchor" aria-label="anchor" href="#arg-season-length"></a></dt>

@@ -1,5 +1,87 @@
 # Changelog
 
+## tbl.now 1.2.0
+
+### Breaking: calendar effects follow the calendar ([\#99](https://github.com/RodrigoZepeda/tbl.now/issues/99))
+
+`temporal_effects(week_of_year = TRUE)`, `month_of_year = TRUE` and
+`seasons` were coded relative to the data rather than the calendar: the
+week and month were offsets from the date in the object’s **first row**
+(so January was month 3 for data starting in November, and the code even
+depended on row order), and the Fourier terms counted time from the
+earliest event date. The same calendar week therefore got a different
+code in every series, stratum and backtest window, and a coefficient
+labelled “week 7” was not epiweek 7.
+
+Now, on every date axis:
+
+- `month_of_year` is the calendar month: a factor with levels `1`
+  (January) to `12` (December).
+- `week_of_year` is the MMWR epidemiological week,
+  \[lubridate::epiweek()\]: a factor with levels `1` to `53`. Week 53,
+  which only some years have, keeps a level of its own instead of being
+  folded into another week.
+- `seasons` count time from 1970-01-01 in the data’s units, so a date
+  gets the same sine and cosine values whatever the first date of the
+  series. Fourier terms for report dates are still counted in the event
+  units, as before. A numeric (non-date) axis has no calendar and still
+  counts from its first event.
+
+Column names are unchanged, but their values change, so models refitted
+with these effects code them differently. A model’s fit with Fourier
+`seasons` alone is unaffected in principle – shifting the phase rotates
+the sine and cosine pair onto the same span – while models with
+`week_of_year` or `month_of_year` now use January / epiweek 1, rather
+than the first period in the data, as the reference level.
+[`tbl_now_to_epinowcast()`](https://rodrigozepeda.github.io/tbl.now/reference/tbl_now_epinowcast.md)
+derives the effects on its completed grid from the calendar too, so its
+values match
+[`compute_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/add_temporal_effects.md)
+wherever the grid starts.
+[`add_temporal_effects.data.frame()`](https://rodrigozepeda.github.io/tbl.now/reference/add_temporal_effects.md)
+no longer needs `numeric_col` for seasons on a date column (an explicit
+`numeric_col` still takes precedence) and gains `season_units`, the
+units the Fourier periods are counted in.
+
+### `nowcast_ensemble()` can take the median ([\#100](https://github.com/RodrigoZepeda/tbl.now/issues/100))
+
+`nowcast_ensemble(type = "median")` combines the members’ predictive
+quantiles by their median, level by level, as the COVID-19 and FluSight
+forecast hubs’ quantile median ensembles do. One outlying member cannot
+drag it the way it drags the average (`type = "quantile"`). The
+`weights` still apply: any weights other than `"equal"`, including
+`"inverse_score"` and `"optim"` from a backtest, give a weighted median.
+With two equally weighted members the median equals the average, so it
+needs three or more to differ.
+
+### epidist comes from CRAN
+
+`epidist` in `Suggests` is now `>= 1.0.0`, its first CRAN release, so it
+installs without an extra repository.
+[`tidy.epidist_fit()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.delay_distribution.md)
+uses the interface that epidist 0.5.0 introduced,
+[`delay_parameter_draws()`](https://epidist.epinowcast.org/reference/delay_parameter_draws.html)
+and
+[`add_summaries()`](https://epidist.epinowcast.org/reference/add_summaries.html),
+in place of the removed `predict_delay_parameters()` and
+`add_mean_sd()`, which had made
+[`tidy()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.nowcast.md)
+fail on every fit and `R CMD check` warn about missing objects. Because
+the new draws carry every column of the model data, all numeric, the
+reported terms are taken from the fit’s family (`mu` and `sigma` for a
+lognormal, say) plus `mean` and `sd`, rather than from whatever numeric
+column is left after dropping a list of bookkeeping names.
+`baselinenowcast` in `Suggests` is relaxed to `>= 0.2.0`, the version on
+CRAN.
+
+### `diagnose()` reports fractional delays under `units` / `delay` again
+
+1.1.0 accidentally moved the fractional-`.delay` finding of
+[`diagnose()`](https://rodrigozepeda.github.io/tbl.now/reference/diagnose.md)
+and
+[`validate_tbl_now()`](https://rodrigozepeda.github.io/tbl.now/reference/validate_tbl_now.md)
+from scope `"delay"` to `"report"`. It is back under `"delay"`.
+
 ## tbl.now 1.1.1
 
 ### `simulate_batch()` works on older R versions
@@ -112,20 +194,6 @@ receives the same role-tagged `tbl_now` attributes directly.
 ## tbl.now 1.0.0
 
 CRAN release: 2026-09-21
-
-### `tidy()` on an epidist fit uses the current epidist interface
-
-epidist 0.5.0 removed `predict_delay_parameters()` and `add_mean_sd()`,
-which made `R CMD check` warn about unexported objects and broke
-[`tidy.epidist_fit()`](https://rodrigozepeda.github.io/tbl.now/reference/tidy.delay_distribution.md).
-It now calls
-[`epidist::delay_parameter_draws()`](https://epidist.epinowcast.org/reference/delay_parameter_draws.html)
-and
-[`epidist::add_summaries()`](https://epidist.epinowcast.org/reference/add_summaries.html).
-Because the new draws also carry the model data’s columns, the reported
-terms are restricted to the family’s distributional parameters plus
-`mean` and `sd`, so the table is the same as before. `epidist` in
-`Suggests` is now `>= 0.5.0`, the first release with them.
 
 ### `example_engine()` no longer emits duplicate prediction rows
 

@@ -16,7 +16,7 @@ reshaping on your side.
 ``` r
 nowcast_ensemble(
   ...,
-  type = c("quantile", "linear_pool"),
+  type = c("quantile", "median", "linear_pool"),
   weights = "equal",
   backtest = NULL,
   include_now = FALSE,
@@ -44,6 +44,17 @@ nowcast_ensemble(
   :   Average the members' predictive quantiles level by level
       (Vincentization). Applicable to every backend.
 
+  `"median"`
+
+  :   Take the median of the members' predictive quantiles level by
+      level, the quantile median ensemble used by the COVID-19 and
+      FluSight forecast hubs. Unlike the average, one outlying member
+      cannot drag it. With `weights` other than `"equal"` it is the
+      weighted median: the value at which the members below it carry
+      half the total weight. With two equally weighted members it equals
+      `"quantile"`, so it needs three or more members to differ.
+      Applicable to every backend.
+
   `"linear_pool"`
 
   :   Pool the members' posterior draws into a mixture distribution and
@@ -57,6 +68,7 @@ nowcast_ensemble(
   `"inverse_score"` / `"optim"`. The last two require `backtest` and are
   passed to
   [`nowcast_weights()`](https://rodrigozepeda.github.io/tbl.now/reference/nowcast_weights.md).
+  With `type = "median"` they weight the median rather than the average.
 
 - backtest:
 
@@ -171,4 +183,38 @@ nowcast_ensemble(toy("a", 0), toy("b", 4), weights = c(a = 0.75, b = 0.25), verb
 #> 1 2020-01-05            0.25      9
 #> 2 2020-01-05            0.5      11
 #> 3 2020-01-05            0.75     14
+
+# The median ignores the outlying member "c"; the average does not
+nowcast_ensemble(toy("a", 0), toy("b", 4), toy("c", 40), type = "median", verbose = FALSE)
+#> ── A <tbl_nowcast> from method "ensemble" ──────────────────────────────────────
+#> • now: 
+#> • event dates: 1
+#> • quantile levels: 0.25, 0.5, and 0.75
+#> • draws: none (quantiles only)
+#> 
+#> Nowcast at "2020-01-05" (q50, 25-75% interval):
+#> • 14 [12, 17]
+#> 
+#> # A tibble: 3 × 3
+#>   onset_week .quantile_level .value
+#>   <date>               <dbl>  <dbl>
+#> 1 2020-01-05            0.25     12
+#> 2 2020-01-05            0.5      14
+#> 3 2020-01-05            0.75     17
+nowcast_ensemble(toy("a", 0), toy("b", 4), toy("c", 40), verbose = FALSE)
+#> ── A <tbl_nowcast> from method "ensemble" ──────────────────────────────────────
+#> • now: 
+#> • event dates: 1
+#> • quantile levels: 0.25, 0.5, and 0.75
+#> • draws: none (quantiles only)
+#> 
+#> Nowcast at "2020-01-05" (q50, 25-75% interval):
+#> • 24.7 [22.7, 27.7]
+#> 
+#> # A tibble: 3 × 3
+#>   onset_week .quantile_level .value
+#>   <date>               <dbl>  <dbl>
+#> 1 2020-01-05            0.25   22.7
+#> 2 2020-01-05            0.5    24.7
+#> 3 2020-01-05            0.75   27.7
 ```

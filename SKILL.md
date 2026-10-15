@@ -239,7 +239,11 @@ replaces;
 [`remove_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/add.md)
 clears. Calling
 [`compute_temporal_effects()`](https://rodrigozepeda.github.io/tbl.now/reference/add_temporal_effects.md)
-before attaching a spec is a no-op. Holiday effects accept
+before attaching a spec is a no-op. Calendar effects are read off the
+calendar, not the data’s first date: `month_of_year` is the calendar
+month (January = 1), `week_of_year` the MMWR epiweek (levels 1 to 53),
+and `seasons` count time from 1970-01-01, so the same date has the same
+codes in every series and window. Holiday effects accept
 [`almanac::rcalendar()`](https://rdrr.io/pkg/almanac/man/rcalendar.html)
 objects; validate a custom calendar with
 [`almanac::cal_events()`](https://rdrr.io/pkg/almanac/man/cal_events.html)
@@ -445,10 +449,12 @@ the print summary, and
 weights then compare methods only on targets every method scored,
 warning about the dropped method/date rows (`common_dates = FALSE`
 averages each method over its own targets).
-`nowcast_ensemble(type = "quantile")` works with quantiles;
-`type = "linear_pool"` requires draws from every member. Combine only
-models with the same target semantics, dates, and strata. Use
-`scoringutils::as_forecast_*()` for additional scoring workflows.
+`nowcast_ensemble(type = "quantile")` averages quantiles level by level;
+`type = "median"` takes their (weighted) median, which one outlying
+member cannot drag and which needs three or more members to differ from
+the average; `type = "linear_pool"` requires draws from every member.
+Combine only models with the same target semantics, dates, and strata.
+Use `scoringutils::as_forecast_*()` for additional scoring workflows.
 
 An interrupted backtest can resume:
 `nowcast_backtest(..., checkpoint_file = "tmp/bt.rds")` saves each

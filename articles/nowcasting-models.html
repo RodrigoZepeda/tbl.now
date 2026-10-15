@@ -27,7 +27,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.1.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -70,7 +70,7 @@
       <img src="../logo.png" class="logo" alt=""><h1>Using tbl.now with different modelling packages</h1>
             
       
-      <small class="dont-index">Source: <a href="https://github.com/RodrigoZepeda/tbl.now/blob/main/vignettes/articles/nowcasting-models.Rmd" class="external-link"><code>vignettes/articles/nowcasting-models.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/RodrigoZepeda/tbl.now/blob/devel/vignettes/articles/nowcasting-models.Rmd" class="external-link"><code>vignettes/articles/nowcasting-models.Rmd</code></a></small>
       <div class="d-none name"><code>nowcasting-models.Rmd</code></div>
     </div>
 
@@ -490,12 +490,12 @@ stratified <code>tbl_now</code>:</p>
 <div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">by_stratum</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   reference_date report_date count    sex .event_day_of_week .event_season_365_cos .event_season_365_sin</span></span>
-<span><span class="co">#&gt; 1     2020-03-02  2020-03-06     1 Female             Monday             1.0000000            0.00000000</span></span>
-<span><span class="co">#&gt; 2     2020-03-03  2020-03-14     1 Female            Tuesday             0.9998518            0.01721336</span></span>
-<span><span class="co">#&gt; 3     2020-03-06  2020-03-09     1   Male             Friday             0.9976303            0.06880243</span></span>
-<span><span class="co">#&gt; 4     2020-03-07  2020-03-09     1 Female           Saturday             0.9962982            0.08596480</span></span>
-<span><span class="co">#&gt; 5     2020-03-08  2020-03-11     2 Female             Sunday             0.9946708            0.10310170</span></span>
-<span><span class="co">#&gt; 6     2020-03-09  2020-03-11     1 Female             Monday             0.9927487            0.12020804</span></span></code></pre></div>
+<span><span class="co">#&gt; 1     2020-03-02  2020-03-06     1 Female             Monday             0.3090170             0.9510565</span></span>
+<span><span class="co">#&gt; 2     2020-03-03  2020-03-14     1 Female            Tuesday             0.2926003             0.9562348</span></span>
+<span><span class="co">#&gt; 3     2020-03-06  2020-03-09     1   Male             Friday             0.2428497             0.9700639</span></span>
+<span><span class="co">#&gt; 4     2020-03-07  2020-03-09     1 Female           Saturday             0.2261157             0.9741005</span></span>
+<span><span class="co">#&gt; 5     2020-03-08  2020-03-11     2 Female             Sunday             0.2093146             0.9778483</span></span>
+<span><span class="co">#&gt; 6     2020-03-09  2020-03-11     1 Female             Monday             0.1924516             0.9813065</span></span></code></pre></div>
 <p>Hand it to <code>baselinenowcast(strata_cols = ...)</code> for one
 fit per stratum, or opt into <code>strata_sharing = "delay"</code> /
 <code>"uncertainty"</code> to share the delay PMF or the uncertainty

@@ -332,6 +332,15 @@ ensemble_nowcast <-
                    weights = "optim", backtest = models_backtest)
 ```
 
+Averaging might let one wrong model pull the whole ensemble towards it.
+`type = "median"` takes the median of the models’ quantiles instead
+which is more robust:
+
+``` r
+
+median_nowcast <- nowcast_ensemble(nowcast1, nowcast2, nowcast3, type = "median")
+```
+
 One can visualize the ensemble with
 [`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html) or
 get its results with
@@ -343,7 +352,7 @@ as in the case of a regular nowcast.
 autoplot(ensemble_nowcast, date_lim = c(as.Date("2010/10/01"), as.Date("2010/12/20")))
 ```
 
-![](ensemble-nowcasting_files/figure-html/unnamed-chunk-7-1.png)
+![](ensemble-nowcasting_files/figure-html/unnamed-chunk-8-1.png)
 
 You can combine multiple backtests for different models with
 `backtest_combine`

@@ -39,7 +39,8 @@ add_temporal_effects(
   numeric_col = NULL,
   name_prefix = paste0(".", date_col),
   weekend_days = c("Sat", "Sun"),
-  units = "days"
+  units = "days",
+  season_units = units
 )
 
 # S3 method for class 'tbl_now'
@@ -85,10 +86,13 @@ compute_temporal_effects(x, overwrite = FALSE)
 
 - numeric_col:
 
-  The column which contains the values from which the seasonal effects
-  will be calculated. This applies only to seasonal effects. For
-  date-related effects (such as month or day of the week) use
-  `date_col`.
+  Optional. A numeric time column to calculate the seasonal (Fourier)
+  effects from, instead of the calendar. This applies only to seasonal
+  effects; for date-related effects (such as month or day of the week)
+  use `date_col`. When `NULL` (the default) and `date_col` holds
+  `<Date>` values, time is counted from 1970-01-01 in `season_units`, so
+  the same date gets the same seasonal values whatever the first date of
+  the data. It is required only when `date_col` does not hold dates.
 
 - name_prefix:
 
@@ -117,6 +121,15 @@ compute_temporal_effects(x, overwrite = FALSE)
   *share* of the period's days that are holidays rather than a 0/1
   indicator. For a `tbl_now`, `compute_temporal_effects()` reads this
   off the object.
+
+- season_units:
+
+  Character. The time units the Fourier `seasons` periods are counted in
+  when they are calculated from the calendar (that is, when
+  `numeric_col` is `NULL`): `"days"`, `"weeks"`, `"months"` or
+  `"years"`. Defaults to `units`. For a `tbl_now`,
+  `compute_temporal_effects()` uses the event units for event- and
+  report-date effects and the revision units for revision-date effects.
 
 - date_type:
 
@@ -192,7 +205,7 @@ get_temporal_effect_cols(computed)
 #> [1] ".event_week_of_year"
 head(computed[[get_temporal_effect_cols(computed)[1]]])
 #> [1] 1 1 1 1 1 1
-#> 52 Levels: 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 ... 52
+#> 53 Levels: 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 ... 53
 
 # Specifications accumulate, so you can add a second pattern ...
 both <- dengue |>

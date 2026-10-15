@@ -377,12 +377,12 @@ by_stratum <- tbl_now_to_baselinenowcast(
 
 head(by_stratum)
 #>   reference_date report_date count    sex .event_day_of_week .event_season_365_cos .event_season_365_sin
-#> 1     2020-03-02  2020-03-06     1 Female             Monday             1.0000000            0.00000000
-#> 2     2020-03-03  2020-03-14     1 Female            Tuesday             0.9998518            0.01721336
-#> 3     2020-03-06  2020-03-09     1   Male             Friday             0.9976303            0.06880243
-#> 4     2020-03-07  2020-03-09     1 Female           Saturday             0.9962982            0.08596480
-#> 5     2020-03-08  2020-03-11     2 Female             Sunday             0.9946708            0.10310170
-#> 6     2020-03-09  2020-03-11     1 Female             Monday             0.9927487            0.12020804
+#> 1     2020-03-02  2020-03-06     1 Female             Monday             0.3090170             0.9510565
+#> 2     2020-03-03  2020-03-14     1 Female            Tuesday             0.2926003             0.9562348
+#> 3     2020-03-06  2020-03-09     1   Male             Friday             0.2428497             0.9700639
+#> 4     2020-03-07  2020-03-09     1 Female           Saturday             0.2261157             0.9741005
+#> 5     2020-03-08  2020-03-11     2 Female             Sunday             0.2093146             0.9778483
+#> 6     2020-03-09  2020-03-11     1 Female             Monday             0.1924516             0.9813065
 ```
 
 Hand it to `baselinenowcast(strata_cols = ...)` for one fit per stratum,

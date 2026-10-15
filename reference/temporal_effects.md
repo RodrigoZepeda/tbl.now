@@ -68,11 +68,20 @@ temporal_effects(
 
 - month_of_year:
 
-  Logical. Whether to include an effect for the month of the year.
+  Logical. Whether to include an effect for the calendar month of each
+  date: a factor with levels `1` (January) to `12` (December).
 
 - week_of_year:
 
-  Logical. Whether to include an effect for the epidemiological week.
+  Logical. Whether to include an effect for the epidemiological (MMWR)
+  week of each date, as given by
+  [`lubridate::epiweek()`](https://lubridate.tidyverse.org/reference/week.html):
+  a factor with levels `1` to `53`. MMWR weeks run Sunday to Saturday,
+  and week 53 only occurs in some years, so its level is often empty.
+
+  Both codes come from the calendar, not from the data's first date: the
+  same date gets the same code in every series, stratum and fitting
+  window.
 
 - holiday_lags:
 
@@ -123,6 +132,14 @@ temporal_effects(
   In weekly data, `seasons = 52` is a yearly wave. Several entries fit
   several waves at once, so `seasons = c(7, 365)` in daily data fits a
   weekly and a yearly cycle together.
+
+  The phase is anchored to the calendar: on a date axis, time is counted
+  from 1970-01-01 in the data's units, so a date gets the same sine and
+  cosine values whatever the first date of the series. (A numeric axis
+  has no calendar, and is counted from its first event.) A period of 52
+  weeks is 364 days, so its peak drifts about a day a year against the
+  calendar; use `seasons = 52.18` (365.25 / 7, rounded) in weekly data
+  if that matters.
 
 - season_length:
 

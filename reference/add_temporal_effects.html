@@ -39,7 +39,7 @@ them."><meta property="og:image" content="https://rodrigozepeda.github.io/tbl.no
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.1.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -69,7 +69,7 @@ them."><meta property="og:image" content="https://rodrigozepeda.github.io/tbl.no
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Attach calendar effects to a <code>tbl_now</code>, and turn them into columns</h1>
-      <small class="dont-index">Source: <a href="https://github.com/RodrigoZepeda/tbl.now/blob/main/R/add_temporal_effects.R" class="external-link"><code>R/add_temporal_effects.R</code></a>, <a href="https://github.com/RodrigoZepeda/tbl.now/blob/main/R/compute_temporal_effects.R" class="external-link"><code>R/compute_temporal_effects.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/RodrigoZepeda/tbl.now/blob/devel/R/add_temporal_effects.R" class="external-link"><code>R/add_temporal_effects.R</code></a>, <a href="https://github.com/RodrigoZepeda/tbl.now/blob/devel/R/compute_temporal_effects.R" class="external-link"><code>R/compute_temporal_effects.R</code></a></small>
       <div class="d-none name"><code>add_temporal_effects.Rd</code></div>
     </div>
 
@@ -104,7 +104,8 @@ them.</p>
 <span>  numeric_col <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  name_prefix <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"."</span>, <span class="va">date_col</span><span class="op">)</span>,</span>
 <span>  weekend_days <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Sat"</span>, <span class="st">"Sun"</span><span class="op">)</span>,</span>
-<span>  units <span class="op">=</span> <span class="st">"days"</span></span>
+<span>  units <span class="op">=</span> <span class="st">"days"</span>,</span>
+<span>  season_units <span class="op">=</span> <span class="va">units</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># S3 method for class 'tbl_now'</span></span>
@@ -150,10 +151,13 @@ for <code>seasonal</code>.</p></dd>
 
 
 <dt id="arg-numeric-col">numeric_col<a class="anchor" aria-label="anchor" href="#arg-numeric-col"></a></dt>
-<dd><p>The column which contains the values from which
-the seasonal effects will be calculated. This applies only to seasonal
-effects. For date-related effects (such as month or day of the week)
-use <code>date_col</code>.</p></dd>
+<dd><p>Optional. A numeric time column to calculate the seasonal
+(Fourier) effects from, instead of the calendar. This applies only to
+seasonal effects; for date-related effects (such as month or day of the week)
+use <code>date_col</code>. When <code>NULL</code> (the default) and <code>date_col</code> holds <code>&lt;Date&gt;</code>
+values, time is counted from 1970-01-01 in <code>season_units</code>, so the same date
+gets the same seasonal values whatever the first date of the data. It is
+required only when <code>date_col</code> does not hold dates.</p></dd>
 
 
 <dt id="arg-name-prefix">name_prefix<a class="anchor" aria-label="anchor" href="#arg-name-prefix"></a></dt>
@@ -178,6 +182,15 @@ or without their accents – under <code>LC_TIME = "es_ES"</code> both
 <strong>holiday</strong> column, which on a grid coarser than days becomes the <em>share</em> of
 the period's days that are holidays rather than a 0/1 indicator. For a
 <code>tbl_now</code>, <code>compute_temporal_effects()</code> reads this off the object.</p></dd>
+
+
+<dt id="arg-season-units">season_units<a class="anchor" aria-label="anchor" href="#arg-season-units"></a></dt>
+<dd><p>Character. The time units the Fourier <code>seasons</code> periods
+are counted in when they are calculated from the calendar (that is, when
+<code>numeric_col</code> is <code>NULL</code>): <code>"days"</code>, <code>"weeks"</code>, <code>"months"</code> or <code>"years"</code>.
+Defaults to <code>units</code>. For a <code>tbl_now</code>, <code>compute_temporal_effects()</code> uses the
+event units for event- and report-date effects and the revision units for
+revision-date effects.</p></dd>
 
 
 <dt id="arg-date-type">date_type<a class="anchor" aria-label="anchor" href="#arg-date-type"></a></dt>
@@ -244,7 +257,7 @@ the columns; <a href="calendar_effect_plots.html">calendar_effect_plots</a> to s
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] ".event_week_of_year"</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">computed</span><span class="op">[[</span><span class="fu"><a href="nowcast_data_getters.html">get_temporal_effect_cols</a></span><span class="op">(</span><span class="va">computed</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] 1 1 1 1 1 1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 52 Levels: 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 ... 52</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 53 Levels: 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 ... 53</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Specifications accumulate, so you can add a second pattern ...</span></span></span>
 <span class="r-in"><span><span class="va">both</span> <span class="op">&lt;-</span> <span class="va">dengue</span> <span class="op">|&gt;</span></span></span>

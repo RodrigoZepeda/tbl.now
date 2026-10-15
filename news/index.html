@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tbl.now</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.1.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -37,9 +37,38 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Changelog</h1>
-      <small>Source: <a href="https://github.com/RodrigoZepeda/tbl.now/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
+      <small>Source: <a href="https://github.com/RodrigoZepeda/tbl.now/blob/devel/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.2.0" id="tblnow-120">tbl.now 1.2.0<a class="anchor" aria-label="anchor" href="#tblnow-120"></a></h2>
+<div class="section level3">
+<h3 id="breaking-calendar-effects-follow-the-calendar-1-2-0">Breaking: calendar effects follow the calendar (<a href="https://github.com/RodrigoZepeda/tbl.now/issues/99" class="external-link">#99</a>)<a class="anchor" aria-label="anchor" href="#breaking-calendar-effects-follow-the-calendar-1-2-0"></a></h3>
+<p><code>temporal_effects(week_of_year = TRUE)</code>, <code>month_of_year = TRUE</code> and <code>seasons</code> were coded relative to the data rather than the calendar: the week and month were offsets from the date in the object’s <strong>first row</strong> (so January was month 3 for data starting in November, and the code even depended on row order), and the Fourier terms counted time from the earliest event date. The same calendar week therefore got a different code in every series, stratum and backtest window, and a coefficient labelled “week 7” was not epiweek 7.</p>
+<p>Now, on every date axis:</p>
+<ul><li>
+<code>month_of_year</code> is the calendar month: a factor with levels <code>1</code> (January) to <code>12</code> (December).</li>
+<li>
+<code>week_of_year</code> is the MMWR epidemiological week, [lubridate::epiweek()]: a factor with levels <code>1</code> to <code>53</code>. Week 53, which only some years have, keeps a level of its own instead of being folded into another week.</li>
+<li>
+<code>seasons</code> count time from 1970-01-01 in the data’s units, so a date gets the same sine and cosine values whatever the first date of the series. Fourier terms for report dates are still counted in the event units, as before. A numeric (non-date) axis has no calendar and still counts from its first event.</li>
+</ul><p>Column names are unchanged, but their values change, so models refitted with these effects code them differently. A model’s fit with Fourier <code>seasons</code> alone is unaffected in principle – shifting the phase rotates the sine and cosine pair onto the same span – while models with <code>week_of_year</code> or <code>month_of_year</code> now use January / epiweek 1, rather than the first period in the data, as the reference level. <code><a href="../reference/tbl_now_epinowcast.html">tbl_now_to_epinowcast()</a></code> derives the effects on its completed grid from the calendar too, so its values match <code><a href="../reference/add_temporal_effects.html">compute_temporal_effects()</a></code> wherever the grid starts. <code><a href="../reference/add_temporal_effects.html">add_temporal_effects.data.frame()</a></code> no longer needs <code>numeric_col</code> for seasons on a date column (an explicit <code>numeric_col</code> still takes precedence) and gains <code>season_units</code>, the units the Fourier periods are counted in.</p>
+</div>
+<div class="section level3">
+<h3 id="nowcast_ensemble-can-take-the-median-1-2-0">
+<code>nowcast_ensemble()</code> can take the median (<a href="https://github.com/RodrigoZepeda/tbl.now/issues/100" class="external-link">#100</a>)<a class="anchor" aria-label="anchor" href="#nowcast_ensemble-can-take-the-median-1-2-0"></a></h3>
+<p><code>nowcast_ensemble(type = "median")</code> combines the members’ predictive quantiles by their median, level by level, as the COVID-19 and FluSight forecast hubs’ quantile median ensembles do. One outlying member cannot drag it the way it drags the average (<code>type = "quantile"</code>). The <code>weights</code> still apply: any weights other than <code>"equal"</code>, including <code>"inverse_score"</code> and <code>"optim"</code> from a backtest, give a weighted median. With two equally weighted members the median equals the average, so it needs three or more to differ.</p>
+</div>
+<div class="section level3">
+<h3 id="epidist-comes-from-cran-1-2-0">epidist comes from CRAN<a class="anchor" aria-label="anchor" href="#epidist-comes-from-cran-1-2-0"></a></h3>
+<p><code>epidist</code> in <code>Suggests</code> is now <code>&gt;= 1.0.0</code>, its first CRAN release, so it installs without an extra repository. <code><a href="../reference/tidy.delay_distribution.html">tidy.epidist_fit()</a></code> uses the interface that epidist 0.5.0 introduced, <code><a href="https://epidist.epinowcast.org/reference/delay_parameter_draws.html" class="external-link">delay_parameter_draws()</a></code> and <code><a href="https://epidist.epinowcast.org/reference/add_summaries.html" class="external-link">add_summaries()</a></code>, in place of the removed <code>predict_delay_parameters()</code> and <code>add_mean_sd()</code>, which had made <code><a href="../reference/tidy.nowcast.html">tidy()</a></code> fail on every fit and <code>R CMD check</code> warn about missing objects. Because the new draws carry every column of the model data, all numeric, the reported terms are taken from the fit’s family (<code>mu</code> and <code>sigma</code> for a lognormal, say) plus <code>mean</code> and <code>sd</code>, rather than from whatever numeric column is left after dropping a list of bookkeeping names. <code>baselinenowcast</code> in <code>Suggests</code> is relaxed to <code>&gt;= 0.2.0</code>, the version on CRAN.</p>
+</div>
+<div class="section level3">
+<h3 id="diagnose-reports-fractional-delays-under-units--delay-again-1-2-0">
+<code>diagnose()</code> reports fractional delays under <code>units</code> / <code>delay</code> again<a class="anchor" aria-label="anchor" href="#diagnose-reports-fractional-delays-under-units--delay-again-1-2-0"></a></h3>
+<p>1.1.0 accidentally moved the fractional-<code>.delay</code> finding of <code><a href="../reference/diagnose.html">diagnose()</a></code> and <code><a href="../reference/validate_tbl_now.html">validate_tbl_now()</a></code> from scope <code>"delay"</code> to <code>"report"</code>. It is back under <code>"delay"</code>.</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.1.1" id="tblnow-111">tbl.now 1.1.1<a class="anchor" aria-label="anchor" href="#tblnow-111"></a></h2>
 <div class="section level3">
@@ -76,11 +105,6 @@
 </div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.0.0" id="tblnow-100">tbl.now 1.0.0<a class="anchor" aria-label="anchor" href="#tblnow-100"></a></h2><p class="text-muted">CRAN release: 2026-09-21</p>
-<div class="section level3">
-<h3 id="tidy-on-an-epidist-fit-uses-the-current-epidist-interface-1-0-0">
-<code>tidy()</code> on an epidist fit uses the current epidist interface<a class="anchor" aria-label="anchor" href="#tidy-on-an-epidist-fit-uses-the-current-epidist-interface-1-0-0"></a></h3>
-<p>epidist 0.5.0 removed <code>predict_delay_parameters()</code> and <code>add_mean_sd()</code>, which made <code>R CMD check</code> warn about unexported objects and broke <code><a href="../reference/tidy.delay_distribution.html">tidy.epidist_fit()</a></code>. It now calls <code><a href="https://epidist.epinowcast.org/reference/delay_parameter_draws.html" class="external-link">epidist::delay_parameter_draws()</a></code> and <code><a href="https://epidist.epinowcast.org/reference/add_summaries.html" class="external-link">epidist::add_summaries()</a></code>. Because the new draws also carry the model data’s columns, the reported terms are restricted to the family’s distributional parameters plus <code>mean</code> and <code>sd</code>, so the table is the same as before. <code>epidist</code> in <code>Suggests</code> is now <code>&gt;= 0.5.0</code>, the first release with them.</p>
-</div>
 <div class="section level3">
 <h3 id="example_engine-no-longer-emits-duplicate-prediction-rows-1-0-0">
 <code>example_engine()</code> no longer emits duplicate prediction rows<a class="anchor" aria-label="anchor" href="#example_engine-no-longer-emits-duplicate-prediction-rows-1-0-0"></a></h3>
