@@ -30,9 +30,7 @@
 #' (Fourier) effects from, instead of the calendar. This applies only to
 #' seasonal effects; for date-related effects (such as month or day of the week)
 #' use `date_col`. When `NULL` (the default) and `date_col` holds `<Date>`
-#' values, time is counted from 1970-01-01 in `season_units`, so the same date
-#' gets the same seasonal values whatever the first date of the data. It is
-#' required only when `date_col` does not hold dates.
+#' values, time is counted from 1970-01-01 in `season_units`,
 #'
 #' @param date_type One of `event_date` (default), `report_date`, or
 #' `revision_date` to add temporal effects to that column. `revision_date`

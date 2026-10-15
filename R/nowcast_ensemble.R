@@ -30,13 +30,9 @@
 #'     \item{`"quantile"` (default)}{Average the members' predictive quantiles
 #'       level by level (Vincentization). Applicable to every backend.}
 #'     \item{`"median"`}{Take the median of the members' predictive quantiles
-#'       level by level, the quantile median ensemble used by the COVID-19 and
-#'       FluSight forecast hubs. Unlike the average, one outlying member cannot
-#'       drag it. With `weights` other than `"equal"` it is the weighted
+#'       level by level. With `weights` other than `"equal"` it is the weighted
 #'       median: the value at which the members below it carry half the total
-#'       weight. With two equally weighted members it equals `"quantile"`, so
-#'       it needs three or more members to differ. Applicable to every
-#'       backend.}
+#'       weight.}
 #'     \item{`"linear_pool"`}{Pool the members' posterior draws into a mixture
 #'       distribution and re-summarise it. Requires that every member returned
 #'       draws, and generally yields wider intervals.}

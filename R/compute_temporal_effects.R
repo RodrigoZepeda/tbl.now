@@ -32,7 +32,7 @@ compute_temporal_effects <- function(x, overwrite = FALSE) {
       numeric_col <- ".report_num"
       name_prefix <- ".report"
       units <- get_report_units(x)
-      season_units <- get_event_units(x)
+      season_units <- get_report_units(x)
     } else if (date_type == "revision_date" && has_revision(x)) {
       date_col <- get_revision_date(x)
       numeric_col <- ".revision_num"
