@@ -1731,7 +1731,7 @@ diagnose_strata <- function(x, by_strata = NULL, strata = NULL) {
     which(!is.na(delay) & abs(delay - round(delay)) > sqrt(.Machine$double.eps))
   }
   .diagnose_count_row(
-    "units", "report", length(fractional), nrow(x), "warning",
+    "units", "delay", length(fractional), nrow(x), "warning",
     .diagnose_text(
       "{length(fractional)} row{?s} {?has/have} a fractional {.code .delay}."
     ),
