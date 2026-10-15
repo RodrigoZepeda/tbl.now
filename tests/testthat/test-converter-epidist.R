@@ -247,20 +247,26 @@ test_that("no revision warning fires on a plain tbl_now", {
 test_that("tidy.epidist_fit() strips epidist's marginal-model bookkeeping columns", {
   skip_on_cran()
   # Simulate the shape `delay_parameter_draws()` returns for an aggregate/
-  # marginal model: a `weight` (or `n`) column plus `.observation`/`.row`. Neither
-  # is a delay parameter and each is numeric, so a blocklist that misses them
-  # would leak them into the tidy output as bogus "parameters".
-  fake_draws <- data.frame(
-    draw    = rep(1:5, each = 2),
-    .draw   = rep(1:5, each = 2),
-    index   = rep(1:2, times = 5),
-    .observation = rep(1:2, times = 5),
-    .row    = rep(1:2, times = 5),
-    obs     = rep(1:2, times = 5),
-    n       = 42L,
-    weight  = 42L,
-    mu      = rnorm(10, 1.5, 0.1),
-    sigma   = runif(10, 0.4, 0.6)
+  # marginal model: the model data's own columns (`delay_lwr`, `n`, ...) and the
+  # draw identifiers, all numeric, in front of the parameters. A filter that
+  # misses any of them would leak it into the tidy output as a bogus "parameter".
+  fake_draws <- structure(
+    data.frame(
+      delay_lwr         = rep(c(3, 6), times = 5),
+      relative_obs_time = 65,
+      pwindow           = 1,
+      swindow           = 1,
+      delay_upr         = rep(c(4, 7), times = 5),
+      delay_min         = 0,
+      n                 = 42L,
+      .row              = rep(1:2, times = 5),
+      .chain            = 1L,
+      .iteration        = rep(1:5, each = 2),
+      .draw             = rep(1:5, each = 2),
+      mu                = rep(rnorm(5, 1.5, 0.1), each = 2),
+      sigma             = rep(runif(5, 0.4, 0.6), each = 2)
+    ),
+    epidist_family = list(name = "lognormal", dpars = c("mu", "sigma"))
   )
   testthat::local_mocked_bindings(
     delay_parameter_draws = function(object, newdata = NULL, ...) fake_draws,
@@ -273,11 +279,10 @@ test_that("tidy.epidist_fit() strips epidist's marginal-model bookkeeping column
   )
 
   fake_fit <- structure(list(), class = c("brmsfit", "epidist_fit"))
-  out <- suppressWarnings(generics::tidy(fake_fit))
+  out <- generics::tidy(fake_fit)
 
   # Only real distribution parameters land in `term`.
   expect_setequal(out$term, c("mu", "sigma", "mean", "sd"))
-  expect_false(any(c("n", "weight", ".observation", ".row", "obs") %in% out$term))
 })
 
 # --- 5. grouped input keeps working ----------------------------------------

@@ -389,10 +389,12 @@ test_that("complete_zeroes recomputes seasonal (Fourier) effects too", {
   out <- complete_zeroes(x)
   expect_false(anyNA(out[[effect_cols[1]]]))
   expect_false(anyNA(out[[effect_cols[2]]]))
-  # Fourier terms are a function of `.event_num`, which complete_zeroes renumbers.
+  # Fourier terms are a function of the calendar date (days since 1970-01-01 on
+  # a daily axis, #99), so the rows complete_zeroes adds get their own phase.
+  expect_equal(get_event_units(out), "days")
   expect_equal(
     out[[effect_cols[1]]],
-    cos(2 * pi * as.numeric(out[[".event_num"]]) / 7)
+    cos(2 * pi * as.numeric(out[[get_event_date(out)]]) / 7)
   )
 })
 

@@ -381,9 +381,11 @@ test_that("estimate_dist and tbl_now_to_epidist build identical windows", {
   ))
   from_epidist <- q(tbl_now_to_epidist(x, verbose = FALSE))
 
+  # Drop the classes before subsetting: epidist 1.0.0 warns when a column
+  # subset leaves an `epidist_linelist_data` without its required columns.
   expect_equal(
-    as.data.frame(from_epinow2[, dates]),
-    as.data.frame(from_epidist[, dates])
+    as.data.frame(from_epinow2)[, dates],
+    as.data.frame(from_epidist)[, dates]
   )
 })
 

@@ -238,6 +238,12 @@ ensemble_nowcast <-
   nowcast_ensemble(nowcast1, nowcast2, nowcast3, 
                    weights = "optim", backtest = models_backtest)
 ```
+Averaging lets one badly wrong model pull the whole ensemble towards it. `type = "median"` takes the median of the models' quantiles instead, level by level, which an outlying model cannot drag; the weights still apply, as a weighted median.
+
+```{r, warning=FALSE, message=FALSE}
+median_nowcast <- nowcast_ensemble(nowcast1, nowcast2, nowcast3, type = "median")
+```
+
 One can visualize the ensemble with `autoplot()` or get its results with `tidy()` as in the case of a regular nowcast. 
 
 ```{r, fig.width=9, fig.height=4.5}

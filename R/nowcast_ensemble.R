@@ -1,10 +1,13 @@
 # Combining several nowcasts into one.
 #
-# Two combination rules are supported:
+# Three combination rules are supported:
 #
 #   "quantile"    Vincentization: average the members' quantiles level by
 #                 level. Always applicable, because every backend produces
 #                 quantiles.
+#   "median"      The (weighted) median of the members' quantiles level by
+#                 level. Also always applicable, and robust to one outlying
+#                 member.
 #   "linear_pool" Pool the members' posterior draws (a mixture distribution),
 #                 then re-summarise. Needs draws from every member, and is
 #                 usually wider than the quantile average.
@@ -26,6 +29,14 @@
 #'   \describe{
 #'     \item{`"quantile"` (default)}{Average the members' predictive quantiles
 #'       level by level (Vincentization). Applicable to every backend.}
+#'     \item{`"median"`}{Take the median of the members' predictive quantiles
+#'       level by level, the quantile median ensemble used by the COVID-19 and
+#'       FluSight forecast hubs. Unlike the average, one outlying member cannot
+#'       drag it. With `weights` other than `"equal"` it is the weighted
+#'       median: the value at which the members below it carry half the total
+#'       weight. With two equally weighted members it equals `"quantile"`, so
+#'       it needs three or more members to differ. Applicable to every
+#'       backend.}
 #'     \item{`"linear_pool"`}{Pool the members' posterior draws into a mixture
 #'       distribution and re-summarise it. Requires that every member returned
 #'       draws, and generally yields wider intervals.}
@@ -34,7 +45,8 @@
 #' @param weights Either the string `"equal"` (default), a numeric vector (named
 #'   by method, or in the order the members were given), or one of
 #'   `"inverse_score"` / `"optim"`. The last two require `backtest` and are
-#'   passed to [nowcast_weights()].
+#'   passed to [nowcast_weights()]. With `type = "median"` they weight the
+#'   median rather than the average.
 #' @param backtest A [nowcast_backtest()] object, required when `weights` is
 #'   `"inverse_score"` or `"optim"`.
 #' @param include_now Logical. When deriving performance weights from
@@ -85,8 +97,12 @@
 #' # Unequal weights
 #' nowcast_ensemble(toy("a", 0), toy("b", 4), weights = c(a = 0.75, b = 0.25), verbose = FALSE)
 #'
+#' # The median ignores the outlying member "c"; the average does not
+#' nowcast_ensemble(toy("a", 0), toy("b", 4), toy("c", 40), type = "median", verbose = FALSE)
+#' nowcast_ensemble(toy("a", 0), toy("b", 4), toy("c", 40), verbose = FALSE)
+#'
 #' @export
-nowcast_ensemble <- function(..., type = c("quantile", "linear_pool"),
+nowcast_ensemble <- function(..., type = c("quantile", "median", "linear_pool"),
                              weights = "equal", backtest = NULL,
                              include_now = FALSE, common_dates = TRUE,
                              quantile_levels = NULL, n_draws = 4000L,
@@ -116,6 +132,9 @@ nowcast_ensemble <- function(..., type = c("quantile", "linear_pool"),
 
   combined <- switch(type,
     quantile = .ensemble_quantiles(members, weights, key, quantile_levels),
+    median = .ensemble_quantiles(members, weights, key, quantile_levels,
+      combine = "median"
+    ),
     linear_pool = .ensemble_linear_pool(members, weights, key, quantile_levels, n_draws)
   )
 
@@ -451,18 +470,27 @@ nowcast_ensemble <- function(..., type = c("quantile", "linear_pool"),
   invisible(NULL)
 }
 
-#' Weighted average of the members' quantiles
+#' Weighted average, or weighted median, of the members' quantiles
 #'
 #' @param members A named list of `tbl_nowcast` objects.
 #' @param weights A named numeric vector summing to 1.
 #' @param key Character vector of the columns identifying a prediction target.
 #' @param quantile_levels Requested levels, or `NULL`.
+#' @param combine `"mean"` (the default) or `"median"`: how the members' values
+#'   at one target and level are combined.
 #'
 #' @return A list with `predictions` and `draws` (always `NULL` here).
 #'
 #' @keywords internal
 #' @noRd
-.ensemble_quantiles <- function(members, weights, key, quantile_levels) {
+.ensemble_quantiles <- function(members, weights, key, quantile_levels,
+                                combine = c("mean", "median")) {
+  combine <- match.arg(combine)
+  combiner <- switch(combine,
+    mean = function(value, weight) stats::weighted.mean(value, w = weight, na.rm = TRUE),
+    median = .weighted_median
+  )
+
   members <- .common_targets(members, key)
   .check_ensemble_member_keys(members, key, "predictions")
   quantile_levels <- .common_quantile_levels(members, quantile_levels)
@@ -477,12 +505,54 @@ nowcast_ensemble <- function(..., type = c("quantile", "linear_pool"),
   predictions <- stacked |>
     dplyr::group_by(dplyr::across(dplyr::all_of(c(key, ".quantile_level")))) |>
     dplyr::summarise(
-      .value = stats::weighted.mean(.data$.value, w = .data$.weight, na.rm = TRUE),
+      .value = combiner(.data$.value, .data$.weight),
       .groups = "drop"
     ) |>
     dplyr::arrange(dplyr::across(dplyr::all_of(c(key, ".quantile_level"))))
 
   list(predictions = predictions, draws = NULL)
+}
+
+#' Weighted median of one target's member values
+#'
+#' The value at which the members at or below it carry half the total weight.
+#' When they carry exactly half -- always the case for an even number of
+#' equally weighted members -- every value between that member and the next is
+#' a median, and the midpoint is taken, so equal weights reproduce
+#' [stats::median()]. The midpoint and both ends of that interval are each
+#' non-decreasing in every member's value, so a median of monotone quantile
+#' functions is itself monotone in the quantile level.
+#'
+#' Missing values and zero-weight members are dropped first, as
+#' `weighted.mean(na.rm = TRUE)` does for the average.
+#'
+#' @param value Numeric vector of the members' values.
+#' @param weight Non-negative weights, the same length as `value`.
+#'
+#' @return A single number, `NA` when no member has a value and a positive
+#'   weight.
+#'
+#' @keywords internal
+#' @noRd
+.weighted_median <- function(value, weight) {
+  keep <- !is.na(value) & weight > 0
+  value <- value[keep]
+  weight <- weight[keep]
+  if (length(value) == 0L) {
+    return(NA_real_)
+  }
+
+  ordering <- order(value)
+  value <- value[ordering]
+  cumulative <- cumsum(weight[ordering]) / sum(weight)
+
+  # A tolerance, because weights such as 1/3 + 1/6 need not sum to exactly 0.5.
+  tolerance <- sqrt(.Machine$double.eps)
+  k <- which(cumulative >= 0.5 - tolerance)[1]
+  if (abs(cumulative[k] - 0.5) < tolerance && k < length(value)) {
+    return((value[k] + value[k + 1L]) / 2)
+  }
+  value[k]
 }
 
 #' Weighted linear pool of the members' draws

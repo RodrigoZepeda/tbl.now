@@ -217,7 +217,11 @@ get_temporal_effect_cols(x)  # materialized column names
 `date_type` may be event, report, or revision date. Repeated
 `add_temporal_effects()` calls append; `replace_temporal_effects()` replaces;
 `remove_temporal_effects()` clears. Calling `compute_temporal_effects()` before
-attaching a spec is a no-op. Holiday effects accept `almanac::rcalendar()`
+attaching a spec is a no-op. Calendar effects are read off the calendar, not
+the data's first date: `month_of_year` is the calendar month (January = 1),
+`week_of_year` the MMWR epiweek (levels 1 to 53), and `seasons` count time from
+1970-01-01, so the same date has the same codes in every series and window.
+Holiday effects accept `almanac::rcalendar()`
 objects; validate a custom calendar with `almanac::cal_events()` or
 `almanac::alma_in()` before modelling it.
 
@@ -363,8 +367,10 @@ inside a parallel backtest, or keep `parallel = FALSE`. A failed fit is
 skipped with a warning (`on_error = "warn"`); `nowcast_weights()`, the print
 summary, and `nowcast_ensemble()` weights then compare methods only on targets
 every method scored, warning about the dropped method/date rows
-(`common_dates = FALSE` averages each method over its own targets). `nowcast_ensemble(type = "quantile")` works with
-quantiles; `type = "linear_pool"` requires draws from every member. Combine
+(`common_dates = FALSE` averages each method over its own targets). `nowcast_ensemble(type = "quantile")` averages
+quantiles level by level; `type = "median"` takes their (weighted) median, which
+one outlying member cannot drag and which needs three or more members to differ
+from the average; `type = "linear_pool"` requires draws from every member. Combine
 only models with the same target semantics, dates, and strata. Use
 `scoringutils::as_forecast_*()` for additional scoring workflows.
 

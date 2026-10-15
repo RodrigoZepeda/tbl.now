@@ -6,7 +6,7 @@
 \usage{
 nowcast_ensemble(
   ...,
-  type = c("quantile", "linear_pool"),
+  type = c("quantile", "median", "linear_pool"),
   weights = "equal",
   backtest = NULL,
   include_now = FALSE,
@@ -26,6 +26,14 @@ rename the members.}
 \describe{
 \item{\code{"quantile"} (default)}{Average the members' predictive quantiles
 level by level (Vincentization). Applicable to every backend.}
+\item{\code{"median"}}{Take the median of the members' predictive quantiles
+level by level, the quantile median ensemble used by the COVID-19 and
+FluSight forecast hubs. Unlike the average, one outlying member cannot
+drag it. With \code{weights} other than \code{"equal"} it is the weighted
+median: the value at which the members below it carry half the total
+weight. With two equally weighted members it equals \code{"quantile"}, so
+it needs three or more members to differ. Applicable to every
+backend.}
 \item{\code{"linear_pool"}}{Pool the members' posterior draws into a mixture
 distribution and re-summarise it. Requires that every member returned
 draws, and generally yields wider intervals.}
@@ -34,7 +42,8 @@ draws, and generally yields wider intervals.}
 \item{weights}{Either the string \code{"equal"} (default), a numeric vector (named
 by method, or in the order the members were given), or one of
 \code{"inverse_score"} / \code{"optim"}. The last two require \code{backtest} and are
-passed to \code{\link[=nowcast_weights]{nowcast_weights()}}.}
+passed to \code{\link[=nowcast_weights]{nowcast_weights()}}. With \code{type = "median"} they weight the
+median rather than the average.}
 
 \item{backtest}{A \code{\link[=nowcast_backtest]{nowcast_backtest()}} object, required when \code{weights} is
 \code{"inverse_score"} or \code{"optim"}.}
@@ -93,6 +102,10 @@ nowcast_ensemble(toy("a", 0), toy("b", 4), verbose = FALSE)
 
 # Unequal weights
 nowcast_ensemble(toy("a", 0), toy("b", 4), weights = c(a = 0.75, b = 0.25), verbose = FALSE)
+
+# The median ignores the outlying member "c"; the average does not
+nowcast_ensemble(toy("a", 0), toy("b", 4), toy("c", 40), type = "median", verbose = FALSE)
+nowcast_ensemble(toy("a", 0), toy("b", 4), toy("c", 40), verbose = FALSE)
 
 }
 \seealso{
