@@ -246,7 +246,7 @@ test_that("no revision warning fires on a plain tbl_now", {
 
 test_that("tidy.epidist_fit() strips epidist's marginal-model bookkeeping columns", {
   skip_on_cran()
-  # Simulate the shape `predict_delay_parameters()` returns for an aggregate/
+  # Simulate the shape `delay_parameter_draws()` returns for an aggregate/
   # marginal model: a `weight` (or `n`) column plus `.observation`/`.row`. Neither
   # is a delay parameter and each is numeric, so a blocklist that misses them
   # would leak them into the tidy output as bogus "parameters".
@@ -263,8 +263,8 @@ test_that("tidy.epidist_fit() strips epidist's marginal-model bookkeeping column
     sigma   = runif(10, 0.4, 0.6)
   )
   testthat::local_mocked_bindings(
-    predict_delay_parameters = function(fit, newdata = NULL, ...) fake_draws,
-    add_mean_sd = function(data, ...) {
+    delay_parameter_draws = function(object, newdata = NULL, ...) fake_draws,
+    add_summaries = function(data, ...) {
       data$mean <- exp(data$mu + data$sigma^2 / 2)
       data$sd   <- data$mean * sqrt(exp(data$sigma^2) - 1)
       data

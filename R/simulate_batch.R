@@ -323,9 +323,12 @@ simulate_batch <- function(x,
 }
 
 #' `setdiff()` strips the Date class; restore it from the grid it came from.
+#'
+#' Compares the underlying numbers: from R 4.3.0 `match()` converts a classed
+#' `Date` to character, so `Date %in% numeric` matches nothing where `setdiff()`
+#' still returns numbers (seen on R 4.3.3; R 4.6.1 keeps the class).
 #' @keywords internal
 #' @noRd
 .batch_restore_date_class <- function(stripped_dates, template_dates) {
-  restored <- template_dates[template_dates %in% stripped_dates]
-  restored
+  template_dates[as.numeric(template_dates) %in% as.numeric(stripped_dates)]
 }

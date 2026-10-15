@@ -35,6 +35,19 @@ make_flat_linelist <- function(n_origins = 60L, per_origin = 12L, seed = 1L) {
 
 # -- simulate_batch() ----------------------------------------------------------
 
+test_that(".batch_restore_date_class() restores dates from stripped numbers", {
+  grid <- seq(as.Date("2021-01-01"), by = "day", length.out = 6)
+  # What `setdiff()` returns on older R (seen on R 4.3.3): numbers, no class.
+  stripped <- as.numeric(grid[c(1, 4, 5)])
+  restored <- .batch_restore_date_class(stripped, grid)
+  expect_s3_class(restored, "Date")
+  expect_equal(restored, grid[c(1, 4, 5)])
+  # And when `setdiff()` keeps the class (seen on R 4.6.1).
+  expect_equal(.batch_restore_date_class(grid[c(1, 4, 5)], grid), grid[c(1, 4, 5)])
+  expect_length(.batch_restore_date_class(numeric(0), grid), 0L)
+})
+
+
 test_that("simulate_batch() conserves items and only ever moves reports later", {
   skip_on_cran()
   clean_tbl <- make_flat_linelist()

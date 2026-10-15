@@ -21,7 +21,7 @@
 \item{...}{Unused, for generic consistency.}
 
 \item{newdata}{\code{tidy.epidist_fit()} only. Optional data frame passed to
-\code{\link[epidist:predict_delay_parameters]{epidist::predict_delay_parameters()}}, for a fit with covariates in the
+\code{\link[epidist:delay_parameter_draws]{epidist::delay_parameter_draws()}}, for a fit with covariates in the
 delay model (\code{formula = mu ~ 1 + gender}, say). \code{NULL} uses the fit's own
 data.}
 }
@@ -67,7 +67,7 @@ rather than an approximation.
 
 
 \pkg{epidist} reports continuous-distribution moments via
-\code{epidist::add_mean_sd()}.
+\code{epidist::add_summaries()}.
 
 \pkg{EpiNow2} gets them without naming a distribution. It can fit five
 families today and may add more, and a \code{switch()} in this package would
