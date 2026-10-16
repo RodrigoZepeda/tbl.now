@@ -19,7 +19,8 @@ add_temporal_effects(x, t_effects = NULL, overwrite = FALSE, ...)
   numeric_col = NULL,
   name_prefix = paste0(".", date_col),
   weekend_days = c("Sat", "Sun"),
-  units = "days"
+  units = "days",
+  season_units = units
 )
 
 \method{add_temporal_effects}{tbl_now}(
@@ -49,10 +50,13 @@ an error, so an accidental second computation cannot silently replace your data.
 effects will be calculated. This applies to all \code{temporal_effects} except
 for \code{seasonal}.}
 
-\item{numeric_col}{The column which contains the values from which
-the seasonal effects will be calculated. This applies only to seasonal
-effects. For date-related effects (such as month or day of the week)
-use \code{date_col}.}
+\item{numeric_col}{Optional. A numeric time column to calculate the seasonal
+(Fourier) effects from, instead of the calendar. This applies only to
+seasonal effects; for date-related effects (such as month or day of the week)
+use \code{date_col}. When \code{NULL} (the default) and \code{date_col} holds \verb{<Date>}
+values, time is counted from 1970-01-01 in \code{season_units}, so the same date
+gets the same seasonal values whatever the first date of the data. It is
+required only when \code{date_col} does not hold dates.}
 
 \item{name_prefix}{Character. Prefix for the names of the created columns.}
 
@@ -73,6 +77,13 @@ or without their accents -- under \code{LC_TIME = "es_ES"} both
 \strong{holiday} column, which on a grid coarser than days becomes the \emph{share} of
 the period's days that are holidays rather than a 0/1 indicator. For a
 \code{tbl_now}, \code{\link[=compute_temporal_effects]{compute_temporal_effects()}} reads this off the object.}
+
+\item{season_units}{Character. The time units the Fourier \code{seasons} periods
+are counted in when they are calculated from the calendar (that is, when
+\code{numeric_col} is \code{NULL}): \code{"days"}, \code{"weeks"}, \code{"months"} or \code{"years"}.
+Defaults to \code{units}. For a \code{tbl_now}, \code{\link[=compute_temporal_effects]{compute_temporal_effects()}} uses the
+event units for event- and report-date effects and the revision units for
+revision-date effects.}
 
 \item{date_type}{One of \code{event_date} (default), \code{report_date}, or
 \code{revision_date} to add temporal effects to that column. \code{revision_date}

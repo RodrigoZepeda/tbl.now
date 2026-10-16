@@ -31,3 +31,4 @@
 ^paper$
 ^figure$
 ^inst/figures$
+^presentation$

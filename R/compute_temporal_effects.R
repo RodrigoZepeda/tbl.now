@@ -18,27 +18,38 @@ compute_temporal_effects <- function(x, overwrite = FALSE) {
     date_type <- spec$date_type
     weekend_days <- spec$weekend_days
 
+    # `season_units` follows `.event_num` / `.report_num` (both in EVENT units)
+    # and `.revision_num` (in revision units), the convention
+    # `aggregate_time_units()` rescales the Fourier periods by.
     if (date_type == "event_date") {
       date_col <- get_event_date(x)
       numeric_col <- ".event_num"
       name_prefix <- ".event"
       units <- get_event_units(x)
+      season_units <- get_event_units(x)
     } else if (date_type == "report_date") {
       date_col <- get_report_date(x)
       numeric_col <- ".report_num"
       name_prefix <- ".report"
       units <- get_report_units(x)
+      season_units <- get_report_units(x)
     } else if (date_type == "revision_date" && has_revision(x)) {
       date_col <- get_revision_date(x)
       numeric_col <- ".revision_num"
       name_prefix <- ".revision"
       units <- get_revision_units(x)
+      season_units <- get_revision_units(x)
     } else {
       cli::cli_abort(c(
         "Cannot compute temporal effects for {.val {date_type}}.",
         "i" = "{.code date_type = \"revision_date\"} needs a revision process."
       ))
     }
+
+    # Dated axes count their seasons along the calendar, so a date has the same
+    # phase whatever the object's first date (#99); only a numeric axis, which
+    # has no calendar, keeps its own relative time column.
+    if (lubridate::is.Date(x[[date_col]])) numeric_col <- NULL
 
     x <- add_temporal_effects.data.frame(
       x,
@@ -48,7 +59,8 @@ compute_temporal_effects <- function(x, overwrite = FALSE) {
       name_prefix  = name_prefix,
       overwrite    = overwrite,
       weekend_days = weekend_days,
-      units        = units
+      units        = units,
+      season_units = season_units
     )
   }
 
@@ -88,11 +100,9 @@ compute_temporal_effects <- function(x, overwrite = FALSE) {
 #' @noRd
 .coerce_prep_tbl_now <- function(x, compute) {
   if (isTRUE(compute)) {
-    # Materialise on ungrouped data so the calendar effects use a single global
-    # reference date. On a grouped object `compute_temporal_effects()` would
-    # derive a per-group reference (length > 1), giving a recycling warning and
-    # wrong centring. The result is declassed below, so grouping is dropped
-    # anyway.
+    # The calendar effects read each row's own date, so grouping does not
+    # change them; ungroup anyway, because the result is declassed below and
+    # loses its grouping regardless.
     if (dplyr::is_grouped_df(x)) x <- dplyr::ungroup(x)
     x <- .materialize_temporal_effects(x)$x
   }

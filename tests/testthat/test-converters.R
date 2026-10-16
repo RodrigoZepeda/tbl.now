@@ -1795,8 +1795,8 @@ test_that("effects on the completed grid match what the object itself computes",
   skip_if_not_installed("epinowcast")
   skip_if_not_installed("almanac")
 
-  # Deriving from the completed grid must reproduce the object's own values: the
-  # Fourier anchor (earliest event date) and the calendar are the same, so the
+  # Deriving from the completed grid must reproduce the object's own values:
+  # every effect, Fourier terms included, is read off the calendar (#99), so the
   # only difference is the extra horizon rows.
   data(denguedat)
   dengue <- denguedat[denguedat$onset_week >= as.Date("2009-01-01"), ]

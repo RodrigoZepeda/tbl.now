@@ -1119,32 +1119,28 @@ tidy.epidist_fit <- function(x, probs = NULL, level = 0.95, newdata = NULL,
   }
 
   # Draws of the delay parameters, one row per draw per observation.
-  # `add_summaries()` appends the summaries of the distribution those parameters
-  # imply, which is what a reader actually wants to read off a delay fit.
+  # `add_summaries()` appends the mean and sd of the distribution those
+  # parameters imply, which is what a reader actually wants to read off a delay
+  # fit.
   draws <- epidist::delay_parameter_draws(x, newdata = newdata)
-  draws <- epidist::add_summaries(draws)
-  # The draws come back grouped by the model data; summarise across all of them.
-  draws <- dplyr::ungroup(draws)
-
-  # Everything except the bookkeeping columns is a parameter worth reporting.
-  # epidist's marginal model carries `n` / `weight` on the aggregate path, and
-  # `delay_parameter_draws()` also carries the columns of the model data
-  # (`n`, `weight`, the censoring windows, covariates...) alongside `.row` /
-  # `.draw`; all are numeric, so they would leak into the output as bogus
-  # "parameters". When epidist records the family, the parameters are exactly its
-  # distributional parameters plus the `mean` / `sd` summaries; otherwise fall
-  # back to a blocklist. Add here whenever epidist ships a new bookkeeping column.
   family <- attr(draws, "epidist_family")
-  if (!is.null(family) && length(family$dpars) > 0L) {
-    terms <- intersect(c(family$dpars, "mean", "sd"), names(draws))
+  draws <- dplyr::ungroup(epidist::add_summaries(draws))
+
+  # `delay_parameter_draws()` binds every column of the prediction data in front
+  # of the draws -- `delay_lwr`, `relative_obs_time`, `n` and the like, all
+  # numeric -- so the parameters are read off the family epidist records rather
+  # than guessed from what is left. The blocklist is the fallback for draws that
+  # carry no family.
+  terms <- if (!is.null(family$dpars)) {
+    intersect(c(family$dpars, "mean", "sd"), names(draws))
   } else {
     bookkeeping <- c(
       "draw", "index", ".draw", ".chain", ".iteration", ".observation", ".row",
-      "obs", "n", "weight"
+      "obs", "n", "weight", names(newdata %||% x$data)
     )
-    terms <- setdiff(names(draws), bookkeeping)
+    candidates <- setdiff(names(draws), bookkeeping)
+    candidates[vapply(draws[candidates], is.numeric, logical(1))]
   }
-  terms <- terms[vapply(draws[terms], is.numeric, logical(1))]
 
   # `delay_parameter_draws()` returns one row per draw x OBSERVATION, and the
   # quantiles below pool over both. For an intercept-only delay model every

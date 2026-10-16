@@ -218,24 +218,32 @@ test_that("tidy() falls back to NA bounds when there is no pi slot", {
 # The bindings are mocked so the test does not have to compile a Stan model; the
 # method was verified against a real fit separately.
 
+# The shape `epidist::delay_parameter_draws()` returns for an intercept-only
+# marginal model: the prediction data's own columns, then the draw identifiers,
+# then one column per parameter, with the family recorded as an attribute.
 fake_delay_draws <- function() {
   set.seed(1)
-  draws <- data.frame(
-    draw  = seq_len(400),
-    index = rep(1:4, each = 100),
-    mu    = stats::rnorm(400, 1.6, 0.05),
-    sigma = stats::rnorm(400, 0.61, 0.02)
+  mu <- stats::rnorm(100, 1.6, 0.05)
+  sigma <- stats::rnorm(100, 0.61, 0.02)
+  structure(
+    data.frame(
+      delay_lwr         = rep(c(2, 5, 7, 9), each = 100),
+      relative_obs_time = 65,
+      n                 = rep(c(3L, 1L, 4L, 2L), each = 100),
+      .row              = rep(1:4, each = 100),
+      .chain            = 1L,
+      .iteration        = rep(1:100, times = 4),
+      .draw             = rep(1:100, times = 4),
+      mu                = rep(mu, times = 4),
+      sigma             = rep(sigma, times = 4)
+    ),
+    epidist_family = list(name = "lognormal", dpars = c("mu", "sigma"))
   )
-  # `delay_parameter_draws()` records the family it drew for.
-  attr(draws, "epidist_family") <- list(name = "lognormal", dpars = c("mu", "sigma"))
-  draws
 }
 
-with_mocked_epidist <- function(code) {
+with_mocked_epidist <- function(code, draws = fake_delay_draws()) {
   testthat::local_mocked_bindings(
-    delay_parameter_draws = function(object, newdata = NULL, ...) {
-      fake_delay_draws()
-    },
+    delay_parameter_draws = function(object, newdata = NULL, ...) draws,
     add_summaries = function(data, ...) {
       data$mean <- exp(data$mu + data$sigma^2 / 2)
       data$sd <- data$mean * sqrt(exp(data$sigma^2) - 1)
@@ -278,8 +286,19 @@ test_that("tidy() drops epidist's bookkeeping columns", {
 
   with_mocked_epidist({
     out <- generics::tidy(fake_epidist_fit())
-    # `draw` and `index` identify the draw, they are not delay parameters.
-    expect_false(any(c("draw", "index") %in% out$term))
+    # The prediction data and the draw identifiers are numeric, but they are not
+    # delay parameters.
+    expect_setequal(out$term, c("mu", "sigma", "mean", "sd"))
+  })
+
+  # Draws that lost the family attribute fall back to the blocklist.
+  unlabelled <- fake_delay_draws()
+  attr(unlabelled, "epidist_family") <- NULL
+  unlabelled$delay_lwr <- NULL
+  unlabelled$relative_obs_time <- NULL
+  with_mocked_epidist(draws = unlabelled, {
+    out <- generics::tidy(fake_epidist_fit())
+    expect_setequal(out$term, c("mu", "sigma", "mean", "sd"))
   })
 })
 

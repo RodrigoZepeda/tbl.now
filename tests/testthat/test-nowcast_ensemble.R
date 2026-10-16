@@ -439,3 +439,121 @@ test_that("a trailing comma is tolerated rather than aborting on a missing arg",
   # An empty argument anywhere else is still refused, and says which it was.
   expect_error(nowcast_ensemble(a, , b, verbose = FALSE), "empty")
 })
+
+# --- type = "median" (#100) --------------------------------------------------
+
+test_that("the median ensemble takes the median of the members level by level", {
+  skip_on_cran()
+  a <- fake_nowcast("a", c(1, 2, 3, 4, 5))
+  b <- fake_nowcast("b", c(3, 4, 5, 6, 7))
+  outlier <- fake_nowcast("outlier", c(100, 200, 300, 400, 500))
+
+  ensemble <- nowcast_ensemble(a, b, outlier, type = "median", verbose = FALSE)
+
+  expect_true(is_tbl_nowcast(ensemble))
+  expect_equal(ensemble@metadata$type, "median")
+  expect_null(ensemble@draws)
+  # The outlying member cannot drag the median; it does drag the average.
+  expect_equal(ensemble@predictions$.value, rep(c(3, 4, 5, 6, 7), times = 2))
+  averaged <- nowcast_ensemble(a, b, outlier, verbose = FALSE)
+  expect_true(all(averaged@predictions$.value > ensemble@predictions$.value))
+})
+
+test_that("an even number of members averages the two middle values", {
+  skip_on_cran()
+  members <- list(
+    a = fake_nowcast("a", c(1, 2, 3, 4, 5)),
+    b = fake_nowcast("b", c(3, 4, 5, 6, 7)),
+    c = fake_nowcast("c", c(5, 6, 7, 8, 9)),
+    d = fake_nowcast("d", c(50, 60, 70, 80, 90))
+  )
+  ensemble <- nowcast_ensemble(members, type = "median", verbose = FALSE)
+  expect_equal(ensemble@predictions$.value, rep(c(4, 5, 6, 7, 8), times = 2))
+
+  # With two members the median is the average.
+  pair_median <- nowcast_ensemble(members$a, members$d, type = "median", verbose = FALSE)
+  pair_mean <- nowcast_ensemble(members$a, members$d, verbose = FALSE)
+  expect_equal(pair_median@predictions, pair_mean@predictions)
+})
+
+test_that("weights make the median a weighted median", {
+  skip_on_cran()
+  a <- fake_nowcast("a", c(1, 2, 3, 4, 5))
+  b <- fake_nowcast("b", c(3, 4, 5, 6, 7))
+  c <- fake_nowcast("c", c(5, 6, 7, 8, 9))
+
+  # More than half the weight on one member: the median is that member.
+  heavy_a <- nowcast_ensemble(a, b, c,
+    type = "median", weights = c(a = 0.6, b = 0.2, c = 0.2), verbose = FALSE
+  )
+  expect_equal(heavy_a@predictions$.value, a@predictions$.value)
+
+  # Exactly half the weight at or below `b`: midway between `b` and `c`.
+  half <- nowcast_ensemble(a, b, c,
+    type = "median", weights = c(a = 1 / 3, b = 1 / 6, c = 1 / 2), verbose = FALSE
+  )
+  expect_equal(half@predictions$.value, rep(c(4, 5, 6, 7, 8), times = 2))
+
+  # A zero-weight member takes no part, however extreme it is.
+  outlier <- fake_nowcast("outlier", c(-100, -90, -80, -70, -60))
+  ignored <- nowcast_ensemble(a, b, c, outlier,
+    type = "median", weights = c(1, 1, 1, 0), verbose = FALSE
+  )
+  expect_equal(ignored@predictions$.value, b@predictions$.value)
+})
+
+test_that("a missing member value is dropped from the median", {
+  skip_on_cran()
+  a <- fake_nowcast("a", c(1, 2, 3, 4, 5))
+  b <- fake_nowcast("b", c(3, 4, 5, 6, 7))
+  c <- fake_nowcast("c", c(5, 6, NA, 8, 9))
+
+  ensemble <- nowcast_ensemble(a, b, c, type = "median", verbose = FALSE)
+  medians <- quantile_values(ensemble, 0.5)
+  # Only `a` (3) and `b` (5) have a median-level value: their midpoint.
+  expect_equal(medians, c(4, 4))
+  expect_equal(quantile_values(ensemble, 0.25), c(4, 4))
+})
+
+test_that("the median ensemble is monotone in the quantile level", {
+  skip_on_cran()
+  # Members whose ranking changes across levels.
+  a <- fake_nowcast("a", c(1, 2, 3, 4, 50))
+  b <- fake_nowcast("b", c(0, 10, 20, 30, 40))
+  c <- fake_nowcast("c", c(5, 6, 7, 8, 9))
+
+  for (weights in list("equal", c(0.5, 0.25, 0.25), c(0.1, 0.3, 0.6))) {
+    ensemble <- nowcast_ensemble(a, b, c,
+      type = "median", weights = weights, verbose = FALSE
+    )
+    sorted <- ensemble@predictions |>
+      dplyr::group_by(.data$event_date) |>
+      dplyr::summarise(
+        ok = !is.unsorted(.data$.value[order(.data$.quantile_level)]),
+        .groups = "drop"
+      )
+    expect_true(all(sorted$ok))
+  }
+})
+
+test_that(".weighted_median() reproduces median() under equal weights", {
+  skip_on_cran()
+  set.seed(99)
+  for (n in 1:7) {
+    values <- stats::rnorm(n)
+    expect_equal(
+      tbl.now:::.weighted_median(values, rep(1 / n, n)),
+      stats::median(values),
+      label = paste("n =", n)
+    )
+  }
+  expect_true(is.na(tbl.now:::.weighted_median(c(NA, NA), c(0.5, 0.5))))
+  expect_true(is.na(tbl.now:::.weighted_median(c(1, 2), c(0, 0))))
+})
+
+test_that("an unknown combination type is refused", {
+  skip_on_cran()
+  a <- fake_nowcast("a", c(1, 2, 3, 4, 5))
+  b <- fake_nowcast("b", c(3, 4, 5, 6, 7))
+  expect_error(nowcast_ensemble(a, b, type = "mode", verbose = FALSE), "should be one of")
+})

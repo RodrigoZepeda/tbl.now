@@ -168,12 +168,11 @@ test_that("add_temporal_effects.data.frame month_of_year cycles correctly", {
     name_prefix = ".date"
   )
 
-  # A factor since 0.21.0; its LABELS are the relative month offsets, because
-  # the effect is centred on the object's own first month rather than January.
+  # A factor since 0.21.0; since 1.2.0 its labels are calendar months
+  # (January = 1), not offsets from the object's first month (#99).
   months <- as.integer(as.character(result$.date_month_of_year))
   expect_s3_class(result$.date_month_of_year, "factor")
-  expect_equal(months[1], 1L)
-  expect_true(all(months %in% 1:12))
+  expect_equal(levels(result$.date_month_of_year), as.character(1:12))
   expect_equal(months, 1:12)
 })
 
@@ -192,11 +191,11 @@ test_that("add_temporal_effects.data.frame month_of_year handles year boundary",
     name_prefix = ".date"
   )
 
-  # Should cycle: starts at Nov (1), Dec (2), Jan (3), Feb (4)
-  expect_equal(as.integer(as.character(result$.date_month_of_year)), c(1L, 2L, 3L, 4L))
+  # Calendar months, so data starting in November still has January = 1.
+  expect_equal(as.integer(as.character(result$.date_month_of_year)), c(11L, 12L, 1L, 2L))
 })
 
-test_that("add_temporal_effects.data.frame week_of_year cycles correctly", {
+test_that("add_temporal_effects.data.frame week_of_year is the MMWR week", {
   skip_on_cran()
   df <- data.frame(
     date = seq(as.Date("2020-01-08"), as.Date("2020-12-30"), by = "week")
@@ -211,15 +210,20 @@ test_that("add_temporal_effects.data.frame week_of_year cycles correctly", {
     name_prefix = ".date"
   )
 
-  # A factor since 0.21.0; labels are the relative epiweek offsets.
+  # A factor since 0.21.0; since 1.2.0 its labels are the MMWR weeks of the
+  # dates themselves (#99). 2020-01-08 is in epiweek 2 and 2020 has 53 weeks.
   weeks <- as.integer(as.character(result$.date_week_of_year))
   expect_s3_class(result$.date_week_of_year, "factor")
-  expect_equal(weeks[1], 1L)
-  expect_true(all(weeks %in% 1:52))
+  expect_equal(levels(result$.date_week_of_year), as.character(1:53))
+  expect_equal(weeks, as.integer(lubridate::epiweek(df$date)))
+  expect_equal(weeks[1], 2L)
+  expect_equal(utils::tail(weeks, 1), 53L)
 })
 
 test_that("add_temporal_effects.data.frame week_of_year handles year boundary", {
   skip_on_cran()
+  # MMWR 2020 has a week 53 (2020-12-27 to 2021-01-02), which keeps its own
+  # level rather than being folded into week 52 or week 1.
   df <- data.frame(
     date = as.Date(c("2020-12-23", "2020-12-30", "2021-01-06", "2021-01-13"))
   )
@@ -233,8 +237,10 @@ test_that("add_temporal_effects.data.frame week_of_year handles year boundary", 
     name_prefix = ".date"
   )
 
-  # Should wrap around (modulo 52)
-  expect_true(all(result$.date_week_of_year %in% 1:52))
+  expect_equal(
+    as.integer(as.character(result$.date_week_of_year)),
+    c(52L, 53L, 1L, 2L)
+  )
 })
 
 test_that("add_temporal_effects.data.frame seasons creates sin and cos columns", {

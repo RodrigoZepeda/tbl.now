@@ -26,10 +26,11 @@
 #' effects will be calculated. This applies to all `temporal_effects` except
 #' for `seasonal`.
 #'
-#' @param numeric_col The column which contains the values from which
-#' the seasonal effects will be calculated. This applies only to seasonal
-#' effects. For date-related effects (such as month or day of the week)
-#' use `date_col`.
+#' @param numeric_col Optional. A numeric time column to calculate the seasonal
+#' (Fourier) effects from, instead of the calendar. This applies only to
+#' seasonal effects; for date-related effects (such as month or day of the week)
+#' use `date_col`. When `NULL` (the default) and `date_col` holds `<Date>`
+#' values, time is counted from 1970-01-01 in `season_units`,
 #'
 #' @param date_type One of `event_date` (default), `report_date`, or
 #' `revision_date` to add temporal effects to that column. `revision_date`
@@ -45,6 +46,13 @@
 #' **holiday** column, which on a grid coarser than days becomes the *share* of
 #' the period's days that are holidays rather than a 0/1 indicator. For a
 #' `tbl_now`, [compute_temporal_effects()] reads this off the object.
+#'
+#' @param season_units Character. The time units the Fourier `seasons` periods
+#' are counted in when they are calculated from the calendar (that is, when
+#' `numeric_col` is `NULL`): `"days"`, `"weeks"`, `"months"` or `"years"`.
+#' Defaults to `units`. For a `tbl_now`, [compute_temporal_effects()] uses the
+#' event units for event- and report-date effects and the revision units for
+#' revision-date effects.
 #'
 #' @param overwrite Logical. When `TRUE`, columns that already exist are
 #' overwritten. When `FALSE` (the default) an existing column of the same name is
@@ -248,6 +256,35 @@ add_temporal_effects <- function(x, t_effects = NULL, overwrite = FALSE, ...) {
   }
 }
 
+#' Time along the calendar, counted from a fixed origin
+#'
+#' The numeric axis the Fourier `seasons` terms are built on. Counting from the
+#' data's own first date gave the same calendar date a different phase in every
+#' series, stratum and backtest window (#99); counting from 1970-01-01, R's own
+#' date origin, gives a date the same phase wherever it appears.
+#'
+#' @param dates A `<Date>` vector.
+#' @param units `"days"`, `"weeks"`, `"months"` or `"years"`. Days and weeks
+#'   are continuous; months and years are whole calendar periods, the way
+#'   `time_cols_to_numeric()` counts them.
+#'
+#' @return A numeric vector the same length as `dates`, `NA` where `dates` is.
+#'
+#' @keywords internal
+#' @noRd
+.calendar_time <- function(dates, units = "days") {
+  switch(units,
+    days = as.numeric(dates),
+    weeks = as.numeric(dates) / 7,
+    months = 12 * (lubridate::year(dates) - 1970) + lubridate::month(dates) - 1,
+    years = lubridate::year(dates) - 1970,
+    cli::cli_abort(c(
+      "{.arg units} {.val {units}} has no calendar to count seasons along.",
+      "i" = "Pass a {.arg numeric_col} instead."
+    ))
+  )
+}
+
 #' @export
 #' @rdname add_temporal_effects
 add_temporal_effects.data.frame <- function(x, t_effects = NULL, overwrite = FALSE,
@@ -256,7 +293,8 @@ add_temporal_effects.data.frame <- function(x, t_effects = NULL, overwrite = FAL
                                             numeric_col = NULL,
                                             name_prefix = paste0(".", date_col),
                                             weekend_days = c("Sat", "Sun"),
-                                            units = "days") {
+                                            units = "days",
+                                            season_units = units) {
   # Do nothing if no effect
   if (is.null(t_effects)) {
     return(x)
@@ -288,15 +326,14 @@ add_temporal_effects.data.frame <- function(x, t_effects = NULL, overwrite = FAL
     )
   }
 
-  if (!is.null(t_effects@seasons) && length(t_effects@seasons) > 0 && is.null(numeric_col)) {
-    cli::cli_abort("Please specify a `numeric_col` to calculate the seasons")
+  # Seasons are counted along the calendar when the dates are dates; anything
+  # else has no calendar to count along, so it needs an explicit numeric axis.
+  if (!is.null(t_effects@seasons) && length(t_effects@seasons) > 0 &&
+        is.null(numeric_col) && !lubridate::is.Date(x[[date_col]])) {
+    cli::cli_abort(
+      "Please specify a `numeric_col` to calculate the seasons: {.arg date_col} does not hold dates."
+    )
   }
-
-
-  # Get the initial date (this is for codifying the month and epiweek effects so that they start in 1)
-  init_date <- x |>
-    dplyr::slice_head(n = 1) |>
-    dplyr::pull(!!as.symbol(date_col))
 
   # Add day of the week effect-----
   if (!is.null(t_effects)) {
@@ -357,7 +394,7 @@ add_temporal_effects.data.frame <- function(x, t_effects = NULL, overwrite = FAL
           factor(as.integer(lubridate::day(!!as.symbol(date_col))), levels = 1:31))
     }
 
-    # Add month effect (centered at current month = 1)-----
+    # Add month effect (calendar month, January = 1)-----
     if (t_effects@month_of_year & !is.null(date_col)) {
       if (paste0(name_prefix, "_month_of_year") %in% colnames(x) && !overwrite) {
         cli::cli_abort(
@@ -365,18 +402,16 @@ add_temporal_effects.data.frame <- function(x, t_effects = NULL, overwrite = FAL
         )
       }
 
-      # Relative to the object's first month, so the LABELS are the offsets
-      # rather than month names -- level 1 is whatever month the data starts in.
+      # The calendar month, not an offset from the data's first month: coding
+      # relative to the first row gave the same month a different level in
+      # every series and backtest window (#99). Numeric labels rather than month
+      # names, which vary with the locale.
       x <- x |>
         dplyr::mutate(!!as.symbol(paste0(name_prefix, "_month_of_year")) :=
-          factor(
-            as.integer(1 +
-              ((lubridate::month(!!as.symbol(date_col)) - lubridate::month(init_date)) %% 12)),
-            levels = 1:12
-          ))
+          factor(as.integer(lubridate::month(!!as.symbol(date_col))), levels = 1:12))
     }
 
-    # Add epiweek effect (centered at current week = 1 | week 53 that almost never happens is collapsed to January)-----
+    # Add epiweek effect (MMWR week, 1 to 53)-----
     if (t_effects@week_of_year & !is.null(date_col)) {
       if (paste0(name_prefix, "_week_of_year") %in% colnames(x) && !overwrite) {
         cli::cli_abort(
@@ -384,20 +419,28 @@ add_temporal_effects.data.frame <- function(x, t_effects = NULL, overwrite = FAL
         )
       }
 
-      # 52 levels is a lot of parameters. For within-year seasonality the
+      # The MMWR week of the date itself (#99), so epiweek 7 is epiweek 7 in
+      # every series. Week 53 keeps a level of its own rather than being folded
+      # into a neighbour: it is a real week, it just only exists in some years.
+      # 53 levels is a lot of parameters. For within-year seasonality the
       # Fourier `seasons` terms below are almost always the better tool; this is
       # here for the case where you genuinely want a free effect per epiweek.
       x <- x |>
         dplyr::mutate(!!as.symbol(paste0(name_prefix, "_week_of_year")) :=
-          factor(
-            as.integer(1 +
-              ((lubridate::epiweek(!!as.symbol(date_col)) - lubridate::epiweek(init_date)) %% 52)),
-            levels = 1:52
-          ))
+          factor(as.integer(lubridate::epiweek(!!as.symbol(date_col))), levels = 1:53))
     }
 
     # Add seasons-----
-    if (!is.null(t_effects@seasons) & length(t_effects@seasons) > 0 & !is.null(numeric_col)) {
+    if (!is.null(t_effects@seasons) & length(t_effects@seasons) > 0) {
+      # Time along the calendar, counted from a fixed origin, so the same date
+      # has the same phase in every series (#99). An explicit `numeric_col`
+      # wins: it is how a caller asks for some other time axis.
+      season_time <- if (is.null(numeric_col)) {
+        rlang::expr(.calendar_time(!!as.symbol(date_col), units = !!season_units))
+      } else {
+        rlang::expr(as.numeric(!!as.symbol(numeric_col)))
+      }
+
       # For each season add a pair of Fourier (sin/cos) columns
       for (i in seq_along(t_effects@seasons)) {
         # Period = seasons * season_length (season_length defaults to 1 → period = seasons)
@@ -419,11 +462,12 @@ add_temporal_effects.data.frame <- function(x, t_effects = NULL, overwrite = FAL
           )
         }
 
-        # Add the sine and cosine components of the Fourier term
+        # Add the sine and cosine components of the Fourier term. `period` is
+        # injected so a data column called `period` cannot mask it.
         x <- x |>
           dplyr::mutate(
-            !!as.symbol(paste0(season_name, "_cos")) := cos(2 * base::pi * as.numeric(!!as.symbol(numeric_col)) / period),
-            !!as.symbol(paste0(season_name, "_sin")) := sin(2 * base::pi * as.numeric(!!as.symbol(numeric_col)) / period)
+            !!as.symbol(paste0(season_name, "_cos")) := cos(2 * base::pi * !!season_time / !!period),
+            !!as.symbol(paste0(season_name, "_sin")) := sin(2 * base::pi * !!season_time / !!period)
           )
       }
     }

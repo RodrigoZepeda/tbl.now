@@ -2507,20 +2507,11 @@ tbl_now_from_tsibble <- function(data, report_date, event_date = NULL,
   on_grid[date_cols] <- lapply(on_grid[date_cols], as.Date)
   derived_from <- names(on_grid)
 
-  # Fourier terms are computed from `.event_num` / `.report_num`, which
-  # `time_cols_to_numeric()` anchors at the earliest event date. Completion only
-  # ever extends the grid forward — it takes its `min_date` from the observations
-  # — so re-deriving them here reproduces the object's own anchor, and the
-  # seasonal phase carries onto the horizon dates unchanged.
-  on_grid <- time_cols_to_numeric(
-    on_grid,
-    event_date   = "reference_date",
-    report_date  = "report_date",
-    event_units  = get_event_units(x),
-    report_units = get_report_units(x),
-    force = TRUE
-  )
-
+  # Every effect, Fourier terms included, is read off the calendar (#99): the
+  # seasons count time from a fixed origin rather than from the first row, so
+  # the completed grid -- which starts wherever epinowcast's completion starts
+  # -- gets exactly the values `compute_temporal_effects()` gives the
+  # `tbl_now`, and the seasonal phase carries onto the horizon dates unchanged.
   for (spec in specs) {
     if (identical(spec$date_type, "revision_date")) {
       cli::cli_warn(c(
@@ -2535,18 +2526,17 @@ tbl_now_from_tsibble <- function(data, report_date, event_date = NULL,
       on_grid,
       t_effects    = spec$t_effects,
       date_col     = if (from_event_date) "reference_date" else "report_date",
-      numeric_col  = if (from_event_date) ".event_num" else ".report_num",
       name_prefix  = if (from_event_date) ".event" else ".report",
       overwrite    = TRUE,
       weekend_days = spec$weekend_days,
-      units        = if (from_event_date) get_event_units(x) else get_report_units(x)
+      units        = if (from_event_date) get_event_units(x) else get_report_units(x),
+      # Report-date seasons are counted in event units, as in
+      # `compute_temporal_effects()`.
+      season_units = get_event_units(x)
     )
   }
 
-  # `.event_num` / `.report_num` / `.delay` are scaffolding for the Fourier
-  # terms, not covariates, and epinowcast derives its own delay index.
-  scaffolding <- c(".event_num", ".report_num", ".delay")
-  effect_cols <- setdiff(names(on_grid), c(derived_from, scaffolding))
+  effect_cols <- setdiff(names(on_grid), derived_from)
 
   list(
     data = data.table::as.data.table(

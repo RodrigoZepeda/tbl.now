@@ -467,6 +467,36 @@ test_that("performance weights flow into nowcast_ensemble()", {
   expect_gt(weights[["scoretoy"]], weights[["scoretoy2"]])
 })
 
+test_that("performance weights weight the median ensemble too", {
+  skip_on_cran()
+  register_scoretoy()
+  x <- score_tbl_now()
+  dates <- as.Date(c("2020-06-01", "2020-06-08"))
+
+  backtest <- nowcast_backtest(
+    x,
+    engine("scoretoy", bias = 0),
+    engine("scoretoy2", bias = 25),
+    now_dates = dates, verbose = FALSE
+  )
+
+  good <- run_nowcast(x, engine("scoretoy", bias = 0), verbose = FALSE)
+  bad <- run_nowcast(x, engine("scoretoy2", bias = 25), verbose = FALSE)
+
+  ensemble <- nowcast_ensemble(
+    good, bad,
+    type = "median", weights = "inverse_score", backtest = backtest,
+    verbose = FALSE
+  )
+  weights <- ensemble@metadata$weights
+
+  # With more than half the weight, the better member IS the weighted median.
+  expect_gt(weights[["scoretoy"]], 0.5)
+  key <- c(good@event_date, good@strata, ".quantile_level")
+  expected <- dplyr::arrange(good@predictions, dplyr::across(dplyr::all_of(key)))
+  expect_equal(ensemble@predictions$.value, expected$.value)
+})
+
 test_that("performance-weighted ensembles hold out member now dates", {
   skip_on_cran()
   register_scoretoy()
